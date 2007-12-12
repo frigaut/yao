@@ -1,0 +1,82 @@
+// Aosimul par file, V3.2.1
+//-------------------------------
+sim.name           = "SH6x6 w/ TT mirror and WFS, full diffraction WFS";
+sim.pupildiam      = 120;
+sim.debug          = 0;
+sim.verbose        = 0;
+
+//-------------------------------
+atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen	   = &("./screen"+["1","2","3","4"]+".fits");
+atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
+atm.layerspeed     = &([11.,20,29,35]);
+atm.layeralt	   = &([0.,400,6000,9000]);
+atm.winddir        = &([0,0,0,0]);
+
+//-------------------------------
+nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+n   = 1;
+wfs(n).type	   = "hartmann";
+wfs(n).lambda	   = 0.65;
+wfs(n).gspos       = [0.,0.];
+wfs(n).gsalt       = 0.;
+wfs(n).gsmag       = 5.;
+wfs(n).shmethod	   = 2;
+wfs(n).shnxsub	   = 6;
+wfs(n).pixsize     = 1.0;
+wfs(n).npixels     = 10;
+wfs(n).noise       = 1;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
+wfs(n).nintegcycles= 1;
+
+//-------------------------------
+ndm                = 2;
+dm = array(dms,ndm);
+
+n  =1;
+dm(n).type	   = "stackarray";
+dm(n).iffile	   = "";
+dm(n).nxact	   = 7;
+dm(n).pitch	   = 20;
+dm(n).alt          = 0.;
+dm(n).unitpervolt   = 0.01;
+dm(n).push4imat    = 100;
+
+n  =2;
+dm(n).type	   = "tiptilt";
+dm(n).iffile	   = "";
+dm(n).alt          = 0.;
+dm(n).unitpervolt   = 0.0005;
+dm(n).push4imat    = 400;
+
+//-------------------------------
+mat.condition      = &([15.]);
+mat.file	   = "";
+
+//-------------------------------
+tel.diam	   = 7.9;
+tel.cobs	   = 0.1125;
+
+//-------------------------------
+target.lambda	   = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint	   = 1e11;
+
+//-------------------------------
+loop.gain	   = 0.6;
+loop.framedelay    = 1;
+loop.niter	   = 10000;
+loop.ittime	   = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 10000;
+loop.skipby        = 10000;
+loop.modalgainfile = "simulModeGains.fits";
+
+//-------------------------------

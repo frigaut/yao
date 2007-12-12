@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>yao: performance</title>
+<script type="text/javascript" src="scripts.js">void=null;</script>
+<link rel="stylesheet" href="styles.css" type="text/css">
+</head>
+<body>
+
+
+<div id="content">
+
+<h1>yao</h1>
+
+<div id="links">
+<p><b>Links</b></p>
+<a href="aosimul.html">Main page</a><br>
+<a href="installation.html">Installation</a><br>
+<a href="examples.html">Examples and Scripts</a><br>
+<a href="performance.html">Performance</a><br>
+<a href="data-structures.html">Data structures and parfiles</a><br>
+<a href="feature-control.html">Controlling Features</a><br>
+<a href="screenshots.html">Screenshots</a><br>
+<a href="algorithms.html">Algorithms</a><br>
+<a href="ytkcontrol.html">Yao tk dynamic control</a><br>
+<a href="weblog.html">News/Weblog</a><br>
+</div>
+
+
+<h2>Performance</h2>
+
+From version 3.0, Yao has been ported to use either the Apple Veclib or FFTW. It can thus run on any *nix machine. The performance of FFTW and the Apple veclib are relatively similar, although details depend on the size of the problem. 
+
+<p>The following table give a few examples of how fast the main loop run on various machines. Display was set to zero for these tests. Note that the large difference with and without noise for <code>sh6m2-bench.par</code> is largely explained by the large number of pixels/subaperture in this example (Poisson noise, although optimized using a compiled routine in this package, is still very expensive).
+
+
+
+<table>
+<tr class="toptitle">
+<td>File</td>
+<td>Machine</td>
+<td>FFT Engine</td>
+<td>#it/sec</td>
+<td>WF sensing time</td>
+<td>Comments</td>
+</tr>
+<tr>
+<td>sh6m2-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>Veclib</td>
+<td>62.3</td>
+<td>8.16ms</td>
+<td>w/o noise</td>
+</tr>
+<tr class="trodd">
+<td>sh6m2-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>FFTW</td>
+<td>58.4</td>
+<td>9.02ms</td>
+<td>w/o noise</td>
+</tr>
+<tr>
+<td>sh6m2-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>Veclib</td>
+<td>205.5</td>
+<td>2.70ms</td>
+<td>w/o noise</td>
+</tr>
+<tr class="trodd">
+<td>sh6m2-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>FFTW</td>
+<td>184.5</td>
+<td>3.14ms</td>
+<td>w/o noise</td>
+</tr>
+<tr>
+<td>sh6m2-bench.par</td>
+<td>Athlon 2x2.8GHz</td>
+<td>FFTW</td>
+<td>158.0</td>
+<td>2.75ms</td>
+<td>w/o noise</td>
+</tr>
+<tr class="trodd">
+<td>sh6m2-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>Veclib</td>
+<td>28.4</td>
+<td>27.6ms</td>
+<td>w/ noise</td>
+</tr>
+<tr>
+<td>sh6m2-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>FFTW</td>
+<td>27.4</td>
+<td>28.4ms</td>
+<td>w/ noise</td>
+</tr>
+<tr class="trodd">
+<td>sh6m2-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>Veclib</td>
+<td>97.2</td>
+<td>8.14ms</td>
+<td>w/ noise</td>
+</tr>
+<tr>
+<td>sh6m2-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>FFTW</td>
+<td>92.6</td>
+<td>8.54ms</td>
+<td>w/ noise</td>
+</tr>
+<tr class="trodd">
+<td>sh6m2-bench.par</td>
+<td>Athlon 2x2.8GHz</td>
+<td>FFTW</td>
+<td>84.0</td>
+<td>8.29ms</td>
+<td></td>
+</tr>
+<tr>
+<td>c188-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>Veclib</td>
+<td>7.44</td>
+<td>62.14ms</td>
+<td></td>
+</tr>
+<tr class="trodd">
+<td>c188-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>FFTW</td>
+<td>7.40</td>
+<td>60.27ms</td>
+<td></td>
+</tr>
+<tr>
+<td>c188-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>Veclib</td>
+<td>24.7</td>
+<td>26.3ms</td>
+<td></td>
+</tr>
+<tr class="trodd">
+<td>c188-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>FFTW</td>
+<td>27.5</td>
+<td>22.55ms</td>
+<td></td>
+</tr>
+<tr>
+<td>c188-bench.par</td>
+<td>Athlon 2x2.8GHz</td>
+<td>FFTW</td>
+<td>13.2</td>
+<td>39.38ms</td>
+<td></td>
+</tr>
+<tr class="trodd">
+<td>mcao2-bench.par</td>
+<td>PBG4 800MHz</td>
+<td>Veclib</td>
+<td>0.63</td>
+<td>425ms</td>
+<td></td>
+</tr>
+<tr>
+<td>mcao2-bench.par</td>
+<td>G5 2x2GHz</td>
+<td>Veclib</td>
+<td>2.56</td>
+<td>136.5ms</td>
+<td></td>
+</tr>
+<tr class="trodd">
+<td>mcao2-bench.par</td>
+<td>Athlon 2x2.8GHz</td>
+<td>FFTW</td>
+<td>1.25</td>
+<td>182ms</td>
+<td></td>
+</tr>
+</table>
+<center>Table: Performance for yao v3.0</center>
+
+<p>Yao-FFTW and yao-veclib display quite similar performance on the PowerBook G4 and the Dual G5. FFT tests and <a href="http://www.fftw.org/speed/g5-2GHz/">FFTW benchmarks for the G5</a> show that the Apple veclib wins for small array sizes, and that this trend is inverted at around 128x128.
+<p>Something I can't explain in these benchmarks is the poor performance of the Athlon w.r.t. the G5 for large FFT problems like <code>c188-bench.par</code>. I have double checked that the performance of the FFT itself is good: For instance, using the <code>bench -s #x#</code> utility provided with the FFTW distribution, I get 530 microseconds to do 128x128 FFTs on the Athlon and 490 microseconds on the G5, close to what could be expected. 1024x1024 takes 179ms on the Athlon and 322ms on the G5. This does not fit with the poor Athlon performance on <code>c188-bench.par</code>. I suspect something is wrong with my coding in <code>_cwfs()</code> (yao_fast.c) and that somehow it is better tolerated by the G5 (/OsX) than the Ahtlon (/Linux).
+
+<p><code>mcao2-bench.par</code> is a very exhaustive simulation of the Gemini MCAO system. It uses a pupil of 128 pixels (6cm sampling in pupil plane), 5 16x16 LGS wfs (including LGS elongation and centroid gain optimization), 4 TT WFS, all including noise, 3 high order DMs (a total of approximately 950 actuators) including the effect of hysteresis, and estimate the PSF at 16 field locations and 2 different wavelengths. That's quite a lot of calculations. Here again, the G5 shows a significant advantage over the Athlon. The major difference comes in fact from the computation of the DM surfaces (405ms on the Athlon vs 113ms on the G5), a compiled routine that is basically a 2 line loop accumulating the scaled influence functions into the final DM shape array. I can't understand why the Athlon is so slow on this routine (even though I compiled it "-O3").
+
+
+</div>
+Page updated on UT $Date: 2007-12-12 23:29:50 $
+<p> <a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+       src="http://jigsaw.w3.org/css-validator/images/vcss" 
+       alt="Valid CSS!">
+ </a>
+</p>
+</body>
+</html>

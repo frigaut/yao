@@ -1,0 +1,57 @@
+8
+
+dir
+307
+svn://myst/svnroot/yao/trunk/yao/doc/pages
+svn://myst/svnroot
+
+
+
+2007-11-13T14:12:40.574090Z
+307
+frigaut
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+663c5bd3-7ac9-451f-bfe8-2c33155fa921
+
+demo.php.txt
+file
+
+
+
+
+2007-11-13T14:17:36.000000Z
+cfcd208495d565ef66e7dff9f98764da
+2007-11-13T14:12:40.574090Z
+307
+frigaut
+has-props
+
+cvs
+dir
+
+counter.txt
+file
+
+
+
+
+2007-11-13T14:17:36.000000Z
+cfcd208495d565ef66e7dff9f98764da
+2007-11-13T14:12:40.574090Z
+307
+frigaut
+has-props
+

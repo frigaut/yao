@@ -1,0 +1,2 @@
+#!/bin/bash
+yorick -i yaopy.i $1

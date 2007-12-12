@@ -1,0 +1,449 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>yao: feature control</title>
+<script type="text/javascript" src="scripts.js">void=null;</script>
+<link rel="stylesheet" href="styles.css" type="text/css">
+</head>
+<body>
+
+
+<div id="content">
+
+<h1>yao</h1>
+
+<div id="links">
+<p><b>Links</b></p>
+<a href="aosimul.html">Main page</a><br>
+<a href="installation.html">Installation</a><br>
+<a href="examples.html">Examples and Scripts</a><br>
+<a href="performance.html">Performance</a><br>
+<a href="data-structures.html">Data structures and parfiles</a><br>
+<a href="feature-control.html">Controlling Features</a><br>
+<a href="screenshots.html">Screenshots</a><br>
+<a href="algorithms.html">Algorithms</a><br>
+<a href="ytkcontrol.html">Yao tk dynamic control</a><br>
+<a href="weblog.html">News/Weblog</a><br>
+</div>
+
+
+<h2>Controlling Features</h2>
+
+This page is under construction.
+
+<p>OK. You have installed <code>yao</code> and now, you would like to do stuff with it, but you have edited the parfile and don't really know where to start from. This is a guide to feature control, where I go through what parameter to modify to get the desired effect. 
+<p>I do not go through the obvious though. Selecting curvature vs shack-hartmann sensor, etc, etc...but only addressed the little more advanced features. You can go back to the <a href="data-structures.html">Data Structure</a> page for explanation about particular parameters. Again, one of the best way to start is from one of the parfiles you will find in the <code>example</code> directory in the yao distribution.
+
+<p>Content:
+<ul class="packed">
+<li><a href="#multiwfsdm"><b>System</b>: Multi-WFS or multi-DM configuration</a>
+<li><a href="#shmethods"><b>WFS</b>: Shack-Hartmann methods (gradient average vs full propagation)</a>
+<li><a href="#adjustexptime"><b>WFS</b>: Separately adjust the integration time for each sensors</a>
+<li><a href="#framedelay"><b>WFS</b>: Frame delay</a>
+<li><a href="#centroidgain"><b>WFS</b>: Centroid Gain Optimization (LGS+Shack-Hartmann only)</a>
+<li><a href="#separateloopgain"><b>DM</b>: Separate loop gain per DM</a>
+<li><a href="#actuatorvalidation"><b>DM</b>: Actuator validation threshold</a>
+<li><a href="#anisomodes"><b>DM</b>: Anisoplanatism modes for MCAO</a>
+<li><a href="#extrapolatedactuators"><b>DM</b>: Extrapolated actuators</a>
+<li><a href="#eltmode"><b>DM</b>:Making things faster for large problems</a>
+<li><a href="#multilambdaperf"><b>Performance</b>:Multi-wavelength, multi-position performance estimate</a>
+<li><a href="#skipandreset"><b>Performance</b>:Skip and reset</a>
+<li><a href="#usealgs"><b>LGS</b>: Use a Laser Guide Star</a>
+<li><a href="#uplinkcompensation"><b>LGS</b>: Uplink compensation of a LGS tilt</a>
+<li><a href="#lgselongation"><b>LGS</b>: Laser Guide Star elongation</a>
+<li><a href="#rayleighfratricide"><b>LGS</b>: Rayleigh Fratricide effect in multiple LGS systems</a>
+<li><a href="#workingoffzenith">Working off-zenith</a>
+<li><a href="#r0perlayer">r0 versus fraction per layer</a>
+</ul>
+
+<p>
+<br>
+
+<ol class="spaced">
+<a name="multiwfsdm"></a>
+
+<li><font class="highlight">Multi-WFS or multi-DM
+configuration</font>: Set nwfs or ndm in the parfile to the desired
+number of WFSs/DMs. Edit the variables accordingly
+(e.g. wfs(<b>2</b>).type). See <code>mcao2-bench.par</code> for an
+example of this. You might group the DMs/WFSs in subsystem by using
+<code>wfs().subsystem</code> and <code>dm().subsystem</code> (set this
+to a number: 1, 2, ...). The interaction matrix for each subsystem is
+inverted separately, and then re-stuffed into a global command matrix.
+
+<a name="shmethods"></a>
+<li><font class="highlight">Shack-Hartmann methods</font>: 
+
+<ul class="packed">
+
+<li><code>wfs.shmethod = 1</code> for the fast gradient average
+option. Noise is always disabled with this option which is to be used
+only for fast evaluation.
+
+<li><code>wfs.shmethod = 2</code> for the full propagation
+option. Images are calculated for each lenslets, and noise, bias, flat
+and threshold are applied.
+
+</ul>
+
+<a name="adjustexptime"></a> <li><font class="highlight">Separately
+adjust the integration time for each sensors</font>:
+
+<ul class="packed">
+
+<li>The clock time, i.e. quantum time for the simulation is set by
+<code>loop.ittime</code>. Each sensors can integrate over an integer
+number of this quantum time, set by
+<code>wfs.nintegcycles</code>. Note that this option only works with
+Shack-Hartmann sensors (curvature sensors are mostly photon noise
+limited, and although there are now consideration to implement
+curvature sensors with CCD, on a single WFS system, you can adjust
+loop.ittime).
+
+</ul>
+
+<ul class="packed">
+
+<li><code>wfs.nintegcycles = 3</code> will result in an integration
+time of 3 x loop.ittime
+
+</ul>
+
+<a name="separateloopgain"></a>
+<li><font class="highlight">Separate loop gain per DM</font>
+
+<ul class="packed">
+
+<li>Just set <code>dm.gain</code>. The total gain for DM n is
+<code>dm(n).gain * loop.gain</code>. At version 3.0, only a simple
+integrator with gain is implemented.
+</ul>
+
+<a name="actuatorvalidation"></a>
+<li><font class="highlight">Actuator validation threshold</font>
+
+<ul class="packed">
+
+<li>When configuring a DM, one may fine tune which actuators are
+enabled with the parameter <code>dm.thresholdresp</code>. The
+interaction matrix is done with a larger number of actuators. It is
+then examined and only actuators for which the WFS response (as
+defined by <code>max(abs(iMat row for this
+actuator))/max(abs(iMat))</code>) is larger than
+<code>dm.thresholdresp</code>. <br><code>dm.thresholdresp=0</code>
+will of course select all actuators, while
+<code>dm.thresholdresp=1</code> will select none. Values of 0.3 to 0.5
+are typical. Setting <code>dm.thresholdresp</code> to negative value
+will enter an interactive mode at execution: When the time comes to
+select valid actuators (after taking the iMat), the user is prompted
+for a value of <code>dm.thresholdresp</code>, and can enter
+successively new values until satisfied with the result (a graphical
+configuration of the beams + valid actuator is plotted to help the
+selection). When you've gone through this step once, I suggest you
+enter the final value of <code>dm.thresholdresp</code> for this DM in
+the parfile.
+
+</ul>
+
+<a name="multilambdaperf"></a>
+<li><font class="highlight">Multi-wavelength, multi-position performance estimate</font>
+
+<ul class="packed">
+
+<li>Starting at version 2.3.0, one can now, in the same simulation
+run, evaluate the performance images at various wavelengths. This has
+to be specified using <code>target.lambda</code> as a pointer to a
+wavelength vector, for example <code>target.lambda =
+&([1.25,1.65,2.2])</code>. The result Strehl and fwhm array,
+accessible as extern variable once the simulation is finished, are
+4-dimensions: <code>(row,column,position, wavelength)</code>, where
+position is the (X,Y) position in the field of view, as specified in
+the <code>target.xposition</code> and <code>yposition</code>
+vectors. Because in most case the computation time is <b>not</b>
+dominated by the PSF estimation, but by the WFS or DM shape
+computation functions, performance evaluation at
+multi-positions/multi-wavelengths makes sense.
+
+</ul>
+
+<a name="framedelay"></a>
+<li><font class="highlight">Frame delay</font>
+
+<ul class="packed">
+
+<li><code>loop.framedelay</code> controls the integer number of frame
+delay in the close loop, on top of a fixed 1 frame delay due to the
+nature of the close loop. <code>loop.framedelay=0</code> means no
+delay, i.e. the WFS measurement are available for the DM command
+calculation as soon as the integration on the WFS is finished. This is
+appropriate for curvature sensors using APDs and very fast real time
+computer. <code>loop.framedelay=1</code> is appropriate for
+Shack-Hartmann sensor (using CCD with usually a frame read out time)
+and fast real time computers. Larger values can be chosen. You can NOT
+use negative values ;-)
+
+</ul>
+
+<a name="skipandreset"></a>
+<li><font class="highlight">"Skip and reset" feature</font>
+
+<ul class="packed">
+				    <p>
+<li>By definition, the low spatial frequencies of the wavefront have
+much larger temporal correlation time than the high spatial
+frequencies. This is a direct consequence of the Taylor hypothesis of
+frozen turbulence. thus obtaining good statistics, including on these
+low spatial frequencies, may result in the need for very large number
+of iterations in the Monte-Carlo code (<code>aoloop</code>). To
+circumvent this, I have implemented a feature that runs a number of
+iterations, then skips a large step and restart at a totally new place
+(in fact, much later, as if you had skipped thousand of
+iterations). Providing you are running a sufficient number of screens
+and these are large enough, this usually works well and provide much
+smoother resulting PSF and less biased performance estimates.
+
+<li>set <code>loop.skipevery</code> to the number of iteration you
+want to run in a row (continuous).
+
+<li>set <code>loop.skipby</code> to the equivalent number of iteration
+you want to jump in between the continuous run. In short, you want to
+skyp by "skipby" iterations every "skipevery" iterations. To be
+perfectly clear, <code>loop.skipevery=100</code> and
+<code>loop.skipby=10000</code>, combined with
+<code>loop.niter=1000</code>, will run 100 iterations, then skip by
+10000 iterations (i.e. move the phase screens as if 10000 iterations
+had passed by), then reset and run another 100 iterations, then skip
+another 10000, reset and run another 100, until the number of actually
+executed iteration reaches 1000.
+
+</ul>
+
+<a name="usealgs"></a> <li><font class="highlight"><b>LGS</b>: Use a
+Laser Guide Star</font>: To set a WFS to use a LGS, set
+
+<ul class="packed">
+
+<li><code>wfs.gsalt</code> to the altitude of the LGS (e.g. 90000 for
+Na star). Specified at zenith.
+
+<li><code>wfs.laserpower</code> to the power of the laser
+
+<li><code>gs.lgsreturnperwatt</code> to the number of photons received
+back at the entrance pupil, per cm2, per second, per Watt of laser
+power on sky, at zenith. The default value is 22, which seems to be in
+good agreement with theory <b>and</b> measurements (e.g. SOR 2004) for
+a Sodium LGS.
+
+<li><code>wfs.filtertilt=1</code>: I do not explicitly add the correct
+uplink tilt to the LGS position. This insures you will not use it
+unduly.
+
+<li>It is advised to use uplink tip-tilt compensation (see below)
+
+<li>You may want to use <code>wfs.gsdepth</code> to simulate guide
+star elongation. <code>gsdepth</code> specifies the <b>depth</b> of
+the laser guide star, <b>thickness</b> of the sodium layer or <b>range
+gating</b> for a Rayleigh guide star, in the same units as
+<code>wfs.gsalt</code> (meters). See below for more details and
+options.
+
+</ul>
+
+<a name="uplinkcompensation"></a> <li><font
+class="highlight"><b>LGS</b>: Uplink compensation of a LGS
+tilt</font>: On top of the LGS settings, set
+
+<ul class="packed">
+
+<li><code>wfs.correctUpTT=1</code>
+
+<li><code>wfs.uplinkgain=0.1</code> or some other value. That is the
+integrator gain of the control loop steering the uplink LGS tip-tilt
+mirrors, controlled by the TT signal of the WFS looking at this LGS
+
+</ul>
+
+<a name="lgselongation"></a>
+<li><font class="highlight"><b>LGS</b>: Laser Guide Star elongation</font>
+
+<ul class="packed">
+
+<li>For SH WFS only.
+
+<li>Starting in version 2.5.0, I have implemented a way to simulate
+the LGS geometrical off-axis elongation. Just set
+<code>wfs.gsdepth</code> to the thickness of the sodium layer (or
+rayleigh depth), in meters. For a sodium LGS system, <code>wfs.gsdepth
+= 10000</code> is appropriate.
+
+<li>Because the uplink propagation is not yet implemented, one may
+want to set <code>wfs.kernel</code>(in arcsec) to the value of the
+spot size, typically 0.8-1.0" to reflect real world conditions (this
+is then convolved with the seeing and the spot elongation).Because of
+this, you might have to enlarge <code>sim.pupildiam</code> to get a
+larger field of view per subaperture.
+
+<li>If any of <code>wfs.gsdepth</code> or <code>wfs.kernel</code> is
+set, the shwfs code then switches into a special section that does the
+convolution. This adds a noticable overhead to the calculations (it
+about doubles the shwfs execution time), but is unavoidable for a
+complete LGS simulation.
+
+<li><code>wfs.LLTxy</code> is an optional parameter that specifies the
+position of the Laser Launch Telescope (LLT) with respect to the
+telescope pupil center. <code>wfs.LLTxy=(0,0)</code> means the LLT is
+centered (e.g. behind the secondary, which is the Gemini MCAO
+configuration). <code>wfs.LLTxy=(+5,0)</code> means a projection from
+the side on a large telescope (this example is close to the Keck
+configuration).
+
+</ul>
+
+<a name="rayleighfratricide"></a> <li><font
+class="highlight"><b>LGS</b>: Rayleigh Fratricide effect in multiple
+LGS systems</font>: <p>To enable this calculation, or simply to enable
+the evaluation of the Rayleigh backscatter in a single LGS system with
+very large subapertures, set <code>wfs.rayleighflag=1</code>. During
+aoinit, yao will compute the backscatter maps for each relevant
+WFS/beam and subapertures. This takes some time, from a few seconds to
+a few minutes, depending on the order of the system and your
+computer's power. This Rayleigh contribution has to be re-calculated
+for different geometry of the system, i.e. LGS altitude and zenith
+angle.
+
+<a name="workingoffzenith"></a> <li><font class="highlight">Working
+off-zenith</font>: <p>Just set <code>gs.zenithangle</code> to the
+zenith angle value in degree. ao.init needs to be re-run. This adjusts
+the value of r0, the lgs altitude and brightness, the atmospheric
+layer altitude and the thickness of the Na layer (or Rayleigh depth).
+
+<a name="anisomodes"></a>
+<li><font class="highlight">Anisoplanatism modes for MCAO</font>:
+
+<ul class="packed">
+
+<li>set <code>dm.type="aniso"</code>
+
+<li>set <code>dm.alt</code> to the altitude of an existing high order
+DM (i.e. not a tip-tilt mirror) capable of producing acceptable
+defocus and astigmatism. <i>There has to be both a DM at altitude 0
+and a DM at altitude *not* 0:</i> What the algorithm does is find the
+actuator commands combination to apply to DM0 (0 altitude DM)
+
+</ul>
+
+<a name="extrapolatedactuators"></a> <li><font
+class="highlight">Extrapolated actuators</font>
+
+<ul class="packed">
+
+<li>Version 2.5.2 started to implement a (crude) ability to use
+extrapolated actuators. It goes as follow: First, a set of influence
+functions is generated (for each DM, of course). The geometry for this
+set of actuators is defined by the parameters <code>dm.nxact</code>,
+<code>dm.pitch</code> and <code>dm.pitchMargin</code>. This last
+parameters was added with version 2.5.2 and represents the extra
+radius -in pitch units- over which actuators have to be considered
+actives (i.e. an influence function is
+computed). <code>dm.pitchMargin=0</code> will results in every
+actuator within (nxact-1)/2 from the pupil center to be generated, and
+nothing else. Usually, one would prefer to include slightly more
+actuators, and personally I use pitchMargin = 0.5 to 1.2 depending on
+the DM geometry.
+
+<li>The whole actuator set is then used to measured the iMat. The
+actuator retained as valid will go as valid, meaning actively
+controlled. The rest will be used as extrapolated actuators, and are
+controlled from the valid one using an extrapolation matrix.
+
+<li>Extrapolation is ON by default. If you want to desactivate it, set
+<code>dm.noextrap=1</code>.
+
+<li>Right now, I use a very crude method to compute the
+extrapolation. Basically, a simple linear weighting of the closest
+valid actuators, with weight computed as exp(-distance^2). A parameter
+is provided for those of you who want finer control. Set
+<code>dm.ecmatfile</code> to a string that contains the filename of
+the valid-to-extrapolated conversion matrix. The dimension of ecmat
+are (number of extrapolated actuators, number of valid actuators)
+
+</ul>
+
+<a name="centroidgain"></a>
+<li><font class="highlight">Centroid Gain Optimization (LGS+Shack-Hartmann only)</font>
+
+<ul class="packed">
+
+<li>Setting <code>wfs.centGainOpt=1</code> will enable <font
+class="highlight">centroid gain optimization</font>. <b>This only
+works for LGS Shack-Hartmann WFS </b>. The method used is as follow:
+
+<ul class="packed">
+
+<li>the uplink fast steering mirror (the one used to re-center the
+beam on the LGS WFS, operation enabled with
+<code>wfs.filtertilt=1</code>, <code>wfs.correctuptt=1</code> and
+<code>wfs.uplinkgain=x</code>, 0<x<1, usually 0.1) is used to dither
+the LGS image on the sky in a circular motion of period=10 and
+radius=0.1".
+
+<li>A lockin detection is performed on the TT signal detected by this
+sensor, with the same period.
+
+<li>Thanks to the properties of the lock in detection, the resulting
+measured TT essentially contains only the dithered motion. The idea is
+that if the measured amplitude is lower than the induced amplitude,
+the centroid gain is too low. If it is larger, the centroid gain is
+too large. A low gain loop is implemented within the main AO loop to
+adjust the centroid gain accordingly. Right now, amplitude and period
+are hardcoded (but you can either change them using yaotk or edit the
+code; look for <code>ditherAmp</code> and <code>ditherPeriod</code>).
+
+</ul>
+</ul>
+
+<a name="eltmode"></a> <li><font class="highlight">Work with
+ELTs</font>: by setting <code>dm.elt=1</code>, one enables several
+features aimed at reducing the CPU and RAM requirements when
+simulating very large systems (well, from 50x50 up). For now, what
+this does is just compute, use and save the influence functions on
+smaller arrays (the part of the phase map which is non zero). In the
+very near future, it is very probable that this will make use of
+Ralf's Sparse Matrix Package SSMP, and store/use not only the
+influence functions, but also the interaction and control matrices in
+sparse form.
+
+<a name="r0perlayer"></a> <li><font class="highlight">Relating r0 per layer 
+and "fraction" per layer</font>: Say your input data are in r0 per
+layer. How do you related this to the yao definition of "fraction" per
+layer? If you look  in the code (getTurbPhaseInit in aosimul.i) you can come up with relationships between the fraction per layer and r0 per layer:
+<pre>
+r0(i)   = r0 of layer i
+r0tot   = total r0
+f(i)    = "fraction" in layer i ( = (*atm.layerfrac)(i) )
+</pre>
+ We have:
+<pre>
+weight(i) = sqrt(f(i)) * (D/r0tot)^(5/6.) = (D/r0(i))^(5/6.)
+</pre>
+thus
+<pre>
+f(i) = (r0tot/r0(i))^(5./3)
+
+inversely, we have:
+r0(i) = r0tot / f(i)^(3./5)
+</pre>
+<li>More features to come in this help
+</ol>
+
+</div>
+Page updated on UT $Date: 2007-12-12 23:29:21 $
+<p>
+ <a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+       src="http://jigsaw.w3.org/css-validator/images/vcss" 
+       alt="Valid CSS!">
+ </a>
+</p>
+</body>
+</html>

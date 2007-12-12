@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>yao: examples</title>
+<script type="text/javascript" src="scripts.js">void=null;</script>
+<link rel="stylesheet" href="styles.css" type="text/css">
+</head>
+<body>
+
+
+<div id="content">
+
+<h1>yao</h1>
+
+<div id="links">
+<p><b>Links</b></p>
+<a href="aosimul.html">Main page</a><br>
+<a href="installation.html">Installation</a><br>
+<a href="examples.html">Examples and Scripts</a><br>
+<ul class="linkpacked">
+<li><a href="#basics">The Basics</a>
+<li><a href="#modelling">Modelling your system</a>
+<li><a href="#scripts">Scripts</a>
+<li><a href="#variables">aoinit or not?</a>
+</ul>
+<a href="performance.html">Performance</a><br>
+<a href="data-structures.html">Data structures and parfiles</a><br>
+<a href="feature-control.html">Controlling Features</a><br>
+<a href="screenshots.html">Screenshots</a><br>
+<a href="algorithms.html">Algorithms</a><br>
+<a href="ytkcontrol.html">Yao tk dynamic control</a><br>
+<a href="weblog.html">News/Weblog</a><br>
+</div>
+
+
+<h2>Examples, Startup, Tips &amp; Scripts</h2>
+
+A very simple but typical run of <b>yao</b> starts with your favorite text 
+editor. First, you have to define the parameter file for your system. 
+Start from one of the given examples (*.par in the example directory). 
+Run it. Then go back to the file, and together with these web pages (in 
+particular, have a look at the <a href="data-structures.html">Data 
+Structure</a> and the <a href="feature-control.html">Controlling features</a> 
+pages), try to figure out what all the variables mean and what they do. 
+Next you can edit the parfiles and change them as you see fit.
+
+<a name="basics"></a>
+<h3>The Basics</h3>
+Is yorick installed ? All set up as per the 
+<a href="installation.html">installation instructions</a> ? 
+Then go to the example directory 
+(<code>~/yorick-1.15/contrib/yao/examples/</code> or <code>~/Yorick/examples/</code> if you already created it [recommended])
+of the yao distribution and type:
+<pre>
+% yorick
+</pre>
+at the unix prompt. You get the welcome message and the yorick prompt:
+<pre>
+frigaut:examples% yorick
+ Copyright (c) 1996.  The Regents of the University of California.
+ All rights reserved.  Yorick 1.6.01 ready.  For help type 'help'
+> 
+</pre>
+Every time you start yorick to run a <b>yao</b> session, you should include the package as follow:
+<pre>> #include "yao/aosimul.i"
+</pre>
+(don't type the ">", it's the yorick prompt). Make sure the package has been loaded by typing
+<pre>
+> info,aoread
+func aoread(parfile)
+</pre>
+if you get this message, you are in business. If not, fix your yorick installation. In the future, you can avoid to type this include line by putting the same directive (<code>#include "yao/aosimul.i"</code>) in a file named <code>custom.i</code> in a directory <code>~/Yorick</code>. It is useful to create <code>~/Yorick</code> in any case. This will be your yorick home, when you will write yorick routines (you will come to it :-). See an example of <code>custom.i</code> in <code>~/yorick-1.6/i/</code>.
+<p><font class="highlight">Notes on Yorick</font>: 
+<ul>
+<li>At this point it might be worth to mention that yorick, in this basic mode, does not have line recall or editing capabilities. You can get that very easily into emacs, by installing yorick.el and yorick-auto.el in your emacs file/directory. See the instructions on top of yorick-1.6/emacs/yorick.el on how to do that. It's not complicated, and worth every second you invest in this 5mn installation.
+<li>Soon, you will need to know more about yorick and its syntax. The yorick manual is in <code>yorick-1.6/doc/yorick.ps</code>. A short help is at <code>yorick-1.6/doc/refs.ps</code>. In <b>yao</b>, and providing you have <code>gv</code> in your path, you can get these by typing <code>docyo</code> and <code>doc</code>.
+</ul>
+
+<p>Before running a simulation, we need to <font class="highlight">create phase screens</font> (if you are running <b>yao</b> on Linux, you will also need to initialize fftw_wisdom, see below on how to do that). These are <font class="highlight">not</font> included in the yao distribution as they would x10 the download size. At the yorick prompt, type:
+<pre>
+> CreatePhaseScreens,2048,256,prefix="screen"
+</pre>
+This will create 8 2048x256 phase screens suitable for use by <b>yao</b>. Depending on your platform and CPU, it may take some time (1mn or so), as this routine is absolutely not optimized. This is a one shot run. You will not need to do that everytime you run <b>yao</b>, as you can, and are encouraged, to use the same phase screens. You may need to run it once more to create larger phase screens if the need arises, but that's about it.
+
+<p>Move these phase screens somewhere convenient. You will need to edit the <b>yao</b> parameter files to reflect the path and names of these phase screens (look for "atm.screen").
+
+<p>Next, we will try to run "sh6m2", which is a simple 6x6 Shack-Hartmann example. After you have edited the "sh6m2.par" file and modified the path and filename of the newly created phase screens, type:
+<pre>
+> aoread,"sh6m2.par"
+Aosimul, Version 2.4, 2004jan21
+Checking parameters ... 
+dm(1).iffile set to sh6m2-if1.fits
+dm(2).iffile set to sh6m2-if2.fits
+ OK
+> aoinit,clean=1,disp=1
+Checking parameters ... 
+ OK
+ WFS# |       Pixel sizes         | Subap. size | Number of pixels | #photons
+      | Desired  Quantum  Actual  | Max  Actual | Desired   Actual | /sub/iter
+ 1      0.10000  0.03182  0.09547   1.02  0.95    10x10      10x10   70735.5
+> 
+</pre>
+At this point you have read the parameter file and initialized everything. The keyword clean indicates that you want to start from scratch, and ignore any influence function or interaction/command matrix files on your disk. The disp=1 is to initialize the displays. You are ready to run the loop.
+<pre>
+> aoloop,disp=20
+      /Short expo. image/Long expos. image/
+ Iter#/Max.S/Min.S/Avg.S/Max.S/Min.S/Avg.S/Time Left
+     1 0.000 0.000 0.000 0.000 0.000 0.000 Time left 00:00:00.0
+    51 0.345 0.345 0.345 0.371 0.371 0.371 Time left 00:00:00.0
+   101 0.371 0.371 0.371 0.391 0.391 0.391 Time left 00:00:-0.0
+   [...]
+   951 0.468 0.468 0.468 0.435 0.435 0.435 Time left 00:00:-0.0
+Finished on 00:38:50
+61.011659 iterations/second in average
+
+         lambda  XPos  YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.
+Star# 1    1.65   0.0   0.0       44.5   0.434      207.8         27.5
+Field Avg  1.65                   44.5   0.434      207.8
+Field rms                          0.0   0.000        0.0
+>
+</pre>
+You have ran 1000 iterations. disp=20 in the call means "<i>do your displays every 20 iterations</i>". Depending on your graphic card, displays can be pretty expensive (time), thus it helps to display less frequently. 
+
+<p>The resulting average images have been saved on disk ("sh6m2-imav.fits"), together with a small postscript file ("sh6m2.ps") that contains some graphics. Strehl, FWHM and 50 percent encircled energy are available as extern variables under the name strehl, fwhm and e50:
+<pre>
+> strehl
+[[0.434317]]
+</pre>
+These variables contains the values for all the images (here there is only one, but there can be an arbitrary number of positions and wavelengths at which you want to estimate the performance). This can be useful in script, as detailled below.
+
+
+<a name="modelling"></a>
+<h3>Modelling your system</h3>
+
+<p>Now you can edit sh6m2.par (make a copy before that), or any other example file provided, and change it to your taste. Be extra careful to understand the significance of the parameters. Many of them have default value too (see the <a href="data-structure.html">Data Structure</a> page), so you may want to rely on defaults when in doubt. Read twice your modifications and be sure that the defined set up makes sense. Then go into yorick and repeat the above instructions with your new parameter file. In aoread(), some basic checks are done on the parameters. Nothing fancy, but it should grab the most obvious errors. You can also read the FAQ and frequent mistake page (to be written).
+
+<p>One level up is to run the ao routines inside a script. There are many reason to do that; if you want to scan a parameter space for best performance for instance. It is very easy to do that in yorick with <b>yao</b> if you have any experience with coding and scripting languages. I give a few examples below.
+
+
+<a name="scripts"></a>
+<h3>Script Examples</h3>
+<b class="highlight">Example 1</b>
+Assume I want to find the best integration time/loop gain compromise for a 6x6 Shack-Hartmann for a guide star of magnitude 14. Here is a script to do this ("sh6m2-script1.i" in the <b>yao</b> example directory):
+
+<pre>
+// file sh6m2-script1.i
+// example script
+// find the best integration time/loop gain compromise for a 6x6
+// Shack-Hartmann as defined in "sh6m2.par" for magnitudeGS=14.
+aoread,"sh6m2.par";
+wfs(1).noise=1;
+wfs(1).ron = 4.; // of course you could have put that in the parfile
+wfs(1).shthreshold = 4.;
+wfs(1).gsmag = 5.;
+aoinit,disp=1,clean=1;
+wfs(1).gsmag = 13.;
+ncycles = [1,2,3,5,10];
+gainvect=[0.1,0.2,0.4,0.8];
+strehlmap = array(float,[2,numberof(ncycles),numberof(gainvect)]);
+for (i=1;i<=numberof(ncycles);i++) {
+  for (j=1;j<=numberof(gainvect);j++) {
+    wfs(1).nintegcycles = ncycles(i);
+    loop.gain = gainvect(j);
+    write,format="\nAOLOOP for ncycles=%d and loopgain=%f\n",wfs(1).nintegcycles,loop.gain;
+    aoloop,disp=10;
+    strehlmap(i,j) = max(strehl); 
+  }
+}
+w = where2(strehlmap == max(strehlmap));
+write,format="Best Strehl = %f for integration time = %.0f ms and gain=%f\n",\
+  max(strehlmap),loop.ittime*ncycles(w(1))*1e3,gainvect(w(2));
+
+</pre>
+This is to be executed from the command line:
+<pre>
+> #include "sh6m2-script1.i"
+[... lots of things printed on the screen as we go through the many aoloop()...]
+Best Strehl = 0.161815 for integration time = 2 ms and gain=0.400000
+</pre>
+
+<b class="highlight">Other examples</b> can include:
+<ul>
+<li>Determine if a curvature system performs better of one splits the GS light to use a dedicated tip-tilt sensor. Work out what fraction of the light should be sent to each sensor versus magnitude.
+<li>Determine the best conjugation altitude for a MCAO system
+<li>etc, etc...
+</ul>
+
+
+
+<a name="variables"></a>
+<h3>Variables (aoinit or not aoinit?)</h3>
+
+<p>A useful thing to know is what variables can be modified where, or more precisely, what do you need to (re)run for the change to be effective. For instance, it is obvious that changing the inversion condition number once the inversion is done is going to have very little effect. Many of the variables used into aoloop() are initialized beforehand in aoinit() (hence the name), and changing them after aoinit() will have no effect.
+<p>In many cases, and in scripts in particular one will want to loop on a variable (e.g. determine the performance for various GS magnitude and loop gain), and it can be annoying and time consuming to restart from aoinit() before each aoloop() run. The following list states at which level a variable can be changed and still be taken into account in aoloop(). 
+<p>The syntax in this list is to be understood as "<i>If you change this variable, you have to take this action for the variable to be taken into account in a new aoloop() run</i>".</p>
+
+<ul>
+<li><font class="highlight">SIM</font> structure
+<ul>
+<li><font class="highlight">pupildiam</font>: Run aoinit
+<li><font class="highlight">debug, verbose</font>: Nothing to do. This variable can be changed anytime, including inside aoloop
+</ul>
+
+<li><font class="highlight">ATM</font> structure
+<ul>
+<li><font class="highlight">all elements</font>: Run aoinit or getTurbPhaseInit,skipReadPhaseScreens=1
+</ul>
+
+<li><font class="highlight">WFS</font> structure
+<ul>
+<li><font class="highlight">nwfs, type, shmethod, subsystem, npixels, shnxsub, pixsize, biasrmserror, flatrmserror</font>: Run aoinit
+<li><font class="highlight">gspos or gsalt</font>: Run aoinit or getTurbPhaseInit,skipReadPhaseScreens=1
+<li><font class="highlight">gsmag, nintegcycles</font>: Prior to starting aoloop (gets initialized in aoloop setup, before entering the actual loop)
+<li><font class="highlight">shthreshold, lambda, noise, ron, filtertilt, correctupTT, uplinkgain</font>: Anytime, including inside aoloop
+</ul>
+
+<li><font class="highlight">DM</font> structure
+<ul>
+<li><font class="highlight">ndm, subsystem, iffile, nxact, pitch, alt, thresholdresp, unitpervolt, push4imat</font>: Run aoinit
+<li><font class="highlight">hyst</font>: Prior to starting aoloop
+<li><font class="highlight">gain</font>: Anytime, including inside aoloop
+</ul>
+
+<li><font class="highlight">MAT</font> and <font class="highlight">TEL</font> structures: Rerun aoinit
+
+<li><font class="highlight">TARGET</font> structure
+<ul>
+<li><font class="highlight">lambda</font>: anytime, including inside aoloop
+<li><font class="highlight">x/yposition</font>: Run getTurbPhaseInit,skipReadPhaseScreens=1
+</ul>
+
+<li><font class="highlight">GS</font> structure
+<ul>
+<li><font class="highlight">zeropoint</font>: Prior to starting aoloop
+</ul>
+
+<li><font class="highlight">LOOP</font> structure
+<ul>
+<li><font class="highlight">ittime</font>: Run aoinit
+<li><font class="highlight">niter</font>: if changed for a larger value, run aoinit or getTurbPhaseInit,skipReadPhaseScreens=1. You don't need to do anything if changed for a lower value.
+<li><font class="highlight">*skip*</font>: Run aoinit or getTurbPhaseInit,skipReadPhaseScreens=1
+<li><font class="highlight">framedelay</font>: Prior to starting aoloop
+<li><font class="highlight">gain</font>: anytime, including inside aoloop
+</ul>
+</ul>
+
+</div>
+Page updated on UT $Date: 2007-12-12 23:29:50 $
+<p>
+ <a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+       src="http://jigsaw.w3.org/css-validator/images/vcss" 
+       alt="Valid CSS!">
+ </a>
+</p>
+</body>
+</html>

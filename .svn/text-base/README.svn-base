@@ -1,0 +1,361 @@
+===========
+YAO package
+===========
+
+Initial release F.Rigaut, June 2002.
+Notes updated somewhat on 2007jun03
+
+Developpers:
+------------
+Francois Rigaut		frigaut@gemini.edu
+Ralf Flicker		flicker@strw.leidenuniv.nl
+Damien Gratadour        dgratadour@gemini.edu
+
+Help pages:
+-----------
+http://www.maumae.net/yao/aosimul.html (outdated)
+
+
+RELEASE NOTES:
+--------------
+
+version 4.0: 2007jun03: Added all GTK GUI. No further modifs in yao,
+  hence yao can still be used safely without a gui (scripts, scripts).
+  
+version 3.81, 2007jun02: added gui_message
+  
+version 3.80, 2007apr19: now 64 bits safe !
+  
+version 3.75, 2007feb22: added angle offset for curvature wfs and dms
+  
+2006mar01: corrected bug. reset put command to 0, while it needed
+  to zero dm._command 
+
+
+v3.6 2005dec01
+    - renamed aosimul -> yao
+    - reworked files and directory structure to accommodate new 
+      yorick plugin binary distribution scheme.
+    - aoloop now -> aoloop + go structure to have prompt active
+      while the loop is running. type "stop" to stopo the loop
+      and "cont" to resume it. 
+    - simple principle demo of tyk control
+
+v3.4.0	2004sep10
+	- Makefiles completely reworked. Install more easy. See README
+	  in distribution directory (yao_veclib or yao_fftw) for more info.
+	- added a printout of the yao versoin used in yao_fast.i's
+	- modified to include yao and yao_fast.i at parse
+	- This is the first version compatible with plugins.
+	- modified tic and tac to accomodate multiple counters
+	- now the "Time Left" functionality works again.
+
+v3.3.2  2004aug02
+	- fixed a few bugs:
+	- a division by zero was causing a SIGFPE for odd number of subaperture
+	  shack hartmann systems in the angle/elongation calculations in ShWfsInit
+	  (bug noted by Miska)
+	- Added a check of indices overflow when determining the Y interpolation
+	  points in getTurbPhaseInit
+
+v3.3    2004July28
+         - semi major changes in this version. Watch out, as some parameters
+           meaning has changed (I know this is silly, but it's more logical 
+           now)
+         - Implemented zenith dependance. Now one can change one parameter
+           (gs.zenithangle) and everything change as needed (r0, lgs altitude
+           and thickness of Na layer, atm layer altitude, LGS brightness)
+         - Imlemented Rayleigh fratricide effect for multiple LGS systems!
+           This was quite an endeavour. I had to modify the _shwfs routine
+           to include several new lines and parameters relative to Rayleigh
+           and calibration (a side effect is that we can now do and use
+           calibration frame in this routine). To enable Rayleigh calculations
+           set wfs.rayleighflag to 1 (it will *not* be calculated for NGS WFS
+           as it is assumed that you can easily block the light from the laser
+           wavelength).
+         - The way to specify the photometry has also changed. Now, if you 
+           deal with a LGS, you specify a power and a return per watt, not
+           anymore a magnitude (magnitude are still ok for a NGS).
+	   Also, everything -in term of zeropoints- is now specified at the
+           entrance of the telescope: gs.zeropoint is now the number of
+           photons for a zero mag star per sec per pupil at M1 (it used to
+           be detected by the WFS). gs.lgsreturnperwatt is also in photons
+           at M1. Instead, I have added a wfs.optthroughput parameter to
+           specify the optical throughput of each WFS. Please set it, as it
+           defaults to 1.
+         - In summary, the following keywords were added in the parfile:
+             - gs.lgsreturnperwatt
+             - gs.zenithangle
+             - wfs.laserpower
+             - wfs.rayleighflag
+             - wfs.optthroughput
+
+v3.2.3  2004jun07
+         - fixed a bug that yao_fftw could not write the file
+           fftw_wisdom.dat in ~/Yorick. Made use of get_end("HOME")
+           to get correct path.
+         - fixed screen names in all example parfiles to 1,2,3,4
+         - changed several other minor inaccuracies
+     
+v3.2.2  2004jun07
+         - Yao is now under CVS!
+         - several cosmetic modifications (this NOTES file, ...)
+         - changed convVE -> convol for compat with yao_fftw in
+           aoutil.i
+
+v3.2.1  2004apr29
+         - implemented sky and dark current in WFS structure and in
+           yao_fast.c, both veclib and fftw. checked by printing
+           _fimage, (sum) and (rms). for a 4cell. the level is OK and
+           the noise is OK.
+         - implemented the same for the CWFS. Note that the dark
+           current is per channel and per sample, i.e. for 2 reads (each
+           extra-focal image). Per read, the dark current is taken as
+           wfs.darkcurrent/2 v3.2.0 2004apr07
+         - reworked the distribution tree
+         - implemented a faster computation of the DM shape for PZT
+           DMs where only the relevant subarray is used in the
+           summation. Instead of precomputing the Influence function
+           (IF) on the whole pupil, I compute it on a fraction of it and
+           store the indices. The branch is done in the new function
+           compDmShape. if dm.elt == 1, then we use the new and faster
+           method. To date, dm.elt is set to 1 in checkParameters
+           (aoutil.i) for any strackarray DM.
+           This is just a patch for now as there is a problem with the
+           computation of the anisoplanatism modes.
+
+v2.5.3  2004mar11
+         - found and fixed a bug in the determination of wfs._tiprefv
+           and wfs._tiltrefv.
+         - implemented dithering for LGS (using uplink, so only for LGS)
+
+v2.5.2  2004mar10
+         - added capability to have extrapolated actuators.
+           I have done that with only a few lines of codes, which
+           tends to prove that the code is easy to upgrade and
+           relatively well structured (allright, subjective judgement!).
+
+v2.5.1   2004mar02
+         - fined tuned the spot elongation
+         - changed wfs.imatkernel into wfs.kernel (serves also for LGS
+           spot FWHM in aoloop)
+
+v2.5     2004feb13
+         - implemented the LGS spot elongation:
+           - added a number of _entries in wfs structures (_kernels,
+             _kerfftr, _kerffti, _x, _y)
+           - modified ShWfsInit accordingly
+           - added the element wfs.LLTxy
+           - added wfs.gsdepth
+
+v2.4.1   2004jan30
+         - Strehl, fwhm and e50 are now extern variables so one can
+           access them after completion of aoloop.
+         - added wfs.fracIllum = fraction of subaper. illuminated for
+           sub to be valid
+         - reworked configuration graphical display ( graphicConfig() ).
+         - added the possibility to interactively select the threshold
+           for valid/not valid actuators (put dm.thresholdresp = -1 in
+           parfile) v2.4 2004jan22
+         - written and implemented parameterCheck, to check parameters
+           in aoread.
+         - rather big change, at least in matter of compatibility: I
+           have changed the normalization of the phase, IFs and phase
+           screens. Previously, the problem was that I could not have
+           different lambda per sensor, as the input phase screens are
+           normalized at one single given dr0. Now the input dr0 is
+           given at 0.5 microns, and everything is normalized in
+           microns (IF, phase screens, phase).
+           New keyword: atm.dr0at05mic, instead of atm.dr0
+
+v2.3.2   2004jan21
+         - I got the MCAO LGS working nicely !! with the
+           anisoplanatism modes as they are handled in MCAO, and
+           implemented in a simple, non obstrusive way. Great. I had to
+           think a long time about the best way to implement it, but
+           now it's done.
+         - worked out the output to the file parprefix+".res"
+         - debugged quite a bit with different parfiles
+         - implemented a new input "sim.name" that contains a comment
+           string to put on all graphics.
+         - reworked the format of some output (e.g. WFS parameters)
+
+v2.3.1   2004jan20
+         - implemented different subsystem, i.e. each dm and wfs is
+           specified to belong to a given subsystem. The cMat for each
+           subsystem is then computed separately. This allow a good
+           separation of e.g. the TT NGS WFS and the HO LGS WFS in a
+           LGS system. I have added the following keywords:
+           - wfs.subsystem
+           - dm.subsystem
+           - mat.condition is now a pointer to a vector of condition
+             numbers
+
+v2.3.0   2004jan18
+         - implemented ShWFS method 1, i.e. straight gradient average,
+           method 2 being the full propagation calculations.
+         - implemented bias and flat in ShWFS, method 2 (new keywords
+           wfs.biasrmserror and wfs.flatrmserror)
+         - implemented target multi-lambda PSF. Changed target.lambda,
+           now a pointer, use to be a float. e.g. target.lambda =
+           &([1.25,2.2]*1e-6)
+           note 2004jan22: now lambda in microns
+         - implemented hysteresis on DMs. Adapted routine from idl
+           routine new parameter dm.hyst
+         - passed thresholdresp from hardcoded to parameter,
+           dm.thresholdresp, separate for each DM.
+         - implemented central obstruction.
+
+v2.2.4   2004jan12
+         - implemented gaussian and poisson noise in shwfs and cwfs !
+         - implemented the correction of the uplink TT for LGS.
+
+v2.2.3   2004jan11
+         - added proper reference measurement subtraction
+         - added tip-tilt filtering of WFS measurements
+
+v2.2.2   2004jan11
+         - fixed a rather major bug in the computation of the DM shapes.
+           In my haste of implementing the get2dphase, I had used only
+           one interpolation x coordinate vector (see getTurbPhaseInit).
+           I was using the vector precomputed for the screens, for the DM...
+           I have fixed it by computing dmxposcub (and y).
+         - Got back to using *dm._def instead of the def variable to stock
+           the influence functions. This is because I can save much more
+           space by allowing different n1 and n2 per mirror.
+
+v2.2     2003dec28
+         - coded _shwfs, shwfs routine in C, using veclib FFT call.
+         - Got rid of wfs.shmethod in parfile
+         - added wfs.npixels in parfile
+         - changed wfs.subsize into wfs.pixsize in parfile
+         - added the routine wfsCheckPixelSize
+         - also, I have moved the influence function setup functions
+           in aoutil.i to reduce the size of yao.i 
+
+v2.0 2003dec12
+         - written and included "optimized" C routines in aoloop.
+            - _fftVE to compute set of image from set of phases
+            - _dmsum to compute mirror shape(s) from set of command
+            - _get2dPhase to integrate a set of phase screens along
+              a given direction and return an integrated phase.
+            all in all, this has resulted in a rather large reduction
+            of execution time in this routine (the most critical).
+            When I started the optimization, I was at 10 iteration/sec
+            for sh6.par, a 6x6 SH, 30 pixel pupil, 1 DM, 1 GS, 4 targets
+            case. In the intermediate stage I am right now, with the
+            3D phase integral, the tagret FFTs and the DM shape
+            computation optimized, I am now running at about 95
+            iterations per seconds on the G4. I am left with some
+            optimization to do, namely the SH WFS and grouping the
+            integrated phase and target image computation in one
+            subroutine call.  
+
+v1.2.5 2003Jun15
+         - added multi viewport display in aoloop
+
+v1.2.4   2003May8
+         - debugged and fixed the method 2 for SHWFS
+
+v1.2.3   2003mar16
+         - modified support of IFs to reduce RAM consumption. before:
+         with tests/mcao.par (5wfs, 3dm, 16x16, 64x64 pupil), the ram
+         (RSIZE) was 37M at the complexion of the IF calculation.
+         
+v1.2.2 2003mar03
+         - added some graphics output at the end of aoinit
+         - added some comment and general explanation of calling
+           sequences below 
+
+v1.2.1 Feb 2003.
+         - Modified the selection of valid actuators to cope with
+           altitude DMs.  
+
+v1.2 February 2003.
+         - a whole lot of changes in this version, which is basically
+           made to handle MCAO, i.e. one or more DM, one or more
+           WFS. Should be able to deal with Classical AO, altitude
+           conjugated AO, ground conjugated wide field AO, MCAO.
+         - The input parameter file has been changed, together with
+           the code. Now each DM and each WFS has its own parameter
+           set stored in a structure. The idea is that the structure
+           is loaded into a working structure before one calls the WFS
+           routine.
+
+         feb 24, 00:35. This version seems now stable enough that
+         I can freeze it and go on subversion for improvements
+         - the basic layout of the software is now as follow:
+           - in aoloop:
+             - aoloop calls multWfs(iter).
+             - for each WFSs, multWfs calls
+               getPhase2dFromDms(offsets,gsalt), which returns the
+               integrated phase along the line of sight for the given
+               WFS (offset,gsalt). The core shifting routine of
+               getPhase2dFromDms is interp2dmir.
+             - for each WFS, multWFS calls
+               getTurbPhase(iter,#star,starType (wfs|target)), which
+               returns the integrated phase accross the phase screens
+               for the given star and iteration #. The core shifting
+               routine of getTurbPhase is interp2dturb.
+             - multWfs then execute the given WFS routine on the total
+               phase and returns the cummulative measurement vector.
+             - aoloop then manages the WFS measurement vector history
+               to pass the vector with correct delay to the matrix
+               multiplication
+             - multiplication by command matrix.
+             - for each mirror, the mirror shape is constructed from
+               the command vector and stored in
+               "mircube(size,size,ndm)".
+             - if certain conditions are met, the PSFs are computed at
+               all needed points in the FoV, and statistics are
+               accumulated.
+             - To summarize:
+             1) aoloop
+                1.1) multWFS(iter,ok), for each sensor:
+                   1.1.1) getPhase2dFromDms(offsets,gsalt)
+                      1.1.1.1) interp2dmir(shifts)
+                   1.1.2) getTurbPhase(iter,gsalt,ok)
+                      1.1.2.1) interp2dturb(shifts)
+                   1.1.3) Get and accumulate sensor measurements
+                1.2) delay management
+                1.3) multiply by cMat
+                1.4) compute PSFs and accumulate statistics if ok to do so.
+                        
+v1.0.8   February 7, 2003
+         - upgraded all calls to fits_read and fits_write
+         (from fitsRead and fitsWrite, to conform to fits2.i)
+         - fixed one problem in MakePztIF (wrong pitch)
+         - also IF back to log form (laserdot form) as sinc is no good.
+         - SVdec broken in last yorick versions. Works with 1.5.13
+         - implemented debug printout and displays
+         - This version is fully functional.
+
+v1.0.7   June 17, 2002, FR
+         - added some parameters (LoopFrameDelay, LoopModalGainFile)
+         - implemented modal gain optimization routine.
+
+v1.0.6   - Remove ao.Size from accesible structure. Set in aoinit.
+         - Cleaned up par file
+         - Trim ActIF at the end of aoinit (therefore for use in aoloop).
+           This saves a lot of computation time in the mirror surface
+           calculation.
+
+v1.0.5   First Release, June 11, 2002, FR
+
+
+
+BUGS:
+-----
+
+- dm.elt is not compatible with MCAO systems, or more generally "aniso" DMs.
+  This is because one has to project on modes and this is not possible with
+  the localized version of dm shape computation (with dm.elt=1).
+
+
+TO DO:
+------
+         - implement NCPAs
+         - add a red light when actuators are saturating in the
+           controlscreen (and the number of saturated actuators)
+
+

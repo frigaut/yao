@@ -1,0 +1,627 @@
+/*
+ * utils.i --
+ *	General purpose utility routines for Yorick.
+ *
+ * Copyright (c) 1999-2002, Eric THIEBAUT.
+ *
+ * Routines:
+ *      eval         - evaluate textual code.
+ *	pwd          - print/get working directory.
+ *	unref        - returns X, destroying X in the process.
+ *	undersample  - shrink array dimension(s).
+ *	reform       - change dimension list of an array.
+ *	map          - apply scalar operator to a whole array.
+ *	str(to)upper - convert string(s) to upper case letters.
+ *	str(to)lower - convert string(s) to lower case letters.
+ *	strcut       - cut text to fit into lines of given length.
+ *	strjoin      - make array of strings into a single string.
+ *	is_scalar    - check if argument is a scalar.
+ *	is_vector    - check if argument is a vector.
+ *	is_matrix    - check if argument is a matrix.
+ *	is_real      - check if argument is of float or double type.
+ *	is_complex   - check if argument is of complex type.
+ *	is_integer   - check if argument is of integer type.
+ *	is_numerical - check if argument is of numerical type.
+ *	is_integer_scalar - check if argument is a scalar of integer type.
+ *	filenameof   - get path name of file associated with a stream.
+ *	stat         - display statistics/info about symbols/expressions.
+ *	smooth       - smooth array along its dimensions.
+ *
+ * History:
+ *	$Id: utils.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+ *	$Log: utils.i.svn-base,v $
+ *	Revision 1.1  2007-12-12 23:29:52  frigaut
+ *	Initial revision
+ *
+ *	Revision 1.1.1.1  2004/06/06 01:00:02  frigaut
+ *	Initial CVS entry of YAO
+ *	Version 3.2.1
+ *	This version contains:
+ *	yao_veclib: c routines (*.c) and wrappers (*.i) to build custom version of yorick using apple veclib FFT routines
+ *	yao_fftw: c routines (*.c) and wrappers (*.i) to build custom version of yorick using FFTW (for anything other than OsX)
+ *	main directory: *.i generic yorick routines used by yao
+ *	doc: HTML documentation
+ *	examples: a few parfiles and a testall.i yorick function
+ *	
+ *	
+ *	Revision 1.7  2002/07/25 10:52:32  eric
+ *	- New function: eval.
+ *
+ *	Revision 1.6  2002/07/01 09:41:45  eric
+ *	 - New function: pwd.
+ *
+ *	Revision 1.5  2002/06/06 14:19:42  eric
+ *	 - New function: undersample.
+ *
+ *	Revision 1.4  2002/02/22 16:19:24  eric
+ *	 - Change (one more time) names of str(to)upper/lower functions to
+ *         avoid clash with builtin Yeti routines.
+ *	 - Add "unref" routines (after Yorick's FAQ, so the true author is
+ *         Dave, not me).
+ *
+ *	Revision 1.3  2001/12/08 22:33:37  eric
+ *	 - stat(): computation of standard deviation improved.
+ *
+ *	Revision 1.2  2001/11/26 08:17:11  eric
+ *	 - Functions strto{lower,upper} renamed as str{lower,upper}.
+ *
+ *	Revision 1.1  2001/03/23 16:20:52  eric
+ *	Initial revision
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+func eval(code, tmp=, debug=)
+/* DOCUMENT eval, code;
+       -or- eval(code);
+     Evaluate CODE given as a string  or as an array of strings (considered
+     as  different lines  in the  script).  Since  CODE can  be dynamically
+     build,   this  routine   allows  the   execution  of   virtually  (see
+     hints/restrictions below)  any Yorick's code  (e.g. dynamic definition
+     of  structures,  of functions,  etc.).   For  instance, the  following
+     statement defines a new structure:
+       eval, "struct NewStruct {string a; long b; float c, d;}";
+
+     Since  the script  gets evaluated  at the  scope level  of  the "eval"
+     routine some local variables of the  "eval" routine may be used in the
+     script:
+       "eval_tmp"    contains  the  name of  the temporary script  file and
+                     must not be changed by the script;
+       "eval_debug"  contains the value of  the keyword DEBUG and  must not
+                     be changed by the script;
+       "eval_code"   contains the value of the argument CODE;
+       "eval_result" is returned by "eval", its contents may be defined into
+                     the script.
+     Note: impredictible  results may  occur if CODE  changes the  value of
+     symbols "eval_tmp" and "eval_debug".
+
+     Keyword TMP  can be  used to  specify the file  name of  the temporary
+     script.  The default file name is:
+       "$YORICK_EVAL_TMP"      if environment variable "YORICK_EVAL_TMP" set;
+                               is set;
+       "/tmp/$USER-eval_tmp.i" if environment variable "USER" set;
+       "~/.eval_tmp.i"         otherwise.
+
+     If  keyword DEBUG  is true  (non-zero and  non-nil), the  name  of the
+     temporary file is printed out and the file is not removed.
+
+
+   SEE ALSO: include. */
+{
+  /* The "eval_" prefix is used in order to somewhat protect local variables
+     from caller's code. */
+  local eval_result, eval_tmp, eval_code, eval_debug;
+  eq_nocopy, eval_tmp,   tmp;
+  eq_nocopy, eval_debug, debug;
+  eq_nocopy, eval_code,  code;
+
+  /* Dump script into a temporary file, then include it. */
+  if (is_void(eval_tmp)) {
+    /* Create default name for yorick temporary code. */
+    eval_tmp = get_env("YORICK_EVAL_TMP");
+    if (! eval_tmp) {
+      eval_tmp = get_env("USER");
+      eval_tmp = (eval_tmp ? "/tmp/"+eval_tmp+"-" : "~/.") + "eval_tmp.i";
+    }
+  }
+
+  f = open(eval_tmp, "w");
+  write, format="%s\n", f, eval_code; fflush,f;
+  include, eval_tmp, 1;
+  if (eval_debug) {
+    write, format="Yorick code written in \"%s\"\n", eval_tmp;
+  } else {
+    remove, eval_tmp;
+  }
+  return eval_result;
+}
+
+func pwd(nil)
+/* DOCUMENT pwd
+       -or- pwd()
+     Prints out (subroutine form) or returns (function form) full path
+     of current working directory.
+
+   SEE ALSO: cd, lsdir. */
+{
+  if (! is_void(nil)) error, "unexpected non-nil argument";
+  dir = cd(".");
+  if (am_subroutine()) write, format="%s\n", dir;
+  else return dir;
+}
+
+func unref(&x)
+/* DOCUMENT unref(x)
+     returns X, destroying X in the process (useful to deal with temporary
+     big arrays).  Written after Yorick's FAQ.
+   SEE ALSO: eq_nocopy. */
+{
+  local y;
+  eq_nocopy, y, x;
+  x= [];
+  return y;
+}
+
+func reform(x, ..)
+/* DOCUMENT y= reform(x, dimlist);
+       -or- y= reform(x);
+     returns array X reshaped according to dimension list DIMLIST.  Without
+     DIMLIST, discards all dimensions equal to 1.  In most cases, prefer
+     this to reshape.
+
+   SEE ALSO: array, dimsof. */
+{
+  if (more_args()) {
+    dims= [0];
+    do {
+      y= next_arg();
+      if (is_void(y)) continue;
+      if (numberof(y)==1) {
+        grow, dims, y(1);
+      } else {
+        grow, dims, y(2:1+y(1));
+      }
+    } while (more_args());
+    if (! (dims(1)= numberof(dims)-1)) {
+      if (numberof(x)>1) error, "X longer than specified DIMLIST";
+      return x(1);
+    }
+  } else {
+    /* Discard all dimensions equal to 1 */
+    if (numberof(x)==1) return x(1);
+    dims= dimsof(x)(2:);
+    dims= dims(where(dims>1));
+    dims= [numberof(dims), dims];
+  }
+  y= array(structof(x), dims);
+  y(*)= x(*);   /* will blow up if lengths differ */
+  return y;
+}
+
+func undersample(a, nsub, which=, op=)
+/* DOCUMENT undersample(a, nsub)
+     Returns  array A  with all  (some)  dimensions divided  by NSUB.   The
+     dimensions of interest must be a multiple of NSUB.
+
+     Keyword  WHICH can  be used  to  specify the  dimension(s) to  shrink.
+     Values  in  WHICH  less  or  equal  zero are  counted  from  the  last
+     dimension.  By default, all dimensions of A get undersampled.
+
+     Keyword OP can  be used to specify the range operator  to apply to the
+     sets of NSUB adjacent values along the considered dimensions:
+       OP=sum   to sum the values
+       OP=avg   to average values
+       OP=min   to keep the smallest value
+       OP=max   to keep the largest value
+     By default,  the median is  taken (WARNING: with the  median operator,
+     the result depends in which order the dimensions of A are considered).
+
+   SEE ALSO: median. */
+{
+  if (nsub < 1) error, "NSUB must be >= 1";
+  if (nsub == 1) return a;
+  if (! is_array(a)) error, "expecting an array";
+  rank = dimsof(a)(1);
+  if (is_void(which)) {
+    which = indgen(rank);
+  } else {
+    which += (which <= 0)*rank;
+    if (structof(which) != long)
+      error, "bad data type for keyword WHICH";
+    if (min(which) < 1 || max(which) > rank)
+      error, "out of range dimension in keyword WHICH";
+  }
+  nw = numberof(which);
+  noop = is_void(op); /* take median value */
+  if (! noop && typeof(op) != "range") error, "OP must be nil or a range operator";
+  dims = array(rank+1, rank+2);
+  for (k=1 ; k<=nw ; ++k) {
+    this = which(k);
+    if (this != 1) a = transpose(a, [1,this]);
+    dims(2:) = dimsof(a);
+    dims(2) = nsub;
+    dims(3) = dims(3)/nsub;
+    (tmp = array(structof(a), dims))(*) = a(*);
+    if (noop) {
+      a = median(tmp, 1);
+    } else {
+      a = tmp(op,..);
+    }
+    tmp = []; /* free some memory */
+    if (this != 1) a = transpose(a, [this,1]);
+  }
+  return a;
+}
+
+func map(op, src)
+/* DOCUMENT map(op, src)
+     Map scalar function OP onto array argument SRC to mimics element-wise
+     unary operation. */
+{
+  if ((n= numberof(src))==0) return [];
+  /* use structof to avoid unecessary string duplication for string result */
+  dst= array(structof((dst1= op(src(1)))), dimsof(src));
+  dst(1)= dst1;
+  for (i=2 ; i<=n ; ++i) dst(i)= op(src(i));
+  return dst;
+}
+
+/*---------------------------------------------------------------------------*/
+/* STRING ROUTINES */
+
+local _strlower, _strupper;
+/* DOCUMENT local _strlower, _strupper;
+     Private arrays to convert char to upper/lowercase letters.
+   SEE ALSO strlower, strupper */
+(_strlower = char(indgen(0:255)))(1+'A':1+'Z') = _strlower(1+'a':1+'z');
+(_strupper = char(indgen(0:255)))(1+'a':1+'z') = _strupper(1+'A':1+'Z');
+
+local strlower;
+local strtolower;
+func __strlower(s)
+/* DOCUMENT strlower(s)
+     Convert a string or an array of strings S to lower case letters.
+   SEE ALSO strupper */
+{
+  /* fool codger */ extern _strlower;
+  n = numberof((r = array(string, dimsof(s))));
+  for (i=1; i<=n; ++i) r(i)= string(&_strlower(1+*pointer(s(i))));
+  return r;
+}
+
+local strupper;
+local strtoupper;
+func __strupper(s)
+/* DOCUMENT strupper(s)
+     Convert a string or an array of strings S to upper case letters.
+   SEE ALSO strlower */
+{
+  /* fool codger */ extern _strupper;
+  n = numberof((r = array(string, dimsof(s))));
+  for (i=1; i<=n; ++i) r(i)= string(&_strupper(1+*pointer(s(i))));
+  return r;
+}
+
+if (! is_func(strupper)) strupper = __strupper;
+if (! is_func(strlower)) strlower = __strlower;
+if (! is_func(strtoupper)) strtoupper = strupper;
+if (! is_func(strtoupper)) strtolower = strtolower;
+
+func strcut(str, len)
+/* DOCUMENT strcut(str, len)
+     Cut input scalar string STR in pieces of length less or equal LEN and
+     return an array of such pieces.
+
+   SEE ALSO strjoin */
+{
+  if ((str_len= strlen(str))<=len) return str;
+  n= (str_len+len-1)/len;
+  result= array(string, n);
+  for (i=1, i1=1, i2=len ; i<=n ; ++i, i1+=len, i2+=len)
+    result(i)= strpart(str, i1:i2);
+  return result;
+}
+
+func strjoin(str, glue)
+/* DOCUMENT strjoin(str)
+       -or- strjoin(str, glue)
+     Join strings from array STR into a single long string.  The string GLUE
+     (default "") is used between each pair of element from STR.
+
+   SEE ALSO strcut */
+{
+  if ((n= numberof(str)) >= 1) {
+    s= str(1);
+    if (glue) for (i=2 ; i<=n ; ++i) s+= glue+str(i);
+    else      for (i=2 ; i<=n ; ++i) s+= str(i);
+    return s;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+/* LOGICAL ROUTINES */
+func is_scalar(x) { return is_array(x) && !dimsof(x)(1); }
+/* DOCUMENT is_scalar(x)
+     returns true if X is a scalar.
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+
+func is_vector(x) { return is_array(x) && dimsof(x)(1)==1; }
+/* DOCUMENT is_vector(x)
+     returns true if array X is a vector (i.e. a 1D array).
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+
+func is_matrix(x) { return is_array(x) && dimsof(x)(1)==2; }
+/* DOCUMENT is_matrix(x)
+     returns true if array X is a matrix (i.e. a 2D array).
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+
+func is_real(x)    { return (s= structof(x))==double || s==float; }
+/* DOCUMENT is_real(x)
+     returns true if array X if of real type (i.e. double or float).
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+
+func is_complex(x) { return structof(x)==complex; }
+/* DOCUMENT is_integer(x)
+     returns true if array X if of integer type.
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+
+func is_integer(x)
+/* DOCUMENT is_integer(x)
+     returns true if array X if of integer type.
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+{
+  return (s= structof(x))==long || s==int || s==char || s==short;
+}
+
+func is_numerical(x)
+/* DOCUMENT is_numerical(x)
+     returns true if array X if of numerical type.
+
+   SEE ALSO is_scalar, is_vector, is_matrix, is_array,
+            is_integer, is_real, is_complex, is_numerical. */
+{
+  return (s= structof(x))==long || s==double || s==int || s==char \
+    || s==complex || s==short || s==float;
+}
+
+func is_integer_scalar(x)
+/* DOCUMENT is_integer_scalar(x)
+     Check whether or not X is an integer scalar.
+
+   SEE ALSO is_scalar, is_integer. */
+{
+  return (((s= structof(x))==long || s==int || s==short || s==char)
+          && dimsof(x)(1)==0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+func filenameof(stream)
+/* DOCUMENT filenameof(stream)
+     Return path name of file associated with STREAM.
+
+   SEE ALSO: open, print. */
+{
+  /* Check input and get description of stream by the print() command. */
+  if ((id= typeof(stream)) == "stream") { id= 1; s= print(stream); }
+  else if (id == "text_stream")         { id= 2; s= print(stream)(2:); }
+  else error, "unexpected non-stream argument";
+
+  /* Join backslash terminated lines from print() result (another
+     possibility would be to change the line length with `print_format' but
+     there is no way to restore the previous line_lenght unles we building
+     a wrapper around original `print_format' routine and make a
+     substitution). */
+  join= (strpart(s, 0:0) == "\\");
+  if (anyof(join)) {
+    r= array(string, (ns= numberof(s)) - sum(join) + join(0));
+    i= j= 0;
+    while (i<ns) {
+      w= s(++i);
+      while (join(i)) {
+        w= strpart(w, :-1);
+        if (++i>ns) break;
+        w+= s(i);
+      }
+      r(++j)= w;
+    }
+    s= r;
+    w= r= [];
+  }
+
+  /* Recover the full path of the stream file from the joined lines. */
+  if (id == 1) {
+    /* Binary stream. */
+    if (numberof(s)==2) {
+      w1= w2= string(0);
+      if (sread(s(1), format="%[^:]", w1)==1 &&
+          sread(s(2), format="%[^/]", w2)==1) {
+        return strpart(s(2), strlen(w2)+1:0) + strpart(s(1), strlen(w1)+3:0);
+      }
+    }
+    error, "unexpected binary stream descriptor";
+  } else {
+    /* Text stream. */
+    if (numberof(s)==1) {
+      w= string(0);
+      if (sread(s(1), format="%[^/]", w)==1) {
+        return strpart(s(1), strlen(w)+1:0);
+      }
+    }
+    error, "unexpected text stream descriptor";
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+func _stat_worker(x)
+/* DOCUMENT _stat_worker(x)
+     Private routine used by stat, returns vector of double's:
+        [min(X), max(X), avg(X), std(X)]
+     where std(X) is the standard deviation of X.
+
+   SEE ALSO stat. */
+{
+  if (structof(x)!=double) x= double(x);
+  avg_x= avg(x);
+  dx = x - avg_x;
+  return [min(x), max(x), avg_x, sqrt(avg(dx*dx))];
+}
+
+func stat(..)
+/* DOCUMENT stat, x, ...
+     Print out statistics and information for all the arguments. */
+{
+  ith= 0;
+  while (more_args()) {
+    ++ith;
+    x= next_arg();
+    write, format="%2d: ", ith;
+    if (is_array(x)) {
+      write, format="array(%s", typeof(x);
+      dims= dimsof(x);
+      n= numberof(dims);
+      for (k=2 ; k<=n ; ++k) write, format=",%d", dims(k);
+      type= structof(x);
+      is_numerical= (type==double || type==long || type==int || type==char ||
+                     type==complex || type==float || type==short);
+      write, format=")%s", (is_numerical ? " " : "\n");
+      if (is_numerical) {
+        fmt= "min=%g max=%g avg=%g std=%g\n";
+        if (type==complex) {
+          s= _stat_worker(double(x));
+          write, format="\n         real part: "+fmt, s(1), s(2), s(3), s(4);
+          s= _stat_worker(x.im);
+          write, format="    imaginary part: "+fmt, s(1), s(2), s(3), s(4);
+          s= _stat_worker(abs(x));
+          write, format="           modulus: "+fmt, s(1), s(2), s(3), s(4);
+        } else {
+          s= _stat_worker(x);
+          write, format=fmt, s(1), s(2), s(3), s(4);
+        }
+      }
+    } else {
+      write, format="%s, %s\n", typeof(x), strjoin(print(x));
+    }
+  }
+}
+/*---------------------------------------------------------------------------*/
+func smooth(a, level)
+/* DOCUMENT smooth(a)
+       -or- smooth(a, level)
+     Returns array A smoothed along its dimensions.  I.e. for a 1D array:
+       smooth(A) = A(pcen)(zcen)
+     for a 2D array:
+       smooth(A) = A(pcen,pcen)(zcen,zcen)
+     ... (up to 6 dimensions).
+
+     For a greater number of dimensions,  each  direction  is  smoothed and
+     transposed in turn: apart from rounding errors, the result is the same
+     but the computation time is approximately  multiplied  by  3.   If you
+     oftenly smooth arrays with more than 6 dimensions you may  think about
+     modifying the source...
+
+     Optional argument  LEVEL  (default  1)  set  the  number  of  time the
+     smoothing operation is performed.
+
+   PROPERTIES OF THE SMOOTHING OPERATOR:
+     (i)   The smoothing operator is linear and symmetric.  For instance,
+           for a vector, A, smooth(A)=S(,+)*A(+) where the matrix S is
+           tridiagonal:
+                    [3 1         ]
+                    [1 2 1       ]
+                    [  1 2 1     ]
+             0.25 * [   \ \ \    ]    where, to improve readability,
+                    [    \ \ \   ]    missing values are all zero.
+                    [     1 2 1  ]
+                    [       1 2 1]
+                    [         1 3]
+           You can, in principle, reverse the smoothing operation with
+           TDsolve along each dimensions of smooth(A).  Note:For a vector
+           A, the operator S-I applied to A (where I is the identity
+           matrix) is the finite difference 2nd derivatives of A (but for
+           the edges).
+
+     (ii)  The smoothing operator does not change the sum of the element
+           values of its argument, i.e.: sum(smooth(A)) = sum(A).
+
+     (iii) Only an array with all elements having the same value is
+           invariant by the smoothing operator.  In fact "slopes" along
+           dimensions of A are almost invariant, only the values along the
+           edges are changed.
+
+     The symmetry of the smoothing operator is important for the
+     computation of gradients.  For instance, let Y = smooth(X) and DQ_DY
+     be the gradient of a scalar function Q with respect to Y, then the
+     gradient of Q with respect to X is simply: DQ_DX = smooth(DQ_DY)
+
+   TO DO:
+     By default A is smoothed along all its dimensions, but the list
+     of dimensions to smooth can be specified with keyword WHICH.  As
+     usual, negative dimensions are taken as offset from the last one.
+
+     If keyword WRAP is true (non-nil and non-zero) a wrapped version
+     of the operator (with same properties but no longer tridiagonal)
+     is applied instead.  This is suitable for periodic arrays (e.g.
+     FFT transformed arrays).
+
+   SEE ALSO: TDsolve. */
+{
+  n= dimsof(a)(1);
+  if (is_void(level) || level == 1) {
+    if (n == 1)
+      return a(pcen)(zcen);
+    if (n == 2)
+      return a(pcen,pcen)(zcen,zcen);
+    if (n == 3)
+      return a(pcen,pcen,pcen)(zcen,zcen,zcen);
+    if (n == 4)
+      return a(pcen,pcen,pcen,pcen)(zcen,zcen,zcen,zcen);
+    if (n == 5)
+      return a(pcen,pcen,pcen,pcen,pcen)(zcen,zcen,zcen,zcen,zcen);
+    if (n == 6)
+      return a(pcen,pcen,pcen,pcen,pcen,pcen)(zcen,zcen,zcen,zcen,zcen,zcen);
+    while (n--)
+      a= transpose(a(pcen,..)(zcen,..));
+    return a;
+  }
+  if (n == 1) {
+    for (i=1; i<=level; i++)
+      a= a(pcen)(zcen);
+  } else if (n == 2) {
+    for (i=1; i<=level; i++)
+      a= a(pcen,pcen)(zcen,zcen);
+  } else if (n == 3) {
+    for (i=1; i<=level; i++)
+      a= a(pcen,pcen,pcen)(zcen,zcen,zcen);
+  } else if (n == 4) {
+    for (i=1; i<=level; i++)
+      a= a(pcen,pcen,pcen,pcen)(zcen,zcen,zcen,zcen);
+  } else if (n == 5) {
+    for (i=1; i<=level; i++)
+      a= a(pcen,pcen,pcen,pcen,pcen)(zcen,zcen,zcen,zcen,zcen);
+  } else if (n == 6) {
+    for (i=1; i<=level; i++)
+      a= a(pcen,pcen,pcen,pcen,pcen,pcen)(zcen,zcen,zcen,zcen,zcen,zcen);
+  } else {
+    while (n--) {
+      for (i=1; i<=level; i++)
+	a= a(pcen,..)(zcen,..);
+      a= transpose(a);
+    }
+  }
+  return a;
+}
+
+/*---------------------------------------------------------------------------*/

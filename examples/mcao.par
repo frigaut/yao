@@ -1,0 +1,166 @@
+// Aosimul par file, V2.4.0
+//-------------------------------
+sim.name              = "Gemini MCAO system";
+sim.pupildiam         = 128;
+sim.debug             = 0;
+sim.verbose           = 1;
+
+//-------------------------------
+atm.dr0at05mic	      = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen	      = &("~/Yorick/data/screen"+["1","2","3","4"]+".fits");
+atm.layerfrac         = &([1.0,0.,0.,0.]);
+atm.layerspeed        = &([11.,20,29,35]);
+atm.layeralt	      = &([0.,400,6000,9000]);
+atm.winddir           = &([0,0,0,0]);
+
+//-------------------------------
+nwfs = 9;
+wfs = array(wfss,nwfs);
+
+for (n=1;n<=5;n++) {
+ wfs(n).type	      = "hartmann";
+ wfs(n).subsystem     = 1;
+ wfs(n).shmethod      = 2;
+ wfs(n).shnxsub	      = 16;
+ wfs(n).pixsize       = 1.0;
+ wfs(n).npixels       = 2;
+ wfs(n).shthreshold   = 0.;
+ wfs(n).lambda	      = 0.589;
+ wfs(n).noise         = 1;
+ wfs(n).ron	      = 4.5;
+ wfs(n).gsalt         = 90000.;
+ wfs(n).gsdepth       = 10000.;
+ wfs(n).kernel        = 0.8;
+ wfs(n).laserpower    = 8.;
+ wfs(n).filtertilt    = 1;
+ wfs(n).correctUpTT   = 1;
+ wfs(n).uplinkgain    = 0.1;
+ wfs(n).dispzoom      = 1.1;
+ wfs(n).biasrmserror  = 2.;
+ wfs(n).flatrmserror  = 0.01;
+ wfs(n).nintegcycles  = 1;
+ wfs(n).centGainOpt   = 1;
+ wfs(n).optthroughput = 0.5;
+ wfs(n).rayleighflag  = 1;
+}
+wfs(1).gspos = [-30,-30]; 
+wfs(2).gspos = [30,-30]; 
+wfs(3).gspos = [0,0]; 
+wfs(4).gspos = [-30,30]; 
+wfs(5).gspos = [30,30]; 
+
+for (n=6;n<=9;n++) {
+ wfs(n).type	      = "hartmann";
+ wfs(n).subsystem     = 2;
+ wfs(n).shmethod      = 2;
+ wfs(n).shnxsub	      = 1;
+ wfs(n).pixsize       = 0.5;
+ wfs(n).npixels       = 4;
+ wfs(n).shthreshold   = 0.;
+ wfs(n).lambda	      = 0.65;
+ wfs(n).noise         = 1;
+ wfs(n).ron	      = 0.;
+ wfs(n).gsalt         = 0.;
+ wfs(n).gsmag         = 5.;
+ wfs(n).dispzoom      = 0.6;
+ wfs(n).biasrmserror  = 0.;
+ wfs(n).flatrmserror  = 0.;
+ wfs(n).nintegcycles  = 1;
+ wfs(n).optthroughput = 0.5;
+}
+wfs(6).gspos = [40,0]; 
+wfs(7).gspos = [0,-40]; 
+wfs(8).gspos = [-40,0]; 
+wfs(9).gspos = [0,40]; 
+
+//-------------------------------
+ndm = 5;
+dm = array(dms,ndm);
+
+n = 1;
+dm(n).type	    = "stackarray";
+dm(n).subsystem     = 1;
+dm(n).iffile	    = "";
+dm(n).nxact	    = 19;
+dm(n).pitch	    = 8;
+dm(n).alt           = 0.;
+dm(n).hyst          = 0.03;
+dm(n).thresholdresp = 0.4;
+dm(n).unitpervolt   = 0.01;
+dm(n).push4imat     = 20;
+dm(n).pitchMargin   = 0.5;
+
+n = 2;
+dm(n).type	    = "stackarray";
+dm(n).subsystem     = 1;
+dm(n).iffile	    = "";
+dm(n).nxact	    = 22;
+dm(n).pitch	    = 8;
+dm(n).alt           = 4500.;
+dm(n).hyst          = 0.03;
+dm(n).thresholdresp = 0.4;
+dm(n).unitpervolt   = 0.01;
+dm(n).push4imat     = 20;
+dm(n).pitchMargin   = 1.2;
+
+n = 3;
+dm(n).type	    = "stackarray";
+dm(n).subsystem     = 1;
+dm(n).iffile	    = "";
+dm(n).nxact	    = 16;
+dm(n).pitch	    = 16;
+dm(n).alt           = 9000.;
+dm(n).hyst          = 0.03;
+dm(n).thresholdresp = 0.4;
+dm(n).unitpervolt   = 0.01;
+dm(n).push4imat     = 20;
+dm(n).pitchMargin   = 0.5;
+
+n = 4;
+dm(n).type	    = "tiptilt";
+dm(n).subsystem     = 2;
+dm(n).iffile	    = "";
+dm(n).alt           = 0.;
+dm(n).hyst          = 0.0;
+dm(n).thresholdresp = 0.01;
+dm(n).unitpervolt   = 0.0005;
+dm(n).push4imat     = 5;
+
+n = 5;
+dm(n).type	    = "aniso";
+dm(n).subsystem     = 2;
+dm(n).iffile	    = "";
+dm(n).alt           = 9000.;
+dm(n).hyst          = 0.0;
+dm(n).thresholdresp = 0.01;
+dm(n).unitpervolt   = 0.0005;
+dm(n).push4imat     = 5;
+
+//-------------------------------
+mat.condition       = &([15.,15]);
+mat.file	    = "";
+
+//-------------------------------
+tel.diam	    = 7.9;
+tel.cobs	    = 0.1125;
+
+//-------------------------------
+target.lambda	    = &([0.85,1.25,1.65,2.2]);
+target.xposition    = &([0, 0, 0, 0, 0,10,10,10,10,10,20,20,20,20,20,30,30,30,30,30,40,40,40,40,40,-30,30.,-30]); //
+target.yposition    = &([0,10,20,30,40,0,10,20,30,40,0,10,20,30,40,0,10,20,30,40,0,10,20,30,40,-30.,-30,30]); //
+target.dispzoom     = &([1.,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]*1.3);
+
+//-------------------------------
+gs.zeropoint	    = 2e11;
+gs.lgsreturnperwatt = 22.;
+gs.zenithangle      = 30.;
+
+//-------------------------------
+loop.gain	    = 0.4;
+loop.framedelay     = 1;
+loop.niter	    = 10000;
+loop.ittime	    = 2e-3;
+loop.startskip      = 10;
+loop.skipevery      = 500;
+loop.skipby         = 5000;
+loop.modalgainfile  = "simulModeGains.fits";

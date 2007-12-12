@@ -1,0 +1,30 @@
+Package: yao
+Kind: plugin
+Version: 4.1
+Revision: 1
+Description: Adaptive Optics simulation package
+License: BSD
+Maintainer: Francois Rigaut <frigaut@users.sourceforge.net>
+OS:
+Depends: yorick(>=1.6.02), yutils(>=1.0), imutil(>=0.5)
+Source: http://www.maumae.net/yorick/packages/%o/tarballs/yao-%v-%o.tgz
+Source-MD5: 
+Source-Directory: contrib/yao
+DocFiles: README TODO VERSION NEWS LEGAL doc/README:README.doc doc/FILE_FORMATS doc/*.doc doc/*.pdf doc/*.ps doc/*.tex
+Homepage: http://www.maumae.net/yorick/doc/plugins.php
+DescDetail: <<
+Multi-usage adaptive optics Monte-Carlo simulation package.
+Can simulation versatile configs (classical, LGS, GLAO, MCAO)
+with Shack-Hartmann or curvature sensors. Fast.
+<<
+DescUsage: <<
+See yao/examples for a test suite. 
+type 
+yorick -i test-all.i
+in a terminal to run it.
+<<
+DescPort: <<
+This package will compile Yao only on MacOSX 10.3.4 or later, because
+of a bug in the system math library libm (part of /usr/lib/LibSystem.dylib)
+in earlier versions of MacOSX 10.3.
+<<

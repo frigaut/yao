@@ -1,0 +1,25 @@
+/* 
+  $Id: rwfifo.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+ */
+func  open_fifo( fn ) {  
+ extern fifo;
+  fifo = open( fn, "w+");
+}
+
+
+func wcmd(s) {
+  write,fifo,s; fflush,fifo;
+}
+
+func rcmd(&s) {
+  s = "";
+  read,fifo,format="%s",s;
+}
+
+func print_struct(structure,strstr) {
+  tmp = strParse(strParse(strParse(strJoin(print(structure)),"(")(2),")")(1),",");
+  if (!am_subroutine()) {return tmp;} 
+  for (i=1;i<=numberof(tmp);i++) {
+    write,format=strstr+".%s\n",tmp(i);
+  }
+}

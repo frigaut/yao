@@ -1,0 +1,74 @@
+# OBSOLETE (2007dec12)
+
+# all these instructions assume you have yorick installed in your home
+# directory. You can put it somewhere else but you'll have to review
+# and change some of the instructions (indicated below)
+cd
+
+# get the latest version from cvs:
+cvs -z3 -d:pserver:anonymous@yorick.cvs.sourceforge.net:/cvsroot/yorick checkout -r HEAD -d yorick-2.1 yorick
+
+# install yorick:
+cd yorick-2.1/
+make config
+edit Make.cfg and change compilation flags if you wish (I use -O2)
+make && make install
+
+# optional:
+make check
+
+# create contrib directory:
+mkdir contrib
+cd contrib
+
+# get the source packages from the web:
+wget http://www.maumae.net/yorick/packages/src/yutils-1.1.2-src.tgz
+wget http://www.maumae.net/yorick/packages/src/imutil-0.5.2-src.tgz
+wget http://www.maumae.net/yorick/packages/src/yao-4.0-src.tgz
+
+# untar
+tar zxvf yutils-1.1.2-src.tgz
+tar zxvf imutil-0.5.2-src.tgz
+tar zxvf yao-4.0-src.tgz
+
+# install yutils:
+cd yutils
+# if you have installed yorick somewhere else, adjust path below:
+~/yorick-2.1/Linux-x86_64/bin/yorick -batch makenix.i install
+
+# install imutil:
+cd ../imutil
+# if you have installed yorick somewhere else, adjust path below:
+~/yorick-2.1/Linux-x86_64/bin/yorick -batch make.i
+make && make install
+
+# install yao:
+cd ../yao/yao_fftw/
+# if you have installed yorick somewhere else, adjust path below:
+~/yorick-2.1/Linux-x86_64/bin/yorick -batch make.i
+make
+# (ignore the warnings)
+make install
+# (oops, I forgot to add this in the install, do it by hand:)
+cp ../*.gs ~/yorick-2.1/g/
+
+# check everything went OK (this also create phase screens, so
+# it's not really optional). Phase screens are created first,
+# so as soon as a window appears, you can safely crtl-c out
+# if you're bored.
+make check
+
+
+# now for the shiny new GUI:
+cd ..
+# (you should now be in contrib/yao)
+export YAOTOP=`pwd`
+# or setenv if you use tcsh
+# you need to create the directory where yao is looking for
+# phase screens:
+mkdir ~/Yorick
+ln -s ~/yorick-2.1/contrib/yao/examples ~/Yorick/data
+
+# run the GUI:
+~/yorick-2.1/Linux-x86_64/bin/yorick -i ../yaopy.i curvature.par 
+

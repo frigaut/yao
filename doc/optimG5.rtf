@@ -1,0 +1,74 @@
+{\rtf1\mac\ansicpg10000\cocoartf102
+{\fonttbl\f0\fswiss\fcharset77 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww9000\viewh9000\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural
+
+\f0\fs24 \cf0 COPTIONS=-O\
+LDOPTIONS= $(C_OPTIMIZE)\
+-rwxr-xr-x  1 frigaut  frigaut  946240 26 Jan 20:33 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+214 it/s\
+\
+=====================================\
+\
+COPTIONS=-O3 -fomit-frame-pointer -faltivec -mcpu=7450\
+LDOPTIONS= $(C_OPTIMIZE) -framework Accelerate\
+\
+223it/sec\
+\
+=======================================\
+\
+COPTIONS=-O3 -fomit-frame-pointer -mcpu=7450 -falign-functions=32 -falign-labels=32 -falign-loops=32 -falign-jumps=32\
+LDOPTIONS= $(C_OPTIMIZE)\
+frigaut  1416320 26 Jan 20:36 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+\
+224it/sec\
+\
+=======================================\
+NOTE: THESE WERE NOT THE G5 FLAGS...!!!!\
+NOW IT IS\
+COPTIONS=-O3 -fomit-frame-pointer -faltivec -fstrict-aliasing -mcpu=970 -mtune=\\\
+970\
+LDOPTIONS=$(C_OPTIMIZE)\
+\
+frigaut  1166608 26 Jan 20:46 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+\
+218 it/sec ??? I don't get it.\
+\
+=========================================\
+COPTIONS=-O3 -fast -faltivec -mcpu=970 -mtune=970\
+LDOPTIONS=$(C_OPTIMIZE)\
+frigaut  1355964 26 Jan 21:05 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+231.554225 iterations/second in average\
+on all2.i:\
+25.157214 iterations/second in average\
+\
+==================\
+same without -fast\
+frigaut  1170560 26 Jan 21:09 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+221.697636 iterations/second in average\
+on all2:\
+24.942365 iterations/second in average\
+\
+=======================\
+\
+with only -O\
+frigaut  946240 26 Jan 21:36 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+\
+on all.i:\
+213.491045 iterations/second in average\
+on all2.i:\
+24.074326 iterations/second in average\
+\
+==========================\
+main with -O, yorickfr routines with -O3 -faltivec -mcpu=970 -mtune=970\
+frigaut  950336 26 Jan 21:38 /Users/frigaut/yorick-1.5/yorickfr/yorickfr*\
+all.i:\
+223.350538 iterations/second in average\
+all2.i:\
+24.941296 iterations/second in average\
+\
+final option retained:\
+-O3 -mcpu=970 -mtune=970 for both main yorick\
+-O3 -faltivec -mcpu=970 -mtune=970 for yorickfr \
+}

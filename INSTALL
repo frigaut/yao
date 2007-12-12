@@ -1,0 +1,48 @@
+YAO PACKAGE INSTALLATION:
+
+Notes updated for V4.0 (2007jun03)
+
+There are two methods of installation: from source or using the yorick package
+manager (pkg_mngr). Soon to come: debian package.
+
+1) From source:
+
+- untar yao.tgz
+- cd yao
+- follow instructions in README
+- dependencies:
+  - fftw3
+  - if you want the fancy (but useful) GUI, you will need python, pygtk, libglade
+
+2) Using pkg_mngr:
+
+- start yorick
+> #include "pkg_mngr.i"
+> pkg_setup
+> pkg_sync
+> pkg_install,"yao"
+
+- pkg_mngr does not take care of the dependencies for the GUI, hence you will
+have to make sure python, pygtk and libglade are installed.
+
+TO RUN:
+
+Start a regular yorick session and type
+
+#include "yao.i"
+
+- you have to have a parameter file (yao_par_file). Look in examples
+
+- if you are running the GUI:
+1) define the environment variable YAOTOP that should point to the directory
+into which yaopy.i is installed
+2) type
+$ yorick -i yao/yaopy.i yao_par_file
+
+- if you want to run it by hand: there are basically 3 stages:
+1) aoread,parfile
+2) aoinit,disp=1  (other parameters, help,aoinit for more info)
+3) aoloop,disp=1  (other parameters, help,aoloop for more info)
+
+This preps everything. Now you can start the loop typing "go" and
+pause it with "stop"
