@@ -1,6 +1,6 @@
 /*
 
-  $Id: gui.i.svn-base,v 1.1 2007-12-12 23:29:51 frigaut Exp $
+  $Id: gui.i.svn-base,v 1.1.1.1 2007-12-12 23:29:51 frigaut Exp $
 
   all of these functions need to be issued in an already existing
   window, example:

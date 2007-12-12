@@ -1,5 +1,5 @@
 /* 
-  $Id: rwfifo.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+  $Id: rwfifo.i.svn-base,v 1.1.1.1 2007-12-12 23:29:52 frigaut Exp $
  */
 func  open_fifo( fn ) {  
  extern fifo;

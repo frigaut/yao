@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.1 2007-12-12 23:29:15 frigaut Exp $
+ * $Id: yao.i,v 1.1.1.1 2007-12-12 23:29:15 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *

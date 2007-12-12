@@ -1,5 +1,5 @@
 # Gist work.gs drawing style
-# $Id: letter.gs,v 1.1 2007-12-12 23:29:11 frigaut Exp $
+# $Id: letter.gs,v 1.1.1.1 2007-12-12 23:29:11 frigaut Exp $
 
 # A single coordinate system on a portrait page
 # Legends: two columns below viewport, contours in single column to right

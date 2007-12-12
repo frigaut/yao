@@ -1,7 +1,7 @@
 /*
    NEWFITS.I
 
-   $Id: newfits.i.svn-base,v 1.1 2007-12-12 23:29:54 frigaut Exp $
+   $Id: newfits.i.svn-base,v 1.1.1.1 2007-12-12 23:29:54 frigaut Exp $
 
    Yorick procedures to read a FITS file (including extensions) and
    mechanism to parse header cards into keywords, value and comments

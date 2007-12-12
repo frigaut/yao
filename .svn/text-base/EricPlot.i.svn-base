@@ -16,10 +16,10 @@
  *	of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * History:
- *	$Id: EricPlot.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+ *	$Id: EricPlot.i.svn-base,v 1.1.1.1 2007-12-12 23:29:52 frigaut Exp $
  *	$Log: EricPlot.i.svn-base,v $
- *	Revision 1.1  2007-12-12 23:29:52  frigaut
- *	Initial revision
+ *	Revision 1.1.1.1  2007-12-12 23:29:52  frigaut
+ *	Initial Import - yorick-yao
  *
  *	Revision 1.2  2004/10/18 21:11:29  frigaut
  *	changed path to orient at a few critic locations

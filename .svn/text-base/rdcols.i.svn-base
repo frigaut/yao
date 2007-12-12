@@ -1,5 +1,5 @@
 /*
- * rdcols.i -- $Id: rdcols.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+ * rdcols.i -- $Id: rdcols.i.svn-base,v 1.1.1.1 2007-12-12 23:29:52 frigaut Exp $
  * routines to assist in reading columns from ascii files
  *
  * Copyright (c) 1998.  See accompanying LEGAL file for details.

@@ -28,10 +28,10 @@
  *	smooth       - smooth array along its dimensions.
  *
  * History:
- *	$Id: utils.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+ *	$Id: utils.i.svn-base,v 1.1.1.1 2007-12-12 23:29:52 frigaut Exp $
  *	$Log: utils.i.svn-base,v $
- *	Revision 1.1  2007-12-12 23:29:52  frigaut
- *	Initial revision
+ *	Revision 1.1.1.1  2007-12-12 23:29:52  frigaut
+ *	Initial Import - yorick-yao
  *
  *	Revision 1.1.1.1  2004/06/06 01:00:02  frigaut
  *	Initial CVS entry of YAO

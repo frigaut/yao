@@ -1,5 +1,5 @@
 /*
-  $Id: util.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+  $Id: util.i.svn-base,v 1.1.1.1 2007-12-12 23:29:52 frigaut Exp $
  */
 
 require,"style.i";
@@ -8,7 +8,7 @@ require,"style.i";
    UTIL.I
    A collection of routines for general purpose.
 
-   $Id: util.i.svn-base,v 1.1 2007-12-12 23:29:52 frigaut Exp $
+   $Id: util.i.svn-base,v 1.1.1.1 2007-12-12 23:29:52 frigaut Exp $
 
    last revision/addition: 2003June13
  */

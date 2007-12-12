@@ -8,7 +8,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.1 2007-12-12 23:29:10 frigaut Exp $
+ * $Id: yaopy.i,v 1.1.1.1 2007-12-12 23:29:10 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,8 +25,8 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.1  2007-12-12 23:29:10  frigaut
- * Initial revision
+ * Revision 1.1.1.1  2007-12-12 23:29:10  frigaut
+ * Initial Import - yorick-yao
  *
  *
  */
