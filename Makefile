@@ -71,28 +71,28 @@ MAKE_TEMPLATE = protect-against-1.5
 #	$(CC) $(CPPFLAGS) $(CFLAGS) -DMY_SWITCH -o $@ -c myfunc.c
 
 install::
-	mkdir -p $(Y_SITE)/python
-	mkdir -p $(Y_SITE)/glade
-	mkdir -p /usr/local/bin
-	mkdir -p /usr/local/share/yao
-	mkdir -p /usr/local/man/man1
-	cp -p yao.py $(Y_SITE)/python/
-	cp -p yao.glade $(Y_SITE)/glade/
-	cp -p aosimul3.gs $(Y_SITE)/g/
-	cp -p letter.gs $(Y_SITE)/g/
-	cp -p yaogtk /usr/local/bin/
-	cp -pr examples /usr/local/share/yao/
-	cp -pr doc /usr/local/share/yao/
-	cp -p doc/yao.1.gz /usr/local/man/man1/
+	mkdir -p $(DEST_Y_SITE)/python
+	mkdir -p $(DEST_Y_SITE)/glade
+	mkdir -p $(DEST_Y_SITE)/g
+	mkdir -p $(DEST_Y_SITE)/share/yao
+#	mkdir -p /usr/local/man/man1
+	cp -p yao.py $(DEST_Y_SITE)/python/
+	cp -p yao.glade $(DEST_Y_SITE)/glade/
+	cp -p aosimul3.gs $(DEST_Y_SITE)/g/
+	cp -p letter.gs $(DEST_Y_SITE)/g/
+	cp -p yaogtk $(DEST_Y_BINDIR)/
+	cp -pr examples $(DEST_Y_SITE)/share/yao/
+	cp -pr doc $(DEST_Y_SITE)/share/yao/
+#	cp -p doc/yao.1.gz /usr/local/man/man1/
 
 uninstall::
-	-rm /usr/local/bin/yaogtk
-	-rm $(Y_SITE)/g/aosimul3.gs
-	-rm $(Y_SITE)/g/letter.gs
-	-rm $(Y_SITE)/python/yao.py
-	-rm $(Y_SITE)/glade/yao.glade
-	-rm -rf /usr/local/share/yao/
-	-rm -rf /usr/local/man/man1/yao.1.gz
+	-rm $(DEST_Y_BINDIR)/yaogtk
+	-rm $(DEST_Y_SITE)/g/aosimul3.gs
+	-rm $(DEST_Y_SITE)/g/letter.gs
+	-rm $(DEST_Y_SITE)/python/yao.py
+	-rm $(DEST_Y_SITE)/glade/yao.glade
+	-rm -rf $(DEST_Y_SITE)/share/yao/
+#	-rm -rf /usr/local/man/man1/yao.1.gz
 
 # -------------------------------------------------------- end of Makefile
 
