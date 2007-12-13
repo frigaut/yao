@@ -75,6 +75,7 @@ install::
 	mkdir -p $(DEST_Y_SITE)/glade
 	mkdir -p $(DEST_Y_SITE)/g
 	mkdir -p $(DEST_Y_SITE)/share/yao
+	mkdir -p $(DEST_Y_BINDIR)
 #	mkdir -p /usr/local/man/man1
 	cp -p yao.py $(DEST_Y_SITE)/python/
 	cp -p yao.glade $(DEST_Y_SITE)/glade/
