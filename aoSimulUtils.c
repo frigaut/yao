@@ -1,15 +1,40 @@
-/************************************************************************
- * This file contains a number or C routines used in conjunction with   *
- * yao.i, the AO simulation tool written in Yorick. This codes          *
- * efficiently, in C, the most critical elements of the AO loop (func-  *
- * tion aoloop in yao.i, for yao versions > 2.0.                        *
- * The functions in this file do NOT use any vectorial library call, so *
- * that they stay compatible for use on non-apple platforms. the        *
- * routine _shwfs is also used within yao.i, but as it contains         *
- * cDSP calls, I have put it in yorickVE.c                              *
- * Last modification: Dec 22, 2003.                                     *
- * Author: F.Rigaut                                                     *
- ************************************************************************/
+/*
+ * aoSimulUtils.c
+ *
+ * C utility functions for yao
+ *
+ * This file contains a number or C routines used in conjunction with
+ * yao.i, the AO simulation tool written in Yorick. This codes
+ * efficiently, in C, the most critical elements of the AO loop (func-
+ * tion aoloop in yao.i, for yao versions > 2.0.
+ * 
+ * This file is part of the yao package, an adaptive optics
+ * simulation tool.
+ *
+ * $Id: aoSimulUtils.c,v 1.2 2007-12-13 00:58:31 frigaut Exp $
+ *
+ * Copyright (c) 2002-2007, Francois Rigaut
+ *
+ * This program is free software; you can redistribute it and/or  modify it
+ * under the terms of the GNU General Public License  as  published  by the
+ * Free Software Foundation; either version 2 of the License,  or  (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope  that  it  will  be  useful, but
+ * WITHOUT  ANY   WARRANTY;   without   even   the   implied   warranty  of
+ * MERCHANTABILITY or  FITNESS  FOR  A  PARTICULAR  PURPOSE.   See  the GNU
+ * General Public License for more details (to receive a  copy  of  the GNU
+ * General Public License, write to the Free Software Foundation, Inc., 675
+ * Mass Ave, Cambridge, MA 02139, USA).
+ *
+ * $Log: aoSimulUtils.c,v $
+ * Revision 1.2  2007-12-13 00:58:31  frigaut
+ * added license and header
+ *
+ *
+ *
+ */
+
 
 /************************************************************************
  * Function int _get2dPhase                                             *

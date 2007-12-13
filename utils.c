@@ -1,3 +1,41 @@
+/*
+ * utils.c
+ *
+ * C utility functions for yao
+ *
+ * This file contains a number of utility functions, coded in C to gain
+ * execution time. It addresses functionalities that are missing in
+ * yorick, mostly concerning 2D image processing.
+ * 
+ * This file is part of the yao package, an adaptive optics
+ * simulation tool.
+ *
+ * $Id: utils.c,v 1.2 2007-12-13 00:58:31 frigaut Exp $
+ *
+ * Copyright (c) 2002-2007, Francois Rigaut
+ *
+ * This program is free software; you can redistribute it and/or  modify it
+ * under the terms of the GNU General Public License  as  published  by the
+ * Free Software Foundation; either version 2 of the License,  or  (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope  that  it  will  be  useful, but
+ * WITHOUT  ANY   WARRANTY;   without   even   the   implied   warranty  of
+ * MERCHANTABILITY or  FITNESS  FOR  A  PARTICULAR  PURPOSE.   See  the GNU
+ * General Public License for more details (to receive a  copy  of  the GNU
+ * General Public License, write to the Free Software Foundation, Inc., 675
+ * Mass Ave, Cambridge, MA 02139, USA).
+ *
+ * $Log: utils.c,v $
+ * Revision 1.2  2007-12-13 00:58:31  frigaut
+ * added license and header
+ *
+ *
+ *
+ */
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -5,15 +43,6 @@
 #include "ydata.h"
 #include "yapi.h"
 #include "pstdlib.h"
-
-/************************************************************************
- * This file contains a number of utility functions, coded in C to gain *
- * execution time. It addresses functionalities that are missing in     *
- * yorick, mostly concerning 2D image processing.                       *
- * Last modified: December 22, 2003.                                    *
- * Author: F.Rigaut                                                     *
- ************************************************************************/
-
 
 
 /************************************************************************
