@@ -1,8 +1,8 @@
-Y_MAKEDIR=/usr/lib/yorick
-Y_EXE=/usr/lib/yorick/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick/2.1
+Y_EXE=/usr/lib/yorick/2.1/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/usr/lib/yorick
-Y_EXE_SITE=/usr/lib/yorick
+Y_EXE_HOME=/usr/lib/yorick/2.1
+Y_EXE_SITE=/usr/share/yorick/2.1
 
 # ----------------------------------------------------- optimization flags
 
@@ -12,7 +12,7 @@ TGT=$(DEFAULT_TGT)
 # ------------------------------------------------ macros for this package
 
 PKG_NAME=yao
-PKG_I=yao_utils.i yao_fast.i
+PKG_I=yao_utils.i yao_fast.i aoutil.i newfits.i yao.i yao_util.i turbulence.i yao_gui.i yaopy.i
 
 OBJS=aoSimulUtils.o utils.o yao_fast.o
 
