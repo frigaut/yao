@@ -65,6 +65,15 @@ MAKE_TEMPLATE = protect-against-1.5
 #myfunc.o: myapi.h myfunc.c
 #	$(CC) $(CPPFLAGS) $(CFLAGS) -DMY_SWITCH -o $@ -c myfunc.c
 
+install::
+	mkdir -p $(Y_SITE)/python
+	mkdir -p $(Y_SITE)/glade
+	mkdir -p /usr/local/bin
+	cp -p yao.py $(Y_SITE)/python/
+	cp -p yao.glade $(Y_SITE)/glade/
+	cp -p *.gs $(Y_SITE)/g/
+	cp -p yaogtk /usr/local/bin/
+
 # -------------------------------------------------------- end of Makefile
 
 
