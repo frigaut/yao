@@ -69,10 +69,14 @@ install::
 	mkdir -p $(Y_SITE)/python
 	mkdir -p $(Y_SITE)/glade
 	mkdir -p /usr/local/bin
+	mkdir -p /usr/share/yao
 	cp -p yao.py $(Y_SITE)/python/
 	cp -p yao.glade $(Y_SITE)/glade/
 	cp -p *.gs $(Y_SITE)/g/
 	cp -p yaogtk /usr/local/bin/
+	cp -pr examples /usr/share/yao/
+	cp -pr doc /usr/share/yao/
+	cp -p doc/yao.1.gz /usr/share/man/man1/
 
 # -------------------------------------------------------- end of Makefile
 
