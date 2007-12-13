@@ -18,6 +18,8 @@ http://www.maumae.net/yao/aosimul.html (outdated)
 
 RELEASE NOTES:
 --------------
+version 4.1.1: 2007dec13:
+    - upgrade/update of Makefile
 
 version 4.1: 2007dec12:
     - cleaned up all things for the debian release and a fresh pkg_mngr
