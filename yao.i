@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.1 2007-12-12 23:29:15 frigaut Exp $
+ * $Id: yao.i,v 1.2 2007-12-13 16:04:21 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -122,6 +122,9 @@ aoSimulVersion = yaoVersion = aoYaoVersion = "4.1";
 aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec12";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
+
+
+plug_in,"yao";
 
 require,"yao_utils.i";
 require,"yao_fast.i";

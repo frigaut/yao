@@ -1,3 +1,4 @@
+# these values filled in by    yorick -batch make.i
 Y_MAKEDIR=/usr/lib/yorick/2.1
 Y_EXE=/usr/lib/yorick/2.1/bin/yorick
 Y_EXE_PKGS=
@@ -6,13 +7,14 @@ Y_EXE_SITE=/usr/share/yorick/2.1
 
 # ----------------------------------------------------- optimization flags
 
+# options for make command line, e.g.-   make COPT=-g TGT=exe
 COPT=$(COPT_DEFAULT)
 TGT=$(DEFAULT_TGT)
 
 # ------------------------------------------------ macros for this package
 
 PKG_NAME=yao
-PKG_I=yao_utils.i yao_fast.i aoutil.i newfits.i yao.i yao_util.i turbulence.i yao_gui.i yaopy.i
+PKG_I=yao_fast.i yao_utils.i
 
 OBJS=aoSimulUtils.o utils.o yao_fast.o
 
@@ -23,7 +25,7 @@ FFTW3_PATH=/usr
 
 # PKG_DEPLIBS=-Lsomedir -lsomelib   for dependencies of this package
 PKG_DEPLIBS=-L$(FFTW3_PATH)/lib -lfftw3f
-# set compiler or loader (rare) flags specific to this package
+# set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS=
 PKG_LDFLAGS=
 
@@ -36,6 +38,8 @@ PKG_CLEAN=
 
 # autoload file for this package, if any
 PKG_I_START=
+# non-pkg.i include files for this package, if any
+PKG_I_EXTRA=yao.i aoutil.i newfits.i yao_util.i turbulence.i yao_gui.i yaopy.i
 
 # -------------------------------- standard targets and rules (in Makepkg)
 
@@ -44,6 +48,7 @@ PKG_I_START=
 # are any additional targets (defined below) prerequisite to
 # the plugin library, archive library, and executable, respectively
 PKG_I_DEPS=$(PKG_I)
+Y_DISTMAKE=distmake
 
 include $(Y_MAKEDIR)/Make.cfg
 include $(Y_MAKEDIR)/Makepkg
@@ -69,14 +74,25 @@ install::
 	mkdir -p $(Y_SITE)/python
 	mkdir -p $(Y_SITE)/glade
 	mkdir -p /usr/local/bin
-	mkdir -p /usr/share/yao
+	mkdir -p /usr/local/share/yao
+	mkdir -p /usr/local/man/man1
 	cp -p yao.py $(Y_SITE)/python/
 	cp -p yao.glade $(Y_SITE)/glade/
-	cp -p *.gs $(Y_SITE)/g/
+	cp -p aosimul3.gs $(Y_SITE)/g/
+	cp -p letter.gs $(Y_SITE)/g/
 	cp -p yaogtk /usr/local/bin/
-	cp -pr examples /usr/share/yao/
-	cp -pr doc /usr/share/yao/
-	cp -p doc/yao.1.gz /usr/share/man/man1/
+	cp -pr examples /usr/local/share/yao/
+	cp -pr doc /usr/local/share/yao/
+	cp -p doc/yao.1.gz /usr/local/man/man1/
+
+uninstall::
+	-rm /usr/local/bin/yaogtk
+	-rm $(Y_SITE)/g/aosimul3.gs
+	-rm $(Y_SITE)/g/letter.gs
+	-rm $(Y_SITE)/python/yao.py
+	-rm $(Y_SITE)/glade/yao.glade
+	-rm -rf /usr/local/share/yao/
+	-rm -rf /usr/local/man/man1/yao.1.gz
 
 # -------------------------------------------------------- end of Makefile
 

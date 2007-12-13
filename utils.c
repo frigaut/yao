@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: utils.c,v 1.2 2007-12-13 00:58:31 frigaut Exp $
+ * $Id: utils.c,v 1.3 2007-12-13 16:04:21 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,14 +27,16 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: utils.c,v $
- * Revision 1.2  2007-12-13 00:58:31  frigaut
+ * Revision 1.3  2007-12-13 16:04:21  frigaut
+ * - modification to broken Makefile
+ * - reshuffling of plug_in statement
+ *
+ * Revision 1.2  2007/12/13 00:58:31  frigaut
  * added license and header
  *
  *
  *
  */
-
-
 
 #include <stdio.h>
 #include <stdlib.h>

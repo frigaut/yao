@@ -8,7 +8,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.1 2007-12-12 23:29:10 frigaut Exp $
+ * $Id: yaopy.i,v 1.2 2007-12-13 16:04:21 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,17 +25,23 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.1  2007-12-12 23:29:10  frigaut
- * Initial revision
+ * Revision 1.2  2007-12-13 16:04:21  frigaut
+ * - modification to broken Makefile
+ * - reshuffling of plug_in statement
+ *
+ * Revision 1.1.1.1  2007/12/12 23:29:10  frigaut
+ * Initial Import - yorick-yao
  *
  *
  */
+
+require,"pathfun.i";
 
 yaotop = get_env("YAOTOP");
 
 if (!yaotop) {
   // try to find yao.py
-  tmppath = find_in_path("python/yao.py",takefirst=1);
+  tmppath = find_in_path("../python/yao.py",takefirst=1);
   if (is_void(tmppath)) error,"Can't find yao.py";
   yaotop = dirname(dirname(tmppath));
   write,format=" Found yao.py in %s\n",dirname(tmppath);

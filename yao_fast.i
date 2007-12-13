@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.i,v 1.1 2007-12-12 23:29:11 frigaut Exp $
+ * $Id: yao_fast.i,v 1.2 2007-12-13 16:04:21 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,15 +23,18 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.i,v $
- * Revision 1.1  2007-12-12 23:29:11  frigaut
- * Initial revision
+ * Revision 1.2  2007-12-13 16:04:21  frigaut
+ * - modification to broken Makefile
+ * - reshuffling of plug_in statement
+ *
+ * Revision 1.1.1.1  2007/12/12 23:29:11  frigaut
+ * Initial Import - yorick-yao
  *
  *
  */
 
 
-plug_in, "yao";
-write,"Yao FFTW version";
+//write,"Yao FFTW version";
 
 func calcPSFVE(pupil,phase,scale=)
 /* DOCUMENT func calcPSFVE(pupil,phase,scale=)
