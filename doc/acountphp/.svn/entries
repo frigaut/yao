@@ -1,43 +1,0 @@
-8
-
-dir
-307
-svn://myst/svnroot/yao/trunk/yao/doc/acountphp
-svn://myst/svnroot
-
-
-
-2007-11-13T14:12:40.574090Z
-307
-frigaut
-
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-663c5bd3-7ac9-451f-bfe8-2c33155fa921
-
-pages
-dir
-
-digits
-dir
-
-doc
-dir
-
-digits_ani
-dir
-
-cvs
-dir
-
