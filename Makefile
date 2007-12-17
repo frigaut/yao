@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/usr/lib/yorick/2.1
-Y_EXE=/usr/lib/yorick/2.1/bin/yorick
+Y_MAKEDIR=/home/frigaut/yorick-2.1/Linux-i686
+Y_EXE=/home/frigaut/yorick-2.1/Linux-i686/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/usr/lib/yorick/2.1
-Y_EXE_SITE=/usr/share/yorick/2.1
+Y_EXE_HOME=/home/frigaut/yorick-2.1/Linux-i686
+Y_EXE_SITE=/home/frigaut/yorick-2.1
 
 # ----------------------------------------------------- optimization flags
 
@@ -81,13 +81,13 @@ install::
 	cp -p yao.glade $(DEST_Y_SITE)/glade/
 	cp -p aosimul3.gs $(DEST_Y_SITE)/g/
 	cp -p letter.gs $(DEST_Y_SITE)/g/
-	cp -p yaogtk $(DEST_Y_BINDIR)/
+	cp -p yao $(DEST_Y_BINDIR)/
 	cp -pr examples $(DEST_Y_SITE)/share/yao/
 	cp -pr doc $(DEST_Y_SITE)/share/yao/
 #	cp -p doc/yao.1.gz /usr/local/man/man1/
 
 uninstall::
-	-rm $(DEST_Y_BINDIR)/yaogtk
+	-rm $(DEST_Y_BINDIR)/yao
 	-rm $(DEST_Y_SITE)/g/aosimul3.gs
 	-rm $(DEST_Y_SITE)/g/letter.gs
 	-rm $(DEST_Y_SITE)/python/yao.py

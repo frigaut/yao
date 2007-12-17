@@ -8,7 +8,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.2 2007-12-13 16:04:21 frigaut Exp $
+ * $Id: yaopy.i,v 1.3 2007-12-17 20:21:04 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,15 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.2  2007-12-13 16:04:21  frigaut
+ * Revision 1.3  2007-12-17 20:21:04  frigaut
+ * - renamed yaogtk -> yao (and updated Makefile accordingly)
+ * - gotten rid of usleep() calls in yorick -> python communication. Instead,
+ * am using a pyk_flush, which send a flush request to python every seconds.
+ * This is still a hack to turn around the BLOCK bug in python, but at least
+ * it does not use usleep (cleaner hack?).
+ * - added debug python <> yorick entry in GUI help menu (set/unset pyk_debug)
+ *
+ * Revision 1.2  2007/12/13 16:04:21  frigaut
  * - modification to broken Makefile
  * - reshuffling of plug_in statement
  *
@@ -37,15 +45,22 @@
 
 require,"pathfun.i";
 
-yaotop = get_env("YAOTOP");
-
-if (!yaotop) {
-  // try to find yao.py
-  tmppath = find_in_path("../python/yao.py",takefirst=1);
-  if (is_void(tmppath)) error,"Can't find yao.py";
-  yaotop = dirname(dirname(tmppath));
-  write,format=" Found yao.py in %s\n",dirname(tmppath);
+Y_PYTHON = get_env("Y_PYTHON");
+if (noneof(Y_PYTHON)) {
+  Y_PYTHON = pathform([Y_SITE,get_path()]);
+  if (Y_SITES!=[]) Y_PYTHON = pathform([Y_PYTHON,Y_SITES]);
  }
+
+// try to find yao.py
+tmppath = find_in_path("python/yao.py",takefirst=1,path=Y_PYTHON);
+if (is_void(tmppath)) tmppath = find_in_path("../python/yao.py",takefirst=1,path=Y_PYTHON);
+if (is_void(tmppath)) {
+  write,format="Can't find yao.py in %s nor in %s\n",
+    Y_PYTHON,pathform(dirname(pathsplit(Y_PYTHON)));
+  error,"Aborting";
+ }
+yaotop = dirname(dirname(tmppath));
+write,format=" Found yao.py in %s\n",dirname(tmppath);
 
 require,"pyk.i";
 require,"yao.i";
@@ -61,6 +76,24 @@ pyk_cmd=[python_exec,swrite(format="%s",yaotop)];
 
 // span the python process, and hook to existing _tyk_proc (see pyk.i)
 _pyk_proc = spawn(pyk_cmd, _pyk_callback);
+
+/*
+  func yaopy_after_error(void)
+{
+  if (is_void(_pyk_proc)) {
+    write,"FATAL: Lost communication with python front end";
+    quit;
+  }
+}
+after_error = yaopy_after_error;
+*/
+
+func yaopy_quit(void)
+{
+  pyk,"gtk.main_quit()";
+  write,"\n*** Python interface killed, quitting ***";
+  quit;
+}
 
 func yao_win_init(parent_id)
 {
@@ -191,7 +224,7 @@ func set_okwfs(wfsnum,ok)
     else if (wfs(w1).type=="curvature") pyk,"wfs_panel_set_sensitivity(1,2)";
     gui_update_wfs,w1;
   }
-  usleep,50
+  //  usleep,50
   pyk,"yo2py_flush";
 }
 
@@ -484,23 +517,30 @@ func toggle_userplot_dphi
   }
 }
 
-func wrap_aoread(yaoparfile)
+func wrap_aoread(void)
 {
   stop;  // in case we are running another loop.
-  aoread,yaoparfile;
+  aoread,yaopardir+"/"+yaoparfile;
   gui_update;
-  usleep,100; // why do I have to do that for it to work ????
+  //  usleep,100; // why do I have to do that for it to work ????
   pyk,"set_cursor_busy(0)";
 }
 
 func gui_update(void)
 {
   extern dispImImav,okdm,okwfs;
+
+  pyk,swrite(format="pyk_debug = %d",pyk_debug)
+  
   if (yaoparfile!=[]) {
     pyk,swrite(format="y_text_parm_update('yaoparfile','%s')",yaoparfile);
+    pyk,swrite(format="yaopardir = '%s'",yaopardir); 
+    pyk,swrite(format="yaoparfile = '%s'",yaoparfile); 
   } else {
     pyk,"glade.get_widget('aoread').set_sensitive(0)";
   }
+  //  usleep,100; // why do I have to do that for it to work ????
+  //  pyk,"yo2py_flush";
   if (wfs==[]) return;  // then aoread has not yet occured.
   
   sim.debug=0;
@@ -521,7 +561,6 @@ func gui_update(void)
   pyk,"glade.get_widget('aoread').set_sensitive(1)";
   //  pyk,"glade.get_widget('aoread').grab_focus()";
   pyk,swrite(format="y_text_parm_update('yaoparfile','%s')",yaoparfile); 
-  pyk,swrite(format="yaoparfile = '%s'",yaoparfile); 
   pyk,swrite(format="window.set_title('%s')",yaoparfile); 
   pyk,swrite(format="y_parm_update('seeing',%f)",float(seeing));
   pyk,swrite(format="y_parm_update('loopgain',%f)",float(loop.gain));
@@ -532,7 +571,7 @@ func gui_update(void)
   pyk,swrite(format="y_parm_update('ymisreg',%f)",float(dm(1).misreg(2)));
   pyk,swrite(format="y_set_ndm(%d)",ndm);
   pyk,swrite(format="y_set_nwfs(%d)",nwfs);
-  usleep,100; // why do I have to do that for it to work ????
+  //  usleep,100; // why do I have to do that for it to work ????
   pyk,swrite(format="y_parm_update('sat_voltage',%f)",float(dm(1).maxvolt));
 /*  tyk,"set ndm "+swrite(format="%d",ndm);
   tyk,"set centg "+swrite(format="%d",wfs(1).centGainOpt);
@@ -573,11 +612,29 @@ func pyk_warning(msg)
 }
 
 
+func pyk_flush(void)
+{
+  pyk,"yo2py_flush";
+  after,1.,pyk_flush;
+}
 
 arg     = get_argv();
 if (numberof(arg)>=4) {
   yaoparfile = arg(4);
+  yaopardir = dirname(yaoparfile);
+  if (yaopardir==".") yaopardir=get_cwd();
+  yaoparfile = basename(yaoparfile);
   if (noneof(findfiles(yaoparfile))) error,"Can't find "+yaoparfile;
   //  aoread,yaoparfile;
+ } else {
+  yaoparfile="";
+  tmp = find_in_path("data/sh6x6.par",takefirst=1);
+  if (tmp==[]) find_in_path("example/sh6x6.par",takefirst=1);
+  if (tmp!=[]) yaopardir = dirname(tmp);
+  if (tmp==[]) find_in_path("../data/sh6x6.par",takefirst=1);
+  if (tmp==[]) find_in_path("../example/sh6x6.par",takefirst=1);
+  if (tmp!=[]) yaopardir = dirname(tmp);
+  else yaopardir=get_cwd();
  }
 
+pyk_flush;

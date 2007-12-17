@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.2 2007-12-13 00:58:31 frigaut Exp $
+# $Id: yao.py,v 1.3 2007-12-17 20:21:04 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,15 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.2  2007-12-13 00:58:31  frigaut
+# Revision 1.3  2007-12-17 20:21:04  frigaut
+# - renamed yaogtk -> yao (and updated Makefile accordingly)
+# - gotten rid of usleep() calls in yorick -> python communication. Instead,
+# am using a pyk_flush, which send a flush request to python every seconds.
+# This is still a hack to turn around the BLOCK bug in python, but at least
+# it does not use usleep (cleaner hack?).
+# - added debug python <> yorick entry in GUI help menu (set/unset pyk_debug)
+#
+# Revision 1.2  2007/12/13 00:58:31  frigaut
 # added license and header
 #
 #
@@ -45,8 +53,8 @@ from time import *
 class yao:
    
    def destroy(self, wdg, data=None):
-      self.py2yo('quit')
-      gtk.main_quit()
+      self.py2yo('yaopy_quit')
+#      gtk.main_quit()
       
    def __init__(self,yaotop):
       self.yaotop = yaotop
@@ -55,6 +63,7 @@ class yao:
       # callbacks and glade UI
       dic = {
          'on_about_activate': self.on_about_activate,
+         'on_debug_toggled': self.on_debug_toggled,
          'on_quit1_activate' : self.on_quit1_activate,
          'on_show_wfss_and_dms_toggled' : self.on_show_wfss_and_dms_toggled,
          'on_drawingarea1_map_event' : self.on_drawingarea1_map_event,
@@ -137,10 +146,12 @@ class yao:
       fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
       
       # add stdin to the event loop (yorick input pipe by spawn)
-      gobject.io_add_watch(sys.stdin,gobject.IO_IN|gobject.IO_HUP,self.yo2py,None)
+      gobject.io_add_watch(sys.stdin,gobject.IO_IN | gobject.IO_HUP,self.yo2py)
 
       self.wfs_panel_set_sensitivity(0,0)
       #self.glade.get_widget('wfs_and_dms').hide()
+      self.yaopardir = "/"
+      self.pyk_debug = 0
       
       # run
       gtk.main()
@@ -149,11 +160,19 @@ class yao:
    dispflag = 1
    init = 0
    buffer = gtk.TextBuffer()
-   
+
    def on_about_activate(self,wdg):
       dialog = self.glade.get_widget('aboutdialog')
       dialog.run()
       dialog.hide()
+
+   def on_debug_toggled(self,wdg):
+      if (wdg.get_active()):
+         self.pyk_debug=1
+         self.py2yo("pyk_set pyk_debug 1")
+      else:
+         self.pyk_debug=0
+         self.py2yo("pyk_set pyk_debug 0")
 
    def on_show_wfss_and_dms_toggled(self,wdg):
       show_state = self.glade.get_widget('show_wfss_and_dms').get_active()
@@ -193,7 +212,7 @@ class yao:
       # set main window yaoparfile entry to the new name
       #self.glade.get_widget('yaoparfile').set_text(self.yaoparfile)
       # save file
-      f = open(self.yaoparfile,'w')
+      f = open(self.yaopardir+'/'+self.yaoparfile,'w')
       f.write(params)
       f.close()
       # refresh editor window title
@@ -213,7 +232,7 @@ class yao:
       self.buffer = textarea.get_buffer()
       params=self.buffer.get_text(self.buffer.get_start_iter(),self.buffer.get_end_iter())
       # save the content in tmp.par
-      f = open(self.yaoparfile,'w')
+      f = open(self.yaopardir+'/'+self.yaoparfile,'w')
       f.write(params)
       f.close()
       # get new name
@@ -259,11 +278,14 @@ class yao:
       filter.add_pattern('*.par')
       filter.set_name('YAO parfiles')
       chooser.add_filter(filter)
+      chooser.set_current_folder(self.yaopardir)
       res = chooser.run()
       if res == gtk.RESPONSE_OK:
          self.yaoparfile=chooser.get_filename()
          self.yaoparfile=self.yaoparfile.split('/')[-1]
          self.glade.get_widget('yaoparfile').set_text(self.yaoparfile)
+         self.yaopardir = chooser.get_current_folder()
+         self.window.set_title(self.yaoparfile)
       chooser.destroy()
       self.glade.get_widget('edit').set_sensitive(1)
       self.glade.get_widget('aoread').set_sensitive(1)
@@ -277,13 +299,12 @@ class yao:
       self.glade.get_widget('wfss').set_sensitive(0)
       self.glade.get_widget('dms').set_sensitive(0)
       self.glade.get_widget('seeingframe').set_sensitive(0)
-      self.window.set_title(self.yaoparfile)
       self.glade.get_widget('aoread').grab_focus()
 
    def on_edit_clicked(self,wdg):
       self.editor.set_title(self.yaoparfile)
       self.editor.show()
-      f = open(self.yaoparfile,'r')
+      f = open(self.yaopardir+'/'+self.yaoparfile,'r')
       params = f.read()
       f.close()
       self.buffer.set_text(params)
@@ -294,8 +315,9 @@ class yao:
    def on_aoread_clicked(self,wdg):
       self.set_cursor_busy(1)
       yaoparfile=self.glade.get_widget('yaoparfile').get_text()
+      self.py2yo('pyk_set yaopardir "%s"' % self.yaopardir)
       self.py2yo('pyk_set yaoparfile "%s"' % yaoparfile)
-      self.py2yo('wrap_aoread \"'+yaoparfile+'\"')
+      self.py2yo('wrap_aoread')
       self.glade.get_widget('aoinit').set_sensitive(1)
       self.glade.get_widget('aoloop').set_sensitive(0)
       self.glade.get_widget('go').set_sensitive(0)
@@ -577,7 +599,7 @@ class yao:
       
    def on_quit1_activate(self,*args):
       # tell the ascam image server to quit (or not?)
-      self.py2yo('quit')
+      self.py2yo('yaopy_quit')
 #      raise SystemExit
    
    def on_drawingarea1_map_event(self,wdg,*args):   
@@ -601,7 +623,7 @@ class yao:
       # sends string command to yorick's eval
       sys.stdout.write(msg+'\n')
       sys.stdout.flush()
-   
+      
    def yo2py(self,cb_condition,*args):
       if cb_condition == gobject.IO_HUP:
          raise SystemExit, "lost pipe to yorick"
@@ -611,6 +633,9 @@ class yao:
          try:
             msg = sys.stdin.readline()
             msg = "self."+msg
+            #debug hack: write on stderr so that it is not processed by yorick
+            if (self.pyk_debug): 
+               sys.stderr.write("Python stdin:"+msg)
             exec(msg)
          except IOError, e:
             if e.errno == errno.EAGAIN:
