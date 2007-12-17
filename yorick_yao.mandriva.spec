@@ -13,7 +13,7 @@ Group: Applications/Engineering
 Packager: Francois Rigaut <frigaut@gemini.edu>
 Url: http://www.maumae.net/yorick/doc/plugins.php
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Requires: yorick = %{yorick_version} yorick_imutil >= 0.5 yorick_utils >= 1.0 yorick_usleep libfftw3
+Requires: yorick = %{yorick_version} yorick_imutil >= 0.5 yorick_utils >= 1.0 libfftw3
 
 
 %description
