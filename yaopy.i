@@ -3,12 +3,14 @@
  *
  * Main function to call the pygtk GUI to yao.
  * syntax: yorick -i yaopy.i [yaoparfile]
- * The environment variable YAOTOP has to point to the package top directory
- * 
+ *
+ * This plugin requires yao.py and yao.glade. These are looked for, but
+ * the path can be forced setting Y_PYTHON and Y_GLADE
+ *
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.3 2007-12-17 20:21:04 frigaut Exp $
+ * $Id: yaopy.i,v 1.4 2007-12-18 19:03:20 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +27,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.3  2007-12-17 20:21:04  frigaut
+ * Revision 1.4  2007-12-18 19:03:20  frigaut
+ * - reworked Y_PYTHON and search for yao.py
+ * - added Y_GLADE and path to yao.glade
+ * - now removes CVS directories in install of examples and doc
+ *
+ * Revision 1.3  2007/12/17 20:21:04  frigaut
  * - renamed yaogtk -> yao (and updated Makefile accordingly)
  * - gotten rid of usleep() calls in yorick -> python communication. Instead,
  * am using a pyk_flush, which send a flush request to python every seconds.
@@ -43,36 +50,45 @@
  *
  */
 
+// PATH to yao.py and yao.glade:
 require,"pathfun.i";
 
-Y_PYTHON = get_env("Y_PYTHON");
-if (noneof(Y_PYTHON)) {
-  Y_PYTHON = pathform([Y_SITE,get_path()]);
-  if (Y_SITES!=[]) Y_PYTHON = pathform([Y_PYTHON,Y_SITES]);
- }
+if (noneof(Y_PYTHON)) \
+  Y_PYTHON="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"python/");
+if (is_void(Y_GLADE)) \
+  Y_GLADE="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"glade/");
 
 // try to find yao.py
-tmppath = find_in_path("python/yao.py",takefirst=1,path=Y_PYTHON);
-if (is_void(tmppath)) tmppath = find_in_path("../python/yao.py",takefirst=1,path=Y_PYTHON);
-if (is_void(tmppath)) {
-  write,format="Can't find yao.py in %s nor in %s\n",
-    Y_PYTHON,pathform(dirname(pathsplit(Y_PYTHON)));
+path2py = find_in_path("yao.py",takefirst=1,path=Y_PYTHON);
+if (is_void(path2py)) {
+  // not found. bust out
+  write,format="Can't find yao.py in %s nor in %s\n",Y_PYTHON;
   error,"Aborting";
  }
-yaotop = dirname(dirname(tmppath));
-write,format=" Found yao.py in %s\n",dirname(tmppath);
+path2py = dirname(path2py);
+write,format=" Found yao.py in %s\n",path2py;
+
+// try to find yao.glade
+path2glade = find_in_path("yao.glade",takefirst=1,path=Y_GLADE);
+if (is_void(path2glade)) {
+  // not found. bust out
+  write,format="Can't find yao.glade in %s nor in %s\n",Y_GLADE;
+  error,"Aborting";
+ }
+path2glade = dirname(path2glade);
+write,format=" Found yao.glade in %s\n",path2glade;
 
 require,"pyk.i";
 require,"yao.i";
 
 yaopy=1; // used in yao.i to know if using pygtk GUI
 if (pyk_debug==[]) pyk_debug=0;
-sleep=200;
+//sleep=200;
 default_dpi=dpi=60;
 
 // spawned gtk interface
-python_exec = yaotop+"/python/yao.py";
-pyk_cmd=[python_exec,swrite(format="%s",yaotop)];
+python_exec = path2py+"/yao.py";
+pyk_cmd=[python_exec,swrite(format="%s",path2glade)];
 
 // span the python process, and hook to existing _tyk_proc (see pyk.i)
 _pyk_proc = spawn(pyk_cmd, _pyk_callback);

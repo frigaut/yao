@@ -84,6 +84,8 @@ install::
 	cp -p yao $(DEST_Y_BINDIR)/
 	cp -pr examples $(DEST_Y_SITE)/share/yao/
 	cp -pr doc $(DEST_Y_SITE)/share/yao/
+	-rm -rf $(DEST_Y_SITE)/share/yao/examples/CVS
+	-rm -rf $(DEST_Y_SITE)/share/yao/doc/CVS
 #	cp -p doc/yao.1.gz /usr/local/man/man1/
 
 uninstall::

@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.3 2007-12-17 20:21:04 frigaut Exp $
+# $Id: yao.py,v 1.4 2007-12-18 19:03:20 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,12 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.3  2007-12-17 20:21:04  frigaut
+# Revision 1.4  2007-12-18 19:03:20  frigaut
+# - reworked Y_PYTHON and search for yao.py
+# - added Y_GLADE and path to yao.glade
+# - now removes CVS directories in install of examples and doc
+#
+# Revision 1.3  2007/12/17 20:21:04  frigaut
 # - renamed yaogtk -> yao (and updated Makefile accordingly)
 # - gotten rid of usleep() calls in yorick -> python communication. Instead,
 # am using a pyk_flush, which send a flush request to python every seconds.
@@ -56,8 +61,8 @@ class yao:
       self.py2yo('yaopy_quit')
 #      gtk.main_quit()
       
-   def __init__(self,yaotop):
-      self.yaotop = yaotop
+   def __init__(self,path2glade):
+      self.path2glade = path2glade
       self.usercmd = 'STOP'
       
       # callbacks and glade UI
@@ -115,11 +120,9 @@ class yao:
          'on_editor_save_activate' : self.on_editor_save_activate,
          'on_editor_save_as_activate' : self.on_editor_save_as_activate,
          'on_editor_close_activate' : self.on_editor_close_activate,
-#         'on_save_warning_dialog_response' : self.on_save_warning_dialog_response,
          }
       
-#      self.yaotop = os.environ['YAOTOP']
-      self.glade = gtk.glade.XML(os.path.join(self.yaotop,'glade/yao.glade')) 
+      self.glade = gtk.glade.XML(self.path2glade+'/yao.glade') 
       self.window = self.glade.get_widget('window1')
       if (self.window):
          self.window.connect('destroy', self.destroy)
@@ -655,8 +658,8 @@ class yao:
          
 
 if len(sys.argv) != 2:
-   print 'Usage: yao.py path_to_yao'
+   print 'Usage: yao.py path_to_glade'
    raise SystemExit
 
-yaotop = str(sys.argv[1])
-top = yao(yaotop)
+path2glade = str(sys.argv[1])
+top = yao(path2glade)
