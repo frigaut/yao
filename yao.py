@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.4 2007-12-18 19:03:20 frigaut Exp $
+# $Id: yao.py,v 1.5 2007-12-19 13:18:59 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,12 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.4  2007-12-18 19:03:20  frigaut
+# Revision 1.5  2007-12-19 13:18:59  frigaut
+# - explicit message when screens are not present/found
+# - more messages in statusbar
+# - added statusbar1 (that can hide/show) for strehl status header
+#
+# Revision 1.4  2007/12/18 19:03:20  frigaut
 # - reworked Y_PYTHON and search for yao.py
 # - added Y_GLADE and path to yao.glade
 # - now removes CVS directories in install of examples and doc
@@ -133,6 +138,7 @@ class yao:
          self.editor.connect('delete_event', self.on_editor_close_activate)
 
       self.statusbar = self.glade.get_widget('statusbar')
+      self.statusbar1 = self.glade.get_widget('statusbar1')
       self.progressbar = self.glade.get_widget('progressbar')
 
       self.aoinit_popup_menu = self.glade.get_widget('aoinit_popup_menu')

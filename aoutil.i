@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.1 2007-12-12 23:29:12 frigaut Exp $
+ * $Id: aoutil.i,v 1.2 2007-12-19 13:18:59 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,8 +22,13 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.1  2007-12-12 23:29:12  frigaut
- * Initial revision
+ * Revision 1.2  2007-12-19 13:18:59  frigaut
+ * - explicit message when screens are not present/found
+ * - more messages in statusbar
+ * - added statusbar1 (that can hide/show) for strehl status header
+ *
+ * Revision 1.1.1.1  2007/12/12 23:29:12  frigaut
+ * Initial Import - yorick-yao
  *
  * Revision 1.9  2004/10/18 21:30:43  frigaut
  * added things relative to inter actuator coupling (MakePztIF),
@@ -312,8 +317,11 @@ func checkParameters(void)
   ftmp = *atm.screen;
   for (i=1;i<=numberof(ftmp);i++) {
     if (!open(ftmp(i),"r",1)) { // file does not exist
-      msg = swrite(format="%s not found!\\nEdit the par file and change the "+
-                   "path,\\nand/or run \"Phase Screen -> Create phase Screen\"",ftmp(i));
+      msg = swrite(format="Phase screen %s not found!\\n"+
+                   "You need to generate phase screens for yao.\\n"+
+                   "Go to \"Phase Screen -> Create phase Screen\"\\n"+
+                   "If you already have phase screens, you can modify\\n"+
+                   "the path in the parfile atm.screen definition",ftmp(i));                
       if (_pyk_proc) pyk,"set_cursor_busy(0)";
       pyk_warning,msg;
       msg = swrite(format="\nWARNING: %s not found!\nEdit the par file and change the "+

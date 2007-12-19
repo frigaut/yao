@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.3 2007-12-13 16:06:58 frigaut Exp $
+ * $Id: yao.i,v 1.4 2007-12-19 13:18:59 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -141,8 +141,9 @@ require,"plot.i";  // in yorick-yutils
 
 func null (arg,..) { return 0; }
 
-pyk_error = pyk_info = pyk_warning = null;
-gui_message = gui_progressbar_frac = gui_progressbar_text = null;  // by default. can be redefined by gui routine
+pyk_error=pyk_info=pyk_warning=null;
+gui_message=gui_message1=gui_progressbar_frac=gui_progressbar_text=null;  // by default. can be redefined by gui routine
+gui_show_statusbar1=gui_hide_statusbar1=null;
 
 //----------------------------------------------------
 func compDmShape(nm,command,extrap=)
@@ -2049,7 +2050,7 @@ func aoread(parfile)
   // PARAMETER CHECKS. SETS SOME DEFAULTS
   //=====================================
   checkParameters;
-
+  gui_message,"Next step: click on aoinit";
 }
 
 //----------------------------------------------------
@@ -2209,6 +2210,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //==================================
 
   if (sim.verbose>=1) {write,"\n> INITIALIZING PHASE SCREENS";}
+  gui_message,"Initializing phase screens";
   getTurbPhaseInit;
 
   //==================================
@@ -2216,6 +2218,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //==================================
 
   if (sim.verbose>=1) {write,"\n> INITIALIZING SENSOR GEOMETRY";}
+  gui_message,"Initializing sensor geometry";
 
   for (n=1;n<=nwfs;n++) {
 
@@ -2311,6 +2314,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //==================================
 
   if (sim.verbose>=1) {write,"\n> Initializing DM influence functions";}
+  gui_message,"Initializing DMs";
 
   // loop over DMs:
   for (n=1;n<=ndm;n++) {
@@ -2425,6 +2429,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
     
     if (sim.verbose >= 1) {write,"\n> DOING INTERACTION MATRIX";}
+    gui_message,"Doing interaction matrix";
     iMat = array(double,sum(wfs._nmes),sum(dm._nact));
     cMat = transpose(iMat);
     
@@ -2626,6 +2631,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE MODAL GAINS:
 
   if (sim.verbose>=1) {write,"\n> INITIALIZING MODAL GAINS";}
+  gui_message,"Initializing modal gains";
 
   modalgain = [];
 
@@ -2653,6 +2659,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE COMMAND MATRIX:
 
   if (sim.verbose>=1) {write,"\n> INTERACTION AND COMMAND MATRICES";}
+  gui_message,"Initializing control matrix";
 
   if ((fileExist(mat.file)) && (forcemat != 1)) {
 
@@ -2715,6 +2722,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     // find which DM is the aniso DM:
     nmaniso = where(dm.type == "aniso");
     if (numberof(nmaniso) != 1) {
+      pyk_error,"there can be only one aniso DM !";
       error,"there can be only one aniso DM !";
     }
 
@@ -2723,10 +2731,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     nmlow = where( (dm(w0).type == "stackarray") | (dm(w0).type == "bimorph") |
                    (dm(w0).type == "zernike") );
     if (numberof(nmlow) == 0) {
+      pyk_error,"I can not find a DM at altitude 0 to produce the lower "+
+        "part of the anisoplanatism modes !";
       error,"I can not find a DM at altitude 0 to produce the lower "+
         "part of the anisoplanatism modes !";
     }
     if (numberof(nmlow) > 1) {
+      pyk_warning,swrite(format="Weird. There are %d high-order DMs at altitude=0 (look at console)",numberof(nmlow));
       write,format="Weird. There are %d high-order DMs at altitude=0:",numberof(nmlow);
       for (i=1;i<=numberof(nmlow);i++) {
         write,format="DM #%d:",nmlow(i);
@@ -2745,10 +2756,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     nmhigh = where( (dm(wn0).type == "stackarray") | (dm(wn0).type == "bimorph") |
                     (dm(wn0).type == "zernike") );
     if (numberof(nmhigh) == 0) {
+      pyk_error,"I can not find a DM at the requested altitude to produce the higher "+
+        "part of the anisoplanatism modes !";
       error,"I can not find a DM at the requested altitude to produce the higher "+
         "part of the anisoplanatism modes !";
     }
     if (numberof(nmhigh) > 1) {
+      pyk_warning,swrite(format="Weird. There are %d high-order DMs at altitude %.0f (look at console)",
+                         numberof(nmhigh),dm(nmaniso).alt);
       write,format="Weird. There are %d high-order DMs at altitude %.0f:",
         numberof(nmhigh),dm(nmaniso).alt;
       for (i=1;i<=numberof(nmhigh);i++) {
@@ -2813,6 +2828,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   write,f,format="D/r0 (500nm) = %.1f; %d iterations\n",atm.dr0at05mic/
     cos(gs.zenithangle*dtor)^0.6,loop.niter;
   close,f;
+
+  gui_message,"aoinit done: click on aoloop";
   
 }
 
@@ -2894,6 +2911,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
   controlscreenFlag = controlscreen;
   nographinitFlag = nographinit;
 
+  gui_message,"Initializing loop";
 
   // Initialize displays:
   if (!is_set(disp)) {disp = 0;}
@@ -3038,6 +3056,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
     require,"tyk.i";
     tyk_source,"/Users/frigaut/yorick-2.1/contrib/yao/yao.tcl";
   }
+  gui_message,"Initializing loop...done. \"go\" to start, \"pause\" to pause";
 }
 
 func go(nshot)
@@ -3046,6 +3065,8 @@ func go(nshot)
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
   extern cbmes, cbcom, cberr;
 
+  gui_show_statusbar1;
+  
   if (nshot!=[]) nshots = nshot;
   disp = dispFlag;
   savecb = savecbFlag;
@@ -3293,8 +3314,14 @@ func go(nshot)
                  min(imav(max,max,,0))/sairy/(niterok+1e-5),
                  avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
     write,msg;
+    header = "Iter#  Inst:Max.S/Min.S/Avg.S  Avg:Max.S/Min.S/Avg.S  Time Left";
+    msg = swrite(format="%5i         %5.3f %5.3f %5.3f        %5.3f %5.3f %5.3f  %s",
+                 i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
+                 avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
+                 min(imav(max,max,,0))/sairy/(niterok+1e-5),
+                 avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
+    gui_message1,header;
     gui_message,msg;
-      
   }
   time(8) += tac();
 
@@ -3302,11 +3329,15 @@ func go(nshot)
 
 //  if (loopCounter<loop.niter) after, 0.001, go;
   if (loopCounter<loop.niter) set_idler, go;
-  else after_loop;
+  else {
+    gui_hide_statusbar1;
+    after_loop;
+  }
 }
 
 func stop {
   write,format="Stopping @ iter=%d\n",loopCounter;
+  gui_hide_statusbar1;
   set_idler;
 }
 

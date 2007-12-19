@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: turbulence.i,v 1.1 2007-12-12 23:29:13 frigaut Exp $
+ * $Id: turbulence.i,v 1.2 2007-12-19 13:18:59 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,11 +22,20 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: turbulence.i,v $
- * Revision 1.1  2007-12-12 23:29:13  frigaut
- * Initial revision
+ * Revision 1.2  2007-12-19 13:18:59  frigaut
+ * - explicit message when screens are not present/found
+ * - more messages in statusbar
+ * - added statusbar1 (that can hide/show) for strehl status header
+ *
+ * Revision 1.1.1.1  2007/12/12 23:29:13  frigaut
+ * Initial Import - yorick-yao
  *
  *
  */
+
+// define function names. Will be redefined by GUI routine if needed:
+func null (arg,..) { return 0; }
+pyk_error=pyk_info=pyk_warning=gui_message=gui_progressbar_frac=gui_progressbar_text=null; 
 
 //+++++++++++++++++++++++++++
 
@@ -79,18 +88,20 @@ func CreatePhaseScreens(dimx,dimy,l0=,prefix=,nalias=)
 
 {
   if (is_void(l0)) l0 = 0.;
-  
+  gui_progressbar_text,"Generating the screen power spectrum";
   nscreen = dimx/dimy*2;
   pscreen = generatePhaseWithL0(dimx,l0,nalias=nalias);
+  gui_progressbar_frac,0.25;
 
   print,"Normalizing phase screens";
-
-  off = [1,5];
+  gui_progressbar_text,"Normalizing phase screens";
+  off = [1,5]; // spatial offset for structure function normalization
   psfunc = array(float,off(2));
   for (i=off(1);i<=off(2);i++ ) {
     fsx     = avg((pscreen(1:-i,,)-pscreen(i+1:,,))^2.);
     fsy     = avg((pscreen(,1:-i,)-pscreen(,i+1:,))^2.);
     psfunc(i)      = sqrt((fsx+fsy)/2.);
+    gui_progressbar_frac,0.25+0.6*(i-off(1))/(off(2)-off(1));
   }
   theo = sqrt(6.88*indgen(off(2))^1.66);
 
@@ -101,18 +112,29 @@ func CreatePhaseScreens(dimx,dimy,l0=,prefix=,nalias=)
 
   pscreen = pscreen/nfact;
   
+
   print,"Sectionning and saving phase screens";
+  gui_progressbar_text,"Sectionning and saving phase screens";
   pscreen = reform(pscreen,[3,dimx,dimy,nscreen]);
   if (!is_void(prefix)) {
     for (i=1;i<=nscreen;i++) {
       fname = prefix+((nscreen==1) ? "":swrite(i,format="%i"))+".fits";
       fitsWrite,fname,pscreen(,,i);
+      gui_progressbar_text,swrite(format="Saving %s",fname);
+      gui_progressbar_frac,0.85+0.15*i/nscreen;
     }
   }
 
+  after,4,clean_progressbar;
   return pscreen;
 }
 createPhaseScreens = CreatePhaseScreens;
+
+func clean_progressbar(void)
+{
+  gui_progressbar_text,"";
+  gui_progressbar_frac,0.;
+}
 
 //+++++++++++++++++++++++++++
 
@@ -160,7 +182,7 @@ func generateVKspectrum(dim,k0,nalias=)
 {
   if (is_void(nalias)) nalias = 0;
   for (i=1;i<=2*nalias+1;i++) {write,format="%s","#";}
-  write,format="%s\n"," < - number or row to do";
+  //  write,format="%s\n"," < - number or row to do";
   
   res = array(float,[2,dim,dim]);
   for (i=-nalias;i<=nalias;i++) {
@@ -222,6 +244,7 @@ func generatePhaseWithL0(dim,l0,nalias=)
 {
   if (l0 == 0.) { k0=0.0f; } else { k0 = float(dim)/l0; }
   randomize;
+  gui_progressbar_frac,0.01;
   print,"Creating arrays";
   print,"Creating amplitude";
   //  tmp = clip(float(sqrt(dist(dim)^2.f+k0^2.)),1e-8,);
@@ -229,6 +252,7 @@ func generatePhaseWithL0(dim,l0,nalias=)
   //  amp = eclat(generateVKspectrum(dim,clip(2*dim,,2048),k0));
   //  amp = dim*eclat(generateVKspectrum(dim,1024,k0));
   amp = dim*generateVKspectrum(dim,k0,nalias=nalias);
+  gui_progressbar_frac,0.10;
   amp = float(amp); sum(amp);
   // normalized so that the structure function is correct for r0 = 1 pixel
   tmp = [];
@@ -241,6 +265,7 @@ func generatePhaseWithL0(dim,l0,nalias=)
   im(1,1) = 0.0f;
   print,"Doing FFT...";
   phaout = fftVE(re,im,1);
+  gui_progressbar_frac,0.20;
   re = im = [];
   return phaout;
 }

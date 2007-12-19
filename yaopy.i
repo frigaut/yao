@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.4 2007-12-18 19:03:20 frigaut Exp $
+ * $Id: yaopy.i,v 1.5 2007-12-19 13:18:59 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.4  2007-12-18 19:03:20  frigaut
+ * Revision 1.5  2007-12-19 13:18:59  frigaut
+ * - explicit message when screens are not present/found
+ * - more messages in statusbar
+ * - added statusbar1 (that can hide/show) for strehl status header
+ *
+ * Revision 1.4  2007/12/18 19:03:20  frigaut
  * - reworked Y_PYTHON and search for yao.py
  * - added Y_GLADE and path to yao.glade
  * - now removes CVS directories in install of examples and doc
@@ -119,9 +124,32 @@ func yao_win_init(parent_id)
 
 func wrap_create_phase_screens(void)
 {
-  CreatePhaseScreens,2048,256,prefix="screen";
-  write,"DONE";
+  if (atm) prefix=dirname((*atm.screen)(1));
+  else prefix=Y_USER+"data";
+
+  if (catch(0x02)) {
+    pyk_error,swrite(format="Can not create %s. Permission problem?",prefix);
+    clean_progressbar;
+    pyk,"set_cursor_busy(0)";
+    return;
+    //    error,swrite(format="Can not create %s. Permission problem?",prefix);
+  }
+  mkdirp,prefix;
+
+  l=2048;
+  w=256;
+  gui_message,swrite(format="Creating phase screens %dx%d in %s",l,w,prefix);
+  write,format="Creating phase screens %dx%d in %s",l,w,prefix;
+  CreatePhaseScreens,2048,256,prefix=prefix+"/screen";
+  gui_message,swrite(format="Done: Phase screens created in %s",prefix);
+  write,format="Done: Phase screens created in %s\n",prefix;
   pyk,"set_cursor_busy(0)";
+}
+
+func clean_progressbar(void)
+{
+  gui_progressbar_text,"";
+  gui_progressbar_frac,0.;
 }
 
 func gui_progressbar_frac(frac)
@@ -137,6 +165,28 @@ func gui_progressbar_text(text)
 func gui_message(msg)
 {
   pyk,swrite(format="statusbar.push(1,'%s')",msg);
+}
+
+func gui_message1(msg)
+{
+  pyk,swrite(format="statusbar1.push(1,'%s')",msg);
+}
+
+statusbar1_visible=0;
+func gui_show_statusbar1(void)
+{
+  extern statusbar1_visible;
+  if (statusbar1_visible) return;
+  pyk,"statusbar1.show()";
+  statusbar1_visible=1;
+}
+
+func gui_hide_statusbar1(void)
+{
+  extern statusbar1_visible;
+  if (!statusbar1_visible) return;
+  pyk,"statusbar1.hide()";
+  statusbar1_visible=0;
 }
 
 func okvec2str(okvec) {
