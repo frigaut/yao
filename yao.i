@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.6 2007-12-19 19:44:19 frigaut Exp $
+ * $Id: yao.i,v 1.7 2007-12-19 20:00:08 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,11 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.6  2007-12-19 19:44:19  frigaut
+ * Revision 1.7  2007-12-19 20:00:08  frigaut
+ * - statusbar updated to indicates where the results are saved when done
+ * - bumped to 4.2.1
+ *
+ * Revision 1.6  2007/12/19 19:44:19  frigaut
  * - solved a number of bugs and inconsistencies between regular yao call and
  *   GUI calls.
  * - fixed misregistration for curvature systems
@@ -138,7 +142,7 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.0";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.1";
 aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec19";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
@@ -160,7 +164,7 @@ require,"plot.i";  // in yorick-yutils
 func null (arg,..) { return 0; }
 pyk_error=pyk_info=pyk_warning=null;
 gui_message=gui_message1=gui_progressbar_frac=gui_progressbar_text=null;  // by default. can be redefined by gui routine
-clean_progressbar=gui_show_statusbar1=gui_hide_statusbar1=null;
+clean_progressbar=gui_show_statusbar1=gui_hide_statusbar1=pyk_flush=null;
 YAO_SAVEPATH=get_cwd();
 // all above is designed to be overwritten by appropriate values in yaopy.i
 // when using yao through the GUI
@@ -3420,6 +3424,9 @@ func after_loop(void)
   extern strehl,e50,fwhm;
 
   savecb = savecbFlag;
+
+  gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...",YAO_SAVEPATH+parprefix);
+  write,format="Dumping results in %s.res (ps,imav.fits)...\n",YAO_SAVEPATH+parprefix;
   
   time = (time - roll(time,1))/loopCounter;
   timeComments = ["WF sensing","Reset and measurement history handling","cMat multiplication",\
@@ -3536,6 +3543,8 @@ func after_loop(void)
   }
   plt,sim.name,0.01,0.01,tosys=0;
   hcp_finish;
+  
+  gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...DONE",YAO_SAVEPATH+parprefix);
   
   if (curw != -1) {window,curw;}
   //  if (is_set(disp)) {window,style="boxed.gs";}
