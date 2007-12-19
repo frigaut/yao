@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.c,v 1.2 2007-12-13 00:58:31 frigaut Exp $
+ * $Id: yao_fast.c,v 1.3 2007-12-19 14:02:08 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -21,7 +21,10 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.c,v $
- * Revision 1.2  2007-12-13 00:58:31  frigaut
+ * Revision 1.3  2007-12-19 14:02:08  frigaut
+ * - gotten rid of annoying compilation warning (clean)
+ *
+ * Revision 1.2  2007/12/13 00:58:31  frigaut
  * added license and header
  *
  *
@@ -30,6 +33,8 @@
 
 
 
+#include <stdlib.h>
+#include <math.h>
 #include <complex.h>
 #include <fftw3.h>
 
@@ -52,7 +57,7 @@ int _export_wisdom(char *wisdom_file)
   if((fp = fopen(wisdom_file, "w"))==NULL) {
     printf("Error creating wisdom file\"%s\"\n",wisdom_file);
     fflush(stdout);
-    exit(0);
+    return(0);
   }
 
   fftwf_export_wisdom_to_file(fp);
@@ -158,7 +163,8 @@ int _calcPSFVE(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
   for ( k=0; k<nplans; k++ ) {
 
     koff = k*n*n;
-    ptr  = &(in[0]);
+//    ptr  = &(in[0]);
+    ptr  = (void *)in;
 
     for ( i=0; i<n*n; i++ ) {
       if ( pupil[i] != 0.f ) {
@@ -175,7 +181,8 @@ int _calcPSFVE(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
 
     fftwf_execute(p); /* repeat as needed */
 
-    ptr = &(out[0]);
+//    ptr = &(out[0]);
+    ptr  = (void *)out;
     for ( i = 0; i < n*n; i++ ) {
       image[koff+i] = ( *(ptr) * *(ptr) +
 			*(ptr+1) * *(ptr+1) );
@@ -223,7 +230,7 @@ int _fftVE(float *rp,
   }
 
   /* fill input */
-  ptr  = &(in[0]);
+  ptr  = (void *)in;
 
   for ( i=0; i<n*n; i++ ) {
     *(ptr)   = rp[i];
@@ -235,7 +242,7 @@ int _fftVE(float *rp,
 
   fftwf_execute(p); /* repeat as needed */
 
-  ptr = &(out[0]);
+  ptr = (void *)out;
   for ( i = 0; i < n*n; i++ ) {
     rp[i] = *(ptr);
     ip[i] = *(ptr+1);
@@ -427,7 +434,7 @@ int _shwfs(float *pupil,      // input pupil
   if (initkernels == 1) {
     // Transform kernels, store and return for future use
     for ( l=0 ; l<nsubs ; l++ ) {
-      ptr = &(A[0]);
+      ptr = (void *)A;
       for ( i = 0; i < n; i++ ) {
 	*(ptr) = kernels[i+l*n];
 	*(ptr+1) = 0.0f;
@@ -435,7 +442,7 @@ int _shwfs(float *pupil,      // input pupil
       }
       fftwf_execute(p); /* repeat as needed */
 
-      ptr = &(K[0]);
+      ptr = (void *)K;
       for ( i = 0; i < n; i++ ) {
 	kerfftr[i+l*n] = *(ptr);
 	kerffti[i+l*n] = *(ptr+1);
@@ -446,7 +453,7 @@ int _shwfs(float *pupil,      // input pupil
 
   if (kernconv == 1) {
     // Transform kernel
-    ptr = &(A[0]);
+    ptr = (void *)A;
     for ( i = 0; i < n; i++ ) {
       *(ptr)   = kernel[i];
       *(ptr+1) = 0.0f;
@@ -464,18 +471,18 @@ int _shwfs(float *pupil,      // input pupil
   for ( l=0 ; l<nsubs ; l++ ) {
 
     // reset A and result
-    ptr = &(A[0]);
+    ptr = (void *)A;
     for ( i=0; i<n ; i++ ) {	
       *(ptr)   = 0.0f; *(ptr+1) = 0.0f; ptr +=2;
     }
-    ptr = &(result[0]);
+    ptr = (void *)result;
     for ( i=0; i<n ; i++ ) {	
       *(ptr)   = 0.0f; *(ptr+1) = 0.0f; ptr +=2;
     }
 
     koff = istart[l] + jstart[l]*dimx;
 
-    ptr = &(A[0]);
+    ptr = (void *)A;
     for ( j=0; j<ny ; j++ ) {
       for ( i=0; i<nx ; i++ ) {
 
@@ -488,7 +495,7 @@ int _shwfs(float *pupil,      // input pupil
     // Carry out a Forward 2d FFT transform, check for errors.
     fftwf_execute(p); /* repeat as needed */
 
-    ptr = &(result[0]);
+    ptr = (void *)result;
     for ( i = 0; i < n; i++ ) {
       simage[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
       ptr +=2;
@@ -496,7 +503,7 @@ int _shwfs(float *pupil,      // input pupil
 
     if (kernconv == 1) {
       // Transform simage
-      ptr = &(A[0]);
+      ptr = (void *)A;
       for ( i = 0; i < n; i++ ) {
 	*(ptr)   = simage[i]; 
 	*(ptr+1) = 0.0f;
@@ -505,9 +512,9 @@ int _shwfs(float *pupil,      // input pupil
       fftwf_execute(p); /* repeat as needed */
 
       // multiply by kernel transform:
-      ptr  = &(K[0]);
-      ptr1 = &(A[0]);
-      ptr2 = &(result[0]);
+      ptr  = (void *)K;
+      ptr1 = (void *)A;
+      ptr2 = (void *)result;
       for ( i = 0; i < n; i++ ) {
 	// this is FFT(kernel) * FFT(kernels)
 	krp = *(ptr)*kerfftr[i+l*n]- *(ptr+1)*kerffti[i+l*n];
@@ -520,7 +527,7 @@ int _shwfs(float *pupil,      // input pupil
       // Transform back:
       fftwf_execute(p1); /* repeat as needed */
 
-      ptr = &(result[0]);
+      ptr = (void *)result;
       for ( i = 0; i < n; i++ ) {
 	simage[i] = ( *(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
 	ptr +=2;
@@ -846,7 +853,7 @@ int _cwfs (float *pupil,      // input pupil
 
   // intermediate FFT, to find intermediate complex amplitude
   // fill A
-  ptr = &(A[0]);
+  ptr = (void *)A;
   for ( i=0; i<n ; i++ ) {
     if (pupil[i] != 0.0f) {
       *(ptr)   = pupil[i]*cos(phasescale*(phase[i]+phaseoffset[i]));
@@ -863,8 +870,8 @@ int _cwfs (float *pupil,      // input pupil
   fftwf_execute(p); /* repeat as needed */
 
   // image #1:
-  ptr = &(A[0]);
-  ptr1 = &(B[0]);
+  ptr = (void *)A;
+  ptr1 = (void *)B;
   for ( i=0; i<n ; i++ ) {
     *(ptr)   = *(ptr1)*cxdef[i] - *(ptr1+1)*sxdef[i];
     *(ptr+1) = *(ptr1)*sxdef[i] + *(ptr1+1)*cxdef[i];
@@ -873,15 +880,15 @@ int _cwfs (float *pupil,      // input pupil
 
   fftwf_execute(p1); /* repeat as needed */
 
-  ptr = &(result[0]);
+  ptr = (void *)result;
   for ( i=0; i<n; i++ ) {
     fimage1[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
     ptr += 2;
   }
 
   // image #2:
-  ptr = &(A[0]);
-  ptr1 = &(B[0]);
+  ptr = (void *)A;
+  ptr1 = (void *)B;
   for ( i=0; i<n ; i++ ) {
     *(ptr)   = *(ptr1)*cxdef[i]   + *(ptr1+1)*sxdef[i];
     *(ptr+1) = *(ptr1+1)*cxdef[i] - *(ptr1)*sxdef[i];
@@ -890,7 +897,7 @@ int _cwfs (float *pupil,      // input pupil
 
   fftwf_execute(p1); /* repeat as needed */
 
-  ptr = &(result[0]);
+  ptr = (void *)result;
   for ( i=0; i<n; i++ ) {
     fimage2[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
     ptr += 2;
