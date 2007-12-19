@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.5 2007-12-19 13:18:59 frigaut Exp $
+ * $Id: yaopy.i,v 1.6 2007-12-19 15:45:32 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,14 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.5  2007-12-19 13:18:59  frigaut
+ * Revision 1.6  2007-12-19 15:45:32  frigaut
+ * - implemented yao.conf which defines the YAO_SAVEPATH directory where
+ * all temporary files and result files will be saved
+ * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
+ * - bumped version to 4.2.0
+ * - slight changes to GUI (edit conf file)
+ *
+ * Revision 1.5  2007/12/19 13:18:59  frigaut
  * - explicit message when screens are not present/found
  * - more messages in statusbar
  * - added statusbar1 (that can hide/show) for strehl status header
@@ -62,6 +69,8 @@ if (noneof(Y_PYTHON)) \
   Y_PYTHON="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"python/");
 if (is_void(Y_GLADE)) \
   Y_GLADE="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"glade/");
+if (is_void(Y_CONF)) \
+  Y_CONF="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"conf/");
 
 // try to find yao.py
 path2py = find_in_path("yao.py",takefirst=1,path=Y_PYTHON);
@@ -86,6 +95,17 @@ write,format=" Found yao.glade in %s\n",path2glade;
 require,"pyk.i";
 require,"yao.i";
 
+// set default save path
+YAO_SAVEPATH=Y_USER+"yao/";
+// try to find yao.conf
+path2conf = find_in_path("yao.conf",takefirst=1,path=Y_CONF);
+if (!is_void(path2conf)) {
+  path2conf = dirname(path2conf)+"/";
+  write,format=" Found and included yao.conf in %s\n",path2conf;
+  require,path2conf+"yao.conf";
+ }
+
+
 yaopy=1; // used in yao.i to know if using pygtk GUI
 if (pyk_debug==[]) pyk_debug=0;
 //sleep=200;
@@ -98,22 +118,40 @@ pyk_cmd=[python_exec,swrite(format="%s",path2glade)];
 // span the python process, and hook to existing _tyk_proc (see pyk.i)
 _pyk_proc = spawn(pyk_cmd, _pyk_callback);
 
-/*
-  func yaopy_after_error(void)
-{
-  if (is_void(_pyk_proc)) {
-    write,"FATAL: Lost communication with python front end";
-    quit;
-  }
-}
-after_error = yaopy_after_error;
-*/
-
 func yaopy_quit(void)
 {
   pyk,"gtk.main_quit()";
   write,"\n*** Python interface killed, quitting ***";
   quit;
+}
+
+func read_conf(void)
+{
+  include,path2conf+"yao.conf",1;
+  mkdirp,YAO_SAVEPATH;
+}
+
+func save_conf(void)
+{
+  extern path2conf;
+  if (is_void(path2conf)) path2conf=Y_USER;
+  
+  if (catch(0x02)) {
+    pyk_error,swrite(format="Can not create %syao.conf. Permission problem?",path2conf);
+    return;
+  }
+  f=open(path2conf+"yao.conf","w");
+  write,f,"/* yao.conf";
+  write,f," * this file is included by yaopy.i";
+  write,f," * definition of the path and possibly other variables";
+  write,f," * e.g. pyk_debug=1";
+  write,f," */";
+  //  write,f,"extern YAO_SAVEPATH;\n";
+  write,f,format="YAO_SAVEPATH=\"%s\";\n",YAO_SAVEPATH;
+  close,f;
+  write,format="Configuration saved in %syao.conf\n",path2conf;
+  gui_message,swrite(format="Configuration saved in %syao.conf",path2conf);
+  mkdirp,YAO_SAVEPATH;
 }
 
 func yao_win_init(parent_id)
@@ -596,11 +634,19 @@ func gui_update(void)
 {
   extern dispImImav,okdm,okwfs;
 
-  pyk,swrite(format="pyk_debug = %d",pyk_debug)
+  pyk,swrite(format="pyk_debug = %d",pyk_debug);
+  pyk,swrite(format="glade.get_widget('debug').set_active(%d)",pyk_debug);
+
+  if (is_void(path2conf)) save_conf;
+  write,format="Results will be saved in %s\n",YAO_SAVEPATH;
+  gui_message,swrite(format="Results will be saved in %s",YAO_SAVEPATH);
   
-  if (yaoparfile!=[]) {
+  require,"string.i";
+  pyk,swrite(format="yuserdir = '%s'",streplace(Y_USER,strfind("~",Y_USER),get_env("HOME"))); 
+  pyk,swrite(format="yaopardir = '%s'",yaopardir); 
+    
+  if (strlen(yaoparfile)) {
     pyk,swrite(format="y_text_parm_update('yaoparfile','%s')",yaoparfile);
-    pyk,swrite(format="yaopardir = '%s'",yaopardir); 
     pyk,swrite(format="yaoparfile = '%s'",yaoparfile); 
   } else {
     pyk,"glade.get_widget('aoread').set_sensitive(0)";
@@ -695,10 +741,10 @@ if (numberof(arg)>=4) {
  } else {
   yaoparfile="";
   tmp = find_in_path("data/sh6x6.par",takefirst=1);
-  if (tmp==[]) find_in_path("example/sh6x6.par",takefirst=1);
+  if (tmp==[]) tmp=find_in_path("example/sh6x6.par",takefirst=1);
   if (tmp!=[]) yaopardir = dirname(tmp);
-  if (tmp==[]) find_in_path("../data/sh6x6.par",takefirst=1);
-  if (tmp==[]) find_in_path("../example/sh6x6.par",takefirst=1);
+  if (tmp==[]) tmp=find_in_path("../data/sh6x6.par",takefirst=1);
+  if (tmp==[]) tmp=find_in_path("../example/sh6x6.par",takefirst=1);
   if (tmp!=[]) yaopardir = dirname(tmp);
   else yaopardir=get_cwd();
  }

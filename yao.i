@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.4 2007-12-19 13:18:59 frigaut Exp $
+ * $Id: yao.i,v 1.5 2007-12-19 15:45:32 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,6 +23,15 @@
  * Initial release F.Rigaut, June 2002.
  * see Release notes in README
  * all documentation at http://www.maumae.net/yao/aosimul.html
+ *
+ * $Log: yao.i,v $
+ * Revision 1.5  2007-12-19 15:45:32  frigaut
+ * - implemented yao.conf which defines the YAO_SAVEPATH directory where
+ * all temporary files and result files will be saved
+ * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
+ * - bumped version to 4.2.0
+ * - slight changes to GUI (edit conf file)
+ *
  *
  * version 4.1.1: 2007dec13:
  *  - upgrade/update of Makefile
@@ -121,8 +130,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.1.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec13";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec19";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -139,11 +148,14 @@ require,"yao_util.i";
 require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
 
+// compatibility with GUI (yaopy.i)
 func null (arg,..) { return 0; }
-
 pyk_error=pyk_info=pyk_warning=null;
 gui_message=gui_message1=gui_progressbar_frac=gui_progressbar_text=null;  // by default. can be redefined by gui routine
 gui_show_statusbar1=gui_hide_statusbar1=null;
+YAO_SAVEPATH=get_cwd();
+// all above is designed to be overwritten by appropriate values in yaopy.i
+// when using yao through the GUI
 
 //----------------------------------------------------
 func compDmShape(nm,command,extrap=)
@@ -575,7 +587,7 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
   // reads out the amplitude mask for the subaperture:
   if (wfs(ns).submask) {
     // read the amplitude image
-    tmp = fitsRead(wfs(ns).submask);
+    tmp = fitsRead(YAO_SAVEPATH+wfs(ns).submask);
     // check that dims are OK:
     if (anyof(dimsof(tmp)!=[2,2^sdimpow2,2^sdimpow2])) {
       error,swrite(format="Bad dimensions for %s. Should be %d, found %d\n",
@@ -728,7 +740,7 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
 
     kall = [];
 
-    rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
+    rayfname = YAO_SAVEPATH+parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
       swrite(format="%d",long(gs.zenithangle))+".fits";
     isthere = fileExist(rayfname);
     fov    = quantumPixelSize*sdim;
@@ -1424,7 +1436,7 @@ func getTurbPhaseInit(skipReadPhaseScreens=)
       if (sim.verbose) {
         write,format="Reading phase map for optics \"%s\"\n",opt(1).phasemaps;
       }
-      tmp = fitsRead(opt(1).phasemaps);
+      tmp = fitsRead(YAO_SAVEPATH+opt(1).phasemaps);
       optdims      = dimsof(tmp);
       optdimx      = optdims(2);
       optdimy      = optdims(3);
@@ -1440,7 +1452,7 @@ func getTurbPhaseInit(skipReadPhaseScreens=)
         if (sim.verbose>=1) {
           write,format="Reading phase map for optics \"%s\"\n",opt(i).phasemaps;
         }
-        tmp = fitsRead(opt(i).phasemaps);
+        tmp = fitsRead(YAO_SAVEPATH+opt(i).phasemaps);
         if (anyof(dimsof(tmp) != optdims))
           error,"All optics phase maps should have the same dimensions";
         optphasemaps(,,i) = float(tmp);
@@ -2097,7 +2109,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   
   sphase = bphase = mircube = [];
 
-  hcp_file,parprefix+"init.ps",ps=1;
+  hcp_file,YAO_SAVEPATH+parprefix+"init.ps",ps=1;
   
   //=====================================
   // PARAMETER CHECKS. SETS SOME DEFAULTS
@@ -2114,16 +2126,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // mircube will receive the shape of each DM (one plan per DM):
   mircube   = array(float,sim._size,sim._size,ndm);
 
-  // INITIALIZE OUTPUT RESULT FILE parprefix.RES
+  // INITIALIZE OUTPUT RESULT FILE YAO_SAVEPATH+parprefix.RES
 
-  if (!fileExist(parprefix+".res")) {
+  if (!fileExist(YAO_SAVEPATH+parprefix+".res")) {
     if (sim.verbose>=1) {
       write,">> File "+parprefix+".res not found, creating one...\n";
     }
-    f = open(parprefix+".res","w");
+    f = open(YAO_SAVEPATH+parprefix+".res","w");
     close,f;
   }
-  f	= open(parprefix+".res","a+");
+  f	= open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,format="=============================\n%s\n",sim.name;
   close,f;
 
@@ -2343,15 +2355,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose>=1) {
         write,format="  >> Reading file %s\n",dm(n).iffile;
       }
-      dm(n)._def = &(float(fitsRead(dm(n).iffile)));
+      dm(n)._def = &(float(fitsRead(YAO_SAVEPATH+dm(n).iffile)));
       dm(n)._nact = dimsof(*(dm(n)._def))(4);
       if ( dm(n).type == "stackarray" ) {
-        dm(n)._x = &(fitsRead(dm(n).iffile,hdu=1));
-        dm(n)._y = &(fitsRead(dm(n).iffile,hdu=2));
+        dm(n)._x = &(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=1));
+        dm(n)._y = &(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=2));
         if (dm(n).elt == 1) {
           dm(n)._eltdefsize = dimsof(*(dm(n)._def))(2);
-          dm(n)._i1 = &(int(fitsRead(dm(n).iffile,hdu=3)));
-          dm(n)._j1 = &(int(fitsRead(dm(n).iffile,hdu=4)));
+          dm(n)._i1 = &(int(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=3)));
+          dm(n)._j1 = &(int(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=4)));
         }
       }
 
@@ -2359,14 +2371,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         if (sim.verbose>=1) {
           write,format="  >> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
         }
-        dm(n)._edef = &(float(fitsRead(dm(n)._eiffile)));
+        dm(n)._edef = &(float(fitsRead(YAO_SAVEPATH+dm(n)._eiffile)));
         dm(n)._enact = dimsof(*(dm(n)._edef))(4);
         if ( dm(n).type == "stackarray" ) {
-          dm(n)._ex = &(fitsRead(dm(n)._eiffile,hdu=1));
-          dm(n)._ey = &(fitsRead(dm(n)._eiffile,hdu=2));
+          dm(n)._ex = &(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=1));
+          dm(n)._ey = &(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=2));
           if (dm(n).elt == 1) {
-            dm(n)._ei1 = &(int(fitsRead(dm(n)._eiffile,hdu=3)));
-            dm(n)._ej1 = &(int(fitsRead(dm(n)._eiffile,hdu=4)));
+            dm(n)._ei1 = &(int(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=3)));
+            dm(n)._ej1 = &(int(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=4)));
           }
         }
       }
@@ -2391,13 +2403,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose>=1) {
         write,format="\n  >> I.F. stored in %s\n",dm(n).iffile;
       }
-      fitsWrite,dm(n).iffile,*(dm(n)._def);
+      fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
       if ( dm(n).type == "stackarray" ) {
-        fitsWrite,dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
-        fitsWrite,dm(n).iffile,*(dm(n)._y),exttype="IMAGE",append=1;
+        fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
+        fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._y),exttype="IMAGE",append=1;
         if (dm(n).elt == 1) {
-          fitsWrite,dm(n).iffile,long(*(dm(n)._i1)),exttype="IMAGE",append=1;
-          fitsWrite,dm(n).iffile,long(*(dm(n)._j1)),exttype="IMAGE",append=1;
+          fitsWrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._i1)),exttype="IMAGE",append=1;
+          fitsWrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._j1)),exttype="IMAGE",append=1;
         }
       }
     }
@@ -2518,22 +2530,22 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
 
           // rewrite influence function file:
-          fitsWrite,dm(nm).iffile,*(dm(nm)._def);
-          fitsWrite,dm(nm).iffile,*(dm(nm)._x),exttype="IMAGE",append=1;
-          fitsWrite,dm(nm).iffile,*(dm(nm)._y),exttype="IMAGE",append=1;
+          fitsWrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._def);
+          fitsWrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._x),exttype="IMAGE",append=1;
+          fitsWrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._y),exttype="IMAGE",append=1;
           if (dm(nm).elt == 1) {
-            fitsWrite,dm(nm).iffile,long(*(dm(nm)._i1)),exttype="IMAGE",append=1;
-            fitsWrite,dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;            
+            fitsWrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._i1)),exttype="IMAGE",append=1;
+            fitsWrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;            
           }
           dm(nm)._nact = (dimsof(*(dm(nm)._def)))(4);
 
           // write extrapolated actuator influence functions file:
-          fitsWrite,dm(nm)._eiffile,*(dm(nm)._edef);
-          fitsWrite,dm(nm)._eiffile,*(dm(nm)._ex),exttype="IMAGE",append=1;
-          fitsWrite,dm(nm)._eiffile,*(dm(nm)._ey),exttype="IMAGE",append=1;
+          fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._edef);
+          fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ex),exttype="IMAGE",append=1;
+          fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ey),exttype="IMAGE",append=1;
           if (dm(nm).elt == 1) {
-            fitsWrite,dm(nm)._eiffile,long(*(dm(nm)._ei1)),exttype="IMAGE",append=1;
-            fitsWrite,dm(nm)._eiffile,long(*(dm(nm)._ej1)),exttype="IMAGE",append=1;            
+            fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ei1)),exttype="IMAGE",append=1;
+            fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ej1)),exttype="IMAGE",append=1;            
           }
           dm(nm)._enact = (dimsof(*(dm(nm)._edef)))(4);
 
@@ -2586,7 +2598,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose >= 1) {
         write,format="Reading valid to extrap. matrix %s\n",dm(nm).ecmatfile;
       }
-      dm(nm)._extrapcmat = fitsRead(dm(nm).ecmatfile);
+      dm(nm)._extrapcmat = fitsRead(YAO_SAVEPATH+dm(nm).ecmatfile);
 
     } else {
 
@@ -2638,7 +2650,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (fileExist(loop.modalgainfile)) {
 
     if (sim.verbose>=1) {write,format=" >> Reading file %s\n\n",loop.modalgainfile;}
-    modalgain = fitsRead(loop.modalgainfile);
+    modalgain = fitsRead(YAO_SAVEPATH+loop.modalgainfile);
 
   }
   
@@ -2709,7 +2721,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
       
     // save the results:
-    fitsWrite,mat.file,[iMat,transpose(cMat)];
+    fitsWrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
 
   }
 
@@ -2811,7 +2823,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   }
   
   // same in result file:
-  f	= open(parprefix+".res","a+");
+  f	= open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,"";
   write,f,format="%s:\n","Summary";
   for (nm=1;nm<=ndm;nm++) {
@@ -3389,9 +3401,9 @@ func after_loop(void)
   
   // Save the circular buffers:
   if (is_set(savecb)) {
-    fitsWrite,"cbmes.fits",cbmes;
-    fitsWrite,"cbcom.fits",cbcom;
-    fitsWrite,"cberr.fits",cberr;
+    fitsWrite,YAO_SAVEPATH+"cbmes.fits",cbmes;
+    fitsWrite,YAO_SAVEPATH+"cbcom.fits",cbcom;
+    fitsWrite,YAO_SAVEPATH+"cberr.fits",cberr;
     write,"cbmes, cbcom and cberr are saved.";
     write,"You can run modalGainOptimization() to optimize and update the gains";
   }
@@ -3429,7 +3441,7 @@ func after_loop(void)
   }
   
   // Some logging of the results in file parprefix+".res":
-  f	= open(parprefix+".res","a+");
+  f	= open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,format=
     "\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
@@ -3462,10 +3474,10 @@ func after_loop(void)
   write,f,print(loop);
   close,f;
   
-  fitsWrite,parprefix+"-imav.fits",imav;
+  fitsWrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav;
 
   // saved graphics
-  window,7,display="",hcp=parprefix+".ps",wait=1,style="work.gs";
+  window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
   fma;
 
   disp2D,im,*target.xposition,*target.yposition,1,zoom=*target.dispzoom,init=1;

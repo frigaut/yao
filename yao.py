@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.5 2007-12-19 13:18:59 frigaut Exp $
+# $Id: yao.py,v 1.6 2007-12-19 15:45:32 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,14 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.5  2007-12-19 13:18:59  frigaut
+# Revision 1.6  2007-12-19 15:45:32  frigaut
+# - implemented yao.conf which defines the YAO_SAVEPATH directory where
+# all temporary files and result files will be saved
+# - modified yao.i and aoutil.i to save in YAO_SAVEPATH
+# - bumped version to 4.2.0
+# - slight changes to GUI (edit conf file)
+#
+# Revision 1.5  2007/12/19 13:18:59  frigaut
 # - explicit message when screens are not present/found
 # - more messages in statusbar
 # - added statusbar1 (that can hide/show) for strehl status header
@@ -78,6 +85,7 @@ class yao:
          'on_show_wfss_and_dms_toggled' : self.on_show_wfss_and_dms_toggled,
          'on_drawingarea1_map_event' : self.on_drawingarea1_map_event,
          'on_edit_clicked' : self.on_edit_clicked,
+         'on_edit2_activate' : self.on_edit2_activate,
          'on_create_phase_screens_activate': self.on_create_phase_screens_activate,
          # MAIN
          'on_aoread_clicked' : self.on_aoread_clicked,
@@ -121,10 +129,12 @@ class yao:
          'on_sh_kernel_value_changed' : self.on_sh_kernel_value_changed,
          'on_ninteg_cycles_value_changed' : self.on_ninteg_cycles_value_changed,
          'on_wfs_select_toggled': self.on_wfs_select_toggled,
-         # EDITOR
+         # EDITORS
          'on_editor_save_activate' : self.on_editor_save_activate,
          'on_editor_save_as_activate' : self.on_editor_save_as_activate,
          'on_editor_close_activate' : self.on_editor_close_activate,
+         'on_editor2_save_activate' : self.on_editor2_save_activate,
+         'on_editor2_close_activate' : self.on_editor2_close_activate,
          }
       
       self.glade = gtk.glade.XML(self.path2glade+'/yao.glade') 
@@ -136,6 +146,10 @@ class yao:
       self.editor = self.glade.get_widget('window2')
       if (self.editor):
          self.editor.connect('delete_event', self.on_editor_close_activate)
+
+      self.editor2 = self.glade.get_widget('window4')
+      if (self.editor2):
+         self.editor2.connect('delete_event', self.on_editor2_close_activate)
 
       self.statusbar = self.glade.get_widget('statusbar')
       self.statusbar1 = self.glade.get_widget('statusbar1')
@@ -158,7 +172,9 @@ class yao:
       gobject.io_add_watch(sys.stdin,gobject.IO_IN | gobject.IO_HUP,self.yo2py)
 
       self.wfs_panel_set_sensitivity(0,0)
-      #self.glade.get_widget('wfs_and_dms').hide()
+      # self.glade.get_widget('wfs_and_dms').hide()
+      # declare and set default (overwritten by gui_update)
+      self.yuserdir = "./"
       self.yaopardir = "/"
       self.pyk_debug = 0
       
@@ -168,7 +184,8 @@ class yao:
 
    dispflag = 1
    init = 0
-   buffer = gtk.TextBuffer()
+   buffer  = gtk.TextBuffer()
+   buffer2 = gtk.TextBuffer()
 
    def on_about_activate(self,wdg):
       dialog = self.glade.get_widget('aboutdialog')
@@ -205,7 +222,7 @@ class yao:
       self.py2yo("wrap_create_phase_screens")
    
    #
-   # EDITOR
+   # EDITORS
    #
    
    def on_modified_editor(self,wdg):
@@ -260,6 +277,24 @@ class yao:
       tmp = tmp+'_'+strftime("%Y%B%d_%H%M%S",localtime())+'.par'
       return tmp
 
+   def on_modified_editor2(self,wdg):
+      self.editor2.set_title(' * yao.conf')
+
+   def on_editor2_save_activate(self,wdg):
+      # get buffer content
+      textarea2 = self.glade.get_widget('textarea2')
+      self.buffer2 = textarea2.get_buffer()
+      params=self.buffer2.get_text(self.buffer2.get_start_iter(),self.buffer2.get_end_iter())
+      # save file
+      f = open(self.yuserdir+'yao.conf','w')
+      f.write(params)
+      f.close()
+      self.py2yo('read_conf')
+      self.editor2.set_title('yao.conf')
+
+   def on_editor2_close_activate(self,wdg,*args):
+      self.editor2.hide()
+      return True    
    
    #
    # Main Panel Events Handlers
@@ -320,6 +355,17 @@ class yao:
       self.buffer.connect('changed',self.on_modified_editor)
       textarea = self.glade.get_widget('textarea')
       textarea.set_buffer(self.buffer)
+
+   def on_edit2_activate(self,wdg):
+      self.editor2.set_title('yao.conf')
+      self.editor2.show()
+      f = open(self.yuserdir+'yao.conf','r')
+      params = f.read()
+      f.close()
+      self.buffer2.set_text(params)
+      self.buffer2.connect('changed',self.on_modified_editor2)
+      textarea2 = self.glade.get_widget('textarea2')
+      textarea2.set_buffer(self.buffer2)
 
    def on_aoread_clicked(self,wdg):
       self.set_cursor_busy(1)
@@ -644,7 +690,7 @@ class yao:
             msg = "self."+msg
             #debug hack: write on stderr so that it is not processed by yorick
             if (self.pyk_debug): 
-               sys.stderr.write("Python stdin:"+msg)
+               sys.stderr.write("Python stdin: "+msg)
             exec(msg)
          except IOError, e:
             if e.errno == errno.EAGAIN:

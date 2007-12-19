@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.2 2007-12-19 13:18:59 frigaut Exp $
+ * $Id: aoutil.i,v 1.3 2007-12-19 15:45:32 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,14 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.2  2007-12-19 13:18:59  frigaut
+ * Revision 1.3  2007-12-19 15:45:32  frigaut
+ * - implemented yao.conf which defines the YAO_SAVEPATH directory where
+ * all temporary files and result files will be saved
+ * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
+ * - bumped version to 4.2.0
+ * - slight changes to GUI (edit conf file)
+ *
+ * Revision 1.2  2007/12/19 13:18:59  frigaut
  * - explicit message when screens are not present/found
  * - more messages in statusbar
  * - added statusbar1 (that can hide/show) for strehl status header
@@ -798,7 +805,7 @@ func modalGainOptimization(disp=,update=)
   if (is_set(update))
   {
     modalgain = bestGains/ao.LoopGain;
-    fitsWrite,ao.LoopModalGainFile,modalgain;
+    fitsWrite,YAO_SAVEPATH+ao.LoopModalGainFile,modalgain;
     if (ao.verbose>=1) {write,format="Gains updated and saved in !",ao.LoopModalGainFile;}
   }
 }
@@ -1000,7 +1007,7 @@ Finds the pixel size for the requested WFS configuration.
   }
 
   if (!is_set(silent)) {
-    f	= open(parprefix+".res","a+");
+    f	= open(YAO_SAVEPATH+parprefix+".res","a+");
     if (is_set(printheader)) {
       write,"WFS# |       Pixel sizes         | Subap. size | Number of pixels | #photons";
       write,"     | Desired  Quantum  Actual  | Max  Actual | Desired   Actual | /sub/iter";
