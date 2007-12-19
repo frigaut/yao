@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.6 2007-12-19 15:45:32 frigaut Exp $
+ * $Id: yaopy.i,v 1.7 2007-12-19 19:44:19 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,15 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.6  2007-12-19 15:45:32  frigaut
+ * Revision 1.7  2007-12-19 19:44:19  frigaut
+ * - solved a number of bugs and inconsistencies between regular yao call and
+ *   GUI calls.
+ * - fixed misregistration for curvature systems
+ * - change: misregistration entry from the GUI is now in pupil diameter unit,
+ *   not in subaperture unit!
+ * - changed default efd in c188-bench.par
+ *
+ * Revision 1.6  2007/12/19 15:45:32  frigaut
  * - implemented yao.conf which defines the YAO_SAVEPATH directory where
  * all temporary files and result files will be saved
  * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
@@ -244,6 +252,13 @@ func set_aoinit_flags(disp,clean,forcemat,svd,keepdmconfig)
   aoinit_keepdmconfig=keepdmconfig;
 }
 
+func set_aoloop_flags(disp,savecb)
+{
+  extern aoloop_disp,aoloop_savecb;
+  aoloop_disp=disp;
+  aoloop_savecb=savecb;
+}
+
 func set_loop_gain(gain)
 {
   loop.gain=gain;
@@ -290,12 +305,12 @@ func do_inter_disp {
 
 func do_aoinit_disp {
   stop;  // in case we are running another loop.
-  aoinit,disp=1,dpi=default_dpi;
+  aoinit,dpi=default_dpi;
   pyk,"set_cursor_busy(0)";
 }
 
 func do_aoloop_disp {
-  aoloop,disp=1,dpi=default_dpi;
+  aoloop,dpi=default_dpi;
   plsys,1;
   animate,0;
   animate,1;
@@ -313,6 +328,9 @@ func set_okdm(dmnum,ok)
 {
   extern okdm,okwfs;
   okdm(dmnum)=ok;
+  if (sum(okdm)==0) pyk,"dm_panel_set_sensitivity(0)";
+  else pyk,"dm_panel_set_sensitivity(1)";
+  pyk,"yo2py_flush";
 }
 
 func set_okwfs(wfsnum,ok)
@@ -371,22 +389,22 @@ func dm_gain(gainval)
 
 func dm_xmisreg(xmisreg)
 {
-  extern okdm,okwfs;
+  extern okdm,okwfs,dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) {
-      dm(i).misreg(1)=xmisreg/100.*dm(i).pitch;
+      dm(i).misreg(1)=xmisreg*sim.pupildiam;
     }
   }
 }
 
 func dm_ymisreg(ymisreg)
 {
-  extern okdm,okwfs;
+  extern okdm,okwfs,dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) {
-      dm(i).misreg(2)=ymisreg/100.*dm(i).pitch;
+      dm(i).misreg(2)=ymisreg*sim.pupildiam;
     }
   }
 }
@@ -627,7 +645,14 @@ func wrap_aoread(void)
   aoread,yaopardir+"/"+yaoparfile;
   gui_update;
   //  usleep,100; // why do I have to do that for it to work ????
+  pyk,"set_aoinit_flags()";
+  pyk,"set_aoloop_flags()";
   pyk,"set_cursor_busy(0)";
+  wfstype=0;
+  if (wfs(1).type=="curvature") wfstype = 1;
+  if (wfs(1).type=="hartmann") wfstype = 2;
+  pyk,swrite(format="wfs_panel_set_sensitivity(1,%d)",wfstype);
+  pyk,"dm_panel_set_sensitivity(1)";
 }
 
 func gui_update(void)

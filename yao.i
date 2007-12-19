@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.5 2007-12-19 15:45:32 frigaut Exp $
+ * $Id: yao.i,v 1.6 2007-12-19 19:44:19 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,15 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.5  2007-12-19 15:45:32  frigaut
+ * Revision 1.6  2007-12-19 19:44:19  frigaut
+ * - solved a number of bugs and inconsistencies between regular yao call and
+ *   GUI calls.
+ * - fixed misregistration for curvature systems
+ * - change: misregistration entry from the GUI is now in pupil diameter unit,
+ *   not in subaperture unit!
+ * - changed default efd in c188-bench.par
+ *
+ * Revision 1.5  2007/12/19 15:45:32  frigaut
  * - implemented yao.conf which defines the YAO_SAVEPATH directory where
  * all temporary files and result files will be saved
  * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
@@ -152,7 +160,7 @@ require,"plot.i";  // in yorick-yutils
 func null (arg,..) { return 0; }
 pyk_error=pyk_info=pyk_warning=null;
 gui_message=gui_message1=gui_progressbar_frac=gui_progressbar_text=null;  // by default. can be redefined by gui routine
-gui_show_statusbar1=gui_hide_statusbar1=null;
+clean_progressbar=gui_show_statusbar1=gui_hide_statusbar1=null;
 YAO_SAVEPATH=get_cwd();
 // all above is designed to be overwritten by appropriate values in yaopy.i
 // when using yao through the GUI
@@ -740,18 +748,18 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
 
     kall = [];
 
-    rayfname = YAO_SAVEPATH+parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
+    rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
       swrite(format="%d",long(gs.zenithangle))+".fits";
-    isthere = fileExist(rayfname);
+    isthere = fileExist(YAO_SAVEPATH+rayfname);
     fov    = quantumPixelSize*sdim;
     aspp   = quantumPixelSize;
 
 
     if (isthere) {
       
-      kall         = fitsRead(rayfname)*1e6;
-      rayleighflux = fitsRead(rayfname,hdu=1);
-      sodiumflux   = fitsRead(rayfname,hdu=2);
+      kall         = fitsRead(YAO_SAVEPATH+rayfname)*1e6;
+      rayleighflux = fitsRead(YAO_SAVEPATH+rayfname,hdu=1);
+      sodiumflux   = fitsRead(YAO_SAVEPATH+rayfname,hdu=2);
 
     } else {
 
@@ -766,9 +774,9 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
         //        tmp = tmp/sum(tmp);
         grow,kall,(eclat(tmp))(*);
       }
-      fitsWrite,rayfname,kall;
-      fitsWrite,rayfname,rayleighflux,append=1,exttype="image";
-      fitsWrite,rayfname,sodiumflux,append=1,exttype="image";
+      fitsWrite,YAO_SAVEPATH+rayfname,kall;
+      fitsWrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
+      fitsWrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
 
     }
 
@@ -962,12 +970,19 @@ SEE ALSO: prepSVD, buildComMat
 */
 
 {
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,"Doing interaction matrix";
+  
+
   indexDm       = array(long,2,ndm);
   indexDm(,1)   = [1,dm(1)._nact];
   for (nm=2;nm<=ndm;nm++) {
     indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
   }
 
+  ntot = sum(dm._nact);
+  ncur=1;
+  
   // Loop on each mirror:
   for (nm=1;nm<=ndm;nm++) {
     n1 = dm(nm)._n1;
@@ -976,6 +991,10 @@ SEE ALSO: prepSVD, buildComMat
     // Loop on each actuator:
     command = array(float,dm(nm)._nact);
     for (i=1;i<=dm(nm)._nact;i++) {
+      ncur++;
+      gui_progressbar_frac,float(ncur)/ntot;
+      gui_progressbar_text,\
+        swrite(format="Doing interaction matrix, DM#%d, actuator#%d",nm,i);
       if (sim.verbose==2) {write,format="%d ",i;}
       mircube  *= 0.0f; command *= 0.0f;
       command(i) = dm(nm).push4imat;
@@ -994,7 +1013,7 @@ SEE ALSO: prepSVD, buildComMat
         // mirror surface
         plsys,3;
         limits,square=1;
-        for (j=1;j<=ndm;j++) {pli,mircube(,,j),j,0.,j+1,1.;}
+        for (j=1;j<=ndm;j++) {pli,mircube(,,j)*ipupil,j,0.,j+1,1.;}
         mypltitle,"DM(s)",[0.,0.008],height=12;
         if ((dm(nm).type == "aniso") && (sim.debug == 2)) hitReturn;
       }
@@ -1007,9 +1026,10 @@ SEE ALSO: prepSVD, buildComMat
   // Display if needed:
   if ((sim.debug>=1) || (disp == 1)) {
     tv,-iMat,square=1;
-    pltitle,"Interaction Matrix";
+    mypltitle,"Interaction Matrix",[0.,-0.005],height=12;
     if (sim.debug >= 1) typeReturn;
   }
+  clean_progressbar;
 }
 //----------------------------------------------------
 func prepSVD(imat,disp=,subs=,svd=)
@@ -1048,6 +1068,8 @@ func prepSVD(imat,disp=,subs=,svd=)
       plot,eigenvalues/max(eigenvalues);
       plg,array(1/(*mat.condition)(subs),numberof(eigenvalues)),color="red",type=2;
       limits,square=0;
+      mypltitle,"Normalized eigenvalues",[0.,-0.005],height=12;
+      if (yaopy) break;
       if (is_set(svd)) {
         ths = "";
         read,prompt=swrite(format="Threshold [%f] (return to continue): ",\
@@ -1062,7 +1084,7 @@ func prepSVD(imat,disp=,subs=,svd=)
         }
       }
     } while (change == 1);
-    typeReturn;
+    if (!yaopy) typeReturn;
   } else if (sim.verbose == 1) {
     write,format="Smallests 2 normalized eigenvalues = %f",
       eigenvalues(-1)/max(eigenvalues),eigenvalues(0)/max(eigenvalues);
@@ -1078,17 +1100,19 @@ func prepSVD(imat,disp=,subs=,svd=)
 
   // Some debug display if needed:
   if (sim.debug==2) {
-    tv,modToAct; pltitle,"modToAct Matrix";
-    typeReturn;
+    tv,modToAct;
+    mypltitle,"modToAct Matrix",[0.,-0.005],height=12;
+    if (!yaopy) typeReturn;
     tv,modToAct(,+)*modToAct(,+);
-    pltitle,"modToAct(,+)*modToAct(,+)";
-    typeReturn;
+    mypltitle,"modToAct(,+)*modToAct(,+)",[0.,-0.005],height=12;
+    if (!yaopy) typeReturn;
 
-    tv,mesToMod; pltitle,"mesToMod Matrix";
-    typeReturn;
+    tv,mesToMod;
+    mypltitle,"mesToMod Matrix",[0.,-0.005],height=12;
+    if (!yaopy) typeReturn;
     tv,mesToMod(,+)*mesToMod(,+);
-    pltitle,"mesToMod(,+)*mesToMod(,+)";
-    typeReturn;
+    mypltitle,"mesToMod(,+)*mesToMod(,+)",[0.,-0.005],height=12;
+    if (!yaopy) typeReturn;
   }
 }
 
@@ -1216,8 +1240,8 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
       fma;
       plt,sim.name,0.01,0.01,tosys=0;
       disp2D,cubphase,subpos(1,),subpos(2,),1;
-      pltitle,swrite(format="Mode %d, Normalized eigenvalue = %f",
-                     i,eigenvalues(i)/max(eigenvalues));
+      mypltitle,swrite(format="Mode %d, Normalized eigenvalue = %f",
+                     i,eigenvalues(i)/max(eigenvalues)),[0.,-0.005],height=12;
 
       // display of DM shapes
       plsys,3;
@@ -2100,12 +2124,18 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   extern _n,_n1,_n2,_p1,_p2,_p;
   extern def,mircube;
   extern tip1arcsec,tilt1arcsec;
+  extern aoinit_disp,aoinit_clean,aoinit_forcemat,aoinit_svd,aoinit_keepdmconfig;
+
 
   if ((disp==[])&&(aoinit_disp!=[])) disp=aoinit_disp;
   if ((clean==[])&&(aoinit_clean!=[])) clean=aoinit_clean;
   if ((forcemat==[])&&(aoinit_forcemat!=[])) forcemat=aoinit_forcemat;
   if ((svd==[])&&(aoinit_svd!=[])) svd=aoinit_svd;
   if ((keepdmconfig==[])&&(aoinit_keepdmconfig!=[])) keepdmconfig=aoinit_keepdmconfig;
+
+  if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+
+                       "forcemat=%d,svd=%d,keepdmconfig=%d\n",
+                       disp,clean,forcemat,svd,keepdmconfig;
   
   sphase = bphase = mircube = [];
 
@@ -2350,7 +2380,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     
     // compute influence functions:
     // If file exist, read it out:
-    if ( (fileExist(dm(n).iffile)) && (!is_set(clean)) ) { 
+    if ( (fileExist(YAO_SAVEPATH+dm(n).iffile)) && (!is_set(clean)) ) { 
 
       if (sim.verbose>=1) {
         write,format="  >> Reading file %s\n",dm(n).iffile;
@@ -2367,7 +2397,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       }
 
-      if ( (fileExist(dm(n)._eiffile)) && (!is_set(clean)) ) { 
+      if ( (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) && (!is_set(clean)) ) { 
         if (sim.verbose>=1) {
           write,format="  >> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
         }
@@ -2419,7 +2449,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // DO INTERACTION MATRIX WITH ALL ACTUATORS
   //=========================================
 
-  if (!(allof(fileExist(dm.iffile)) && fileExist(mat.file) && (forcemat != 1))) {
+  if (!(allof(fileExist(YAO_SAVEPATH+dm.iffile)) && fileExist(YAO_SAVEPATH+mat.file) && (forcemat != 1))) {
 
 
     if (!is_set(keepdmconfig)) { // concatenate dm._def and dm._edef
@@ -2551,7 +2581,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
           if (sim.debug >= 1) {
             tv,compDmShape(nm,&(array(1.0f,dm(nm)._nact)));
-            pltitle,swrite(format="Pushing on all actuator of DM#%d",nm);
+            mypltitle,swrite(format="Pushing on all actuator of DM#%d",nm),[0.,-0.005],height=12;
             typeReturn;
           }
 
@@ -2592,7 +2622,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     if (dm(nm)._enact == 0) break;  // no extrapolated actuator
 
-    if (fileExist(dm(nm).ecmatfile)) {
+    if (fileExist(YAO_SAVEPATH+dm(nm).ecmatfile)) {
 
       // if defined and exist, we read it and proceed
       if (sim.verbose >= 1) {
@@ -2647,7 +2677,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   modalgain = [];
 
-  if (fileExist(loop.modalgainfile)) {
+  if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
 
     if (sim.verbose>=1) {write,format=" >> Reading file %s\n\n",loop.modalgainfile;}
     modalgain = fitsRead(YAO_SAVEPATH+loop.modalgainfile);
@@ -2673,11 +2703,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (sim.verbose>=1) {write,"\n> INTERACTION AND COMMAND MATRICES";}
   gui_message,"Initializing control matrix";
 
-  if ((fileExist(mat.file)) && (forcemat != 1)) {
+  if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
     if (sim.verbose>=1) {write,format="  >> Reading file %s\n",mat.file;}
     // read out mat file and stuff iMat and cMat:
-    tmp = fitsRead(mat.file);
+    tmp = fitsRead(YAO_SAVEPATH+mat.file);
     iMat = tmp(,,1);
     cMat = transpose(tmp(,,2));
     tmp = [];
@@ -2685,7 +2715,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   }
 
   // in the opposite case, plus if svd=1 (request re-do SVD):
-  if ((!fileExist(mat.file)) || (forcemat == 1) || (svd == 1)) {
+  if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
     
     if (sim.verbose>=1) {
       write,">> Preparing SVD and computing command matrice";
@@ -2713,10 +2743,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     // More debug display
     if (sim.debug>=3) {
       tv,cMat(,+)*iMat(+,);
-      pltitle,"cMat(,+)*iMat(+,)";
+      mypltitle,"cMat(,+)*iMat(+,)",[0.,-0.005],height=12;
       typeReturn;
       tv,iMat(,+)*cMat(+,);
-      pltitle,"iMat(,+)*cMat(+,)";
+      mypltitle,"iMat(,+)*cMat(+,)",[0.,-0.005],height=12;
       typeReturn;
     }
       
@@ -2916,7 +2946,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
   extern dispImImav;
   extern loopCounter, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
+  extern aoloop_disp,aoloop_savecb;
 
+  if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
+  if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
   dispFlag = disp;
   savecbFlag = savecb;
   dpiFlag = dpi;
@@ -3490,7 +3523,7 @@ func after_loop(void)
       type="none",marks=1,color="red";
   }
   axisLegend,"arcsec","arcsec";
-  pltitle=parprefix+"/ Average PSF";
+  mypltitle=parprefix+"/ Average PSF";
   hcp;
   if (strehlsp != []) {
     fma;

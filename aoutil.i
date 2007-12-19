@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.3 2007-12-19 15:45:32 frigaut Exp $
+ * $Id: aoutil.i,v 1.4 2007-12-19 19:44:19 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,15 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.3  2007-12-19 15:45:32  frigaut
+ * Revision 1.4  2007-12-19 19:44:19  frigaut
+ * - solved a number of bugs and inconsistencies between regular yao call and
+ *   GUI calls.
+ * - fixed misregistration for curvature systems
+ * - change: misregistration entry from the GUI is now in pupil diameter unit,
+ *   not in subaperture unit!
+ * - changed default efd in c188-bench.par
+ *
+ * Revision 1.3  2007/12/19 15:45:32  frigaut
  * - implemented yao.conf which defines the YAO_SAVEPATH directory where
  * all temporary files and result files will be saved
  * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
@@ -1065,6 +1073,8 @@ func MakePztIF(nm,&def,disp=)
      the influence functions are in microns per volt.
   */
 {
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,"Computing Influence Functions";
   coupling=dm(nm).coupling;
 
   // best parameters, as determined by a multi-dimensional fit
@@ -1164,6 +1174,8 @@ func MakePztIF(nm,&def,disp=)
     tmp        = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*
                  (1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
     def(,,i)   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
+    gui_progressbar_text,swrite(format="Computing Influence Functions %d/%d",i,nvalid);
+    gui_progressbar_frac,float(i)/nvalid;
     if ((disp == 1) && (sim.debug == 2)) {fma; pli,def(,,i);}
   }
   if (sim.verbose)  write,"";
@@ -1185,8 +1197,8 @@ func MakePztIF(nm,&def,disp=)
     tv,piston;
   }
   
+  clean_progressbar;
   return def;
-
 }
 
 //----------------------------------------------------
@@ -1304,6 +1316,8 @@ func MakeZernikeIF(nm,&def,disp=)
      1 arcsec/volt).
    */
 {
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,"Computing Influence Functions";
   dim   = dm(nm)._n2-dm(nm)._n1+1;
   nzer	= dm(nm).nzer;
   cobs	= tel.cobs;
@@ -1317,9 +1331,10 @@ func MakeZernikeIF(nm,&def,disp=)
   def	= array(float,dim,dim,nzer);
 
   for (i=1;i<=nzer;i++) {
-      def(,,i) = zernike_ext(i);
-      if (disp == 1) {fma; pli,def(,,i);}
-    }
+    def(,,i) = zernike_ext(i);
+    if (disp == 1) {fma; pli,def(,,i);}
+    gui_progressbar_frac,float(i)/nzer;
+  }
   if (sim.verbose>=1) {write,format="Number of zernike :%d\n",nzer;}
 
   // normalization factor: one unit of tilt gives 1 arcsec:
@@ -1330,6 +1345,7 @@ func MakeZernikeIF(nm,&def,disp=)
   dm(nm)._nact = (dimsof(def))(4);
   dm(nm)._def = &def;
 
+  clean_progressbar;
   return def;
 }
 
@@ -1508,6 +1524,9 @@ func MakeBimorphIF(nm,&def,disp=,cobs=)
   extern actNumIm;
   local WhichRing,ActThetaIn,ActThetaOut,ActRadiusIn,ActRadiusOut;
 
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,"Computing Influence Functions";
+  
   dimdef   = dm(nm)._n2-dm(nm)._n1+1;
 
   dim	= sim._size;
@@ -1573,7 +1592,7 @@ func MakeBimorphIF(nm,&def,disp=,cobs=)
   //  rad = dist(CompDim)/(pupd/2.);
   rad = dist(CompDim)/(patchDiam/2.);
   d2 = clip(eclat(dist(CompDim)^2.),1e-5,);
-  pupil = rad < 1.;
+  cpupil = rad < 1.;
 
   supportOffset=90.;
   if (dm(nm).supportOffset!=[]) supportOffset=dm(nm).supportOffset;
@@ -1590,7 +1609,7 @@ func MakeBimorphIF(nm,&def,disp=,cobs=)
   i1 = CompDim/2-dim/2+1;
   i2 = CompDim/2+dim/2;
   tmp = array(1.,CompDim,CompDim);
-  tmp = tmp-0.5*pupil
+  tmp = tmp-0.5*cpupil
   tmp(Support1) = 0;
   tmp(Support2) = 0;
   tmp(Support3) = 0;
@@ -1616,10 +1635,16 @@ func MakeBimorphIF(nm,&def,disp=,cobs=)
     ydif = y(Support1)-y(Support2);
     if (ydif!=0.) aif = aif - (aif(Support1)-aif(Support2))*y/ydif;
     aif = aif - aif(Support3);
-    if (disp == 1) {fma; pli,float(aif*pupil);}
     aif = float(aif);
     tdef = aif(i1:i2,i1:i2);
     def(,,i)   = tdef(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2);
+    if (disp == 1) {
+      fma;
+      mypltitle,swrite(format="Influence Function %d/%d",i,NAct),[0.,-0.005],height=12;
+      pli,def(,,i)*ipupil(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2);
+    }
+    gui_progressbar_text,swrite(format="Computing Influence Functions %d/%d",i,NAct);
+    gui_progressbar_frac,float(i)/NAct;
   }
   def = def/max(def)*pi; //just to keep things within reasonable values.
   def *= dm(nm).unitpervolt;  // adjustable normalization factor
@@ -1628,6 +1653,7 @@ func MakeBimorphIF(nm,&def,disp=,cobs=)
   dm(nm)._nact = (dimsof(def))(4);
   dm(nm)._def = &def;
 
+  clean_progressbar;
   return def;
 }
 

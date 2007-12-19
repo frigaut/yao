@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.6 2007-12-19 15:45:32 frigaut Exp $
+# $Id: yao.py,v 1.7 2007-12-19 19:44:19 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,15 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.6  2007-12-19 15:45:32  frigaut
+# Revision 1.7  2007-12-19 19:44:19  frigaut
+# - solved a number of bugs and inconsistencies between regular yao call and
+#   GUI calls.
+# - fixed misregistration for curvature systems
+# - change: misregistration entry from the GUI is now in pupil diameter unit,
+#   not in subaperture unit!
+# - changed default efd in c188-bench.par
+#
+# Revision 1.6  2007/12/19 15:45:32  frigaut
 # - implemented yao.conf which defines the YAO_SAVEPATH directory where
 # all temporary files and result files will be saved
 # - modified yao.i and aoutil.i to save in YAO_SAVEPATH
@@ -172,6 +180,7 @@ class yao:
       gobject.io_add_watch(sys.stdin,gobject.IO_IN | gobject.IO_HUP,self.yo2py)
 
       self.wfs_panel_set_sensitivity(0,0)
+      self.dm_panel_set_sensitivity(0)
       # self.glade.get_widget('wfs_and_dms').hide()
       # declare and set default (overwritten by gui_update)
       self.yuserdir = "./"
@@ -384,6 +393,8 @@ class yao:
       self.glade.get_widget('dms').set_sensitive(0)
       self.glade.get_widget('seeingframe').set_sensitive(0)
       self.glade.get_widget('aoinit').grab_focus()
+      self.glade.get_widget('wfss').set_sensitive(1)
+      self.glade.get_widget('dms').set_sensitive(1)
       self.progressbar.set_fraction(0.)
       self.progressbar.set_text('')
       self.init = 0
@@ -413,6 +424,11 @@ class yao:
       svd = self.glade.get_widget('aoinit_svd').get_active()
       keepdmconfig = self.glade.get_widget('aoinit_keepdmconfig').get_active()
       self.py2yo('set_aoinit_flags %d %d %d %d %d' % (disp,clean,forcemat,svd,keepdmconfig))
+   
+   def set_aoloop_flags(self):
+      disp = self.glade.get_widget('aoloop_disp').get_active()
+      savecb = self.glade.get_widget('aoloop_savecb').get_active()
+      self.py2yo('set_aoloop_flags %d %d' % (disp,savecb))
    
    def on_aoloop_popup_button_clicked(self,wdg,event):
       if event.type == gtk.gdk.BUTTON_PRESS:
@@ -617,6 +633,16 @@ class yao:
          ok = self.glade.get_widget('dm'+str(i+1)).get_active()
          self.py2yo('set_okdm %d %d' % (i+1,ok))
          
+   def dm_panel_set_sensitivity(self,sens):
+      # sens = 0 or 1
+      self.glade.get_widget('dmreset').set_sensitive(sens)
+      self.glade.get_widget('dmflatten').set_sensitive(sens)
+      self.glade.get_widget('extrapolated').set_sensitive(sens)
+      self.glade.get_widget('dmgain').set_sensitive(sens)
+      self.glade.get_widget('xmisreg').set_sensitive(sens)
+      self.glade.get_widget('ymisreg').set_sensitive(sens)
+      self.glade.get_widget('sat_voltage').set_sensitive(sens)
+                  
    #
    # Yorick to Python Wrapper Functions
    #

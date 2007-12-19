@@ -1288,8 +1288,10 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 -100 100 1 10 10</property>
+                                        <property name="tooltip" translatable="yes">misregistration DM/WFS in pupil diameter unit</property>
+                                        <property name="adjustment">0 -1 1 0.01 0.10000000000000001 10</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
+                                        <property name="digits">3</property>
                                         <signal name="value_changed" handler="on_xmisreg_value_changed"/>
                                       </widget>
                                       <packing>
@@ -1303,8 +1305,10 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 -100 100 1 10 10</property>
+                                        <property name="tooltip" translatable="yes">misregistration DM/WFS in pupil diameter unit</property>
+                                        <property name="adjustment">0 -1 1 0.01 0.10000000000000001 10</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
+                                        <property name="digits">3</property>
                                         <signal name="value_changed" handler="on_ymisreg_value_changed"/>
                                       </widget>
                                       <packing>
@@ -1837,6 +1841,7 @@ Debian packaging by Thibaut Paumard.</property>
         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
         <property name="label" translatable="yes">disp</property>
         <property name="use_underline">True</property>
+        <property name="active">True</property>
         <property name="draw_as_radio">True</property>
       </widget>
     </child>
