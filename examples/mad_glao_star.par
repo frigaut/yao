@@ -14,7 +14,7 @@ seeing = 1.50; // in arcsec at 550nm (V band)
 r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^1.2;
 //atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
 atm.dr0at05mic     = tel.diam/r0at500;
-atm.screen	   = &("~/Yorick/data/screen"+["1","2","3","4","5","6"]+".fits");
+atm.screen	   = &(Y_USER+"data/screen"+["1","2","3","4","5","6"]+".fits");
 atm.layerfrac      = &([0.64,0.2,0.05,0.05,0.05,0.01]);
 atm.layerspeed     = &([11.,20,29,35,30,40]);
 atm.layeralt	   = &([0.,400,2000,6000,8500,13000]);

@@ -7,7 +7,7 @@ sim.verbose           = 1;
 
 //-------------------------------
 atm.dr0at05mic	      = 42.44;  // this is r0=0.166 at 550 nm
-atm.screen	      = &("~/Yorick/data/screen"+["1","2","3","4"]+".fits");
+atm.screen	      = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
 atm.layerfrac         = &([1.0,0.,0.,0.]);
 atm.layerspeed        = &([11.,20,29,35]);
 atm.layeralt	      = &([0.,400,6000,9000]);
