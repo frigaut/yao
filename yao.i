@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.8 2007-12-20 13:34:53 frigaut Exp $
+ * $Id: yao.i,v 1.9 2007-12-20 13:35:55 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,10 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.8  2007-12-20 13:34:53  frigaut
+ * Revision 1.9  2007-12-20 13:35:55  frigaut
+ * bumped to v4.2.2
+ *
+ * Revision 1.8  2007/12/20 13:34:53  frigaut
  * - various bug fixes
  * - better handlng of default parfile path
  * - better handling of options menu (WFS and DM)
@@ -147,8 +150,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec19";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec20";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
