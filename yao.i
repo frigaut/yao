@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.7 2007-12-19 20:00:08 frigaut Exp $
+ * $Id: yao.i,v 1.8 2007-12-20 13:34:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,12 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.7  2007-12-19 20:00:08  frigaut
+ * Revision 1.8  2007-12-20 13:34:53  frigaut
+ * - various bug fixes
+ * - better handlng of default parfile path
+ * - better handling of options menu (WFS and DM)
+ *
+ * Revision 1.7  2007/12/19 20:00:08  frigaut
  * - statusbar updated to indicates where the results are saved when done
  * - bumped to 4.2.1
  *
@@ -701,6 +706,9 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
 
     kall = [];
 
+    gui_progressbar_frac,0.;
+    gui_progressbar_text,swrite(format="Computing subaperture dependant kernel for LGS elongation, WFS#%d",ns);
+    
     for (l=1; l<=wfs(ns)._nsub; l++) {
       // for each subaperture, we have to find the elongation and the angle.
       xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
@@ -728,7 +736,10 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
       
       s2 = tel.diam/nxsub*0.9/2.;
       //if (sim.debug >= 2) {fma; pli,tmp,xsub-s2,ysub-s2,xsub+s2,ysub+s2;}
+      gui_progressbar_text,swrite(format="Computing subaperture dependant kernel for LGS elongation, WFS#%d, sub#%d/%d",ns,l,wfs(ns)._nsub);
+      gui_progressbar_frac,float(l)/wfs(ns)._nsub;
     }
+    clean_progressbar;
     //if (sim.debug >=2) {hitReturn;}
 
     wfs(ns)._kernels = &(float(kall));
@@ -2232,6 +2243,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   _p1       = long(ceil(sim._cent-_p/2.));
   _p2       = long(floor(sim._cent+_p/2.));
   _p        = _p2-_p1+1;
+
   
   _n        = _p+4;
   _n1       = _p1-2;
@@ -2375,9 +2387,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       dm(n)._n1 = 1;
       dm(n)._n2 = sim._size;
     }
-    //special case = only 2 pixels margin each side:
+    // special case = (only) 6 pixels margin each side:
+    // note: "upgraded" from 2 to 8 to allow more margin when misregistering
     if (dm(n).alt == 0) {
-      extent=sim.pupildiam+4;
+      extent=sim.pupildiam+16;
       dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
       dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
     }
@@ -3352,25 +3365,44 @@ func go(nshot)
 
   if (((looptime <= 2) && ((i % 500) == 1)) ||
       ((looptime > 2) && ((i % 20) == 1)) || (nshots>=0)) {
-    write,"       Short expo. image  Long expos. image ";
-    write,"Iter#  Max.S/Min.S/Avg.S  Max.S/Min.S/Avg.S  Time Left";
+    if (numberof(*target.xposition)==1) {
+      write,"Iter#  Inst.Strehl  Long expo.Strehl  Time Left";
+    } else {
+      write,"       Short expo. image  Long expos. image ";
+      write,"Iter#  Max.S/Min.S/Avg.S  Max.S/Min.S/Avg.S  Time Left";
+    }
   }
 
   if ((looptime > 2) || ((i % 50) == 1) || (nshots>=0)) {
-    msg = swrite(format="%5i  %5.3f %5.3f %5.3f  %5.3f %5.3f %5.3f  %s",
-                 i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
-                 avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
-                 min(imav(max,max,,0))/sairy/(niterok+1e-5),
-                 avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
-    write,msg;
-    header = "Iter#  Inst:Max.S/Min.S/Avg.S  Avg:Max.S/Min.S/Avg.S  Time Left";
-    msg = swrite(format="%5i         %5.3f %5.3f %5.3f        %5.3f %5.3f %5.3f  %s",
-                 i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
-                 avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
-                 min(imav(max,max,,0))/sairy/(niterok+1e-5),
-                 avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
-    gui_message1,header;
-    gui_message,msg;
+    if (numberof(*target.xposition)==1) {
+      msg = swrite(format="%5i  %5.3f        %5.3f             %s",
+                   i,im(max,max,max)/sairy,
+                   imav(max,max,max,0)/sairy/(niterok+1e-5),
+                   remainingTimestring);
+      write,msg;
+      header = "Iter#  Inst.Strehl  Long expo.Strehl  Time Left";
+      msg = swrite(format="%5i  %5.3f          %5.3f             %s",
+                   i,im(max,max,max)/sairy,
+                   imav(max,max,max,0)/sairy/(niterok+1e-5),
+                   remainingTimestring);
+      gui_message1,header;
+      gui_message,msg;
+    } else {
+      msg = swrite(format="%5i  %5.3f %5.3f %5.3f  %5.3f %5.3f %5.3f  %s",
+                   i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
+                   avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
+                   min(imav(max,max,,0))/sairy/(niterok+1e-5),
+                   avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
+      write,msg;
+      header = "Iter#  Inst:Max.S/Min.S/Avg.S  Avg:Max.S/Min.S/Avg.S  Time Left";
+      msg = swrite(format="%5i         %5.3f %5.3f %5.3f        %5.3f %5.3f %5.3f  %s",
+                   i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
+                   avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
+                   min(imav(max,max,,0))/sairy/(niterok+1e-5),
+                   avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
+      gui_message1,header;
+      gui_message,msg;
+    }
   }
   time(8) += tac();
 
@@ -3379,6 +3411,7 @@ func go(nshot)
 //  if (loopCounter<loop.niter) after, 0.001, go;
   if (loopCounter<loop.niter) set_idler, go;
   else {
+    if (yaopy) pyk,"aoloop_to_end()";
     gui_hide_statusbar1;
     after_loop;
   }

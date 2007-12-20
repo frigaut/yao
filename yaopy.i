@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.7 2007-12-19 19:44:19 frigaut Exp $
+ * $Id: yaopy.i,v 1.8 2007-12-20 13:34:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.7  2007-12-19 19:44:19  frigaut
+ * Revision 1.8  2007-12-20 13:34:53  frigaut
+ * - various bug fixes
+ * - better handlng of default parfile path
+ * - better handling of options menu (WFS and DM)
+ *
+ * Revision 1.7  2007/12/19 19:44:19  frigaut
  * - solved a number of bugs and inconsistencies between regular yao call and
  *   GUI calls.
  * - fixed misregistration for curvature systems
@@ -118,6 +123,7 @@ yaopy=1; // used in yao.i to know if using pygtk GUI
 if (pyk_debug==[]) pyk_debug=0;
 //sleep=200;
 default_dpi=dpi=60;
+initdone=0;
 
 // spawned gtk interface
 python_exec = path2py+"/yao.py";
@@ -129,7 +135,7 @@ _pyk_proc = spawn(pyk_cmd, _pyk_callback);
 func yaopy_quit(void)
 {
   pyk,"gtk.main_quit()";
-  write,"\n*** Python interface killed, quitting ***";
+  write,"<< Python interface exited, quitting >>";
   quit;
 }
 
@@ -289,13 +295,15 @@ func change_zenith_angle(zen)
 
 func change_dr0(dr0) {
   atm.dr0at05mic=dr0;
-  getTurbPhaseInit;
+  if (initdone) getTurbPhaseInit;
 }
 
 func change_seeing(seeing) {  //seeing at 550 (V band)
-  r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^1.2;
-  atm.dr0at05mic     = tel.diam/r0at500;
-  getTurbPhaseInit;
+  if (seeing>0) {
+    r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^1.2;
+    atm.dr0at05mic     = tel.diam/r0at500;
+  } else atm.dr0at05mic = 0.;
+  if (initdone) getTurbPhaseInit;
 }
 
 
@@ -431,21 +439,28 @@ func set_wfs_noise(nse)
 
 func set_gs_alt(gsalt)
 {
+  extern okdm,okwfs;
+  if (noneof(okwfs)) return;
+  wfsvec = where(okwfs);
   wfs(wfsvec).gsalt=wfs(wfsvec).gsalt*0+gsalt;
-  getTurbPhaseInit,skipReadPhaseScreens=1;
-  for(ll=1;ll<=nwfs;ll++) {
-    ShWfsInit,ipupil,ll,silent=1;
+  if (initdone) {
+    getTurbPhaseInit,skipReadPhaseScreens=1;
+    for(ll=1;ll<=nwfs;ll++) ShWfsInit,ipupil,ll,silent=1;
   }
 }
 
 func set_gs_depth(gsdepth)
 {
+  extern okdm,okwfs;
+  if (noneof(okwfs)) return;
+  wfsvec = where(okwfs);
   wfs(wfsvec).gsdepth=wfs(wfsvec).gsdepth*0+gsdepth;
-  getTurbPhaseInit,skipReadPhaseScreens=1;
-  for(ll=1;ll<=nwfs;ll++) {
-    ShWfsInit,ipupil,ll,silent=1;
+  if (initdone) {
+    getTurbPhaseInit,skipReadPhaseScreens=1;
+    for(ll=1;ll<=nwfs;ll++) ShWfsInit,ipupil,ll,silent=1;
   }
 }
+
 
 func set_gs_mag(gsmag)
 {
@@ -454,10 +469,9 @@ func set_gs_mag(gsmag)
   for (i=1;i<=nwfs;i++) {
     if (okwfs(i)) {
       wfs(i).gsmag=gsmag;
-      if (wfs(i).type=="curvature") {
-        CurvWfs,,,i,init=1,disp=0,silent=1;
-      } else {
-        ShWfsInit,ipupil,i,silent=1;
+      if (initdone) {
+        if (wfs(i).type=="curvature") CurvWfs,,,i,init=1,disp=0,silent=1;
+        else ShWfsInit,ipupil,i,silent=1;
       }
     }
   }
@@ -472,19 +486,28 @@ func set_wfs_ron(ron)
 
 func wfs_subtract_background(state)
 {
+  extern okdm,okwfs;
+  if (noneof(okwfs)) return;
+  wfsvec = where(okwfs);
   wfs(wfsvec)._bckgrdsub=state;
 }
 
 func wfs_set_uptt(state)
 {
+  extern okdm,okwfs;
+  if (noneof(okwfs)) return;
+  wfsvec = where(okwfs);
   wfs(wfsvec).correctUpTT=state;
 }
 
 func set_wfs_kernel(value)
 {
+  extern okdm,okwfs;
+  if (noneof(okwfs)) return;
+  wfsvec = where(okwfs);
   wfs(wfsvec).kernel=wfs(wfsvec).kernel*0+value;
-  for(ll=1;ll<=nwfs;ll++) {
-    ShWfsInit,ipupil,ll,silent=1;
+  if (initdone) {
+    for(ll=1;ll<=nwfs;ll++) ShWfsInit,ipupil,ll,silent=1;
   }
 }
 
@@ -509,8 +532,7 @@ func set_wfs_efd(efd)
   for (i=1;i<=nwfs;i++) {
     if (okwfs(i)) {
       wfs(i).l=efd;
-      CurvWfs,,,i,init=1,disp=0,silent=1;
-
+      if (initdone) CurvWfs,,,i,init=1,disp=0,silent=1;
     }
   }
 }
@@ -651,8 +673,8 @@ func wrap_aoread(void)
   wfstype=0;
   if (wfs(1).type=="curvature") wfstype = 1;
   if (wfs(1).type=="hartmann") wfstype = 2;
-  pyk,swrite(format="wfs_panel_set_sensitivity(1,%d)",wfstype);
-  pyk,"dm_panel_set_sensitivity(1)";
+  //  pyk,swrite(format="wfs_panel_set_sensitivity(1,%d)",wfstype);
+  //  pyk,"dm_panel_set_sensitivity(1)";
 }
 
 func gui_update(void)
@@ -701,7 +723,7 @@ func gui_update(void)
   pyk,swrite(format="window.set_title('%s')",yaoparfile); 
   pyk,swrite(format="y_parm_update('seeing',%f)",float(seeing));
   pyk,swrite(format="y_parm_update('loopgain',%f)",float(loop.gain));
-  pyk,swrite(format="y_parm_update('imlambda',%f)",float((*target.lambda)(1)));
+  pyk,swrite(format="y_parm_update('imlambda',%f)",float((*target.lambda)(0)));
   gui_update_wfs,1;
   pyk,swrite(format="y_parm_update('dmgain',%f)",float(dm(1).gain));
   pyk,swrite(format="y_parm_update('xmisreg',%f)",float(dm(1).misreg(1)));
@@ -765,11 +787,10 @@ if (numberof(arg)>=4) {
   //  aoread,yaoparfile;
  } else {
   yaoparfile="";
-  tmp = find_in_path("data/sh6x6.par",takefirst=1);
-  if (tmp==[]) tmp=find_in_path("example/sh6x6.par",takefirst=1);
-  if (tmp!=[]) yaopardir = dirname(tmp);
-  if (tmp==[]) tmp=find_in_path("../data/sh6x6.par",takefirst=1);
-  if (tmp==[]) tmp=find_in_path("../example/sh6x6.par",takefirst=1);
+  parpath="./:"+pathform(_(Y_USER,Y_SITES,Y_SITE));
+  tmp = find_in_path("sh6x6.par",takefirst=1,path=parpath);
+  if (tmp==[]) tmp=find_in_path("data/sh6x6.par",takefirst=1,path=parpath);
+  if (tmp==[]) tmp=find_in_path("share/yao/examples/sh6x6.par",takefirst=1,path=parpath);
   if (tmp!=[]) yaopardir = dirname(tmp);
   else yaopardir=get_cwd();
  }

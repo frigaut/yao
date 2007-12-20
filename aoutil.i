@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.4 2007-12-19 19:44:19 frigaut Exp $
+ * $Id: aoutil.i,v 1.5 2007-12-20 13:34:52 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.4  2007-12-19 19:44:19  frigaut
+ * Revision 1.5  2007-12-20 13:34:52  frigaut
+ * - various bug fixes
+ * - better handlng of default parfile path
+ * - better handling of options menu (WFS and DM)
+ *
+ * Revision 1.4  2007/12/19 19:44:19  frigaut
  * - solved a number of bugs and inconsistencies between regular yao call and
  *   GUI calls.
  * - fixed misregistration for curvature systems
@@ -1074,7 +1079,7 @@ func MakePztIF(nm,&def,disp=)
   */
 {
   gui_progressbar_frac,0.;
-  gui_progressbar_text,"Computing Influence Functions";
+  gui_progressbar_text,swrite(format="Computing Influence Functions for DM#%d",nm);
   coupling=dm(nm).coupling;
 
   // best parameters, as determined by a multi-dimensional fit
@@ -1174,7 +1179,7 @@ func MakePztIF(nm,&def,disp=)
     tmp        = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*
                  (1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
     def(,,i)   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
-    gui_progressbar_text,swrite(format="Computing Influence Functions %d/%d",i,nvalid);
+    gui_progressbar_text,swrite(format="Computing Influence Functions for DM#%d, act#%d/%d",nm,i,nvalid);
     gui_progressbar_frac,float(i)/nvalid;
     if ((disp == 1) && (sim.debug == 2)) {fma; pli,def(,,i);}
   }

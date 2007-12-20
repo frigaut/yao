@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.7 2007-12-19 19:44:19 frigaut Exp $
+# $Id: yao.py,v 1.8 2007-12-20 13:34:53 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,12 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.7  2007-12-19 19:44:19  frigaut
+# Revision 1.8  2007-12-20 13:34:53  frigaut
+# - various bug fixes
+# - better handlng of default parfile path
+# - better handling of options menu (WFS and DM)
+#
+# Revision 1.7  2007/12/19 19:44:19  frigaut
 # - solved a number of bugs and inconsistencies between regular yao call and
 #   GUI calls.
 # - fixed misregistration for curvature systems
@@ -260,7 +265,9 @@ class yao:
       if res == gtk.RESPONSE_CANCEL:
          chooser.destroy()
          return
-      self.yaoparfile = chooser.get_filename()
+      name = chooser.get_filename()
+      self.yaopardir = os.path.dirname(name)
+      self.yaoparfile = os.path.basename(name)
       chooser.destroy()
       # get buffer content
       textarea = self.glade.get_widget('textarea')
@@ -389,8 +396,6 @@ class yao:
       self.glade.get_widget('step').set_sensitive(0)
       self.glade.get_widget('restart').set_sensitive(0)
       self.glade.get_widget('displays').set_sensitive(0)
-      self.glade.get_widget('wfss').set_sensitive(0)
-      self.glade.get_widget('dms').set_sensitive(0)
       self.glade.get_widget('seeingframe').set_sensitive(0)
       self.glade.get_widget('aoinit').grab_focus()
       self.glade.get_widget('wfss').set_sensitive(1)
@@ -398,6 +403,7 @@ class yao:
       self.progressbar.set_fraction(0.)
       self.progressbar.set_text('')
       self.init = 0
+      self.py2yo('pyk_set initdone 0')
 
    def on_aoinit_clicked(self,wdg):
       self.set_cursor_busy(1)
@@ -408,6 +414,7 @@ class yao:
       self.progressbar.set_fraction(0.)
       self.progressbar.set_text('')
       self.init = 1
+      self.py2yo('pyk_set initdone 1')
    
    def on_aoinit_popup_button_clicked(self,wdg,event):
       if event.type == gtk.gdk.BUTTON_PRESS:
@@ -465,20 +472,40 @@ class yao:
       self.py2yo('go 1')
       
    def on_restart_clicked(self,wdg):
+      self.glade.get_widget('go').set_sensitive(1)
+      self.glade.get_widget('pause').set_sensitive(1)
+      self.glade.get_widget('step').set_sensitive(1)
       self.py2yo('do_aoloop_disp')
-      
+
+   def aoloop_to_end(self):
+      self.glade.get_widget('go').set_sensitive(0)
+      self.glade.get_widget('pause').set_sensitive(0)
+      self.glade.get_widget('step').set_sensitive(0)
+
    #
    # Display Panel Events Handlers
    #
+      
+   def disp_panel_set_sensitivity(self,sens):
+      self.glade.get_widget('disp_rate').set_sensitive(sens)
+      self.glade.get_widget('disp_label').set_sensitive(sens)
+      self.glade.get_widget('instavg_label').set_sensitive(sens)
+      self.glade.get_widget('instavg_hbox').set_sensitive(sens)
       
    def on_disp_pause_clicked(self,wdg):
       self.py2yo('toggle_animate 0')
       self.py2yo('fma')
       self.py2yo('funcset dispFlag 10000')
-      
+      self.disp_panel_set_sensitivity(0)
+      self.glade.get_widget('disp_pause').set_sensitive(0)
+      self.glade.get_widget('disp_resume').set_sensitive(1)
+
    def on_disp_resume_clicked(self,wdg):
       self.py2yo('funcset dispFlag %d' % self.dispflag)
       self.py2yo('toggle_animate 1')
+      self.disp_panel_set_sensitivity(1)
+      self.glade.get_widget('disp_pause').set_sensitive(1)
+      self.glade.get_widget('disp_resume').set_sensitive(0)
 
    def on_image_disp_inst_clicked(self,wdg):
       if wdg.get_active():
@@ -497,8 +524,7 @@ class yao:
    #
       
    def on_seeing_value_changed(self,wdg):
-      if self.init:
-         self.py2yo('change_seeing %f' % wdg.get_value())
+      self.py2yo('change_seeing %f' % wdg.get_value())
       
    def on_loopgain_value_changed(self,wdg):
       if self.init:
@@ -606,20 +632,16 @@ class yao:
       self.py2yo('dm_flatten')
 
    def on_dmgain_value_changed(self,wdg):
-      if self.init:
-         self.py2yo('dm_gain %f' % wdg.get_value())
+      self.py2yo('dm_gain %f' % wdg.get_value())
          
    def on_xmisreg_value_changed(self,wdg):
-      if self.init:
-         self.py2yo('dm_xmisreg %f' % wdg.get_value())
+      self.py2yo('dm_xmisreg %f' % wdg.get_value())
          
    def on_ymisreg_value_changed(self,wdg):
-      if self.init:
-         self.py2yo('dm_ymisreg %f' % wdg.get_value())
+      self.py2yo('dm_ymisreg %f' % wdg.get_value())
 
    def on_sat_voltage_value_changed(self,wdg):
-      if self.init:
-         self.py2yo('dm_satvolt %f' % wdg.get_value())
+      self.py2yo('dm_satvolt %f' % wdg.get_value())
 
 
    def y_set_ndm(self,ndm):
