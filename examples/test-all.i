@@ -1,4 +1,4 @@
-require,"yao/yao.i";
+require,"yao.i";
 write,"CREATING PHASE SCREENS";
 CreatePhaseScreens,1024,256,prefix="screen";
 f = findfiles("test*.par");
