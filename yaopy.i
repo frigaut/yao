@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.8 2007-12-20 13:34:53 frigaut Exp $
+ * $Id: yaopy.i,v 1.9 2007-12-21 20:48:47 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,10 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.8  2007-12-20 13:34:53  frigaut
+ * Revision 1.9  2007-12-21 20:48:47  frigaut
+ * added get_env on Y_PYTHON, Y_GLADE, Y_CONF
+ *
+ * Revision 1.8  2007/12/20 13:34:53  frigaut
  * - various bug fixes
  * - better handlng of default parfile path
  * - better handling of options menu (WFS and DM)
@@ -77,6 +80,10 @@
 
 // PATH to yao.py and yao.glade:
 require,"pathfun.i";
+
+Y_PYTHON = get_env("Y_PYTHON");
+Y_GLADE  = get_env("Y_GLADE");
+Y_CONF   = get_env("Y_CONF");
 
 if (noneof(Y_PYTHON)) \
   Y_PYTHON="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"python/");
