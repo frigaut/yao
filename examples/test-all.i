@@ -1,7 +1,8 @@
 require,"yao.i";
 write,"CREATING PHASE SCREENS";
 if (!open(Y_USER+"data/screen1.fits","r",1)) {
-  CreatePhaseScreens,1024,256,prefix=YUSER+"data/screen";
+  mkdirp,Y_USER+"data/screen";
+  CreatePhaseScreens,1024,256,prefix=Y_USER+"data/screen";
  }
 f = findfiles("test*.par");
 write,"LOOPING ON TEST*.PAR";
