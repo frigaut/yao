@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.9 2007-12-21 20:48:47 frigaut Exp $
+ * $Id: yaopy.i,v 1.10 2007-12-26 18:54:40 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,10 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.9  2007-12-21 20:48:47  frigaut
+ * Revision 1.10  2007-12-26 18:54:40  frigaut
+ * fixed minor bugs, mostly related to path and permissions
+ *
+ * Revision 1.9  2007/12/21 20:48:47  frigaut
  * added get_env on Y_PYTHON, Y_GLADE, Y_CONF
  *
  * Revision 1.8  2007/12/20 13:34:53  frigaut
@@ -87,9 +90,9 @@ Y_CONF   = get_env("Y_CONF");
 
 if (noneof(Y_PYTHON)) \
   Y_PYTHON="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"python/");
-if (is_void(Y_GLADE)) \
+if (noneof(Y_GLADE)) \
   Y_GLADE="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"glade/");
-if (is_void(Y_CONF)) \
+if (noneof(Y_CONF)) \
   Y_CONF="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"conf/");
 
 // try to find yao.py
@@ -161,6 +164,8 @@ func save_conf(void)
     pyk_error,swrite(format="Can not create %syao.conf. Permission problem?",path2conf);
     return;
   }
+
+  mkdirp,Y_USER;
   f=open(path2conf+"yao.conf","w");
   write,f,"/* yao.conf";
   write,f," * this file is included by yaopy.i";

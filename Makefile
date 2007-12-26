@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/home/frigaut/yorick-2.1/Linux-i686
-Y_EXE=/home/frigaut/yorick-2.1/Linux-i686/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick
+Y_EXE=/usr/lib/yorick/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/home/frigaut/yorick-2.1/Linux-i686
-Y_EXE_SITE=/home/frigaut/yorick-2.1
+Y_EXE_HOME=/usr/lib/yorick
+Y_EXE_SITE=/usr/lib/yorick
 
 # ----------------------------------------------------- optimization flags
 
@@ -70,6 +70,9 @@ MAKE_TEMPLATE = protect-against-1.5
 #myfunc.o: myapi.h myfunc.c
 #	$(CC) $(CPPFLAGS) $(CFLAGS) -DMY_SWITCH -o $@ -c myfunc.c
 
+clean::
+	-rm -rf binaries
+
 install::
 	mkdir -p $(DEST_Y_SITE)/python
 	mkdir -p $(DEST_Y_SITE)/glade
@@ -104,7 +107,7 @@ uninstall::
 PKG_DEPLIBS_STATIC=-lm /usr/lib/libfftw3f.a
 PKG_ARCH = $(OSTYPE)-$(MACHTYPE)
 # The above usually don't work. Edit manually and change the PKG_ARCH below:
-PKG_ARCH = linux-x86
+# PKG_ARCH = linux-x86
 PKG_VERSION = $(shell (awk '{if ($$1=="Version:") print $$2}' $(PKG_NAME).info))
 # .info might not exist, in which case he line above will exit in error.
 
@@ -138,7 +141,7 @@ package:
 	cp -p yao.glade binaries/$(PKG_NAME)/dist/y_site/glade/.
 	cp -p aosimul3.gs binaries/$(PKG_NAME)/dist/y_site/g/.
 	cp -p letter.gs binaries/$(PKG_NAME)/dist/y_site/g/.
-	cp -p examples/* binaries/$(PKG_NAME)/dist/y_site/contrib/yao/examples/.	
+	-cp -p examples/* binaries/$(PKG_NAME)/dist/y_site/contrib/yao/examples/.
 	cd binaries; tar zcvf $(PKG_NAME)-$(PKG_VERSION)-$(PKG_ARCH).tgz $(PKG_NAME)
 
 distbin:
