@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.10 2007-12-26 18:54:40 frigaut Exp $
+ * $Id: yaopy.i,v 1.11 2007-12-27 09:06:28 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.10  2007-12-26 18:54:40  frigaut
+ * Revision 1.11  2007-12-27 09:06:28  frigaut
+ * - bumped to version 4.2.3
+ * - corrected problem with glade path (python does not like ~, so
+ * replaced by expansion)
+ *
+ * Revision 1.10  2007/12/26 18:54:40  frigaut
  * fixed minor bugs, mostly related to path and permissions
  *
  * Revision 1.9  2007/12/21 20:48:47  frigaut
@@ -88,12 +93,14 @@ Y_PYTHON = get_env("Y_PYTHON");
 Y_GLADE  = get_env("Y_GLADE");
 Y_CONF   = get_env("Y_CONF");
 
+y_user = streplace(Y_USER,strfind("~",Y_USER),get_env("HOME"))
+
 if (noneof(Y_PYTHON)) \
-  Y_PYTHON="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"python/");
+  Y_PYTHON="./:"+y_user+":"+pathform(_(y_user,Y_SITES,Y_SITE)+"python/");
 if (noneof(Y_GLADE)) \
-  Y_GLADE="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"glade/");
+  Y_GLADE="./:"+y_user+":"+pathform(_(y_user,Y_SITES,Y_SITE)+"glade/");
 if (noneof(Y_CONF)) \
-  Y_CONF="./:"+Y_USER+":"+pathform(_(Y_USER,Y_SITES,Y_SITE)+"conf/");
+  Y_CONF="./:"+y_user+":"+pathform(_(y_user,Y_SITES,Y_SITE)+"conf/");
 
 // try to find yao.py
 path2py = find_in_path("yao.py",takefirst=1,path=Y_PYTHON);

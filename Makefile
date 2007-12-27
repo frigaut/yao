@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/usr/lib/yorick
-Y_EXE=/usr/lib/yorick/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick/2.1
+Y_EXE=/usr/lib/yorick/2.1/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/usr/lib/yorick
-Y_EXE_SITE=/usr/lib/yorick
+Y_EXE_HOME=/usr/lib/yorick/2.1
+Y_EXE_SITE=/usr/share/yorick/2.1
 
 # ----------------------------------------------------- optimization flags
 
@@ -118,12 +118,14 @@ package:
 	$(MAKE)
 	$(LD_DLL) -o $(PKG_NAME).so $(OBJS) ywrap.o $(PKG_DEPLIBS_STATIC) $(DLL_DEF)
 	mkdir -p binaries/$(PKG_NAME)/dist/y_home/lib
+	mkdir -p binaries/$(PKG_NAME)/dist/y_home/bin
 	mkdir -p binaries/$(PKG_NAME)/dist/y_home/i-start
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/i0
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/g
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/python
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/glade
-	mkdir -p binaries/$(PKG_NAME)/dist/y_site/contrib/yao/examples
+	mkdir -p binaries/$(PKG_NAME)/dist/y_site/share/yao/examples
+	mkdir -p binaries/$(PKG_NAME)/dist/y_site/share/yao/doc
 	cp -p *.i binaries/$(PKG_NAME)/dist/y_site/i0/
 	rm binaries/$(PKG_NAME)/dist/y_site/i0/check.i
 	if test -n "$(PKG_I_START)"; then rm binaries/$(PKG_NAME)/dist/y_site/i0/$(PKG_I_START); fi
@@ -134,14 +136,15 @@ package:
 	cat $(PKG_NAME).info | sed -e 's/OS:/OS: $(PKG_ARCH)/' > tmp.info
 	mv tmp.info binaries/$(PKG_NAME)/$(PKG_NAME).info
 	cp -p *.i binaries/$(PKG_NAME)/dist/y_site/i0/.
-	cp -p README binaries/$(PKG_NAME)/dist/y_site/contrib/yao/.
-	cp -p INSTALL binaries/$(PKG_NAME)/dist/y_site/contrib/yao/.
-	cp -p LICENSE binaries/$(PKG_NAME)/dist/y_site/contrib/yao/.
+	cp -p README binaries/$(PKG_NAME)/dist/y_site/share/yao/.
+	cp -p INSTALL binaries/$(PKG_NAME)/dist/y_site/share/yao/.
+	cp -p LICENSE binaries/$(PKG_NAME)/dist/y_site/share/yao/.
+	cp -p yao binaries/$(PKG_NAME)/dist/y_home/bin/.
 	cp -p yao.py binaries/$(PKG_NAME)/dist/y_site/python/.
 	cp -p yao.glade binaries/$(PKG_NAME)/dist/y_site/glade/.
-	cp -p aosimul3.gs binaries/$(PKG_NAME)/dist/y_site/g/.
-	cp -p letter.gs binaries/$(PKG_NAME)/dist/y_site/g/.
-	-cp -p examples/* binaries/$(PKG_NAME)/dist/y_site/contrib/yao/examples/.
+	cp -p *.gs binaries/$(PKG_NAME)/dist/y_site/g/.
+	-cp -p examples/* binaries/$(PKG_NAME)/dist/y_site/share/yao/examples/.
+	-cp -p doc/* binaries/$(PKG_NAME)/dist/y_site/share/yao/doc/.
 	cd binaries; tar zcvf $(PKG_NAME)-$(PKG_VERSION)-$(PKG_ARCH).tgz $(PKG_NAME)
 
 distbin:
@@ -154,8 +157,8 @@ distbin:
 
 distsrc:
 	make clean; rm -rf binaries
-	cd ../..; tar --exclude binaries --exclude .svn -zcvf \
-	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz $(PKG_NAME);\
+	cd ..; tar --exclude binaries --exclude CVS -zcvf \
+	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz yorick-$(PKG_NAME)-$(PKG_VERSION);\
 	ncftpput -f $(HOME)/.ncftp/maumae www/yorick/$(PKG_DEST_URL)/src/ \
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz
 

@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.9 2007-12-20 13:35:55 frigaut Exp $
+ * $Id: yao.i,v 1.10 2007-12-27 09:06:28 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,12 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.9  2007-12-20 13:35:55  frigaut
+ * Revision 1.10  2007-12-27 09:06:28  frigaut
+ * - bumped to version 4.2.3
+ * - corrected problem with glade path (python does not like ~, so
+ * replaced by expansion)
+ *
+ * Revision 1.9  2007/12/20 13:35:55  frigaut
  * bumped to v4.2.2
  *
  * Revision 1.8  2007/12/20 13:34:53  frigaut
@@ -150,8 +155,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.2";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec20";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.3";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec26";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
