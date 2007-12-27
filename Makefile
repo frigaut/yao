@@ -77,6 +77,7 @@ install::
 	mkdir -p $(DEST_Y_SITE)/python
 	mkdir -p $(DEST_Y_SITE)/glade
 	mkdir -p $(DEST_Y_SITE)/g
+	mkdir -p $(DEST_Y_SITE)/gist
 	mkdir -p $(DEST_Y_SITE)/share/yao
 	mkdir -p $(DEST_Y_BINDIR)
 #	mkdir -p /usr/local/man/man1
@@ -84,6 +85,8 @@ install::
 	cp -p yao.glade $(DEST_Y_SITE)/glade/
 	cp -p aosimul3.gs $(DEST_Y_SITE)/g/
 	cp -p letter.gs $(DEST_Y_SITE)/g/
+	cp -p aosimul3.gs $(DEST_Y_SITE)/gist/
+	cp -p letter.gs $(DEST_Y_SITE)/gist/
 	cp -p yao $(DEST_Y_BINDIR)/
 	cp -pr examples $(DEST_Y_SITE)/share/yao/
 	cp -pr doc $(DEST_Y_SITE)/share/yao/
@@ -95,6 +98,8 @@ uninstall::
 	-rm $(DEST_Y_BINDIR)/yao
 	-rm $(DEST_Y_SITE)/g/aosimul3.gs
 	-rm $(DEST_Y_SITE)/g/letter.gs
+	-rm $(DEST_Y_SITE)/gist/aosimul3.gs
+	-rm $(DEST_Y_SITE)/gist/letter.gs
 	-rm $(DEST_Y_SITE)/python/yao.py
 	-rm $(DEST_Y_SITE)/glade/yao.glade
 	-rm -rf $(DEST_Y_SITE)/share/yao/
@@ -122,6 +127,7 @@ package:
 	mkdir -p binaries/$(PKG_NAME)/dist/y_home/i-start
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/i0
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/g
+	mkdir -p binaries/$(PKG_NAME)/dist/y_site/gist
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/python
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/glade
 	mkdir -p binaries/$(PKG_NAME)/dist/y_site/share/yao/examples
@@ -143,6 +149,7 @@ package:
 	cp -p yao.py binaries/$(PKG_NAME)/dist/y_site/python/.
 	cp -p yao.glade binaries/$(PKG_NAME)/dist/y_site/glade/.
 	cp -p *.gs binaries/$(PKG_NAME)/dist/y_site/g/.
+	cp -p *.gs binaries/$(PKG_NAME)/dist/y_site/gist/.
 	-cp -p examples/* binaries/$(PKG_NAME)/dist/y_site/share/yao/examples/.
 	-cp -p doc/* binaries/$(PKG_NAME)/dist/y_site/share/yao/doc/.
 	cd binaries; tar zcvf $(PKG_NAME)-$(PKG_VERSION)-$(PKG_ARCH).tgz $(PKG_NAME)
