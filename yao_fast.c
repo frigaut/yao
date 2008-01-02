@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.c,v 1.3 2007-12-19 14:02:08 frigaut Exp $
+ * $Id: yao_fast.c,v 1.4 2008-01-02 13:54:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -21,7 +21,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.c,v $
- * Revision 1.3  2007-12-19 14:02:08  frigaut
+ * Revision 1.4  2008-01-02 13:54:53  frigaut
+ * - correct size for the graphic inserts (no black border)
+ * - updated spec files
+ *
+ * Revision 1.3  2007/12/19 14:02:08  frigaut
  * - gotten rid of annoying compilation warning (clean)
  *
  * Revision 1.2  2007/12/13 00:58:31  frigaut
@@ -40,14 +44,18 @@
 
 #define FFTWOPTMODE FFTW_EXHAUSTIVE
 
-int _import_wisdom(char *wisdom_file)
+void _eclat_float(float *ar, int nx, int ny);
+void _poidev(float *xmv, long n);
+void _gaussdev(float *xmv, long n);
+
+void _import_wisdom(char *wisdom_file)
 {
   FILE *fp;
 
   fp = fopen(wisdom_file, "r");
   if (fftwf_import_wisdom_from_file(fp)==0)
     printf("Error reading wisdom!\n");
-  fclose(fp); 
+  fclose(fp);
 }
 
 int _export_wisdom(char *wisdom_file)
@@ -71,7 +79,6 @@ int _init_fftw_plans(int nlimit)
 {
   int n;
   int size;
-  FILE *input_file;
   fftwf_complex *inf;
   fftwf_complex *outf;
   float *rinf;
@@ -144,7 +151,6 @@ int _calcPSFVE(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
   fftwf_complex *in, *out;
   float         *ptr;
   long          i,k,koff,n;
-  float         scale;
   fftwf_plan     p;
       
   /* Set the size of 2d FFT. */
@@ -195,7 +201,7 @@ int _calcPSFVE(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
   /* Free allocated memory. */
   fftwf_destroy_plan(p);
   fftwf_free(in); fftwf_free(out);
-
+  return (0);
 }
 
 
@@ -252,12 +258,12 @@ int _fftVE(float *rp,
   /* Free allocated memory. */
   fftwf_destroy_plan(p);
   fftwf_free(in); fftwf_free(out);
-
+  return (0);
 }
 
 
 
-int _fftVE2(fftwf_complex *in,
+void _fftVE2(fftwf_complex *in,
 	    fftwf_complex *out,
 	    int n,       /* log2 of side linear dimension (e.g. 6 for 64x64 arrays) */
 	    int dir)      /* forward (1) or reverse (-1) */
@@ -387,7 +393,7 @@ int _shwfs(float *pupil,      // input pupil
   fftwf_plan    p,p1;
   float         centx, centy, centi, tot, totrayleigh, krp, kip, sky;
   long          log2nr, log2nc, n, ns, nb;
-  int           i,j,k,l,koff,err,integrate;
+  int           i,j,k,l,koff,integrate;
 
   /*
     Global setup for FFTs:
@@ -742,7 +748,7 @@ int _shwfsSimple(float *pupil,      // input pupil
 {
   /* Declarations */
   float         avgx, avgy, avgi;
-  long          n, N;
+  long          N;
   int           i,j,k,l,koff;
 
   // Set sizes
@@ -811,8 +817,8 @@ int _cwfs (float *pupil,      // input pupil
   fftwf_plan     p,p1;
   float         *x1,*x2,*gnoise;
   float         tot;
-  long          log2nr, log2nc, n, ns, nb;
-  int           i,j,k,sindstride,koff;
+  long          log2nr, log2nc, n, ns;
+  int           i,k,sindstride,koff;
 
 
   /*

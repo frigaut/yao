@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: utils.c,v 1.3 2007-12-13 16:04:21 frigaut Exp $
+ * $Id: utils.c,v 1.4 2008-01-02 13:54:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: utils.c,v $
- * Revision 1.3  2007-12-13 16:04:21  frigaut
+ * Revision 1.4  2008-01-02 13:54:53  frigaut
+ * - correct size for the graphic inserts (no black border)
+ * - updated spec files
+ *
+ * Revision 1.3  2007/12/13 16:04:21  frigaut
  * - modification to broken Makefile
  * - reshuffling of plug_in statement
  *
@@ -105,7 +109,7 @@ void _poidev(float *xmv, long n)
   float gammln(float xx); 
   /*  float ran1(long *idum);*/
   static float sq,alxm,g,oldm=(-1.0); 
-  float xm,em,t,y,y1; 
+  float xm,em,t,y; 
   long i;
 
   for (i=0;i<n;i++) {

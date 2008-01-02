@@ -1,7 +1,6 @@
-%define name yorick_yao
-%define version 4.2.1
-%define release 02gemini
-%define yorick_version 2.1
+%define name yorick-yao
+%define version 4.2.3
+%define release gemini2007dec31
 
 Summary: yorick adaptive optics simulation package
 Name: %{name}
@@ -13,7 +12,7 @@ Group: Applications/Engineering
 Packager: Francois Rigaut <frigaut@gemini.edu>
 Url: http://www.maumae.net/yorick/doc/plugins.php
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Requires: yorick = %{yorick_version} yorick_imutil >= 0.5 yorick_utils >= 1.0 fftw
+Requires: yorick >= 2.1 yorick-imutil >= 0.5 yorick-yutils >= 1.0 fftw
 
 
 %description
@@ -35,39 +34,51 @@ fi;
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/lib
-mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/bin
-mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/i0
-mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/g
-mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/glade
-mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/python
-mkdir -p $RPM_BUILD_ROOT/usr/share/doc
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/lib
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/i0
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/i
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/g
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/glade
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/python
+mkdir -p $RPM_BUILD_ROOT/usr/share/doc/yorick-yao
+mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
 mkdir -p $RPM_BUILD_ROOT/usr/bin
 
-install -dm 755 examples $RPM_BUILD_ROOT/usr/share/yao/examples
-install -m 644 examples/*.par $RPM_BUILD_ROOT/usr/share/yao/examples
-install -m 644 examples/*.i $RPM_BUILD_ROOT/usr/share/yao/examples
-install -m 755 examples/testclean $RPM_BUILD_ROOT/usr/share/yao/examples
-install -m 755 yao.so $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/lib
-install -m 644 *.i $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/i0
-install -m 644 *.gs $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/g
-install -m 644 yao.glade $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/glade
-install -m 755 yao.py $RPM_BUILD_ROOT/usr/lib/yorick/%{yorick_version}/python
-install -m 644 README $RPM_BUILD_ROOT/usr/share/yao
-install -m 755 yaogtk $RPM_BUILD_ROOT/usr/bin
+install -m 755 yao.so $RPM_BUILD_ROOT/usr/lib/yorick/lib
+install -m 755 yao $RPM_BUILD_ROOT/usr/bin
+install -m 644 yao_fast.i $RPM_BUILD_ROOT/usr/lib/yorick/i0
+install -m 644 yao_utils.i $RPM_BUILD_ROOT/usr/lib/yorick/i0
+install -m 644 *.i $RPM_BUILD_ROOT/usr/lib/yorick/i
+install -m 644 *.gs $RPM_BUILD_ROOT/usr/lib/yorick/g
+install -m 644 yao.glade $RPM_BUILD_ROOT/usr/lib/yorick/glade
+install -m 755 yao.py $RPM_BUILD_ROOT/usr/lib/yorick/python
+install -m 644 LICENSE $RPM_BUILD_ROOT/usr/share/doc/yorick-yao
+install -m 644 README $RPM_BUILD_ROOT/usr/share/doc/yorick-yao
+install -dm 755 examples $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
+install -m 644 examples/*.par $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
+install -m 644 examples/*.i $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
+install -m 755 examples/testclean $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
+install -m 644 doc/yao.1.gz $RPM_BUILD_ROOT/usr/share/man/man1
+
+rm $RPM_BUILD_ROOT/usr/lib/yorick/i/yao_fast.i
+rm $RPM_BUILD_ROOT/usr/lib/yorick/i/yao_utils.i
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-/usr/lib/yorick/%{yorick_version}/lib/yao.so
-/usr/bin/yaogtk
-/usr/lib/yorick/%{yorick_version}/i0/*.i
-/usr/lib/yorick/%{yorick_version}/g/*.gs
-/usr/lib/yorick/%{yorick_version}/glade/yao.glade
-/usr/lib/yorick/%{yorick_version}/python/yao.py
-/usr/share/yao
-
+/usr/lib/yorick/lib/yao.so
+/usr/bin/yao
+/usr/lib/yorick/i0/*.i
+/usr/lib/yorick/i/*.i
+/usr/lib/yorick/g/*.gs
+/usr/lib/yorick/glade/yao.glade
+/usr/lib/yorick/python/yao.py
+/usr/share/doc/yorick-yao
+/usr/share/man/man1
 
 %changelog
+* Mon Dec 31 2007 <frigaut@users.sourceforge.net>
+- new distro directory structure
+- updated to cvs

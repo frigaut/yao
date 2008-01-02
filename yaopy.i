@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.11 2007-12-27 09:06:28 frigaut Exp $
+ * $Id: yaopy.i,v 1.12 2008-01-02 13:54:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.11  2007-12-27 09:06:28  frigaut
+ * Revision 1.12  2008-01-02 13:54:53  frigaut
+ * - correct size for the graphic inserts (no black border)
+ * - updated spec files
+ *
+ * Revision 1.11  2007/12/27 09:06:28  frigaut
  * - bumped to version 4.2.3
  * - corrected problem with glade path (python does not like ~, so
  * replaced by expansion)
@@ -190,7 +194,7 @@ func save_conf(void)
 func yao_win_init(parent_id)
 {
   window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),
-    height=long(425*(dpi/50.)),wait=1,parent=parent_id;
+    height=long(425*(dpi/50.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
 }
 
 func wrap_create_phase_screens(void)

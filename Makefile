@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/usr/lib/yorick/2.1
-Y_EXE=/usr/lib/yorick/2.1/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick
+Y_EXE=/usr/lib/yorick/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/usr/lib/yorick/2.1
-Y_EXE_SITE=/usr/share/yorick/2.1
+Y_EXE_HOME=/usr/lib/yorick
+Y_EXE_SITE=/usr/lib/yorick
 
 # ----------------------------------------------------- optimization flags
 
@@ -21,10 +21,8 @@ OBJS=aoSimulUtils.o utils.o yao_fast.o
 # change to give the executable a name other than yorick
 PKG_EXENAME=yorick
 
-FFTW3_PATH=/usr
-
 # PKG_DEPLIBS=-Lsomedir -lsomelib   for dependencies of this package
-PKG_DEPLIBS=-L$(FFTW3_PATH)/lib -lfftw3f
+PKG_DEPLIBS=-lfftw3f
 # set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS=
 PKG_LDFLAGS=
@@ -154,7 +152,7 @@ package:
 	-cp -p doc/* binaries/$(PKG_NAME)/dist/y_site/share/yao/doc/.
 	cd binaries; tar zcvf $(PKG_NAME)-$(PKG_VERSION)-$(PKG_ARCH).tgz $(PKG_NAME)
 
-distbin:
+distbin: package
 	if test -f "binaries/$(PKG_NAME)-$(PKG_VERSION)-$(PKG_ARCH).tgz" ; then \
 	  ncftpput -f $(HOME)/.ncftp/maumae www/yorick/$(PKG_DEST_URL)/$(PKG_ARCH)/tarballs/ \
 	  binaries/$(PKG_NAME)-$(PKG_VERSION)-$(PKG_ARCH).tgz; fi
@@ -168,6 +166,8 @@ distsrc:
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz yorick-$(PKG_NAME)-$(PKG_VERSION);\
 	ncftpput -f $(HOME)/.ncftp/maumae www/yorick/$(PKG_DEST_URL)/src/ \
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz
+	ncftpput -f $(HOME)/.ncftp/maumae www/yorick/contrib/ \
+	   ../$(PKG_NAME)-$(PKG_VERSION)-src.tgz
 
 
 # -------------------------------------------------------- end of Makefile

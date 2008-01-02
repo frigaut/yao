@@ -682,8 +682,8 @@ yet, they will be saved in Y_USER/data</property>
                 </child>
                 <child>
                   <widget class="GtkDrawingArea" id="drawingarea1">
-                    <property name="width_request">665</property>
-                    <property name="height_request">530</property>
+                    <property name="width_request">660</property>
+                    <property name="height_request">532</property>
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <signal name="map_event" handler="on_drawingarea1_map_event"/>
@@ -1622,7 +1622,7 @@ yet, they will be saved in Y_USER/data</property>
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="border_width">5</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
-    <property name="version">V4.2.1</property>
+    <property name="version">V4.2.3</property>
     <property name="copyright" translatable="yes">Francois Rigaut, 2001-2007</property>
     <property name="comments" translatable="yes">YAO is an Adaptive Optics simulation package written in yorick, an open source interpreted language. It features Shack-Hartmann and curvature wavefront 
 sensors, Stack array (piezostack) or curvature deformable mirrors, or modal (Zernike) correctors. An arbitrary number
