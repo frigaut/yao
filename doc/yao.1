@@ -1,0 +1,109 @@
+.TH YAO 1 "2007 December 12"
+.UC 4
+.SH NAME
+yao \- Adaptive Optics simulation tool in yorick
+.SH SYNOPSIS
+.TP 3
+Start yao with the gtk GUI:
+.B yao
+.I parfile.par
+.br
+.B yorick
+\-i yaopy.i
+.I parfile.par
+.TP 3
+Within yorick (no GUI, but same graphical output)
+.B #include "yao.i"
+.br
+.B aoread,"parfile.par"; aoinit; aoloop; go;
+.SH DESCRIPTION
+.I Yao
+is a monte-carlo simulation package for adaptive optics. It includes
+fast core coded in C (e.g. wavefront sensing) that are glued together
+by yorick interpreted code. One defines the system to evaluate using
+a configuration file, and then run aoread, aoinit and aoloop. Yao
+features:
+.TP 3
+*
+Shack-Hartmann and Curvature WFS, on or off axis.
+.TP
+*
+Stackarray (piezostack), curvature (bimorph), modal (zernike) and
+Tip-Tilt deformable mirrors are supported. The altitude of conjugation
+is adjustable. 
+.TP
+*
+An arbitrary number of WFSs and DMs can be selected, with the
+possibility of mixing types. It is therefore possible (and easy)
+to simulate single DM systems, as well as single non-zero conjugate,
+GLAO and MCAO systems. 
+.TP
+*
+It supports Natural and Laser Guide Stars (or a mix), WFS with photon
+and read-out noise.
+.TP
+*
+It uses a multi-layered atmospheric model, with geometrical
+propagation only. 
+.TP
+*
+The loop execution has been optimized for speed: the critical routines
+have been coded in C. Yorick is thus used as a convenient glue
+between lower levels optimized C calls. Overall, this is rather
+efficient: A simple 6x6 Shack-Hartmann system runs at up to 650
+iterations per second on an apple dual 2GHz G5 (200 iterations/sec for
+a full diffraction propagation model). A 50x50 Shack-Hartmann system
+runs at about 3 iterations/s. A 188 curvature system runs at 25
+iterations/s.
+.TP
+*
+Straightforward scriptability to probe parameter domains.
+.TP
+*
+GTK GUI to change some of the system parameters while the loop
+is running (new in v4.0). This provides an educational approach to
+Adaptive Optics (newbies can play with the parameters and immediately
+sees how the system reacts) and can also provides a quick way to
+investigate the stability conditions for a newly designed system,
+before entering more serious Monte-carlo simulations.  
+.SS Options
+.TP 15
+.RI 
+\0help,aoread
+will give you information about the syntax, parameters and keywords of
+aoread. See help,aoinit and help,aoloop also.
+.PP
+.SH AUTHOR
+.PP
+Francois Rigaut, Gemini Observatory
+.PP
+.SH FILES
+.PP
+Input files:
+.TP 15
+parfile.par
+A yao parameter file. This file follows a regular yorick syntax. It is
+directly included by yorick to define the structures used by yao. As
+it might be a little bit daunting to create a parfile from scratch,
+example parfiles are provided. Their location depends on the
+installation. Search for yao/examples (e.g. shx6x.par, curvature.par)
+.TP
+screen*.fits
+To simulate the atmospheric turbulence, yao needs phase screens. You
+can create phase screens with CreatePhaseScreens(). They might also be
+included in your distribution.
+.PP
+Output files:
+.TP 15
+parfile.res
+After a simulation run, results are output in parfile.res in the cwd
+.SH BUGS
+Lots.
+.PP
+LGS uplink propagation is not implemented
+.PP
+Shack-Hartmann cross talk between subapertures is not implemented
+.PP
+Many more.
+.SH SEE ALSO
+yorick(1)
