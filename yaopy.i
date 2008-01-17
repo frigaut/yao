@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.12 2008-01-02 13:54:53 frigaut Exp $
+ * $Id: yaopy.i,v 1.13 2008-01-17 19:32:16 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.12  2008-01-02 13:54:53  frigaut
+ * Revision 1.13  2008-01-17 19:32:16  frigaut
+ * - fixed critical bug on seeing entry in GUI
+ * - changed seeing(V) -> seeing(550nm) in GUI
+ *
+ * Revision 1.12  2008/01/02 13:54:53  frigaut
  * - correct size for the graphic inserts (no black border)
  * - updated spec files
  *
@@ -323,7 +327,7 @@ func change_dr0(dr0) {
 
 func change_seeing(seeing) {  //seeing at 550 (V band)
   if (seeing>0) {
-    r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^1.2;
+    r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^0.2;
     atm.dr0at05mic     = tel.diam/r0at500;
   } else atm.dr0at05mic = 0.;
   if (initdone) getTurbPhaseInit;
@@ -738,7 +742,7 @@ func gui_update(void)
   okdm  = array(0.,ndm);
   //  pyk,swrite(format="nwfs=%d",nwfs);
   r0at500 = tel.diam/atm.dr0at05mic;
-  seeing = (0.500e-6/r0at500/4.848e-6)*(500./550.)^1.2;
+  seeing = (0.500e-6/r0at500/4.848e-6)*(500./550.)^0.2;
   pyk,"glade.get_widget('edit').set_sensitive(1)";
   pyk,"glade.get_widget('aoread').set_sensitive(1)";
   //  pyk,"glade.get_widget('aoread').grab_focus()";
@@ -806,7 +810,7 @@ if (numberof(arg)>=4) {
   yaopardir = dirname(yaoparfile);
   if (yaopardir==".") yaopardir=get_cwd();
   yaoparfile = basename(yaoparfile);
-  if (noneof(findfiles(yaoparfile))) error,"Can't find "+yaoparfile;
+  if (noneof(findfiles(yaopardir+"/"+yaoparfile))) error,"Can't find "+yaoparfile;
   //  aoread,yaoparfile;
  } else {
   yaoparfile="";
@@ -814,6 +818,10 @@ if (numberof(arg)>=4) {
   tmp = find_in_path("sh6x6.par",takefirst=1,path=parpath);
   if (tmp==[]) tmp=find_in_path("data/sh6x6.par",takefirst=1,path=parpath);
   if (tmp==[]) tmp=find_in_path("share/yao/examples/sh6x6.par",takefirst=1,path=parpath);
+  if (tmp==[]) {
+    parpath="/usr/share/doc/yorick-yao/examples/";
+    tmp = find_in_path("sh6x6.par",takefirst=1,path=parpath);
+  }
   if (tmp!=[]) yaopardir = dirname(tmp);
   else yaopardir=get_cwd();
  }
