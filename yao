@@ -1,2 +1,2 @@
-#!/bin/bash
-yorick -i yaopy.i $1
+#!/bin/sh
+rlwrap yorick -i yaopy.i $1 || yorick -i yaopy.i $1
