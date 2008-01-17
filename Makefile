@@ -72,6 +72,7 @@ clean::
 	-rm -rf binaries
 
 install::
+	@echo "passing here"
 	mkdir -p $(DEST_Y_SITE)/python
 	mkdir -p $(DEST_Y_SITE)/glade
 	mkdir -p $(DEST_Y_SITE)/g
@@ -90,7 +91,8 @@ install::
 	cp -pr doc $(DEST_Y_SITE)/share/yao/
 	-rm -rf $(DEST_Y_SITE)/share/yao/examples/CVS
 	-rm -rf $(DEST_Y_SITE)/share/yao/doc/CVS
-#	cp -p doc/yao.1.gz /usr/local/man/man1/
+#	gzip -9 doc/yao.1
+#	cp -p doc/yao.1 /usr/local/man/man1/
 
 uninstall::
 	-rm $(DEST_Y_BINDIR)/yao
@@ -101,7 +103,7 @@ uninstall::
 	-rm $(DEST_Y_SITE)/python/yao.py
 	-rm $(DEST_Y_SITE)/glade/yao.glade
 	-rm -rf $(DEST_Y_SITE)/share/yao/
-#	-rm -rf /usr/local/man/man1/yao.1.gz
+#	-rm -rf /usr/local/man/man1/yao.1
 
 # -------------------------------------------------------- end of Makefile
 
@@ -162,7 +164,7 @@ distbin: package
 
 distsrc:
 	make clean; rm -rf binaries
-	cd ..; tar --exclude binaries --exclude CVS -zcvf \
+	cd ..; tar --exclude binaries --exclude CVS --exclude *.spec -zcvf \
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz yorick-$(PKG_NAME)-$(PKG_VERSION);\
 	ncftpput -f $(HOME)/.ncftp/maumae www/yorick/$(PKG_DEST_URL)/src/ \
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz
