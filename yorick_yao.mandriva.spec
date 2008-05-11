@@ -1,6 +1,6 @@
 %define name yorick-yao
-%define version 4.2.3
-%define release gemini2007dec31
+%define version 4.2.4
+%define release gemini2008apr09
 
 Summary: yorick adaptive optics simulation package
 Name: %{name}
@@ -43,6 +43,7 @@ mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/python
 mkdir -p $RPM_BUILD_ROOT/usr/share/doc/yorick-yao
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
 mkdir -p $RPM_BUILD_ROOT/usr/bin
+mkdir -p $RPM_BUILD_ROOT/usr/lib/yorick/packages/installed
 
 install -m 755 yao.so $RPM_BUILD_ROOT/usr/lib/yorick/lib
 install -m 755 yao $RPM_BUILD_ROOT/usr/bin
@@ -59,6 +60,7 @@ install -m 644 examples/*.par $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
 install -m 644 examples/*.i $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
 install -m 755 examples/testclean $RPM_BUILD_ROOT/usr/share/doc/yorick-yao/examples
 install -m 644 doc/yao.1.gz $RPM_BUILD_ROOT/usr/share/man/man1
+install -m 644 yao.info $RPM_BUILD_ROOT/usr/lib/yorick/packages/installed
 
 rm $RPM_BUILD_ROOT/usr/lib/yorick/i/yao_fast.i
 rm $RPM_BUILD_ROOT/usr/lib/yorick/i/yao_utils.i
@@ -77,8 +79,12 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/yorick/python/yao.py
 /usr/share/doc/yorick-yao
 /usr/share/man/man1
+/usr/lib/yorick/packages/installed/*
 
 %changelog
+* Tue Jan 09 2008 <frigaut@users.sourceforge.net>
+- included the info file for compat with pkg_mngr
+
 * Mon Dec 31 2007 <frigaut@users.sourceforge.net>
 - new distro directory structure
 - updated to cvs

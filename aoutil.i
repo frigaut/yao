@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.5 2007-12-20 13:34:52 frigaut Exp $
+ * $Id: aoutil.i,v 1.6 2008-05-11 14:03:56 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.5  2007-12-20 13:34:52  frigaut
+ * Revision 1.6  2008-05-11 14:03:56  frigaut
+ * - implemented zernike wfs
+ * - gotten rid of faulty round function in yao_util
+ *
+ * Revision 1.5  2007/12/20 13:34:52  frigaut
  * - various bug fixes
  * - better handlng of default parfile path
  * - better handling of options menu (WFS and DM)
@@ -591,7 +595,7 @@ func checkParameters(void)
 
   // Are we using a WFS we know?
   if (nallof((wfs.type == "curvature") | (wfs.type == "hartmann") |
-             (wfs.type =="pyramid"))) {
+             (wfs.type == "zernike") | (wfs.type =="pyramid"))) {
     exit,"wfs.type : Unknown value";
   }
 

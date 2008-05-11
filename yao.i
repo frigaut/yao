@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.10 2007-12-27 09:06:28 frigaut Exp $
+ * $Id: yao.i,v 1.11 2008-05-11 14:03:56 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,11 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.10  2007-12-27 09:06:28  frigaut
+ * Revision 1.11  2008-05-11 14:03:56  frigaut
+ * - implemented zernike wfs
+ * - gotten rid of faulty round function in yao_util
+ *
+ * Revision 1.10  2007/12/27 09:06:28  frigaut
  * - bumped to version 4.2.3
  * - corrected problem with glade path (python does not like ~, so
  * replaced by expansion)
@@ -155,8 +159,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2007dec26";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.4";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2008apr09";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -971,7 +975,40 @@ func ShWfs(pupsh,phase,ns)
 }
 
 //----------------------------------------------------
-func doInter(disp=,sleep=)
+func ZernikeWfs(pupsh,phase,nwfs,init=)
+{
+  // the phase at the input (call from multwfs) is in microns.
+  // I have chosen to return coefficients of zernikes in nm (rms)
+  
+  extern wfs_zer,wfs_wzer,zn12;
+  
+  if (init) {
+    pupd  = sim.pupildiam;
+    size  = sim._size;
+    nzer  = wfs(nwfs).nzer(1);
+    wfs(nwfs)._nmes  = wfs(nwfs).nzer;
+    cent  = sim._cent;
+    prepzernike,size,pupd,sim._cent,sim._cent;
+    wfs_wzer = where(zernike(1)*ipupil);
+    wfs_zer = array(float,[2,numberof(wfs_wzer),nzer]);
+    for (i=1;i<=nzer;i++) wfs_zer(,i) = zernike_ext(i)(*)(wfs_wzer);
+    wfs_zer = LUsolve(wfs_zer(+,)*wfs_zer(+,))(+,)*wfs_zer(,+);
+    // wfs_zer(nzer,npt in pupil)
+    tmp = where(zernike(1)(avg,));
+    zn12 = minmax(tmp);
+    if (sim.verbose>=1) write,"Zernike wfs initialized";
+    return;
+  }
+
+  wfs(nwfs)._fimage = wfs(nwfs)._dispimage = &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
+  mes = wfs_zer(,+)*phase(*)(wfs_wzer)(+);
+
+  // returns microns rms (checked 2008apr10)
+  
+  return mes;
+}
+//----------------------------------------------------
+func doInter(disp=,subsysfilt=)
 /* DOCUMENT doInter(disp=)
    
 Measure the interaction matrix.
@@ -1960,6 +1997,7 @@ func multWfsIntMat(disp=)
     if (wfs(ns).type == "curvature") {smes = CurvWfs(pupil,phase,ns);}
     if (wfs(ns).type == "hartmann" ) {smes = ShWfs(ipupil,phase,ns);}
     if (wfs(ns).type == "pyramid")   {smes = PyramidWfs(pupil,phase);}
+    if (wfs(ns).type == "zernike")   {smes = ZernikeWfs(ipupil,phase,ns);}
     
     // subtract the reference vector for this sensor:
     smes = smes - *wfs(ns)._refmes;
@@ -2006,6 +2044,7 @@ func multWfs(iter,disp=)
     if (wfs(ns).type == "curvature") {smes = CurvWfs(pupil,phase,ns);}
     if (wfs(ns).type == "hartmann" ) {smes = ShWfs(ipupil,phase,ns);}
     if (wfs(ns).type == "pyramid")   {smes = PyramidWfs(pupil,phase);}
+    if (wfs(ns).type == "zernike")   {smes = ZernikeWfs(ipupil,phase,ns);}
 
     // subtract the reference vector for this sensor:
     if (wfs(ns)._cyclecounter == 1) {
@@ -2150,11 +2189,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   extern aoinit_disp,aoinit_clean,aoinit_forcemat,aoinit_svd,aoinit_keepdmconfig;
 
 
-  if ((disp==[])&&(aoinit_disp!=[])) disp=aoinit_disp;
-  if ((clean==[])&&(aoinit_clean!=[])) clean=aoinit_clean;
-  if ((forcemat==[])&&(aoinit_forcemat!=[])) forcemat=aoinit_forcemat;
-  if ((svd==[])&&(aoinit_svd!=[])) svd=aoinit_svd;
-  if ((keepdmconfig==[])&&(aoinit_keepdmconfig!=[])) keepdmconfig=aoinit_keepdmconfig;
+  disp = ( (disp==[])? (aoinit_disp==[]? 0:aoinit_disp):disp );
+  clean = ( (clean==[])? (aoinit_clean==[]? 0:aoinit_clean):clean );
+  forcemat = ( (forcemat==[])? (aoinit_forcemat==[]? 0:aoinit_forcemat):forcemat );
+  svd = ( (svd==[])? (aoinit_svd==[]? 0:aoinit_svd):svd );
+  keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
 
   if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+
                        "forcemat=%d,svd=%d,keepdmconfig=%d\n",
@@ -2225,9 +2264,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     } else if (wfs(i).type == "curvature") {
       grow,cent,sim._size/2+1;
+    } else if (wfs(i).type == "zernike") {
+      grow,cent,sim._size/2+1;
     } else if (wfs(i).type == "pyramid") {
       grow,cent,sim._size/2+0.5;
-    }
+    } else write,"Unknown wfs";
   }
   if (anyof(cent != cent(1))) {
     write,"Wrong mix of hartmann/curvature or subaperture odd/even !";
@@ -2311,6 +2352,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       wfs(n).nsub = numberof(v)/2;
       wfs(n)._nmes = 2*wfs(n)._nsub;
 
+    } else if (wfs(n).type == "zernike") {
+      ZernikeWfs,ipupil,ipupil*0.,n,init=1;
     }
   }
 
@@ -2614,7 +2657,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         }
       }
-      //      stop;
       iMat = iMat(,where(iMat(rms,) != 0.));
       cMat = transpose(iMat)*0.;
     }
@@ -3048,6 +3090,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
   // but that might be on purpose.
   for (ns=1;ns<=nwfs;ns++) {
     // define _dispimage
+    if (wfs(ns).type=="zernike") continue;
     wfs(ns)._dispimage = &(*wfs(ns)._fimage*0.0f);
     if (wfs(ns).type == "hartmann") {
       ShWfsInit,ipupil,ns,silent=1;
@@ -3306,6 +3349,7 @@ func go(nshot)
   if (disp) {
     for (ns=1;ns<=nwfs;ns++ ) {
       // if cyclecounter = 1, a final image just got computed
+      if (wfs(ns).type=="zernike") continue;
       if (wfs(ns)._cyclecounter == 1) {*wfs(ns)._dispimage = *wfs(ns)._fimage;}
     }
   }
@@ -3681,7 +3725,8 @@ struct opt_struct
 
 struct wfs_struct
 {
-  string  type;           // WFS type: "curvature", "hartmann" or "pyramid". Required [none]
+  string  type;           // WFS type: "curvature", "hartmann", "pyramid" or "zernike".
+                          // Required [none]
   long    subsystem;      // Subsystem this WFS belongs to. Optional [1]
   float   lambda;         // WFS wavelength in microns. Required [none]
   long    noise;          // Enable noise (photon noise/read out noise). Optional [0=no].
@@ -3729,6 +3774,8 @@ struct wfs_struct
   long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and 
   // filtertilt must be set). Optional [0]
   int     rayleighflag;   // set to one to take rayleigh into account
+  // zernike wfs only
+  int     nzer;           // # of zernike sensed
   // Internal keywords:
   float   _gsalt;         // This WFS guide star altitude in meter. 0 for infinity.
   float   _gsdepth;       // This WFS GS depth in meter (e.g. Na layer thickness).

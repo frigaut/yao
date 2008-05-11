@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_util.i,v 1.1 2007-12-12 23:29:11 frigaut Exp $
+ * $Id: yao_util.i,v 1.2 2008-05-11 14:03:56 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,8 +23,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_util.i,v $
- * Revision 1.1  2007-12-12 23:29:11  frigaut
- * Initial revision
+ * Revision 1.2  2008-05-11 14:03:56  frigaut
+ * - implemented zernike wfs
+ * - gotten rid of faulty round function in yao_util
+ *
+ * Revision 1.1.1.1  2007/12/12 23:29:11  frigaut
+ * Initial Import - yorick-yao
  *
  *
  */
@@ -620,16 +624,6 @@ func uint(arg)
   if (numberof(tmp) > 0) {arg(tmp) = arg(tmp) + 65536;}
   return arg;
 }
-
-//---------------------------------------------------------
-
-func round(arg) 
-/* DOCUMENT round(arg)
- * Returns the rounded version of a floating point argument
- * F.Rigaut 2001/10
- * SEE ALSO: ceil, floor
- */
-{return long(arg+0.5);}
 
 //---------------------------------------------------------
 
