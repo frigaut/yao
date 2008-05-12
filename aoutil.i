@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.6 2008-05-11 14:03:56 frigaut Exp $
+ * $Id: aoutil.i,v 1.7 2008-05-12 18:00:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,10 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.6  2008-05-11 14:03:56  frigaut
+ * Revision 1.7  2008-05-12 18:00:53  frigaut
+ * fixed problem with zernike diameter for altitude DMs.
+ *
+ * Revision 1.6  2008/05/11 14:03:56  frigaut
  * - implemented zernike wfs
  * - gotten rid of faulty round function in yao_util
  *
@@ -1332,7 +1335,7 @@ func MakeZernikeIF(nm,&def,disp=)
   cobs	= tel.cobs;
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
-  patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
+  patchDiam = sim.pupildiam+2*max(abs(wfs.gspos(1,),wfs.gspos(2,)))*
     4.848e-6*(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
