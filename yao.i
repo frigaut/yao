@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.11 2008-05-11 14:03:56 frigaut Exp $
+ * $Id: yao.i,v 1.12 2008-05-12 18:23:48 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,10 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.11  2008-05-11 14:03:56  frigaut
+ * Revision 1.12  2008-05-12 18:23:48  frigaut
+ * version change
+ *
+ * Revision 1.11  2008/05/11 14:03:56  frigaut
  * - implemented zernike wfs
  * - gotten rid of faulty round function in yao_util
  *
@@ -159,8 +162,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.4";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2008apr09";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.5";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2008may12";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
