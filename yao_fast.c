@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.c,v 1.4 2008-01-02 13:54:53 frigaut Exp $
+ * $Id: yao_fast.c,v 1.5 2008-11-19 00:53:19 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -21,7 +21,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.c,v $
- * Revision 1.4  2008-01-02 13:54:53  frigaut
+ * Revision 1.5  2008-11-19 00:53:19  frigaut
+ * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
+ * - fixed comments in newfits.i
+ * - upped version to 4.2.6
+ *
+ * Revision 1.4  2008/01/02 13:54:53  frigaut
  * - correct size for the graphic inserts (no black border)
  * - updated spec files
  *
@@ -99,9 +104,9 @@ int _init_fftw_plans(int nlimit)
     fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
     fftwf_plan_dft_r2c_2d(size, size, rinf, outf, plan_mode);
 
-    free(inf);
-    free(rinf);
-    free(outf);
+    fftwf_free(rinf);
+    fftwf_free(inf);
+    fftwf_free(outf);
 
     size*=2;
   }
@@ -117,9 +122,9 @@ int _init_fftw_plans(int nlimit)
     fftwf_plan_dft_1d(size, inf, outf, FFTW_BACKWARD, plan_mode);
     fftwf_plan_dft_r2c_1d(size, rinf, outf, plan_mode);
 
-    free(inf);
-    free(rinf);
-    free(outf);
+    fftwf_free(rinf);
+    fftwf_free(inf);
+    fftwf_free(outf);
 
     size*=2;
   }
@@ -200,7 +205,8 @@ int _calcPSFVE(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
 
   /* Free allocated memory. */
   fftwf_destroy_plan(p);
-  fftwf_free(in); fftwf_free(out);
+  fftwf_free(in);
+  fftwf_free(out);
   return (0);
 }
 
@@ -257,7 +263,8 @@ int _fftVE(float *rp,
 
   /* Free allocated memory. */
   fftwf_destroy_plan(p);
-  fftwf_free(in); fftwf_free(out);
+  fftwf_free(in);
+  fftwf_free(out);
   return (0);
 }
 
@@ -420,7 +427,7 @@ int _shwfs(float *pupil,      // input pupil
 
   if ( A == NULL || K == NULL || result == NULL || 
        bimage == NULL || simage == NULL || 
-       gnoise == NULL ) { return (1); }
+       brayleigh == NULL || gnoise == NULL ) { return (1); }
 
   //Zero out final image if first iteration
   if (counter == 1) {
@@ -467,6 +474,7 @@ int _shwfs(float *pupil,      // input pupil
     }
     fftwf_execute(p); /* repeat as needed */
   }
+  fftwf_destroy_plan(p); /* mem leak fixed 2008nov18 ! */
 
   //=====================
   // LOOP ON SUBAPERTURES
@@ -718,6 +726,7 @@ int _shwfs(float *pupil,      // input pupil
   fftwf_destroy_plan(p1);
 
   free ( bimage );
+  free ( brayleigh ); /* fixed memleak 2008nov18 */
   free ( gnoise );
   free ( simage );
   fftwf_free ( A );

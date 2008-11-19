@@ -1,7 +1,7 @@
 /*
  * NEWFITS.I
  *
- * $Id: newfits.i,v 1.1 2007-12-12 23:29:13 frigaut Exp $
+ * $Id: newfits.i,v 1.2 2008-11-19 00:53:19 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -410,9 +410,7 @@ func exitInError(message)
 /*----------------------------------------------------------*/
 
 func fitsWrite(filename,data,header,exttype=,append=,rescale=)
-{
-
-/* DOCUMENT fitsWrite(filename,data,header,exttype=,rescale=)
+/* DOCUMENT fitsWrite(filename,data,header,exttype=,append=,rescale=)
    Write a fits file. Primary HDU and possible append extensions.
    Current valid extension = only image.
    Usage:
@@ -424,6 +422,7 @@ func fitsWrite(filename,data,header,exttype=,append=,rescale=)
      rescale: rescale data array
    SEE ALSO:
  */
+{
   if (is_void(exttype)) exttype="PRIMARY";
 
   exttype= strtoupper(strtrim(exttype));
@@ -528,6 +527,7 @@ func _fBuildCoreHeader(exttype,data)
   if (typeof(data) == "char") bitpix=8;
   if (typeof(data) == "short") bitpix=16;
   if (typeof(data) == "long") bitpix=32;
+  if (typeof(data) == "int") bitpix=32;
   if (typeof(data) == "float") bitpix=-32;
   if (typeof(data) == "double") bitpix=-64;
   if (is_void(bitpix)) error,"Unsupported data type";

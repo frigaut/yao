@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.12 2008-05-12 18:23:48 frigaut Exp $
+ * $Id: yao.i,v 1.13 2008-11-19 00:53:19 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -25,7 +25,12 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.12  2008-05-12 18:23:48  frigaut
+ * Revision 1.13  2008-11-19 00:53:19  frigaut
+ * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
+ * - fixed comments in newfits.i
+ * - upped version to 4.2.6
+ *
+ * Revision 1.12  2008/05/12 18:23:48  frigaut
  * version change
  *
  * Revision 1.11  2008/05/11 14:03:56  frigaut
@@ -162,8 +167,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.5";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2008may12";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.6";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2008nov18";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -566,6 +571,7 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
   size	     = sim._size;
   nxsub	     = wfs(ns).shnxsub(0);
   subsize    = pupd/nxsub;
+  if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   fracsub    = wfs(ns).fracIllum;
   sdim       = long(2^ceil(log(subsize)/log(2)+1));
   sdimpow2   = int(log(sdim)/log(2));
@@ -675,6 +681,9 @@ func ShWfsInit(pupsh,ns,silent=,imat=)
   // indices (X and Y) of the subapertures
 
   is	= size/2+1-pupd/2;
+  if (wfs(ns).npixpersub) {
+    is	= size/2+1-(subsize*nxsub)/2;
+  }
   nsubs = nxsub*nxsub;
   istart = (indgen(nsubs)-1)/nxsub*subsize+is;
   jstart = ((indgen(nsubs)-1)%nxsub)*subsize+is;
@@ -2255,10 +2264,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   for (i=1;i<=nwfs;i++) {
     wfs(i)._cyclecounter = 1;
     if (wfs(i).type == "hartmann") {
-      npixpersub	= float(sim.pupildiam)/wfs(i).shnxsub;
-      if (npixpersub != int(npixpersub)) {
-        write,"sim.pupildiam should be a multiple of wfs.shnxsub !";
-        return -1;
+      if (wfs(i).npixpersub) {
+        npixpersub = wfs(i).npixpersub;
+      } else {
+        npixpersub	= float(sim.pupildiam)/wfs(i).shnxsub;
+        if (npixpersub != int(npixpersub)) {
+          write,"sim.pupildiam should be a multiple of wfs.shnxsub !";
+          return -1;
+        }
       }
       if (odd(wfs(i).shnxsub) && odd(npixpersub)) {
         grow,cent,sim._size/2+1;
@@ -3761,16 +3774,19 @@ struct wfs_struct
   // Shack-Hartmann WFS only keywords:
   long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
   long    shnxsub;        // # of subaperture in telescope diameter. Required [none]
+  long    npixpersub;     // to force npixpersub and bypass constraint that
+                          // pupildiam should be a multiple of this number
+                          // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
   float   pixsize;        // Subaperture pixel size in arcsec. Required [none]
   long    npixels;        // Final # of pixels in subaperture. Required [none]
   float   shthreshold;    // Threshold in computation of subaperture signal, >=0. Optional [0]
   float   biasrmserror;   // rms error on WFS bias in electron. Optional [0]
   float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]
+                          // Typical value can be 0.01
   string  submask;        // fits file with subaperture amplitude mask. It should have
                           // dimension 2^sdimpow2 square. can be float or long.
-  // Typical value can be 0.01
   float   kernel;         // FWHM in arcsec of WFS gaussian kernel. Optional.
-  // Default is computed as a function of D/r0
+                          // Default is computed as a function of D/r0
   int     nintegcycles;   // # of cycles/iterations over which to integrate. Optional [1]
   float   fracIllum;      // fraction illuminated to be valid. Optional [0.5]
   float   LLTxy(2);       // 2 element vector with (x,y) of laser projector [m]
@@ -3842,10 +3858,10 @@ struct dm_struct
   float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
   float   hyst;           // DM actuator hysteresis (0. to 1.). Optional [0]
   float   push4imat;      // Voltage to apply for imat calibration. Optional [20].
-  // Note: the default is not OK for many configs. Change at will.
+                          // Note: the default is not OK for many configs. Change at will.
   float   thresholdresp;  // Normalized response threshold for an act. to be valid. Optional [0.3]
   float   unitpervolt;    // Influence function sensitivity in unit/volt. Optional [0.01]
-  // Stackarray: mic/volt, Tip-tilt: arcsec/volt.
+                          // Stackarray: mic/volt, Tip-tilt: arcsec/volt.
   float   maxvolt;        // Saturation voltage (- and +) in volt. Optional [none if not set]
   float   gain;           // loop gain for this DM (total = this x loop.gain). Optional [1]
   float   misreg(2);      // dm misregistration (pixels). optional [0,0]
@@ -3860,9 +3876,9 @@ struct dm_struct
   long    nxact;          // # of act. in pupil diameter. Required [none]
   long    pitch;          // Actuator pitch IN PIXEL. Required [none]
   float   pitchMargin;    // margin to include more corner actuators when creating inf.functions
-  // optional [1.44]
+                          // optional [1.44]
   float   coupling;       // coupling coef in influence function. optional [0.2].
-  // valid values from 0.04 to 0.30.
+                          // valid values from 0.04 to 0.30.
   string  ecmatfile;      // valid to extrap. actuator matrix (extrap_com). Optional.
   long    noextrap;       // set to 1 if no extrapolated actuators whatsoever are to be used [0]
   long    elt;            // set to 1 if fast dmsum to be used
@@ -3922,34 +3938,36 @@ struct target_struct
 struct gs_struct
 {
   float   zeropoint;      // Photometric zero point (#photons@pupil/s/full_aper, mag0 star).
-  // Required [none]
+                          // Required [none]
   float   zenithangle;    // zenith angle. Optional [0.]. The zenith angle is used to compute:
-  // - r0 off-zenith
-  // - atmopheric turbulence layer altitude
-  // - LGS altitude and thickness of Na Layer
-  // - LGS brighness
-  // note that dm altitude is unchanged.
+                          // - r0 off-zenith
+                          // - atmopheric turbulence layer altitude
+                          // - LGS altitude and thickness of Na Layer
+                          // - LGS brighness
+                          // note that dm altitude is unchanged.
   float  lgsreturnperwatt;// Sodium LGS return in photons/cm2/s at entrance pupil.
-  // Specified at zenith. Modified by gs.zenithangle. Optional [22.]
-  // basically, you have to fold in this the sodium density
-  // and your model of return.
+                          // Specified at zenith. Modified by gs.zenithangle. Optional [22.]
+                          // basically, you have to fold in this the sodium density
+                          // and your model of return.
 };
 
 struct loop_struct
 {
   float   gain;            // Loop gain. Optional, but important! [0]
-  long    framedelay;      // # of frame delay ON TOP OF normal 1 frame delay. Optional [0]
+  long    framedelay;      // loop delay (# of frames). Optional [0]
+                           // Regular CCD 1 frame integration -> framedelay=1
+                           // + readout & Calculation -> framedelay=2
   long    niter;           // # of total iteration. Required [none]
   float   ittime;          // Iteration time in seconds. Required [none]
   long    startskip;       // # iter to skip before collecting statistics. Optional [10]
   long    skipevery;       // skip by "skipby" every "skipevery" iterations. Optional [0=none]
   long    skipby;          // see above. this is to get better statistical
+                           // coverage. Optional [10000]
   long    stats_every;     // compute stats every so many iteration (default 4)
-  // coverage. Optional [10000]
   long    jumps2swapscreen;//number of jumps (i.e. niter/skipevery) after which screens
-  //will be swapped (rotation, 2->1, 3->2... 1->last
+                           // will be swapped (rotation, 2->1, 3->2... 1->last
   string  modalgainfile;   // Name of file with mode gains. Optional.
-  //  float   dithering;      // TT dithering for centroid gain (volts).
+  //float   dithering;     // TT dithering for centroid gain (volts).
 };
 
 dtor = pi/180.;
