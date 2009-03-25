@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.c,v 1.5 2008-11-19 00:53:19 frigaut Exp $
+ * $Id: yao_fast.c,v 1.6 2009-03-25 14:38:33 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -21,7 +21,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.c,v $
- * Revision 1.5  2008-11-19 00:53:19  frigaut
+ * Revision 1.6  2009-03-25 14:38:33  frigaut
+ * - sync
+ * - fixed a couple of bugs
+ *
+ * Revision 1.5  2008/11/19 00:53:19  frigaut
  * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
  * - fixed comments in newfits.i
  * - upped version to 4.2.6
@@ -738,6 +742,84 @@ int _shwfs(float *pupil,      // input pupil
 
 
 int _shwfsSimple(float *pupil,      // input pupil
+		 float *phase,      // input phase
+		 float phasescale,  // phase scaling factor
+		 float *phaseoffset,// input phase offset
+		 int dimx,          // X dim of phase. Use as stride for extraction
+		 int dimy,          // Y dim of phase. Use as stride for extraction
+		 
+		 int *istart,       // vector of i starts of each subaperture
+		 int *jstart,       // vector of j starts of each subaperture
+		 int nx,            // subaperture i size
+		 int ny,            // subaperture j size
+		 int nsubs,         // # of subapertures
+		 
+		 float toarcsec,    // conversion factor to arcsec
+		 
+		 float *mesvec)     // final measurement vector
+
+{
+  /* Declarations */
+  float         avgx, avgy, avgi;
+  int           i,j,k,l,koff;
+
+  // loop on subapertures:
+  for ( l=0 ; l<nsubs ; l++ ) {
+
+    koff = istart[l] + jstart[l]*dimx;
+    
+    avgx = 0.0f;
+    avgy = 0.0f;
+    avgi = 0.0f;
+    
+    for ( j=0; j<ny ; j++ ) {
+      for ( i=0; i<nx ; i++ ) {
+	
+	k = koff + i + j*dimx;
+	// the term between parenthesis is the 2 point estimate 
+	// of the phase X derivative
+        // take care of outliers:
+        if ( (istart[l]==0) & (i==0) ) { // start of a row
+          avgx += pupil[k] * phasescale * (phase[k+1]-phase[k]+phaseoffset[k+1]-phaseoffset[k]);
+        } else if ( ((istart[l]+nx)>=dimx) & (i==(nx-1)) ) { // end of a row
+          avgx += pupil[k] * phasescale * (phase[k]-phase[k-1]+phaseoffset[k]-phaseoffset[k-1]);
+        } else if (pupil[k-1]==0) { // edge of the pupil 
+          avgx += pupil[k] * phasescale * (phase[k+1]-phase[k]+phaseoffset[k+1]-phaseoffset[k]);
+        } else if (pupil[k+1]==0) { // edge of the pupil 
+          avgx += pupil[k] * phasescale * (phase[k]-phase[k-1]+phaseoffset[k]-phaseoffset[k-1]);
+        } else { // then 2 neightbors derivative estimate
+          avgx += pupil[k] * phasescale * (phase[k+1]-phase[k-1]+phaseoffset[k+1]-phaseoffset[k-1])/2.;
+        }
+	// same for y:
+        if ( (jstart[l]==0) & (j==0) ) { // start of a column
+          avgy += pupil[k] * phasescale * (phase[k+dimx]- phase[k]+phaseoffset[k+dimx]-phaseoffset[k]);
+        } else if ( ((jstart[l]+ny)>=dimy) & (j==(ny-1)) ) { // end of a column
+          avgy += pupil[k] * phasescale * (phase[k]- phase[k-dimx]+phaseoffset[k]-phaseoffset[k-dimx]);
+        } else if (pupil[k-dimx]==0) { // edge of the pupil
+          avgy += pupil[k] * phasescale * (phase[k+dimx]- phase[k]+phaseoffset[k+dimx]-phaseoffset[k]);
+        } else if (pupil[k+dimx]==0) { // edge of the pupil
+          avgy += pupil[k] * phasescale * (phase[k]- phase[k-dimx]+phaseoffset[k]-phaseoffset[k-dimx]);
+        } else {
+          avgy += pupil[k] * phasescale * (phase[k+dimx]- phase[k-dimx]+phaseoffset[k+dimx]-phaseoffset[k-dimx])/2.;
+        }
+	avgi += pupil[k];
+      }
+    }
+    
+    if (avgi > 0.0f) {
+      mesvec[l]   = avgx/avgi*toarcsec;
+      mesvec[nsubs+l] = avgy/avgi*toarcsec;
+    } else {
+      mesvec[l]   = 0.0f;
+      mesvec[nsubs+l] = 0.0f;
+    }
+  }
+
+  return (0);
+}
+
+
+int _shwfsSimple_pre20090324(float *pupil,      // input pupil
 		 float *phase,      // input phase
 		 float phasescale,  // phase scaling factor
 		 float *phaseoffset,// input phase offset

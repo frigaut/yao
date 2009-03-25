@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_util.i,v 1.3 2008-05-12 17:59:35 frigaut Exp $
+ * $Id: yao_util.i,v 1.4 2009-03-25 14:38:33 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,11 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_util.i,v $
- * Revision 1.3  2008-05-12 17:59:35  frigaut
+ * Revision 1.4  2009-03-25 14:38:33  frigaut
+ * - sync
+ * - fixed a couple of bugs
+ *
+ * Revision 1.3  2008/05/12 17:59:35  frigaut
  * restored (fixed) round in yao_util.i
  *
  * Revision 1.2  2008/05/11 14:03:56  frigaut
@@ -88,27 +92,6 @@ func wheremax(ar) { return  where(ar == max(ar)); }
    Short hand for where(array == min(array) or max(array)
    SEE ALSO: where, where2, min, max
  */
-
-//---------------------------------------------------------
-
-func colorbar(cmin, cmax)
-/* DOCUMENT colorbar
-            colorbar, cmin, cmax
-     draw a color bar to the right of the plot.  If CMIN and CMAX
-     are specified, label the top and bottom of the bar with those
-     numbers.
- */
-{
-  plsys, 0;
-  pli, span(0,1,200)(-,), .65,.46,.67,.84, legend="";
-  plg, [.46,.84,.84,.46],[.67,.67,.65,.65], closed=1,
-    marks=0,color="fg",width=1,type=1,legend="";
-  plsys, 1;  /* assumes there is only one coordinate system */
-  if (!is_void(cmin)) {
-    plt, pr1(cmin), .66,.46, justify="CT";
-    plt, pr1(cmax), .66,.84, justify="CB";
-  }
-}
 
 //---------------------------------------------------------
 

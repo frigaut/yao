@@ -1,7 +1,7 @@
 /*
  * NEWFITS.I
  *
- * $Id: newfits.i,v 1.2 2008-11-19 00:53:19 frigaut Exp $
+ * $Id: newfits.i,v 1.3 2009-03-25 14:38:31 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -68,6 +68,7 @@
 */
 
 require,"string.i";
+require,"util_fr.i"; // for is_set
 
 func fitsHead(name, &phdr, &ehdr, extension=, hdu=)
 {
@@ -766,16 +767,18 @@ func fitsBuildCard(keyword,value,comment,type=,form=)
   return line;
 }
 
-func is_set(arg)
+
+// remove below as it creates problem with the is_set of util_fr.i in yutils.
+//func is_set(arg)
   /* DOCUMENT is_set(arg)
      Returns 0 if element is void or equal to zero, 1 otherwise
      F.Rigaut 2002/06/03
      SEE ALSO: is_void
   */
-{
-  if (is_void(arg) | (arg == 0)) {return 0;}
-  else {return 1;}
-}
+//{
+//  if (is_void(arg) | (arg == 0)) {return 0;}
+//  else {return 1;}
+//}
 
 func _fRescale(data, bitpix, &bscale, &bzero, data_min=, data_max=)
 /* DOCUMENT rescaled_data= _fRescale(data, bitpix, bscale, bzero, data_min=, data_max=)

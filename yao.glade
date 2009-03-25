@@ -446,7 +446,7 @@ yet, they will be saved in Y_USER/data</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="adjustment">1 1 100 1 10 10</property>
+                                    <property name="adjustment">1 1 100 1 10 0</property>
                                     <property name="climb_rate">0.10000000149</property>
                                     <property name="numeric">True</property>
                                     <signal name="value_changed" handler="on_disp_rate_value_changed"/>
@@ -610,7 +610,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <property name="adjustment">0 0 4 0.10000000000000001 0.5 10</property>
+                        <property name="adjustment">0 0 4 0.10000000000000001 0.5 0</property>
                         <property name="climb_rate">0.0001</property>
                         <property name="digits">3</property>
                         <property name="numeric">True</property>
@@ -636,7 +636,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <property name="adjustment">0 0 3 0.01 10 10</property>
+                        <property name="adjustment">0 0 3 0.01 10 0</property>
                         <property name="climb_rate">0.0099999997764800008</property>
                         <property name="digits">3</property>
                         <property name="numeric">True</property>
@@ -662,7 +662,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <property name="adjustment">0.40000000000000002 0.40000000000000002 10 0.01 10 10</property>
+                        <property name="adjustment">0.40000000000000002 0.40000000000000002 10 0.01 10 0</property>
                         <property name="climb_rate">0.0099999997764800008</property>
                         <property name="digits">2</property>
                         <property name="numeric">True</property>
@@ -881,7 +881,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 20 1 10 10</property>
+                                        <property name="adjustment">0 0 20 1 10 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <signal name="value_changed" handler="on_ninteg_cycles_value_changed"/>
                                       </widget>
@@ -895,7 +895,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 10 0.10000000000000001 10 10</property>
+                                        <property name="adjustment">0 0 10 0.10000000000000001 10 0</property>
                                         <property name="climb_rate">0.0099999997764825821</property>
                                         <signal name="value_changed" handler="on_sh_kernel_value_changed"/>
                                       </widget>
@@ -909,7 +909,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 -100 100 0.10000000000000001 10 10</property>
+                                        <property name="adjustment">0 -100 100 0.10000000000000001 10 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">2</property>
                                         <signal name="value_changed" handler="on_sh_threshold_value_changed"/>
@@ -924,7 +924,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 100 0.10000000000000001 10 10</property>
+                                        <property name="adjustment">0 0 100 0.10000000000000001 10 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">2</property>
                                         <signal name="value_changed" handler="on_ron_value_changed"/>
@@ -939,7 +939,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 50000 100 10 10</property>
+                                        <property name="adjustment">0 0 50000 100 10 0</property>
                                         <property name="climb_rate">1</property>
                                         <signal name="value_changed" handler="on_gsdepth_value_changed"/>
                                       </widget>
@@ -953,7 +953,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 500000 100 10 10</property>
+                                        <property name="adjustment">0 0 500000 100 10 0</property>
                                         <property name="climb_rate">1</property>
                                         <signal name="value_changed" handler="on_gsalt_value_changed"/>
                                       </widget>
@@ -967,7 +967,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 25 0.10000000000000001 10 10</property>
+                                        <property name="adjustment">0 0 25 0.10000000000000001 10 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">2</property>
                                         <signal name="value_changed" handler="on_gsmag_value_changed"/>
@@ -982,7 +982,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0.050000000000000003 0.050000000000000003 10 0.02 10 10</property>
+                                        <property name="adjustment">0.050000000000000003 0.050000000000000003 10 0.02 10 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">2</property>
                                         <signal name="value_changed" handler="on_efd_value_changed"/>
@@ -1332,7 +1332,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 10000 1 10 10</property>
+                                        <property name="adjustment">0 0 10000 1 10 0</property>
                                         <property name="climb_rate">1</property>
                                         <signal name="value_changed" handler="on_sat_voltage_value_changed"/>
                                       </widget>
@@ -1348,7 +1348,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                         <property name="tooltip" translatable="yes">misregistration DM/WFS in pupil diameter unit</property>
-                                        <property name="adjustment">0 -1 1 0.01 0.10000000000000001 10</property>
+                                        <property name="adjustment">0 -1 1 0.01 0.10000000000000001 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">3</property>
                                         <signal name="value_changed" handler="on_ymisreg_value_changed"/>
@@ -1365,7 +1365,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                         <property name="tooltip" translatable="yes">misregistration DM/WFS in pupil diameter unit</property>
-                                        <property name="adjustment">0 -1 1 0.01 0.10000000000000001 10</property>
+                                        <property name="adjustment">0 -1 1 0.01 0.10000000000000001 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">3</property>
                                         <signal name="value_changed" handler="on_xmisreg_value_changed"/>
@@ -1381,7 +1381,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="adjustment">0 0 3 0.050000000000000003 10 10</property>
+                                        <property name="adjustment">0 0 3 0.050000000000000003 10 0</property>
                                         <property name="climb_rate">0.0099999997764800008</property>
                                         <property name="digits">3</property>
                                         <signal name="value_changed" handler="on_dmgain_value_changed"/>

@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/usr/lib/yorick
-Y_EXE=/usr/lib/yorick/bin/yorick
+Y_MAKEDIR=/home/frigaut/yorick-2.1.05x-jaunty
+Y_EXE=/home/frigaut/yorick-2.1.05x-jaunty/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/usr/lib/yorick
-Y_EXE_SITE=/usr/lib/yorick
+Y_EXE_HOME=/home/frigaut/yorick-2.1.05x-jaunty
+Y_EXE_SITE=/home/frigaut/yorick-2.1.05x-jaunty
 
 # ----------------------------------------------------- optimization flags
 
