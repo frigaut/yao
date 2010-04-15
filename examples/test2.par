@@ -1,4 +1,4 @@
-// Aosimul par file, V3.2.1
+// YAO parameter file
 //-------------------------------
 sim.name           = "SH 12x12, quick method, with separate Quadcell and TT mirror";
 sim.pupildiam      = 60;

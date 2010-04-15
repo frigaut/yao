@@ -1,4 +1,4 @@
-// Aosimul par file, V2.4.0
+// YAO parameter file
 //-------------------------------
 sim.name              = "Gemini MCAO system";
 sim.pupildiam         = 128;

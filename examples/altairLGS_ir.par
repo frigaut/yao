@@ -1,4 +1,4 @@
-// Aosimul par file, V2.4.0
+// YAO parameter file
 //-------------------------------
 sim.name             = "Simili Altair LGS, full diffraction WFS, spot elongation";
 sim.pupildiam        = 240;

@@ -1,4 +1,4 @@
-// YAO par file, V3.8
+// YAO parameter file
 //-------------------------------
 sim.name           = "MAD MCAO";
 sim.pupildiam      = 128;

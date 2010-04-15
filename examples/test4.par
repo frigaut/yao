@@ -1,4 +1,4 @@
-// Aosimul par file, V3.2.1
+// YAO parameter file
 //-------------------------------
 sim.name           = "Simple Curvature 36 actuators with noise";
 sim.pupildiam      = 60;

@@ -1,0 +1,94 @@
+teldiam	= 42;
+pupd    = 84*10;
+nxsub   = 84;
+seeing  = 0.7;
+//-------------------------------
+sim.name            = "generic SHWFS";
+sim.pupildiam       = pupd;
+sim.debug           = 2;
+sim.verbose         = 2;
+
+//-------------------------------
+r0                  = (0.5e-6)/(seeing*4.848e-6);
+atm.dr0at05mic      = teldiam/r0;  // this is r0=0.166 at 550 nm
+atm.screen	        = &(Y_USER+"data/widescreen"+["1","2","3","4"]+".fits");
+atm.layerfrac       = &([0.4,0.2,0.3,0.1]);
+atm.layerspeed      = &([11.,20,29,35]);
+atm.layeralt	      = &([0.,400,6000,9000]);
+atm.winddir         = &([0,0,0,0]);
+
+//-------------------------------
+nwfs                = 1; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+n   = 1;
+wfs(n).shnxsub	    = nxsub;
+wfs(n).npixpersub   = sim.pupildiam/wfs(n).shnxsub;
+wfs(n).type	        = "hartmann";
+wfs(n).lambda	      = 0.65;
+wfs(n).gspos        = [0.,0.];
+wfs(n).gsalt        = 0.;
+wfs(n).gsmag        = 5.;
+wfs(n).shmethod	    = 1;
+wfs(n).pixsize      = 0.2;
+wfs(n).npixels      = 10;
+wfs(n).noise        = 1;
+wfs(n).ron          = 3.5;
+wfs(n).shthreshold  = 0.;
+wfs(n).nintegcycles = 1;
+                    
+sim.pupildiam       = wfs(n).npixpersub * wfs(n).shnxsub;
+write,format="Telescope diameter = %.1f m\n",teldiam;
+write,format="Pupil diameter     = %d pixels\n",sim.pupildiam;
+write,format="Shack-Hartmann     = %dx%d\n",nxsub,nxsub;
+write,format="Seeing             = %.2f ''\n",seeing;
+
+//-------------------------------
+ndm                = 2;
+dm = array(dms,ndm);
+
+n  =1;
+dm(n).type	       = "stackarray";
+dm(n).iffile	     = "";
+dm(n).nxact	       = wfs(1).shnxsub+1;
+dm(n).pitch	       = wfs(1).npixpersub;
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.01;
+dm(n).push4imat    = 30;
+dm(n).elt          = 1;
+
+n  =2;
+dm(n).type	       = "tiptilt";
+dm(n).iffile	     = "";
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.0005;
+dm(n).push4imat    = 50;
+
+//-------------------------------
+mat.condition      = &([15.]);
+mat.file	         = "";
+
+//-------------------------------
+tel.diam	         = teldiam;
+tel.cobs	         = 0.1125;
+
+//-------------------------------
+target.lambda	     = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint	     = 1e11;
+
+//-------------------------------
+loop.gain	         = 0.6;
+loop.framedelay    = 1;
+loop.niter	       = 1000;
+loop.ittime	       = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 10000;
+loop.skipby        = 10000;
+loop.modalgainfile = "simulModeGains.fits";
+
+//-------------------------------

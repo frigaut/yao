@@ -1,4 +1,4 @@
-// Aosimul par file, V2.4.0
+// YAO parameter file
 //-------------------------------
 sim.name           = "Simple SH6x6 w/ TT mirror, full diffraction WFS";
 sim.pupildiam      = 60;

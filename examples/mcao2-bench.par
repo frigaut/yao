@@ -1,4 +1,4 @@
-// Aosimul par file, V2.4.0
+// YAO parameter file
 //-------------------------------
 sim.name              = "Gemini MCAO system";
 sim.pupildiam         = 128;
@@ -87,7 +87,7 @@ dm(n).alt           = 0.;
 dm(n).hyst          = 0.03;
 dm(n).thresholdresp = 0.4;
 dm(n).unitpervolt   = 0.01;
-dm(n).push4imat     = 20;
+dm(n).push4imat     = 15;
 dm(n).pitchMargin   = 0.5;
 
 n = 2;
@@ -100,7 +100,7 @@ dm(n).alt           = 4500.;
 dm(n).hyst          = 0.03;
 dm(n).thresholdresp = 0.4;
 dm(n).unitpervolt   = 0.01;
-dm(n).push4imat     = 20;
+dm(n).push4imat     = 10;
 dm(n).pitchMargin   = 1.2;
 
 n = 3;
@@ -113,7 +113,7 @@ dm(n).alt           = 9000.;
 dm(n).hyst          = 0.03;
 dm(n).thresholdresp = 0.4;
 dm(n).unitpervolt   = 0.01;
-dm(n).push4imat     = 20;
+dm(n).push4imat     = 10;
 dm(n).pitchMargin   = 0.5;
 
 n = 4;

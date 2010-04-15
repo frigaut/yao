@@ -1,9 +1,9 @@
 // YAO parameter file
 //-------------------------------
-sim.name           = "Simple Curvature 36 actuators with noise";
-sim.pupildiam      = 128;
-sim.debug          = 1;
-sim.verbose        = 1;
+sim.name           = "SH6x6 w/ TT mirror and WFS, full diffraction WFS";
+sim.pupildiam      = 120;
+sim.debug          = 2;
+sim.verbose        = 0;
 
 //-------------------------------
 atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
@@ -13,21 +13,40 @@ atm.layerspeed     = &([11.,20,29,35]);
 atm.layeralt	   = &([0.,400,6000,9000]);
 atm.winddir        = &([0,0,0,0]);
 
-
 //-------------------------------
-nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+nwfs               = 2; // number of WFSs (>1 if e.g. mcao)
 wfs = array(wfss,nwfs);
 
 n   = 1;
-wfs(n).type	   = "curvature";
-wfs(n).nsubperring = &([6,12,20,26,32,40,52]);
-wfs(n).l           = 0.4;
+wfs(n).type	   = "hartmann";
 wfs(n).lambda	   = 0.65;
 wfs(n).gspos       = [0.,0.];
 wfs(n).gsalt       = 0.;
+wfs(n).gsmag       = 12.;
+wfs(n).shmethod	   = 2;
+wfs(n).shnxsub	   = 6;
+wfs(n).pixsize     = 0.2;
+wfs(n).npixels     = 10;
+wfs(n).noise       = 1;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
+wfs(n).nintegcycles= 1;
+wfs(n).fstop       = "square";
+wfs(n).fssize      = 10.;
+
+n   = 2;
+wfs(n).type	   = "hartmann";
+wfs(n).lambda	   = 0.65;
+wfs(n).gspos       = [40.,40.];
+wfs(n).gsalt       = 0.;
 wfs(n).gsmag       = 5.;
-wfs(n).noise       = 0;
-wfs(n).ron         = 0.;
+wfs(n).shmethod	   = 2;
+wfs(n).shnxsub	   = 6;
+wfs(n).pixsize     = 0.2;
+wfs(n).npixels     = 10;
+wfs(n).noise       = 1;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
 wfs(n).nintegcycles= 1;
 
 //-------------------------------
@@ -35,12 +54,12 @@ ndm                = 1;
 dm = array(dms,ndm);
 
 n  =1;
-dm(n).type	   = "bimorph";
+dm(n).type	   = "zernike";
 dm(n).iffile	   = "";
+dm(n).nzer	   = 21;
 dm(n).alt          = 0.;
-dm(n).nelperring   = &([6,12,20,26,32,40,52]);
-dm(n).unitpervolt  = 0.01;
-dm(n).push4imat    = 1000;
+dm(n).unitpervolt   = 0.01;
+dm(n).push4imat    = 1;
 
 //-------------------------------
 mat.condition      = &([15.]);
@@ -53,7 +72,7 @@ tel.cobs	   = 0.1125;
 //-------------------------------
 target.lambda	   = &([1.65]);
 target.xposition   = &([0.]);
-target.yposition   = &([0.]);
+target.yposition   = &([0]);
 target.dispzoom    = &([1.]);
 
 //-------------------------------
@@ -62,10 +81,10 @@ gs.zeropoint	   = 1e11;
 //-------------------------------
 loop.gain	   = 0.6;
 loop.framedelay    = 1;
-loop.niter	   = 300;
+loop.niter	   = 5000;
 loop.ittime	   = 2e-3;
 loop.startskip     = 10;
-loop.skipevery     = 1000;
+loop.skipevery     = 10000;
 loop.skipby        = 10000;
 loop.modalgainfile = "simulModeGains.fits";
 

@@ -1,4 +1,4 @@
-// Aosimul par file, V2.4.0
+// YAO parameter file
 //-------------------------------
 sim.name              = "Gemini MCAO system";
 sim.pupildiam         = 128;
@@ -78,11 +78,11 @@ ndm = 5;
 dm = array(dms,ndm);
 
 n = 1;
-dm(n).type	    = "stackarray";
+dm(n).type	        = "stackarray";
 dm(n).subsystem     = 1;
-dm(n).iffile	    = "";
-dm(n).nxact	    = 19;
-dm(n).pitch	    = 8;
+dm(n).iffile	      = "";
+dm(n).nxact	        = 19;
+dm(n).pitch	        = 8;
 dm(n).alt           = 0.;
 dm(n).hyst          = 0.03;
 dm(n).thresholdresp = 0.4;
@@ -91,11 +91,11 @@ dm(n).push4imat     = 20;
 dm(n).pitchMargin   = 0.5;
 
 n = 2;
-dm(n).type	    = "stackarray";
+dm(n).type	        = "stackarray";
 dm(n).subsystem     = 1;
-dm(n).iffile	    = "";
-dm(n).nxact	    = 22;
-dm(n).pitch	    = 8;
+dm(n).iffile	      = "";
+dm(n).nxact	        = 22;
+dm(n).pitch	        = 8;
 dm(n).alt           = 4500.;
 dm(n).hyst          = 0.03;
 dm(n).thresholdresp = 0.4;
@@ -104,11 +104,11 @@ dm(n).push4imat     = 20;
 dm(n).pitchMargin   = 1.2;
 
 n = 3;
-dm(n).type	    = "stackarray";
+dm(n).type	        = "stackarray";
 dm(n).subsystem     = 1;
-dm(n).iffile	    = "";
-dm(n).nxact	    = 16;
-dm(n).pitch	    = 16;
+dm(n).iffile	      = "";
+dm(n).nxact	        = 16;
+dm(n).pitch	        = 16;
 dm(n).alt           = 9000.;
 dm(n).hyst          = 0.03;
 dm(n).thresholdresp = 0.4;
@@ -117,24 +117,26 @@ dm(n).push4imat     = 20;
 dm(n).pitchMargin   = 0.5;
 
 n = 4;
-dm(n).type	    = "tiptilt";
+dm(n).type	        = "tiptilt";
 dm(n).subsystem     = 2;
-dm(n).iffile	    = "";
+dm(n).iffile	      = "";
 dm(n).alt           = 0.;
 dm(n).hyst          = 0.0;
 dm(n).thresholdresp = 0.01;
 dm(n).unitpervolt   = 0.0005;
 dm(n).push4imat     = 5;
+dm(n).gain          = 0.3;
 
 n = 5;
-dm(n).type	    = "aniso";
+dm(n).type	        = "aniso";
 dm(n).subsystem     = 2;
-dm(n).iffile	    = "";
+dm(n).iffile	      = "";
 dm(n).alt           = 9000.;
 dm(n).hyst          = 0.0;
 dm(n).thresholdresp = 0.01;
 dm(n).unitpervolt   = 0.0005;
 dm(n).push4imat     = 5;
+dm(n).gain          = 0.3;
 
 //-------------------------------
 mat.condition       = &([15.,15]);
