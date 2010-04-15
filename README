@@ -71,10 +71,10 @@ v3.4.0	2004sep10
 v3.3.2  2004aug02
 	- fixed a few bugs:
 	- a division by zero was causing a SIGFPE for odd number of subaperture
-	  shack hartmann systems in the angle/elongation calculations in ShWfsInit
+	  shack hartmann systems in the angle/elongation calculations in shwfs_init
 	  (bug noted by Miska)
 	- Added a check of indices overflow when determining the Y interpolation
-	  points in getTurbPhaseInit
+	  points in get_turb_phase_init
 
 v3.3    2004July28
          - semi major changes in this version. Watch out, as some parameters
@@ -136,8 +136,8 @@ v3.2.1  2004apr29
            summation. Instead of precomputing the Influence function
            (IF) on the whole pupil, I compute it on a fraction of it and
            store the indices. The branch is done in the new function
-           compDmShape. if dm.elt == 1, then we use the new and faster
-           method. To date, dm.elt is set to 1 in checkParameters
+           comp_dm_shape. if dm.elt == 1, then we use the new and faster
+           method. To date, dm.elt is set to 1 in check_parameters
            (aoutil.i) for any strackarray DM.
            This is just a patch for now as there is a problem with the
            computation of the anisoplanatism modes.
@@ -162,7 +162,7 @@ v2.5     2004feb13
          - implemented the LGS spot elongation:
            - added a number of _entries in wfs structures (_kernels,
              _kerfftr, _kerffti, _x, _y)
-           - modified ShWfsInit accordingly
+           - modified shwfs_init accordingly
            - added the element wfs.LLTxy
            - added wfs.gsdepth
 
@@ -171,7 +171,7 @@ v2.4.1   2004jan30
            access them after completion of aoloop.
          - added wfs.fracIllum = fraction of subaper. illuminated for
            sub to be valid
-         - reworked configuration graphical display ( graphicConfig() ).
+         - reworked configuration graphical display ( graphic_config() ).
          - added the possibility to interactively select the threshold
            for valid/not valid actuators (put dm.thresholdresp = -1 in
            parfile) v2.4 2004jan22
@@ -235,7 +235,7 @@ v2.2.3   2004jan11
 v2.2.2   2004jan11
          - fixed a rather major bug in the computation of the DM shapes.
            In my haste of implementing the get2dphase, I had used only
-           one interpolation x coordinate vector (see getTurbPhaseInit).
+           one interpolation x coordinate vector (see get_turb_phase_init).
            I was using the vector precomputed for the screens, for the DM...
            I have fixed it by computing dmxposcub (and y).
          - Got back to using *dm._def instead of the def variable to stock
@@ -247,7 +247,7 @@ v2.2     2003dec28
          - Got rid of wfs.shmethod in parfile
          - added wfs.npixels in parfile
          - changed wfs.subsize into wfs.pixsize in parfile
-         - added the routine wfsCheckPixelSize
+         - added the routine wfs_check_pixel_size
          - also, I have moved the influence function setup functions
            in aoutil.i to reduce the size of yao.i 
 
@@ -304,18 +304,18 @@ v1.2 February 2003.
          I can freeze it and go on subversion for improvements
          - the basic layout of the software is now as follow:
            - in aoloop:
-             - aoloop calls multWfs(iter).
-             - for each WFSs, multWfs calls
-               getPhase2dFromDms(offsets,gsalt), which returns the
+             - aoloop calls mult_wfs(iter).
+             - for each WFSs, mult_wfs calls
+               get_phase2d_from_dms(offsets,gsalt), which returns the
                integrated phase along the line of sight for the given
                WFS (offset,gsalt). The core shifting routine of
-               getPhase2dFromDms is interp2dmir.
+               get_phase2d_from_dms is interp2dmir.
              - for each WFS, multWFS calls
-               getTurbPhase(iter,#star,starType (wfs|target)), which
+               get_turb_phase(iter,#star,starType (wfs|target)), which
                returns the integrated phase accross the phase screens
                for the given star and iteration #. The core shifting
-               routine of getTurbPhase is interp2dturb.
-             - multWfs then execute the given WFS routine on the total
+               routine of get_turb_phase is interp2dturb.
+             - mult_wfs then execute the given WFS routine on the total
                phase and returns the cummulative measurement vector.
              - aoloop then manages the WFS measurement vector history
                to pass the vector with correct delay to the matrix
@@ -330,9 +330,9 @@ v1.2 February 2003.
              - To summarize:
              1) aoloop
                 1.1) multWFS(iter,ok), for each sensor:
-                   1.1.1) getPhase2dFromDms(offsets,gsalt)
+                   1.1.1) get_phase2d_from_dms(offsets,gsalt)
                       1.1.1.1) interp2dmir(shifts)
-                   1.1.2) getTurbPhase(iter,gsalt,ok)
+                   1.1.2) get_turb_phase(iter,gsalt,ok)
                       1.1.2.1) interp2dturb(shifts)
                    1.1.3) Get and accumulate sensor measurements
                 1.2) delay management
@@ -342,7 +342,7 @@ v1.2 February 2003.
 v1.0.8   February 7, 2003
          - upgraded all calls to fits_read and fits_write
          (from fitsRead and fitsWrite, to conform to fits2.i)
-         - fixed one problem in MakePztIF (wrong pitch)
+         - fixed one problem in make_pzt_dm (wrong pitch)
          - also IF back to log form (laserdot form) as sinc is no good.
          - SVdec broken in last yorick versions. Works with 1.5.13
          - implemented debug printout and displays

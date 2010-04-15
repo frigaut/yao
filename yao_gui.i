@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_gui.i,v 1.1 2007-12-12 23:29:10 frigaut Exp $
+ * $Id: yao_gui.i,v 1.2 2010-04-15 02:36:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,20 +23,25 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_gui.i,v $
- * Revision 1.1  2007-12-12 23:29:10  frigaut
- * Initial revision
+ * Revision 1.2  2010-04-15 02:36:53  frigaut
+ *
+ *
+ * final commit to upgrade this repo to yao 4.5.1
+ *
+ * Revision 1.1.1.1  2007/12/12 23:29:10  frigaut
+ * Initial Import - yorick-yao
  *
  *
  * all of these functions need to be issued in an already existing
  * window, example:
  * // create window with graphic style with no box:
  * window,2,width=390,height=350,style="letter.gs",wait=1,dpi=70;
- * // define limits for future use of progressBar or drawStatus:
+ * // define limits for future use of progress_bar or draw_status:
  * limits,0.,1.,0.,1.;
  */
 
-func progressBar(percent,&id,init=)
-/* DOCUMENT func progressBar(percent,&id,init=)
+func progress_bar(percent,&id,init=)
+/* DOCUMENT func progress_bar(percent,&id,init=)
    percent: progress -in percent- to be displayed
    id: internal use. Returned by init. To be used in further calls.
    init = [x0,y0,x1,y1]: position to display the progress bar
@@ -50,7 +55,7 @@ func progressBar(percent,&id,init=)
 
   if (!is_void(init)) {
     if (numberof(init) != 4) {
-      error,"progressBar init keyword takes exactly 4 parameters (x0,y0,x1,y1)";
+      error,"progress_bar init keyword takes exactly 4 parameters (x0,y0,x1,y1)";
     }
     if (is_void(PBids)) {
       PBids=1;
@@ -72,7 +77,7 @@ func progressBar(percent,&id,init=)
   limits,0.,1.,0.,1.;
 }
 
-func drawButton(color,pos,size)
+func draw_button(color,pos,size)
 {
   n = 32;
   if (color=="green")  but = char(255-(dist(n) <(n/2))*5);
@@ -82,17 +87,17 @@ func drawButton(color,pos,size)
   limits,0.,1.,0.,1.;
 }
 
-func drawStatus(status,&id,init=)
-/* DOCUMENT func drawStatus(status,&id,init=)
+func draw_status(status,&id,init=)
+/* DOCUMENT func draw_status(status,&id,init=)
    status = 1 (green), 0 (yellow), -1 (red)
    id = returned after init, use as is in futher calls.
    init = [xpos,ypos,size]
    example:
    first call/init:
-   drawStatus,1,ids2,init=[0.3,0.6,0.02]
+   draw_status,1,ids2,init=[0.3,0.6,0.02]
    init the light and place it at positions (0.3,0.6) with size 0.02
    draw red/yellow/green light:
-   drawStatus,1,ids2
+   draw_status,1,ids2
    SEE ALSO:
  */
 {
@@ -100,7 +105,7 @@ func drawStatus(status,&id,init=)
 
   if (!is_void(init)) {
     if (numberof(init) != 3) {
-      error,"progressBar init keyword takes exactly 3 parameters (xpos,ypos,size)";
+      error,"progress_bar init keyword takes exactly 3 parameters (xpos,ypos,size)";
     }
     if (is_void(Sids)) {
       Sids=1;
@@ -118,7 +123,7 @@ func drawStatus(status,&id,init=)
   //    return;
   //  }
   color = ["green","yellow","red"](-status+2);
-  drawButton,color,[coo(1),coo(2)],coo(3);
+  draw_button,color,[coo(1),coo(2)],coo(3);
   //  plg,coo(3)*cos(s)/2+coo(2),coo(3)*sin(s)/2+coo(1),width=3;
   limits,0.,1.,0.,1.;
 }

@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.13 2008-01-17 19:32:16 frigaut Exp $
+ * $Id: yaopy.i,v 1.14 2010-04-15 02:36:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.13  2008-01-17 19:32:16  frigaut
+ * Revision 1.14  2010-04-15 02:36:53  frigaut
+ *
+ *
+ * final commit to upgrade this repo to yao 4.5.1
+ *
+ * Revision 1.13  2008/01/17 19:32:16  frigaut
  * - fixed critical bug on seeing entry in GUI
  * - changed seeing(V) -> seeing(550nm) in GUI
  *
@@ -219,7 +224,7 @@ func wrap_create_phase_screens(void)
   w=256;
   gui_message,swrite(format="Creating phase screens %dx%d in %s",l,w,prefix);
   write,format="Creating phase screens %dx%d in %s",l,w,prefix;
-  CreatePhaseScreens,2048,256,prefix=prefix+"/screen";
+  create_phase_screens,2048,256,prefix=prefix+"/screen";
   gui_message,swrite(format="Done: Phase screens created in %s",prefix);
   write,format="Done: Phase screens created in %s\n",prefix;
   pyk,"set_cursor_busy(0)";
@@ -297,12 +302,12 @@ func set_loop_gain(gain)
   loop.gain=gain;
 }
 
-func toggle_im_imav (imavg)
+func toggle_im_imav(imavg)
 {
   extern dispImImav;
 
   if (imavg) dispImImav=imavg;
-  else dispImImav=3-dispImImav;
+  else dispImImav=1-dispImImav;
 }
 
 func change_target_lambda(lambda)
@@ -310,7 +315,7 @@ func change_target_lambda(lambda)
   (*target.lambda)(0)=lambda;
   if (target._ntarget==1) {
     *target.dispzoom=(*target.lambda)(0)*1e-6/4.848e-6/tel.diam*sim.pupildiam/2;
-    disp2D,im,*target.xposition,*target.yposition,1,zoom=*target.dispzoom,init=1,nolimits=1;
+    disp2d,im,*target.xposition,*target.yposition,1,zoom=*target.dispzoom,init=1,nolimits=1;
   }
 }
 
@@ -322,7 +327,7 @@ func change_zenith_angle(zen)
 
 func change_dr0(dr0) {
   atm.dr0at05mic=dr0;
-  if (initdone) getTurbPhaseInit;
+  if (initdone) get_turb_phase_init;
 }
 
 func change_seeing(seeing) {  //seeing at 550 (V band)
@@ -330,21 +335,21 @@ func change_seeing(seeing) {  //seeing at 550 (V band)
     r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^0.2;
     atm.dr0at05mic     = tel.diam/r0at500;
   } else atm.dr0at05mic = 0.;
-  if (initdone) getTurbPhaseInit;
+  if (initdone) get_turb_phase_init;
 }
 
 
-func do_inter_disp {
-  doInter,disp=1,sleep=sleep;
+func do_inter_disp(void) {
+  do_imat,disp=1,sleep=sleep;
 }
 
-func do_aoinit_disp {
+func do_aoinit_disp(void) {
   stop;  // in case we are running another loop.
   aoinit,dpi=default_dpi;
   pyk,"set_cursor_busy(0)";
 }
 
-func do_aoloop_disp {
+func do_aoloop_disp(void) {
   aoloop,dpi=default_dpi;
   plsys,1;
   animate,0;
@@ -354,9 +359,10 @@ func do_aoloop_disp {
 
 func toggle_animate(state)
 {
-  plsys,1;
-  if (state==0) fma;
-  if (state!=[]) animate,state; else animate;
+  // now done from stop/cont
+//  plsys,1;
+//  if (state==0) fma;
+//  if (state!=[]) animate,state; else animate;
 }
 
 func set_okdm(dmnum,ok)
@@ -385,7 +391,7 @@ func set_okwfs(wfsnum,ok)
   pyk,"yo2py_flush";
 }
 
-func dm_reset
+func dm_reset(void)
 {
   extern okdm,okwfs;
   if (noneof(okdm)) return;
@@ -395,7 +401,7 @@ func dm_reset
   wfsMesHistory*=0.0f;
 }
 
-func dm_flatten
+func dm_flatten(void)
 {
   extern okdm,okwfs;
   if (noneof(okdm)) return;
@@ -471,8 +477,12 @@ func set_gs_alt(gsalt)
   wfsvec = where(okwfs);
   wfs(wfsvec).gsalt=wfs(wfsvec).gsalt*0+gsalt;
   if (initdone) {
-    getTurbPhaseInit,skipReadPhaseScreens=1;
-    for(ll=1;ll<=nwfs;ll++) ShWfsInit,ipupil,ll,silent=1;
+    get_turb_phase_init,skipReadPhaseScreens=1;
+    for(ll=1;ll<=nwfs;ll++) {
+      if (wfs(ll).disjointpup) {
+        shwfs_init,disjointpup(,,ll),ll,silent=1;
+      } else shwfs_init,ipupil,ll,silent=1;
+    }
   }
 }
 
@@ -483,8 +493,12 @@ func set_gs_depth(gsdepth)
   wfsvec = where(okwfs);
   wfs(wfsvec).gsdepth=wfs(wfsvec).gsdepth*0+gsdepth;
   if (initdone) {
-    getTurbPhaseInit,skipReadPhaseScreens=1;
-    for(ll=1;ll<=nwfs;ll++) ShWfsInit,ipupil,ll,silent=1;
+    get_turb_phase_init,skipReadPhaseScreens=1;
+    for(ll=1;ll<=nwfs;ll++) {
+      if (wfs(ll).disjointpup) {
+        shwfs_init,disjointpup(,,ll),ll,silent=1;
+      } else shwfs_init,ipupil,ll,silent=1;
+    }
   }
 }
 
@@ -497,8 +511,12 @@ func set_gs_mag(gsmag)
     if (okwfs(i)) {
       wfs(i).gsmag=gsmag;
       if (initdone) {
-        if (wfs(i).type=="curvature") CurvWfs,,,i,init=1,disp=0,silent=1;
-        else ShWfsInit,ipupil,i,silent=1;
+        if (wfs(i).type=="curvature") curv_wfs,,,i,init=1,disp=0,silent=1;
+        else if (wfs(i).type=="hartmann") {
+          if (wfs(ll).disjointpup) {
+            shwfs_init,disjointpup(,,i),i,silent=1;
+          } else shwfs_init,ipupil,i,silent=1;
+        }
       }
     }
   }
@@ -534,7 +552,11 @@ func set_wfs_kernel(value)
   wfsvec = where(okwfs);
   wfs(wfsvec).kernel=wfs(wfsvec).kernel*0+value;
   if (initdone) {
-    for(ll=1;ll<=nwfs;ll++) ShWfsInit,ipupil,ll,silent=1;
+    for(ll=1;ll<=nwfs;ll++) {
+      if (wfs(ll).disjointpup) {
+        shwfs_init,disjointpup(,,ll),ll,silent=1;
+      } else shwfs_init,ipupil,ll,silent=1;
+    }
   }
 }
 
@@ -559,7 +581,7 @@ func set_wfs_efd(efd)
   for (i=1;i<=nwfs;i++) {
     if (okwfs(i)) {
       wfs(i).l=efd;
-      if (initdone) CurvWfs,,,i,init=1,disp=0,silent=1;
+      if (initdone) curv_wfs,,,i,init=1,disp=0,silent=1;
     }
   }
 }
@@ -581,7 +603,7 @@ func gui_update_wfs(num)
 
 record_shot=0;
 window3_created=0;
-func plotMTF(i,init=)
+func plot_mtf(i,init=)
 {
   extern mtf_reference,mtf_airy,record_shot;
   extern airy,window3_created;
@@ -623,14 +645,14 @@ func plotMTF(i,init=)
 
 func toggle_userplot_mtf
 {
-  if (userPlot!=[]) userPlot=[];
+  if (user_plot!=[]) user_plot=[];
   else {
-    userPlot=plotMTF;
-    plotMTF,init=1;
+    user_plot=plot_mtf;
+    plot_mtf,init=1;
   }
 }
 
-func plotDphi(i,init=)
+func plot_dphi(i,init=)
 {
   extern dphi_reference,mtf_airy,dphi_atmos,record_shot;
   extern airy,imax,dphi_x,window3_created;
@@ -681,10 +703,10 @@ func plotDphi(i,init=)
 
 func toggle_userplot_dphi
 {
-  if (userPlot!=[]) userPlot=[];
+  if (user_plot!=[]) user_plot=[];
   else {
-    userPlot=plotDphi;
-    plotDphi,init=1;
+    user_plot=plot_dphi;
+    plot_dphi,init=1;
   }
 }
 
@@ -798,11 +820,12 @@ func pyk_warning(msg)
 }
 
 
-func pyk_flush(void)
-{
-  pyk,"yo2py_flush";
-  after,1.,pyk_flush;
-}
+// below not needed anymore since Matthieu solved the communication bug
+//func pyk_flush(void)
+//{
+//  pyk,"yo2py_flush";
+//  after,1.,pyk_flush;
+//}
 
 arg     = get_argv();
 if (numberof(arg)>=4) {
@@ -825,5 +848,3 @@ if (numberof(arg)>=4) {
   if (tmp!=[]) yaopardir = dirname(tmp);
   else yaopardir=get_cwd();
  }
-
-pyk_flush;

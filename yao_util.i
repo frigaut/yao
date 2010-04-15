@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_util.i,v 1.4 2009-03-25 14:38:33 frigaut Exp $
+ * $Id: yao_util.i,v 1.5 2010-04-15 02:36:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_util.i,v $
- * Revision 1.4  2009-03-25 14:38:33  frigaut
+ * Revision 1.5  2010-04-15 02:36:53  frigaut
+ *
+ *
+ * final commit to upgrade this repo to yao 4.5.1
+ *
+ * Revision 1.4  2009/03/25 14:38:33  frigaut
  * - sync
  * - fixed a couple of bugs
  *
@@ -41,6 +46,9 @@
  */
 
 require,"style.i";
+require,"pkg_mngr.i"; // kinput
+require,"util_fr.i"; // nprint, wheremin, wheremax, typeReturn, exist
+require,"linalg.i";
 
 func rdfile(file)
 {
@@ -50,48 +58,13 @@ func rdfile(file)
   return fcontent;
 }
 
-//---------------------------------------------------------
-
-func nprint(var,sep=,format=)
-/* DOCUMENT func nprint(var,sep=,format=)
-   Neat print of a 2d array.
-   example:
-   > nprint,optpos*pi/3.14e9,sep=", "
-      +0, -5.003e-07,       +0, -9.005e-08,       +0,       +0 
-      +0, -4.002e-07,       +0, +9.005e-08,       +0,       +0 
-      +0, -3.002e-07,       +0, +9.005e-08,       +0,       +0 
-      +0, -2.001e-07,       +0, +9.005e-08,       +0,       +0 
-      +0, -1.801e-07,       +0, +9.005e-08,       +0,       +0 
-      +0, -1.001e-07,       +0, +9.005e-08,       +0,       +0 
-      +0, +1.001e-07,       +0, +9.005e-08,       +0,       +0
-   sep= seperator string. The default separator is two blanks ("  ").
-   format= swrite format
-   Restricted to 2D arrays
-   SEE ALSO: pm
- */
+func escapechar(s)
 {
-  if (!is_set(sep)) sep = " ";
-  if (!is_set(format)) format = "%+8.4g";
-  dim = dimsof(var);
-  if (dim(1) != 2) {error,"only implemented for 2D arrays";}
-  for (i=1;i<=dim(3);i++) {
-    for (j=1;j<=dim(2)-1;j++) {
-      write,format=format+sep,var(j,i);
-    }
-    write,format=format,var(0,i);
-    write,"";
-  }
+  s=streplace(s,strfind("_",s,n=20),"!_");
+  s=streplace(s,strfind("^",s,n=20),"!^");
+  return s;
 }
 
-
-
-func wheremin(ar) { return  where(ar == min(ar)); }
-func wheremax(ar) { return  where(ar == max(ar)); }
-/* DOCUMENT func wheremin(ar)
-        and func wheremax(ar)
-   Short hand for where(array == min(array) or max(array)
-   SEE ALSO: where, where2, min, max
- */
 
 //---------------------------------------------------------
 
@@ -317,32 +290,6 @@ func tbget(fh,dataptr,keyword)
 
 //---------------------------------------------------------
 
-func doc {system,"evince "+Y_SITE+"/doc/refs.pdf&";}
-func docyo {system,"evince "+Y_SITE+"/doc/yorick.pdf&";}
-/* DOCUMENT doc and docyo
- * Spawns ghostview (actually, gv) to display the short doc and
- * extended yorick doc ps files. gv has to be in the path.
- * SEE ALSO:
- */
-
-//---------------------------------------------------------
-
-func ds9(image)
-/* DOCUMENT ds9(image)
- * Writes the input image on disk and start ds9 to view it.
- * this is rather an ugly hack but ds9 is sometimes useful
- * to look at large image of have a display of the pixel value.
- * Of course, ds9 has to be in the path.
- * SEE ALSO:
- */
-{
-  fname="/tmp/tmp"+swrite(format="%d",long(random(1)(1)*10000))+".fits";
-  fitsWrite,fname,image;
-  system,"ds9 "+fname+"&";
-}
-
-//---------------------------------------------------------
-
 func mrot(ang)
 /* DOCUMENT mrot(angle)
  * returns the matrix of rotation for a given angle.
@@ -408,18 +355,6 @@ func bin2(image)
 
 //---------------------------------------------------------
 
-func typeReturn(void)
-/* DOCUMENT typeReturn(void)
- * A simple convenient function that does what is name says.
- * SEE ALSO:
- */
-{
-  rep = rdline(prompt="type return to continue..."); 
-  return rep;
-}
-
-//---------------------------------------------------------
-
 func extractImage(image,dimx,dimy,method=)
 /* DOCUMENT extractImage(image,dimx,dimy,method=)
  * Interactively extract a subimage from a larger one.
@@ -446,7 +381,7 @@ func extractImage(image,dimx,dimy,method=)
 
   if (method == 1) {
     beg: co = mouse(1,0,"Click on center of image to extract");
-    co1 = round(co(1:2)-[dimx/2.,dimy/2.]+1);
+    co1 = long(round(co(1:2)-[dimx/2.,dimy/2.]+1));
     co2 = co1 + [dimx,dimy]-1;
     xc  = [co1(1),co2(1)];
     yc  = [co1(2),co2(2)];
@@ -462,7 +397,7 @@ func extractImage(image,dimx,dimy,method=)
   }
 
   if (method == 2) {
-    co = round(mouse(1,1,"Click and drag to select image to extract")+0.5);
+    co = long(round(mouse(1,1,"Click and drag to select image to extract")+0.5));
     xc  = [co(1),co(3)];
     yc  = [co(2),co(4)];
     xc  = xc(sort(xc));
@@ -511,7 +446,7 @@ func surface(image,shade=)
 
 //---------------------------------------------------------
 
-func sinc(ar)
+func __sinc(ar)
 /* DOCUMENT sinc(ar)
  * Return the sinus cardinal of the input array
  * F.Rigaut, 2002/04/03
@@ -524,65 +459,7 @@ func sinc(ar)
   if (exist(w)) {ar(w) = 1e-8;}
   return sin(ar)/ar;
 }
-
-//---------------------------------------------------------
-
-func exist(arg)
-/* DOCUMENT exist(arg)
- * Returns 0 if element is not set or is a <nuller>, 1 otherwise
- * F.Rigaut 2002/04/03
- * SEE ALSO: is_void, where
- */
-{
-  if (numberof(arg) == 0) {return 0;}
-  else {return 1;}
-}
-
-//---------------------------------------------------------
-
-func is_set(arg)
-/* DOCUMENT is_set(arg)
- * Returns 0 if element is void or equal to zero, 1 otherwise
- * F.Rigaut 2002/06/03
- * SEE ALSO: is_void, where, exist
- */
-{
-  if (is_void(arg) | (arg == 0)) {return 0;}
-  else {return 1;}
-}
-
-//---------------------------------------------------------
-
-func indices(dim)
-/* DOCUMENT indices(dim)
- * Return a dimxdimx2 array. First plane is the X indices of the pixels
- * in the dimxdim array. Second plane contains the Y indices.
- * Inspired by the Python scipy routine of the same name.
- * New (June 12 2002): dim can either be :
- *   - a single number N (e.g. 128) in which case the returned array are
- *     square (NxN)
- *   - a Yorick array size, e.g. [#dimension,N1,N2], in which case
- *     the returned array are N1xN2
- *   - a vector [N1,N2], same result as previous case
- * F.Rigaut 2002/04/03
- * SEE ALSO: span
- */
-{
-  if (numberof(dim) == 1)
-  {
-    x  = span(1,dim,dim)(,-:1:dim);
-    y  = transpose(x);
-    return [x,y];
-  } else
-  {
-    if (numberof(dim) == 3) {dim = dim(2:3);}
-    x  = span(1,dim(1),dim(1))(,-:1:dim(2));
-    y  = span(1,dim(2),dim(2))(,-:1:dim(1));
-    y  = transpose(y);
-    return [x,y];
-  }
-    
-}
+if (!is_func(sinc)) sinc=__sinc;
 
 //---------------------------------------------------------
 
@@ -611,61 +488,6 @@ func uint(arg)
   return arg;
 }
 
-//---------------------------------------------------------
-
-func round(arg) 
-/* DOCUMENT round(arg)
- * Returns the rounded version of a floating point argument
- * modified 2007dec06 to fix problem with negative numbers
- * F.Rigaut 2001/10
- * SEE ALSO: ceil, floor
- */
-{return long(arg+0.5)-(arg<0);}
-
-//---------------------------------------------------------
-
-func fileExist(filename)
-/* DOCUMENT fileExist(filename)
- *  Returns "1" if the file(s) exist(s), "0" if it does not.
- *  filename can be an array, in which case the results is an array
- *  of 0s and 1s.
- *  F.Rigaut 2002/01
- *  SEE ALSO:
- */
-{
-  exist = [];
-  for (i=1;i<=numberof(filename);i++) {
-    grow,exist,(open(filename(i),"r",1) ? 1:0);
-  }
-  if (numberof(filename) == 1) {return exist(1);}
-  return exist;
-}
-
-//---------------------------------------------------------
-
-//func spawn(command) 
-/* DOCUMENT spawn(command)
- * This function tries to group in one call the :
- * - call to system
- * - read the file created by the system call
- * - returns it
- * Inspired from the IDL function of the same name
- * F.Rigaut 2002/04/04
- * SEE ALSO: system, popen, exec in Eric/system.i
- */
- /*
-{
-  f   = popen(command,0);
-  ans = rdline(f);
-  l   = ans;
-  while (l)
-    {
-      l = rdline(f);
-      if (l) {ans = grow(ans,l);}
-    }
-  return ans;
-}  
-*/
 //---------------------------------------------------------
 
 func decimal_time(str,delim)
@@ -726,21 +548,6 @@ func fftfit(yin,fraccut,nsig)
 
 //---------------------------------------------------------
 
-func makegaussian(size,fwhm,xc=,yc=,norm=) 
-/* DOCUMENT makegaussian(size,fwhm,xc=,yc=)
- * Returns a centered gaussian of specified size and fwhm.
- * F.Rigaut 2001/09
- * norm returns normalized 2d gaussian
- * SEE ALSO:
- */
-{
-  tmp = exp(-(dist(size,xc=xc,yc=yc)/(fwhm/1.66))^2.);
-  if (is_set(norm)) tmp = tmp/fwhm^2./1.140075;
-  return tmp;
-}
-
-//---------------------------------------------------------
-
 func rfftconvol(image,kernel)
 /* DOCUMENT rfftconvol(image,kernel)
  * Not specialy optimized fft convolution.
@@ -790,56 +597,8 @@ func convol2d(image,kernel)
 }
 
 //---------------------------------------------------------
-
-func tic(counterNumber)
-/* DOCUMENT tic
- * Marks the beginning of a time lapse
- * ex: tic ; do_something ; tac()
- * will print out the time ellapsed between tic and tac
- * F.Rigaut 2001/10
- * SEE ALSO: tac
- */
-{
-  if (counterNumber == []) counterNumber = 1;
-  if (counterNumber > 10) error,"tic and tac are limited to 10 time counters !";
-
-  el = array(double,3);
-  timer,el;
-  _nowtime(counterNumber) = el(3);
-}
-
-//---------------------------------------------------------
 extern _nowtime;
  _nowtime = array(double,10);
-//---------------------------------------------------------
-
-func tac(counterNumber)
-/* DOCUMENT tac()
- * Marks the end of a time lapse
- * ex: tic ; do_something ; tac()
- * will print out the time ellapsed between tic and tac
- * F.Rigaut 2001/10
- * SEE ALSO: tic
- */
-{
-  if (counterNumber == []) counterNumber = 1;
-
-  el = array(double,3);
-  timer,el;
-  elapsed = el(3)-_nowtime(counterNumber);
-
-  return elapsed;
-}
-
-//---------------------------------------------------------
-
-func minmax(arg) 
-/* DOCUMENT minmax(arg)
- * Returns a vector containing the min and the max of the argument
- * F.Rigaut 2001/09
- * SEE ALSO:
- */
-{return [min(arg),max(arg)];}
 
 //---------------------------------------------------------
 func myxytitles(xtitle,ytitle,xyoff,font=,height=)
@@ -884,89 +643,6 @@ func axisLegend(xtext,ytext,xyoff=,yxoff=)
   plt,xtext,0.42,0.39+xyoff,justify="CC",font="helvetica";
   plt,ytext,0.12+yxoff,0.65,justify="CC",font="helvetica",orient=1;
 }
-
-//---------------------------------------------------------
-
-func tv(im,square=) 
-/* DOCUMENT tv(im,square=) 
- * This routines does a frame advance, display the image
- * and set the limits to have the image full display.
- * Inspired from the IDL tvscl
- * F.Rigaut, 2001/11/10.
- * SEE ALSO: fma, pli, plot
- */
-{
-  fma; 
-  pli,im; 
-  limits,"e","e","e","e",square=square;
-}
-
-//---------------------------------------------------------
-
-func plot(vect,x,square=,histo=) 
-/* DOCUMENT plot(vect,x,square=,histo=)
- * Short cut for a fma + plg
- * Set histo to get plh type plot
- * F.Rigaut 2001/10
- * SEE ALSO: plg, fma, tv, plh
- */
-{
-  fma;
-  if (is_set(histo)) {
-    plh,vect,x;
-  } else {
-    plg,vect,x;
-  }
-  limits,,,,,square=square;
-}
-
-
-//---------------------------------------------------------
-
-func even(arg) 
-/* DOCUMENT even(arg)
- * returns 1 is argument is even, zero otherwise. 
- * The argument should be an integer.
- * F.Rigaut, 2001/11/10.
- * SEE ALSO: odd
- */
-{return ((arg % 2) == 0);}
-
-//---------------------------------------------------------
-
-func odd(arg) 
-/* DOCUMENT odd(arg)
- * Returns 1 is argument is odd, zero otherwise. 
- * The argument should be an integer.
- * F.Rigaut, 2001/11/10.
- * SEE ALSO: even
- */
-{return ((arg % 2) == 1);}
-
-//---------------------------------------------------------
-
-func diag(image)
-/* DOCUMENT diag(image)
- * Returns a vector containing the diagonal of the input matrix
- * F.Rigaut, 2001/10
- * SEE ALSO: trace
- */
-{
-  s	= (dimsof(image))(2);
-  d	= array(float,s);
-  for (i=1;i<=s;i++) {d(i) = image(i,i);}
-  return d;
-}
-
-//---------------------------------------------------------
-
-func trace(image) 
-/* DOCUMENT trace(image)
- * Returns the trace of the input matrix
- * F.Rigaut 2001/10
- * SEE ALSO: diag
- */
-{return sum(diag(image));}
 
 //---------------------------------------------------------
 
@@ -1100,49 +776,6 @@ func medianCube(cube)
 
 //---------------------------------------------------------
 
-func ls 
-/* DOCUMENT ls: system command ls 
- * F.Rigaut, 2001/11/10.
- * SEE ALSO: pwd, system, $.
- */
-{system,"ls";}
-
-//---------------------------------------------------------
-
-func pwd 
-/* DOCUMENT pwd: system command pwd 
- * F.Rigaut, 2001/11/10.
- * SEE ALSO: ls, system, $.
- */
-{system,"pwd";}
-
-//---------------------------------------------------------
-
-func findfiles(files)
-/* DOCUMENT findfiles(filter)
- * This routines returns a list of files which satisfy the filter
- * argument. The list is a string vector. If no files were found,
- * the results is the empty string.
- * F.Rigaut, 2001/11/10.
- * SEE ALSO: spawn
- */
-{
-  system,"ls -1 "+files+" > /tmp/yorick";
-  system,"wc -l /tmp/yorick > /tmp/yorick1";
-  f = open("/tmp/yorick1");
-  nlines = 0;
-  read,f,nlines;
-  close,f;
-  if (nlines == 0) return "";
-  f = open("/tmp/yorick");
-  fout = array(string,nlines);
-  read,f,fout;
-  close,f;
-  return fout;
-}
-
-//---------------------------------------------------------
-
 // this function is superseeded by the call to the C function distraw
 // see yorickfr.i
 // 2004mar03: same remark as for clip (see above). Superseeded by the faster
@@ -1219,24 +852,6 @@ func calcpsf(pupil,phase,init=)
   psf = eclat(abs(fft(p,1,setup=calcPsfWorkSpace)))^2.;
   return psf;
 }
-
-//---------------------------------------------------------
-
-func secToHMS(time)
-/* DOCUMENT secToHMS(time)
- * Convert from time (float in sec) to string in the form hh:mm:ss.s
- * AUTHOR : F.Rigaut, June 13 2002.
- * SEE ALSO: 
- */
-{
-  lt    = long(time);
-  hh    = lt/3600;
-  lt    = lt-hh*3600;
-  mm    = lt/60;
-  sec   = float(time)-hh*3600-mm*60;
-  ts    = swrite(hh,mm,sec,format="%02i:%02i:%04.1f");
-  return ts;
-} 
 
 //---------------------------------------------------------
 
@@ -1393,5 +1008,4 @@ func psd(s, length, step=, filter=, samp=, db=,noplot=,overplot=,
 man=help;
 hitReturn=typeReturn;
 encircledEnergy=encircled_energy;
-saoimage=ds9;
 findFiles = findfiles;

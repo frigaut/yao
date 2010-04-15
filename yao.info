@@ -1,6 +1,6 @@
 Package: yao
 Kind: plugin
-Version: 4.2.6
+Version: 4.5.1
 Revision: 1
 Description: Adaptive Optics simulation package
 License: BSD
@@ -24,7 +24,4 @@ yorick -i test-all.i
 in a terminal to run it.
 <<
 DescPort: <<
-This package will compile Yao only on MacOSX 10.3.4 or later, because
-of a bug in the system math library libm (part of /usr/lib/LibSystem.dylib)
-in earlier versions of MacOSX 10.3.
 <<

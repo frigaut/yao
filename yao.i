@@ -4,9 +4,9 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.13 2008-11-19 00:53:19 frigaut Exp $
+ * $Id: yao.i,v 1.14 2010-04-15 02:36:53 frigaut Exp $
  *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2009, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -25,7 +25,12 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.13  2008-11-19 00:53:19  frigaut
+ * Revision 1.14  2010-04-15 02:36:53  frigaut
+ *
+ *
+ * final commit to upgrade this repo to yao 4.5.1
+ *
+ * Revision 1.13  2008/11/19 00:53:19  frigaut
  * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
  * - fixed comments in newfits.i
  * - upped version to 4.2.6
@@ -121,7 +126,7 @@
  * Revision 1.22  2004/09/14 04:32:56  frigaut
  * several modifs to do with the creation of turbulent phase screens
  * - implemented cosf and sinf which take and return floats to save space
- * - started coding generatePhaseWithL0 in turbulence.i, not finished
+ * - started coding generate_phase_with_L0 in turbulence.i, not finished
  * - modif YORICKEXE in makefiles, just "yorick" did not do it on osx
  * - modifs ok for both veclib and fftw implementations
  *
@@ -149,17 +154,17 @@
  * Updated version number and date in file header.
  *
  * Revision 1.15  2004/08/02 07:54:11  frigaut
- * Fixed a bug in ShWfsInit noted by Miska when running odd number of
+ * Fixed a bug in shwfs_init noted by Miska when running odd number of
  * subaperture shack-hartmann systems. There was a division by zero
  * in the call to atan to determine the angle of the kernel. fixed
  * by calling atan(y,x) instead of atan(y/x)
  *
  * Revision 1.14  2004/08/02 07:21:25  frigaut
  * Corrected a nasty bug in the final adjustment of yposvec in
- * getTurbPhaseInit (used xmargin instead of ymargin)
+ * get_turb_phase_init (used xmargin instead of ymargin)
  *
  * Revision 1.13  2004/08/02 07:11:13  frigaut
- * Added call to getTurbPhaseInitCheckOverflow in getTurbPhaseInit
+ * Added call to get_turb_phase_initCheckOverflow in get_turb_phase_init
  *
  * Revision 1.12  2004/07/29 04:06:50  frigaut
  * added cvs dollar Log in header
@@ -167,16 +172,25 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.2.6";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2008nov18";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.5.1";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010apr14";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
+// before we do anything else (to avoid forking a large process), 
+// let's try to determine what OS we are in:
+f = popen("uname",0); 
+rep = ""; read,f,format="%s",rep; 
+close,f;
+rep = strlower(rep);
+if ( (rep=="darwin") || (rep=="linux") ) os_env = rep; else os_env="unknown";
 
 plug_in,"yao";
 
 require,"yao_utils.i";
 require,"yao_fast.i";
+require,"yao_wfs.i";
+require,"yao_dm.i";
 require,"aoutil.i";
 require,"yao_gui.i";
 require,"utils.i";
@@ -184,24 +198,34 @@ require,"newfits.i";
 require,"yao_util.i";
 require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
+require,"yao_structures.i";
 
 // compatibility with GUI (yaopy.i)
 func null (arg,..) { return 0; }
-pyk_error=pyk_info=pyk_warning=null;
-gui_message=gui_message1=gui_progressbar_frac=gui_progressbar_text=null;  // by default. can be redefined by gui routine
-clean_progressbar=gui_show_statusbar1=gui_hide_statusbar1=pyk_flush=null;
-YAO_SAVEPATH=get_cwd();
-// all above is designed to be overwritten by appropriate values in yaopy.i
-// when using yao through the GUI
+
+// All below is designed to be overwritten by appropriate values 
+// in yaopy.i when using yao through the GUI
+pyk_error = pyk_info = pyk_warning = null;
+gui_message = gui_message1 = gui_progressbar_frac = gui_progressbar_text = null;  
+clean_progressbar = gui_show_statusbar1 = gui_hide_statusbar1 = pyk_flush = null;
+YAO_SAVEPATH = get_cwd();
 
 //----------------------------------------------------
-func compDmShape(nm,command,extrap=)
-/* DOCUMENT func compDmShape(nm,command)
-   compute the DM shape from the command vector
-   branch over _dmsum or _dmsumelt according to case.
+func comp_dm_shape(nm,command,extrap=)
+/* DOCUMENT comp_dm_shape(nm,command,extrap=)
+   Fast compute of DM #nm shape from a command vector.
+   Branch over _dmsum or _dmsumelt according to case.
+   nm: DM yao #
+   command: POINTER to a float vector containing the commands
+            length of vector = numberof(*dm(nm)._command) = dm(nm)._nact
+   extrap : Compute for extrapolated only (otherwise compute for valid only)
+            so that to compute valid + extrap, you have to make 2 calls,
+            one with and one without the extrap keyword set.
    SEE ALSO:
 */
 {
+  if (typeof(*command)!="float") error,"command is not float";
+  
   n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = int(n2-n1+1);
   sphase = array(float,[2,nxy,nxy]);
 
@@ -225,10 +249,27 @@ func compDmShape(nm,command,extrap=)
     
   }
   
+  // temporary method for shifting DMs/influence functions
+  // one can not anymore use the straight (*dm._def)(,,sum),
+  // but instead should always use comp_dm_shape.
+  if (dm(nm)._puppixoffset!=[]) {
+    sphase = roll(sphase,dm(nm)._puppixoffset);
+  }
+  
+  if (dm(nm).disjointpup) { // we have to filter by disjointpup(,,nm)
+    sphase *= disjointpup(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2,nm);
+  }
+  
   return sphase;
 }
 //----------------------------------------------------
-func controlScreen(i,init=)
+func control_screen(i,init=)
+/* DOCUMENT control_screen(i,init=)
+   While the loop is running, brings up another graphic window in which
+   some loop parameters are displayed. I rarely use this feature anymore.
+   i is the loop counter. Not intended for use by the end user.
+   SEE ALSO:
+ */
 {
   local x0,y0,x,y;
   y0 = 0.84;
@@ -253,7 +294,7 @@ func controlScreen(i,init=)
     window,2,width=390,height=350,style="letter.gs",wait=1,dpi=70;
     //    window,2,width=570,height=dheight,style="letter.gs",wait=1,dpi=70;
     limits,0.,1.,0.,1.;
-    progressBar,0,pbid1,init=[x0,y0-ygstep,x0+0.25,y0-ygstep+0.015];
+    progress_bar,0,pbid1,init=[x0,y0-ygstep,x0+0.25,y0-ygstep+0.015];
     window,0;
     return;
   }
@@ -267,7 +308,7 @@ func controlScreen(i,init=)
   it = swrite(format="%d/%d iterations",i,loop.niter);
   plt,it,x0+0.27,y,tosys=1,height=csize,justify="LA";
   y -= ygstep;
-  progressBar,i*100./loop.niter,pbid1;
+  progress_bar,i*100./loop.niter,pbid1;
   
   //  s = "WFS     rms     Tip     Tilt    ";
   s = "WFS        Tip    Tilt   ";
@@ -338,81 +379,15 @@ func controlScreen(i,init=)
   window,0;
 }
 
-//----------------------------------------------------
-
-func CurvWfs(pupil,phase,ns,init=,disp=,silent=)
-/* DOCUMENT  CurvWfs(pupil,phase,ns,disp=)
-   This function computes the signal from a Curvature WFS for a 
-   given phase and pupil input and WFS config.
-*/
-{
-  if (is_void(ns)) {ns=1;} // default sensor#1 for one WFS work
-  
-  size	     = sim._size;
-  dimpow2   = int(log(size)/log(2));
-
-  if (init == 1) {
-    if ( (sim.verbose>=1) && (!is_set(silent)) ) {write,"> Initializing CurvWfs\n";}
-    fratio= 60.;
-    defoc = (pi*wfs(ns).lambda*1e-6/(sim._size^2.*(tel.diam/sim.pupildiam)^2.))*
-      eclat(dist(sim._size)^2.);
-    x	= fratio*tel.diam*(fratio*tel.diam-wfs(ns).l)/wfs(ns).l;
-    defoc= defoc*x;
-    wfs(ns)._cxdef= &(float(cos(defoc))); 
-    wfs(ns)._sxdef= &(float(sin(defoc)));
-    wfs(ns)._tiltsh = &(float(defoc*0.));
-    wfs(ns)._fimage = &(float(defoc*0.));
-    wfs(ns)._fimage2 = &(float(defoc*0.));
-
-    // Work out the total NUMBER OF PHOTONS per sample
-    // from star
-    if (wfs(ns).gsalt == 0) {
-
-      wfs(ns)._nphotons = gs.zeropoint*10^(-0.4*wfs(ns).gsmag)*
-        wfs(ns).optthroughput*                 // include throughput to WFS
-        loop.ittime;                           // per iteration time
-
-    } else { // we are dealing with a LGS
-
-      telsurface = pi/4.*tel.diam^2.(1-tel.cobs^2.)*1e4; // in cm^2
-
-      wfs(ns)._nphotons = gs.lgsreturnperwatt*wfs(ns).laserpower*
-        telsurface*loop.ittime;
-
-    }
-    // from sky, over field stop
-    wfs(ns)._skynphotons = gs.zeropoint*10^(-0.4*wfs(ns).skymag)*
-      wfs(ns).optthroughput*                 // include throughput to WFS
-      loop.ittime*pi/4*wfs(ns).fieldstopdiam^2.;
-
-    if ( (sim.verbose>=1) && (!is_set(silent)) ) {
-      write,format="NPhotons/iter from star = %f\n",wfs(ns)._nphotons;
-      write,format="NPhotons/iter from sky  = %f\n",wfs(ns)._skynphotons;
-
-    }
-    return defoc;
-  }
-
-  mesvec = array(float,wfs(ns)._nsub);
-  if (typeof(phase) != "float") {
-    print,"Phase was not float";
-    phase = float(phase);
-  }
-
-  phasescale = float(2*pi/wfs(ns).lambda);   // wfs.lambda in microns
-
-  err = _cwfs( &pupil, &phase, phasescale, wfs(ns)._tiltsh, wfs(ns)._cxdef,
-               wfs(ns)._sxdef, dimpow2, wfs(ns)._sind, wfs(ns)._nsind,
-               wfs(ns)._nsub, wfs(ns)._fimage, wfs(ns)._fimage2,
-               wfs(ns)._nphotons, wfs(ns)._skynphotons, float(wfs(ns).ron),
-               float(wfs(ns).darkcurrent*loop.ittime), int(wfs(ns).noise), &mesvec);
-
-  return mesvec;
-}
 
 //----------------------------------------------------
 
-func mcaoRayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
+func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
+/* DOCUMENT mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
+   Computes the rayleigh backscattering from other LGS beams (fratricide)
+   Called from shwfs_init()
+   SEE ALSO: shwfs_init
+ */
 {
   as2rd = dtor/3600.;
   cobs  = 0;
@@ -432,15 +407,15 @@ func mcaoRayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   if (!is_set(aspp)) { aspp = 1;} // arcsec per pixel
 
   // I have not implemented the 4 following parameters in the parfile.
-  // one has to fill it b hand in the code for now!!!!!!!
+  // one has to fill it by hand in the code for now!!!!!!!
   beamdiameter = 0.3; // fwhm of gaussian laser beam in meter
 
   laserlambda  = wfs(nwfs).lambda*1e-6; //589e-9;
-  diamsubap    = tel.diam/wfs(nwfs).shnxsub; // diameter of a subaperture [m]
+  diamsubap    = tel.diam/wfs(nwfs).shnxsub; // side of a subaperture [m]
   r0           = (tel.diam/atm.dr0at05mic)*cos(zenith)^0.6;
   seeing       = laserlambda/r0/4.848e-6;
   spotsize     = 1.0; // irrelevant for rayleigh in this code.
-  d            = 1e-2; // linear size of aperture for flux (/cm^2)
+  d            = 1e-2; // linear size of aperture for flux (/cm^2) <???
 
   altsod       = wfs(nwfs)._gsalt;
   fwhmsod      = wfs(nwfs)._gsdepth;
@@ -555,492 +530,27 @@ func mcaoRayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   return [imrayl,imstar];
 }  
 
-//----------------------------------------------------
-
-func ShWfsInit(pupsh,ns,silent=,imat=)
-{
-  extern initkernels;
-  
-  initkernels = array(1n,nwfs);
-
-  if (is_void(ns)) {ns=1;} // default to wfs#1 for one WFS work.
-
-  if (typeof(pupsh) != "float") {error,"pupsh was not float !";}
-
-  pupd	     = sim.pupildiam;
-  size	     = sim._size;
-  nxsub	     = wfs(ns).shnxsub(0);
-  subsize    = pupd/nxsub;
-  if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
-  fracsub    = wfs(ns).fracIllum;
-  sdim       = long(2^ceil(log(subsize)/log(2)+1));
-  sdimpow2   = int(log(sdim)/log(2));
-
-  wfs(ns)._centroidgain = 1.f;
-
-  //====================================================================
-  // WORK OUT THE NUMBER OF PHOTONS COLLECTED PER SUBAPERTURE AND SAMPLE
-  //====================================================================
-
-  telSurf  = pi/4.*tel.diam^2.;
-  // from the guide star (computed here as used in wfsCheckPixelSize):
-  if (wfs(ns).gsalt == 0) {
-
-    wfs(ns)._nphotons = gs.zeropoint*10^(-0.4*wfs(ns).gsmag)*
-      wfs(ns).optthroughput*                 // include throughput to WFS
-      (tel.diam/wfs(ns).shnxsub)^2./telSurf* // for unobstructed subaperture
-      loop.ittime;                           // per iteration
-
-  } else {  // we are dealing with a LGS
-
-    wfs(ns)._nphotons = gs.lgsreturnperwatt*  // detected by WFS
-      wfs(ns).laserpower*                     // ... for given power
-      wfs(ns).optthroughput*                  // include throughput to WFS
-      (tel.diam/wfs(ns).shnxsub)^2.*1e4*      // for unobstructed subaperture
-      loop.ittime;                            // per iteration
-
-  }
-  // see below for # of photons from sky
-
-  //=============================================================
-  // COMPUTE KERNEL TO CONVOLVE _SHWFS IMAGE FOR IMAT CALIBRATION
-  //=============================================================
-
-  // if there is no explicit request for an extended kernel
-  // and we are not using LGS (or the depth = 0) then we disable
-  // the kernel convolution is _shwfs to gain time (and accuracy)
-  // this behavior is overriden in MultWfsIntMat anyway for the purpose
-  // of computing the iMat with the correct kernel (to simulate for
-  // the extended "seeing" spot
-  if ((wfs(ns).kernel == 0) && (wfs(ns)._gsdepth == 0) && (!is_set(imat))) {
-    wfs(ns)._kernelconv = 0n;
-  } else {
-    wfs(ns)._kernelconv = 1n;
-  }
-
-  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-
-  write,format="Dimension for optional amplitude mask: %d\n",2^sdimpow2;
-  
-  // reads out the amplitude mask for the subaperture:
-  if (wfs(ns).submask) {
-    // read the amplitude image
-    tmp = fitsRead(YAO_SAVEPATH+wfs(ns).submask);
-    // check that dims are OK:
-    if (anyof(dimsof(tmp)!=[2,2^sdimpow2,2^sdimpow2])) {
-      error,swrite(format="Bad dimensions for %s. Should be %d, found %d\n",
-                   wfs(ns).submask,2^sdimpow2,dimsof(tmp)(2));
-    }
-    // check of mask is centered (can be a common cause of mistake):
-    f1x = sum(tmp(1:2^(sdimpow2-1),));
-    f2x = sum(tmp(2^(sdimpow2-1)+1:,));
-    f1y = sum(tmp(,1:2^(sdimpow2-1)));
-    f2y = sum(tmp(,2^(sdimpow2-1)+1:));
-    if ((f1x!=f2x)||(f1y!=f2y)) {
-      write,format="%s\n","\nWARNING!";
-      write,format="%s\n","The SHWFS amplitude mask is not centered. This can create";
-      write,format="%s\n","a bias in the slope calculation. A centered mask should be";
-      write,format="%s\n","centered on the 4 central pixels of the mask, not on";
-      write,format="%s\n","the (0,0) of the FFT transform. If you did not do that on ";
-      write,format="%s\n\n","purpose, you should correct your mask.";
-}
-    // modify as required:
-    wfs(ns)._submask = &(float(roll(tmp)));
-    wfs(ns)._domask = 1l;
-  } else wfs(ns)._domask = 0l;
-
-  // factor 1.5 to crudely compensate for the fact that the spot is
-  // tilt compensated at the focus of the lenslet
-
-  if (is_set(imat)) { // we are in iMat computation. we want
-    // the kernel FWHM = seeing + requested kernel fwhm (quadratically)
-    dr0 = atm.dr0at05mic*(0.5/wfs(ns).lambda)^1.2/cos(gs.zenithangle*dtor)^0.6;
-    fwhmseeing = wfs(ns).lambda/
-      (tel.diam/sqrt(wfs(ns).shnxsub^2.+(dr0/1.5)^2.))/4.848;
-    kernelfwhm = sqrt(fwhmseeing^2.+wfs(ns).kernel^2.);
-  } else { // we are in regular aoloop. no further convolution to account
-           // for seeing. However, we want to avoid dividing by zero
-           // in makegaussian, so we floor fwhm:
-    kernelfwhm = clip(wfs(ns).kernel,1e-8,);
-  }
-
-  if ( (sim.verbose >= 1) && (!is_set(silent)) ) {
-    write,format="Kernel FWHM for the iMat calibration = %f\n",kernelfwhm;
-  }
-
-  tmp = eclat(makegaussian(sdim,kernelfwhm/quantumPixelSize,
-                           xc=sdim/2+1,yc=sdim/2+1));
-  tmp(1,1) = 1.; // this insures that even with fwhm=0, the kernel is a dirac
-  tmp = tmp/sum(tmp);
-  wfs(ns)._kernel = &(float(tmp));
-
-  //==================================
-  // COMPUTE ISTART AND JSTART VECTORS
-  //==================================
-  // they are vectors containing the start
-  // indices (X and Y) of the subapertures
-
-  is	= size/2+1-pupd/2;
-  if (wfs(ns).npixpersub) {
-    is	= size/2+1-(subsize*nxsub)/2;
-  }
-  nsubs = nxsub*nxsub;
-  istart = (indgen(nsubs)-1)/nxsub*subsize+is;
-  jstart = ((indgen(nsubs)-1)%nxsub)*subsize+is;
-  xsub = ((indgen(nsubs)-1)/nxsub+0.5)*tel.diam/nxsub-tel.diam/2.;
-  ysub = (((indgen(nsubs)-1)%nxsub)+0.5)*tel.diam/nxsub-tel.diam/2.;
-
-  //==========================================================
-  // COMPUTE WHICH SUBAPERTURES ARE ENABLED (FLUX > THRESHOLD)
-  //==========================================================
-
-  fluxPerSub = array(float,nsubs);
-  for (i=1;i<=nsubs;i++) {
-    fluxPerSub(i) = sum(pupsh(istart(i):istart(i)+subsize-1,jstart(i):jstart(i)+subsize-1));
-  }
-  fluxPerSub = fluxPerSub/subsize^2.;
-  // indices of the enabled subapertures: gind
-  gind = where(fluxPerSub > fracsub);
-  istart = istart(gind);
-  jstart = jstart(gind);
-  xsub = xsub(gind);
-  ysub = ysub(gind);
-  fluxPerSub  = fluxPerSub(gind);
-
-  // stuff some of wfs structure for WFS "ns":
-  wfs(ns)._istart = &(int(istart-1)); // -1n 'cause C is 0 based
-  wfs(ns)._jstart = &(int(jstart-1));
-  wfs(ns)._x = &(xsub);
-  wfs(ns)._y = &(ysub);
-  wfs(ns)._nsub = int(numberof(gind));
-
-  // compute other setup variables for _shwfs:
-
-  //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDANT. USED FOR LGS ELONGATION
-  //==========================================================================
-
-  if (wfs(ns)._kernelconv != 0n) {
-    // if kernelconv is 0, then the _shwfs routine does not use wfs._kernels,
-    // so no need to compute it.
-    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(sdim)-sdim/2.-1)*quantumPixelSize;  // coordinate array in arcsec
-
-    if (sim.verbose >= 1) {write,"Pre-computing Kernels for the SH WFS";}
-
-    kall = [];
-
-    gui_progressbar_frac,0.;
-    gui_progressbar_text,swrite(format="Computing subaperture dependant kernel for LGS elongation, WFS#%d",ns);
-    
-    for (l=1; l<=wfs(ns)._nsub; l++) {
-      // for each subaperture, we have to find the elongation and the angle.
-      xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-      xllt = wfs(ns).LLTxy(1); yllt = wfs(ns).LLTxy(2);
-      d = sqrt((xsub-xllt)^2. +(ysub-yllt)^2.);
-      if (d == 0) {
-        elong = ang = 0.;
-      } else {
-        elong = atan((wfs(ns)._gsalt+wfs(ns)._gsdepth)/d)-atan(wfs(ns)._gsalt/d);
-        elong /= 4.848e-6; // now in arcsec
-        ang = atan(ysub-yllt,xsub-xllt); // fixed 2004aug02
-      }
-      angp90 = ang+pi/2.;
-
-      expo = 4.;
-      alpha = elong/(2.*log(2)^(1/expo));
-      beta = 2*quantumPixelSize/(2.*log(2)^(1/expo));
-      alpha = clip(alpha,0.5*quantumPixelSize,);
-      beta = clip(beta,0.5*quantumPixelSize,alpha);
-      
-      tmp  = exp(-((cos(ang)*xy(,,1)+sin(ang)*xy(,,2))/alpha)^expo);
-      tmp *= exp(-((cos(angp90)*xy(,,1)+sin(angp90)*xy(,,2))/beta)^expo);
-      tmp = tmp/sum(tmp);
-      grow,kall,(eclat(tmp))(*);
-      
-      s2 = tel.diam/nxsub*0.9/2.;
-      //if (sim.debug >= 2) {fma; pli,tmp,xsub-s2,ysub-s2,xsub+s2,ysub+s2;}
-      gui_progressbar_text,swrite(format="Computing subaperture dependant kernel for LGS elongation, WFS#%d, sub#%d/%d",ns,l,wfs(ns)._nsub);
-      gui_progressbar_frac,float(l)/wfs(ns)._nsub;
-    }
-    clean_progressbar;
-    //if (sim.debug >=2) {hitReturn;}
-
-    wfs(ns)._kernels = &(float(kall));
-    wfs(ns)._kerfftr = &(float(kall*0.));
-    wfs(ns)._kerffti = &(float(kall*0.));
-    kall = [];
-  }
-  
-  //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDANT. USED FOR LGS ELONGATION
-  //==========================================================================
-
-  rayleighflux = array(0.0f,wfs(ns)._nsub);
-  sodiumflux   = array(1.0f,wfs(ns)._nsub);
-
-  if (wfs(ns).rayleighflag == 1n) {
-    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(sdim)-sdim/2.-1)*quantumPixelSize;  // coordinate array in arcsec
-
-    if (sim.verbose > 0) {write,"Pre-computing Rayleigh for the SH WFS";}
-
-    kall = [];
-
-    rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
-      swrite(format="%d",long(gs.zenithangle))+".fits";
-    isthere = fileExist(YAO_SAVEPATH+rayfname);
-    fov    = quantumPixelSize*sdim;
-    aspp   = quantumPixelSize;
-
-
-    if (isthere) {
-      
-      kall         = fitsRead(YAO_SAVEPATH+rayfname)*1e6;
-      rayleighflux = fitsRead(YAO_SAVEPATH+rayfname,hdu=1);
-      sodiumflux   = fitsRead(YAO_SAVEPATH+rayfname,hdu=2);
-
-    } else {
-
-      for (l=1; l<=wfs(ns)._nsub; l++) {
-        xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-        tmp = mcaoRayleigh(ns,ysub,xsub,fov=fov,aspp=aspp,zenith=gs.zenithangle);
-        rayleighflux(l) = sum(tmp(,,1));
-        sodiumflux(l)   = sum(tmp(,,2));
-        tmp = transpose(tmp(,,1));
-        // the switch of xsub <-> ysub and transpose are to accomodate the
-        // C vs yorick 0 vs 1 start array index.
-        //        tmp = tmp/sum(tmp);
-        grow,kall,(eclat(tmp))(*);
-      }
-      fitsWrite,YAO_SAVEPATH+rayfname,kall;
-      fitsWrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
-      fitsWrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
-
-    }
-
-    if (sim.verbose > 0) {
-      write,"From Rayleigh calculations:";
-      write,format="Rayleigh / Sodium ratio in worse/best subapertures: %f, %f\n",
-        max(rayleighflux/sodiumflux),min(rayleighflux/sodiumflux);
-      write,format="Rayleigh flux varies between %f and %f /cm2/looptime\n",
-        min(rayleighflux),max(rayleighflux);
-      write,format="Sodium   flux varies between %f and %f /cm2/looptime\n",
-        min(sodiumflux),max(sodiumflux);
-    }
-    
-    wfs(ns)._rayleigh = &(float(kall));
-    kall = [];
-  }
-  
-  //================================
-  // SUBAPERTURE SIZE AND PIXEL SIZE
-  //================================
-  wfsCheckPixelSize,ns,binindices,centroidw,printheader=(ns == 1),silent=silent;
-  
-  binxy = int(int(wfs(ns).npixels));
-
-  // stuff some more of wfs structure for WFS "ns":
-  wfs(ns)._binindices = &(int(binindices));
-  wfs(ns)._binxy = binxy;
-  wfs(ns)._centroidw = &centroidw;
-  wfs(ns)._fimage = &(array(float,[2,nxsub*(binxy+1)+1,nxsub*(binxy+1)+1]));
-
-  // 2004mar22: added a guard pixel for each subaperture for the display
-  imistart = (istart-min(istart))/subsize*(binxy+1)+1; //same: starts @ 0 'cause C 0 based
-  imjstart = (jstart-min(jstart))/subsize*(binxy+1)+1; //same
-  
-  wfs(ns)._imistart = &(int(imistart));
-  wfs(ns)._imjstart = &(int(imjstart));
-  wfs(ns)._fimnx = int(nxsub*(binxy+1)+1);
-  wfs(ns)._fimny = int(nxsub*(binxy+1)+1);
-
-  // This is the tilt to add to the input phase so that
-  // the individual subaperture images fall in between
-  // the pixels of the quadcell
-  xy     = indices(sim._size);
-
-  wfs(ns)._tiltsh = &(float(-64.*0.098174773*(xy(,,1)+xy(,,2))* \
-                            0.5/sdim*wfs(ns).lambda/(2*pi)*(wfs(ns).shmethod == 2)));
-
-  // This tilt array is intended to bring the spot back inbetween 4 pixels
-  // instead of centered on dim/2+1 as a result of the regular FFT.
-  // this is an achromatic factor of course that just depends on the
-  // dimension of the array.
-  // the lambda/2pi factor is thus to compensate the x by 2pi/lambda
-  // in _shwfs, making tiltsh achromatic.
-
-
-  // compute # of photons from the sky as above for guide star.
-  // skymag is per arcsec, so we have to convert for
-  // the subaperture size computed in wfsCheckPixelSize.
-
-  wfs(ns)._skynphotons = gs.zeropoint*10^(-0.4*wfs(ns).skymag)*
-    (tel.diam/wfs(ns).shnxsub)^2./telSurf*   // per subaperture
-    loop.ittime*                             // per iteration
-    wfs(ns).optthroughput*                   // include throughput to WFS
-    (wfs(ns).pixsize*wfs(ns).npixels)^2.;    // for the actual subap. size
-
-  if ( wfs(ns).skymag == 0) { wfs(ns)._skynphotons = 0.; } // if skymag not set
-
-  if (sim.verbose == 2) {
-    write,format="wfs(%d)._skynphotons = %f\n\n",ns,wfs(ns)._skynphotons;
-  }
-  
-  // for guide star, total "useful" signal per subap.
-  wfs(ns)._fluxpersub  = &(float(fluxPerSub*wfs(ns)._nphotons));
-  if (sim.verbose > 0) {
-    write,"From flux calculations:";
-    write,format="Sodium flux varies between %f and %f /subaperture/looptime\n",
-      min(*wfs(ns)._fluxpersub),max(*wfs(ns)._fluxpersub);
-  }
-  
-  // for rayleigh, if any:
-  wfs(ns)._raylfluxpersub  = &(*wfs(ns)._fluxpersub*float(rayleighflux/sodiumflux));
-    
-  // for sky:
-  wfs(ns)._skyfluxpersub  = &(float(fluxPerSub*wfs(ns)._skynphotons));
-
-  wfs(ns)._bias = &(wfs(ns).biasrmserror *
-                    gaussdev(wfs(ns)._nsub*wfs(ns)._binxy*wfs(ns)._binxy));
-
-  wfs(ns)._flat = &(1.0f + wfs(ns).flatrmserror *
-                    gaussdev(wfs(ns)._nsub*wfs(ns)._binxy*wfs(ns)._binxy));
-
-  wfs(ns)._bckgrdcalib = &(array(float,wfs(ns)._nsub*wfs(ns)._binxy*wfs(ns)._binxy));
-  
-  if (sim.verbose == 2) {
-    write,format="Dark current wfs#%d / iter / pixel=%f\n",ns,
-      float(wfs(ns).darkcurrent*loop.ittime);
-  }
-
-  // calibrate background images (have to run shwfs for that):
-  wfs(ns)._bckgrdsub  = 1;
-  wfs(ns)._bckgrdinit = 1;
-
-  // call ShWfs for calibration of the background
-  ShWfs,pupsh,pupsh*0.0f,ns;
-
-  wfs(ns)._bckgrdinit = 0;
-  
-  return 1;
-}
-//----------------------------------------------------
-
-func ShWfs(pupsh,phase,ns)
-{
-  if (is_void(ns)) {ns=1;} // default to wfs#1 for one WFS work.
-
-  if (typeof(pupsh) != "float") {error,"pupsh was not float !";}
-  if (typeof(phase) != "float") {error,"Phase was not float !";}
-  
-  pupd	     = sim.pupildiam;
-  size	     = sim._size;
-  nxsub	     = wfs(ns).shnxsub(0);
-  subsize    = int(pupd/nxsub);
-
-  mesvec = array(float,2*wfs(ns)._nsub);
-
-  // the phase is in microns. this scaling factor restore it in radian
-  // at the wfs lambda
-  phasescale = float(2*pi/wfs(ns).lambda);   // wfs.lambda in microns
-
-  if (wfs(ns).shmethod == 1) {
-    
-    toarcsec = float(wfs(ns).lambda/2.0/pi/(tel.diam/sim.pupildiam)/4.848);
-
-    err = _shwfsSimple(&pupsh, &phase, phasescale, wfs(ns)._tiltsh, size, size,
-                       wfs(ns)._istart, wfs(ns)._jstart, subsize, subsize,
-                       wfs(ns)._nsub, toarcsec, &mesvec);
-
-  } else {
-
-    sdim       = long(2^ceil(log(subsize)/log(2)+1));
-    sdimpow2   = int(log(sdim)/log(2));
-    threshold = array(float,wfs(ns)._nsub)+wfs(ns).shthreshold;
-    
-    err = _shwfs(&pupsh, &phase, phasescale, wfs(ns)._tiltsh, int(size), wfs(ns)._istart,
-                 wfs(ns)._jstart, subsize, subsize, wfs(ns)._nsub, sdimpow2, wfs(ns)._domask,
-                 wfs(ns)._submask, wfs(ns)._kernel, wfs(ns)._kernels, wfs(ns)._kerfftr,
-                 wfs(ns)._kerffti, initkernels(ns), wfs(ns)._kernelconv,
-                 wfs(ns)._binindices, wfs(ns)._binxy, wfs(ns)._centroidw,
-                 wfs(ns)._fimage, wfs(ns)._imistart, wfs(ns)._imjstart,
-                 wfs(ns)._fimnx , wfs(ns)._fimny, wfs(ns)._fluxpersub, wfs(ns)._raylfluxpersub,
-                 wfs(ns)._skyfluxpersub, &threshold, wfs(ns)._bias, wfs(ns)._flat,
-                 float(wfs(ns).ron), float(wfs(ns).darkcurrent*loop.ittime),
-                 int(wfs(ns).noise), int(wfs(ns).rayleighflag), wfs(ns)._rayleigh,
-                 wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
-                 &mesvec, wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
-
-    initkernels(ns) = 0n;
-
-    wfs(ns)._cyclecounter += 1;
-    if (wfs(ns)._cyclecounter > wfs(ns).nintegcycles) {wfs(ns)._cyclecounter = 1;}
-  }
-  
-  if (err != 0) {error,"problem in _shwfs";}
-
-  mesvec *= wfs(ns)._centroidgain;
-
-  // return measurement vector in arcsec (thanks to centroiw):
-  return mesvec;
-}
 
 //----------------------------------------------------
-func ZernikeWfs(pupsh,phase,nwfs,init=)
-{
-  // the phase at the input (call from multwfs) is in microns.
-  // I have chosen to return coefficients of zernikes in nm (rms)
-  
-  extern wfs_zer,wfs_wzer,zn12;
-  
-  if (init) {
-    pupd  = sim.pupildiam;
-    size  = sim._size;
-    nzer  = wfs(nwfs).nzer(1);
-    wfs(nwfs)._nmes  = wfs(nwfs).nzer;
-    cent  = sim._cent;
-    prepzernike,size,pupd,sim._cent,sim._cent;
-    wfs_wzer = where(zernike(1)*ipupil);
-    wfs_zer = array(float,[2,numberof(wfs_wzer),nzer]);
-    for (i=1;i<=nzer;i++) wfs_zer(,i) = zernike_ext(i)(*)(wfs_wzer);
-    wfs_zer = LUsolve(wfs_zer(+,)*wfs_zer(+,))(+,)*wfs_zer(,+);
-    // wfs_zer(nzer,npt in pupil)
-    tmp = where(zernike(1)(avg,));
-    zn12 = minmax(tmp);
-    if (sim.verbose>=1) write,"Zernike wfs initialized";
-    return;
-  }
-
-  wfs(nwfs)._fimage = wfs(nwfs)._dispimage = &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
-  mes = wfs_zer(,+)*phase(*)(wfs_wzer)(+);
-
-  // returns microns rms (checked 2008apr10)
-  
-  return mes;
-}
-//----------------------------------------------------
-func doInter(disp=,subsysfilt=)
-/* DOCUMENT doInter(disp=)
+func do_imat(disp=)
+/* DOCUMENT do_imat(disp=)
+   Measure the interaction matrix.
+   Each actuator are actuated in a row, a measurement vector is taken
+   and placed into the iMat. The reference (for phase=0) is subtracted.
    
-Measure the interaction matrix.
-Each actuator are set and a measurement vector is taken.
-The reference (for phase=0) is subtracted.
-
-Keyword disp: set to display stuff as it goes.
-
-This routine uses:
-- dm._nact, _n1, _n2, _def (extern)
-- mircube (extern)
-
-This routine calls:
-- multWfsIntMat
-
-This routine sets:
-- iMat (extern)
-SEE ALSO: prepSVD, buildComMat
-*/
-
+   disp       = set to display stuff as it goes.
+   
+   This routine uses:
+   - dm._nact, _n1, _n2, _def (extern)
+   - mircube (extern)
+   
+   This routine calls:
+   - mult_wfs_int_mat
+   
+   This routine sets:
+   - iMat (extern)
+   SEE ALSO: prep_svd, build_cmat
+   */
 {
   gui_progressbar_frac,0.;
   gui_progressbar_text,"Doing interaction matrix";
@@ -1069,27 +579,48 @@ SEE ALSO: prepSVD, buildComMat
         swrite(format="Doing interaction matrix, DM#%d, actuator#%d",nm,i);
       if (sim.verbose==2) {write,format="%d ",i;}
       mircube  *= 0.0f; command *= 0.0f;
-      command(i) = dm(nm).push4imat;
-      mircube(n1:n2,n1:n2,nm) = compDmShape(nm,&command);
-      // Fill iMat (reference vector subtracted in multWfsIntMat):
-      iMat(,i+indexDm(1,nm)-1) = multWfsIntMat(disp=disp)/dm(nm).push4imat;
+      command(i) = float(dm(nm).push4imat);
+      mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
+      // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
+      iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp)/dm(nm).push4imat;
       // display, if requested:
       // WFS spots:
       if (is_set(disp)) {
         fma;
         plt,sim.name,0.01,0.01,tosys=0;
         if (!allof(wfs.shmethod ==1)) {
-          disp2D,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2;
-          mypltitle,"WFSs spots",[0.,-0.005],height=12;
+          if (wfs_display_mode=="spatial") {
+            disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
+            mypltitle,"WFSs spots (spatial mode)",[0.,-0.005],height=12;
+          } else {
+            disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2;
+            mypltitle,"WFSs spots",[0.,-0.005],height=12;
+          }
         }
         // mirror surface
         plsys,3;
         limits,square=1;
-        for (j=1;j<=ndm;j++) {pli,mircube(,,j)*ipupil,j,0.,j+1,1.;}
+        if (mergedms4disp) { //e.g. GMT case
+          tmp = mircube(,,sum);
+          pli,(tmp-min(tmp))*ipupil,1,0.,2,1.;
+          range,0.25,0.75;
+        } else {
+          pli,(mircube(,,1)-min(mircube(,,1)))*ipupil,1,0.,2,1.;
+          if (ndm==1) range,0.25,0.75;
+          for (jj=2;jj<=ndm;jj++) {
+            //pli,mircube(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2,nm),nm,0.,nm+1,1.;
+            if (dm(jj).alt==0) {
+              pli,(mircube(,,jj)-min(mircube(,,jj)))*ipupil,jj,0.,jj+1,1.;
+            } else {
+              pli,(mircube(,,jj)-min(mircube(,,jj))),jj,0.,jj+1,1.;
+            }
+          }
+        }
         mypltitle,"DM(s)",[0.,0.008],height=12;
-        if ((dm(nm).type == "aniso") && (sim.debug == 2)) hitReturn;
+        if ((dm(nm).type == "aniso") && (sim.debug >= 2)) hitReturn;
       }
       if (sleep) usleep,sleep;
+      if ((sim.debug>=3) && (i==(dm(nm)._nact/2))) hitReturn;
     }
     if (sim.verbose==2) {write," ";}
   }
@@ -1104,12 +635,13 @@ SEE ALSO: prepSVD, buildComMat
   clean_progressbar;
 }
 //----------------------------------------------------
-func prepSVD(imat,disp=,subs=,svd=)
-/* DOCUMENT func prepSVD(imat,disp=)
-   Does the SVD decomposition and fill out modToAct
-   and mesToMod matrices for further use by buildComMat()
+func prep_svd(imat,subsystem,svd=,disp=)
+/* DOCUMENT prep_svd(imat,subsystem,svd=,disp=)
+   Does the SVD decomposition and fill out the modToAct (V)
+   and mesToMod (UT) matrices for further use by build_cmat()
 
-   Keyword disp: set if display is required.
+   imat = the imat to inverse
+   disp = set if display is required.
 
    This routine uses:
    - imat (input)
@@ -1122,84 +654,86 @@ func prepSVD(imat,disp=,subs=,svd=)
    - modToAct (extern)
    - mesToMod (extern)
 
-   SEE ALSO: doInter, buildComMat
+  Note: The Mode-to-Actuator (modToAct) matrix has to be used as follow:
+  modes-coef    = actToMod(,+) * command-coef(+)
+  
+  SEE ALSO: do_imat, build_cmat
 */
 {
   // Define some extern variables:
   extern modToAct,mesToMod,eigenvalues;
 
   // Decompose to prepare inversion:
-  if (sim.verbose==2) {write,"Doing SVD\n";}
-  eigenvalues 	= SVdec(imat,u,vt);
+  if (sim.verbose>=2) {write,"Doing SVD\n";}
+  eigenvalues   = SVdec(imat,u,vt);
 
   // Some debug output if needed:
-  if (sim.verbose>=2) {
-    write,"Normalized eigenvalues:";
-    write,eigenvalues/max(eigenvalues);
-    do {
-      plot,eigenvalues/max(eigenvalues);
-      plg,array(1/(*mat.condition)(subs),numberof(eigenvalues)),color="red",type=2;
-      limits,square=0;
-      mypltitle,"Normalized eigenvalues",[0.,-0.005],height=12;
-      if (yaopy) break;
-      if (is_set(svd)) {
-        ths = "";
-        read,prompt=swrite(format="Threshold [%f] (return to continue): ",\
-                           1/(*mat.condition)(subs)),ths;
-        if ( strlen(ths) == 0 ) {
-          th =  1/(*mat.condition)(subs);
-          change = 0;
-        } else {
-          th=0.; sread,ths,th;
-          (*mat.condition)(subs) = 1./th;
-          change = 1;
-        }
-      }
-    } while (change == 1);
-    if (!yaopy) typeReturn;
-  } else if (sim.verbose == 1) {
+  if (sim.verbose >= 1) {
     write,format="Smallests 2 normalized eigenvalues = %f",
       eigenvalues(-1)/max(eigenvalues),eigenvalues(0)/max(eigenvalues);
   }
   
-  // Mode-to-Actuator and Actuator-to_mode matrices:
-  // to be used as follow:
-  // modes-coef    = actToMod(,+) * command-coef(+)
-  // actuator-coef = modToAct(,+) * modes-coef(+)
+  if (sim.verbose>=2) {
+    write,"Normalized eigenvalues:";
+    write,eigenvalues/max(eigenvalues);
+    th = 1.0f/(*mat.condition)(subsystem);
+    do {
+      plot,eigenvalues/max(eigenvalues);
+      plg,array(1/(*mat.condition)(subsystem),numberof(eigenvalues)),color="red",type=2;
+      limits,square=0;
+      mypltitle,"Normalized eigenvalues",[0.,-0.005],height=12;
+      if (yaopy) break;
+      if (is_set(svd)) {
+        th = kinput("New Threshold ? (return to continue)",th);
+        change = ( (th==1/(*mat.condition)(subsystem))? 0:1);
+        if (change) (*mat.condition)(subsystem) = 1/th;
+      }
+    } while (change == 1);
+    if (!yaopy) typeReturn;
+  } 
+  
   modToAct    = transpose(vt);
   //  actToMod    = LUsolve(modToAct);
   mesToMod    = transpose(u);  // used to be called ut
 
   // Some debug display if needed:
-  if (sim.debug==2) {
+  if (sim.debug>=2) {
     tv,modToAct;
     mypltitle,"modToAct Matrix",[0.,-0.005],height=12;
     if (!yaopy) typeReturn;
-    tv,modToAct(,+)*modToAct(,+);
-    mypltitle,"modToAct(,+)*modToAct(,+)",[0.,-0.005],height=12;
-    if (!yaopy) typeReturn;
+    if (sim.debug>=3) {
+      tv,modToAct(,+)*modToAct(,+);
+      mypltitle,"modToAct(,+)*modToAct(,+)",[0.,-0.005],height=12;
+      if (!yaopy) typeReturn;
+    }
 
     tv,mesToMod;
     mypltitle,"mesToMod Matrix",[0.,-0.005],height=12;
     if (!yaopy) typeReturn;
-    tv,mesToMod(,+)*mesToMod(,+);
-    mypltitle,"mesToMod(,+)*mesToMod(,+)",[0.,-0.005],height=12;
-    if (!yaopy) typeReturn;
+    if (sim.debug>=3) {
+      tv,mesToMod(,+)*mesToMod(,+);
+      mypltitle,"mesToMod(,+)*mesToMod(,+)",[0.,-0.005],height=12;
+      if (!yaopy) typeReturn;
+    }
   }
 }
 
 //----------------------------------------------------
 
-func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
-/* DOCUMENT buildComMat(all=,nomodalgain=,disp=)
+func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
+/* DOCUMENT build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
    Build the command matrix from V,UT, the eigenvalues and the modal gains
    F.Rigaut, June 17,2002
-   Input keywords:
-   all: if not set, one (1) mode is forced to be discarded (useful if regular
-   AO system using a DM with a piston component and condition number too
-   large). Normally, set all=1.
-   nomodalgain: if set, the modal gain are not taken into account.
-   disp: set to display stuff.
+   
+   condition = Filter eigenvalues ev (and modes) for max(ev)/ev > condition
+   modalgain = vector of system mode gains to pre-multiply the contolr matrix 
+               with. rarely used as these modes are not generally natural
+               w.r.t. the turbulence.
+   all = if not set, one (1) mode is forced to be discarded (useful if regular
+         AO system using a DM with a piston component and condition number
+         too large). Normally, set all=1.
+   nomodalgain = if set, the modal gain are not taken into account.
+   disp = set to display stuff.
 
    This routine uses:
    - dm._def, _nact, _n1, _n2 (extern)
@@ -1219,14 +753,14 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
    This routine returns:
    - cMat
 
-   SEE ALSO: doInter, prepSVD
+   SEE ALSO: do_imat, prep_svd
 */
 {
   extern NModesControlled;  
 
   neigen = numberof(eigenvalues);
   
-  mev 	= array(float,neigen,neigen);
+  mev   = array(float,neigen,neigen);
 
   mask = ((eigenvalues/max(eigenvalues)) > (1./condition));
   
@@ -1268,7 +802,7 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
     sswfs = where(wfs.subsystem == subsystem);
     cubphase = array(float,[3,nxy,nxy,numberof(sswfs)]);
     subpos = wfs(sswfs).gspos;
-    disp2D,cubphase,subpos(1,),subpos(2,),1,zoom=0.9,init=1;
+    disp2d,cubphase,subpos(1,),subpos(2,),1,zoom=0.9,init=1;
     
     // find out to where is DM N in this subsystem "modToAct" matrix:
     ssdm = where(dm.subsystem == subsystem);
@@ -1292,7 +826,7 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
           n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
           scommand = float(modToAct(indexDm(1,nm):indexDm(2,nm),i));
 
-          mircube(n1:n2,n1:n2,nm) = compDmShape(nm,&scommand);
+          mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&scommand);
         }
       }
 
@@ -1300,18 +834,20 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
       n1 = (sim._size-sim.pupildiam)/2-2;
       n2 = (sim._size+sim.pupildiam)/2+2;
       nxy = n2-n1+1;
+      nnss = 1;
       for (ns=1;ns<=nwfs;ns++) {
         if (wfs(ns).subsystem == subsystem) {
-          phase = getPhase2dFromDms(ns,"wfs")*ipupil;
+          phase = get_phase2d_from_dms(ns,"wfs")*ipupil;
           // fill cubphase
-          cubphase(,,ns) = phase(n1:n2,n1:n2);
+          cubphase(,,nnss) = phase(n1:n2,n1:n2);
+          nnss++;
         }
       }
 
-      // display using disp2D of integrated phases
+      // display using disp2d of integrated phases
       fma;
       plt,sim.name,0.01,0.01,tosys=0;
-      disp2D,cubphase,subpos(1,),subpos(2,),1;
+      disp2d,cubphase,subpos(1,),subpos(2,),1;
       mypltitle,swrite(format="Mode %d, Normalized eigenvalue = %f",
                      i,eigenvalues(i)/max(eigenvalues)),[0.,-0.005],height=12;
 
@@ -1329,7 +865,7 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
       mypltitle,"DM(s)",[0.,0.008],height=12;
 
       rep = typeReturn();
-      if (rep == "q") {break;}
+      if (rep == "q") break;
     }
   }
   //=========================================
@@ -1341,16 +877,17 @@ func buildComMat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
 }
 
 //----------------------------------------------------
-func swapScreens
-/* DOCUMENT func swapScreens
+func swap_screens(void)
+/* DOCUMENT swap_screens
    Swap the phase screens. This is to get better statistics
    out of fewer phase screens and iterations.
    The 2nd phase screen becomes the 1rst one, 3->2, etc...
    This routine uses the phase screens and normalization
-   factor stored in extern by getTurbPhaseInit
+   factor stored in extern by get_turb_phase_init
    SEE ALSO:
 */
 {
+  extern pscreens; 
   weight = currentScreenNorm;
   // avoid division per zero
   // it's legitimate to have one screen == 0
@@ -1367,15 +904,14 @@ func swapScreens
 }
 //----------------------------------------------------
 
-func getTurbPhaseInit(skipReadPhaseScreens=)
-/* DOCUMENT getTurbPhaseInit(void)
-   Belongs to the yao package suite.
-   Initializes everything for getTurbPhase (see below), which
+func get_turb_phase_init(skipReadPhaseScreens=)
+/* DOCUMENT get_turb_phase_init(skipReadPhaseScreens=)
+   Initializes everything for get_turb_phase (see below), which
    returns the interpolated, integrated phase to the loop function
    for iteration number "iter". Returns the "ok" parameter which is
    set to 0 if this step is not to be used to compute statistics.
    AUTHOR: F.Rigaut, June 11, 2002.
-   SEE ALSO: aoinit, aoloop, getTurbPhase.
+   SEE ALSO: aoinit, aoloop, get_turb_phase.
 */
 {
   extern pscreens,// contains screens, dim [dim Screen X,dim Screen Y, nscreens]
@@ -1415,7 +951,7 @@ func getTurbPhaseInit(skipReadPhaseScreens=)
 
     xmargins,     // value of xposvec so that no pixel indice < 1 or > dimx(screen)
                   // in any off-axis beam and altitude (low margin, up margin)
-    ymargins,     // same for Y. We use that in getTurbPhase to determine when to
+    ymargins,     // same for Y. We use that in get_turb_phase to determine when to
                   // wrap.
     statsokvec,   // 1 if it is ok to collect stats at this iteration.
                   // 0 if not, e.g. we just did a jump. dim [iteration]
@@ -1760,29 +1296,22 @@ func getTurbPhaseInit(skipReadPhaseScreens=)
     // about, xposvec(iteration) + wfsxposcub(,,wfs#) ].
 
     // check that y index does not overflow:
-    getTurbPhaseInitCheckOverflow;
+    get_turb_phase_initCheckOverflow;
   
     inithistory = 1;
     return 1;
 }
 //----------------------------------------------------
 
-func getTurbPhase(iter,nn,type)
-
-/* DOCUMENT getTurbPhase(iter,n,type)
-   Belongs to the yao package suite.
-   Returns the interpolated, integrated phase to the loop function
-   for iteration number "iter". 
-   You have to call getTurbPhaseInit to initialize prior using.
-   AUTHOR: F.Rigaut, June 11, 2002.
-   Modified 2003 feb 24 to v1.2.
-   now takes additional parameters offsets (offsets from field center
-   in arcsec) and altgs (altitude of GS in meters).
-   Modified 2003 dec 9 to implement call to C routine _get2dPhase
-   SEE ALSO: aoinit, aoloop, getTurbPhaseInit.
+func get_turb_phase(iter,nn,type)
+/* DOCUMENT get_turb_phase(iter,n,type)
+   Returns the interpolated, integrated phase along the turbulent phase
+   screen data cube to the loop function for iteration number "iter". 
+   You have to call get_turb_phase_init to initialize prior using.
+   SEE ALSO: aoinit, aoloop, get_turb_phase_init.
 */
 {
-  if (!inithistory) {error,"getTurbPhase has not been initialized !";}
+  if (!inithistory) {error,"get_turb_phase has not been initialized !";}
   
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
@@ -1814,7 +1343,7 @@ func getTurbPhase(iter,nn,type)
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
 
-  if (err != 0) {error,"Error in getTurbPhase";}
+  if (err != 0) {error,"Error in get_turb_phase";}
   
   bphase(_n1:_n2,_n1:_n2) = sphase;
   
@@ -1822,16 +1351,21 @@ func getTurbPhase(iter,nn,type)
 }
 
 //----------------------------------------------------
-func getPhase2dFromDms(nn,type)
-/* DOCUMENT func getPhase2dFromDms(mircube, mir_sh)
-   adapted from the IDL function of the same name in tomoclose.pro
-   mircube(extern)	= cube or image of phase screen (mirrors)
+func get_phase2d_from_dms(nn,type)
+/* DOCUMENT get_phase2d_from_dms(nn, type)
+   Similar than get_turb_phase excepts it works on the mirror shape
+   data cube. Returns the integrated phase along one given direction.
+   
+   nn = yao object # of type as below
+   type = "wfs" or "target".
+   so get_phase2d_from_dms(2,"wfs") will return the phase integrated along
+   the third dimension of the cube (different altitude) in the direction
+   of wfs #2.
+   uses mircube (extern) = cube or image of phase screen (mirrors)
    first plan = first mirror shape
    second plan = second mirror shape
    etc...
-   should be of size _n*_n
-   mir_sh     = 2d vector of shift in number of pixels per screen
-   *_sh([x,y],screen#)
+   should be of size sim._size * sim._size
    SEE ALSO: 
 */
 {
@@ -1866,7 +1400,7 @@ func getPhase2dFromDms(nn,type)
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
 
-  if (err != 0) {error,"Error in getPhase2dFromDms";}
+  if (err != 0) {error,"Error in get_phase2d_from_dms";}
   
   bphase(_n1:_n2,_n1:_n2) = sphase;
   
@@ -1874,9 +1408,10 @@ func getPhase2dFromDms(nn,type)
 }
 
 //----------------------------------------------------
-func getPhase2dFromOptics(nn,type)
-/* DOCUMENT func getPhase2dFromOptics(nn,type)
-   adapted from the IDL function of the same name in tomoclose.pro
+func get_phase2d_from_optics(nn,type)
+/* DOCUMENT get_phase2d_from_optics(nn,type)
+   Same as get_phase2d_from_dms, but for static optical elements defined
+   in the opt structure. See get_phase2d_from_dms.
    nn = wfs or GS #
    type = "wfs" or "target"
    SEE ALSO: 
@@ -1914,7 +1449,7 @@ func getPhase2dFromOptics(nn,type)
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
 
-  //  if (err != 0) {error,"Error in getPhase2dFromOptics";}
+  //  if (err != 0) {error,"Error in get_phase2d_from_optics";}
   
   bphase(_n1:_n2,_n1:_n2) = sphase;
   
@@ -1922,10 +1457,11 @@ func getPhase2dFromOptics(nn,type)
 }
 
 //----------------------------------------------------
-func correctUpLinkTT(phase,ns)
-/* DOCUMENT func correctUpLinkTT(phase)
-     
-SEE ALSO:
+func correct_uplink_tt(phase, ns)
+/* DOCUMENT correct_uplink_tt(phase, ns)
+   Apply tiptilt phase correction to a phase term, given
+   wfs._upttcommand determined previously. 
+   SEE ALSO:
 */
 {
   wfs(ns)._upttcommand += wfs(ns).uplinkgain * wfs(ns)._tt;
@@ -1936,12 +1472,12 @@ SEE ALSO:
   return phase;
 }
 //----------------------------------------------------
-func splitWfsVector(v)
-/* DOCUMENT func splitWfsVector(v)
-   splits the single vector (out of multWfs or multWfsIntMat)
-   into as many individual wfs vector as there are sensors.
+func split_wfs_vector(v)
+/* DOCUMENT split_wfs_vector(v)
+   Splits a single vector (out of mult_wfs or mult_wfs_int_mat)
+   into as many individual wfs vectors as there are sensors.
    Return a pointer vector to the individual wfs vectors.
-   SEE ALSO: splitDMCommandVector(v)
+   SEE ALSO: split_dm_vector(v)
 */
 {
   vp = [];
@@ -1959,12 +1495,12 @@ func splitWfsVector(v)
   return vp;
 }
 //----------------------------------------------------
-func splitDMCommandVector(v)
-/* DOCUMENT func splitDMCommandVector(v)
-   splits the single vector (out of cMat matrix multiply in aoloop)
+func split_dm_vector(v)
+/* DOCUMENT split_dm_vector(v)
+   Splits the single vector (out of cMat matrix multiply in aoloop)
    into as many individual command vector as there are DMs.
    Return a pointer vector to the individual command vectors.
-   SEE ALSO: splitWfsVector
+   SEE ALSO: split_wfs_vector
 */
 {
   vp = [];
@@ -1981,114 +1517,23 @@ func splitDMCommandVector(v)
 
   return vp;
 }
-//----------------------------------------------------
-func multWfsIntMat(disp=)
-/* intmat : set if computing intMat
-   as multWfs but special for IntMat acquisition
-   for speed in aoloop
-*/
 
-{
-  mes = [];
-  for (ns=1;ns<=nwfs;ns++) {
-
-    // Impose noise = rmsbias = rmsflat = 0 for interaction matrix measurements
-    noiseOrig = wfs(ns).noise; wfs(ns).noise = 0n;
-    cycleOrig = wfs(ns).nintegcycles; wfs(ns).nintegcycles = 1;
-    if (wfs(ns).type == "hartmann" ) {
-      kconvOrig = wfs(ns)._kernelconv; wfs(ns)._kernelconv = 1n;
-      bias  = *wfs(ns)._bias; *wfs(ns)._bias = *wfs(ns)._bias*0.0f;
-      flat  = *wfs(ns)._flat; *wfs(ns)._flat = *wfs(ns)._flat*0.0f+1.0f;
-    }
-
-    offsets = wfs(ns).gspos;
-    phase   = getPhase2dFromDms(ns,"wfs");
-    // uncomment if needed:
-    //    phase  += getPhase2dFromOptics(ns,"wfs");
-
-    if (wfs(ns).type == "curvature") {smes = CurvWfs(pupil,phase,ns);}
-    if (wfs(ns).type == "hartmann" ) {smes = ShWfs(ipupil,phase,ns);}
-    if (wfs(ns).type == "pyramid")   {smes = PyramidWfs(pupil,phase);}
-    if (wfs(ns).type == "zernike")   {smes = ZernikeWfs(ipupil,phase,ns);}
-    
-    // subtract the reference vector for this sensor:
-    smes = smes - *wfs(ns)._refmes;
-
-    // compute the TT and subtract if required:
-    if (wfs(ns).filtertilt) {
-      wfs(ns)._tt(1) = sum( smes * (*wfs(ns)._tiprefvn) );
-      wfs(ns)._tt(2) = sum( smes * (*wfs(ns)._tiltrefvn) );
-      smes = smes - wfs(ns)._tt(1) * (*wfs(ns)._tiprefv) \
-        - wfs(ns)._tt(2) * (*wfs(ns)._tiltrefv);
-    }
-
-    grow,mes,smes;
-    
-    // restore whatever value was in bias and flat
-    if (wfs(ns).type == "hartmann" ) {
-      wfs(ns)._bias = &bias; wfs(ns)._flat = &flat;
-      wfs(ns)._kernelconv = kconvOrig;
-    }
-    wfs(ns).noise = noiseOrig;
-    wfs(ns).nintegcycles = cycleOrig;
-
-  }
-  return mes;
-}
-//----------------------------------------------------
-func multWfs(iter,disp=)
-/* 
- */
-{
-  mes = [];
-  for (ns=1;ns<=nwfs;ns++) {
-
-    offsets = wfs(ns).gspos;
-    phase   = getPhase2dFromDms(ns,"wfs");
-    phase  += getPhase2dFromOptics(ns,"wfs");
-    phase  += getTurbPhase(iter,ns,"wfs");
-
-    if (wfs(ns).correctUpTT) {
-      phase = correctUpLinkTT(phase,ns);
-    }
-
-    // get the measurements:
-    if (wfs(ns).type == "curvature") {smes = CurvWfs(pupil,phase,ns);}
-    if (wfs(ns).type == "hartmann" ) {smes = ShWfs(ipupil,phase,ns);}
-    if (wfs(ns).type == "pyramid")   {smes = PyramidWfs(pupil,phase);}
-    if (wfs(ns).type == "zernike")   {smes = ZernikeWfs(ipupil,phase,ns);}
-
-    // subtract the reference vector for this sensor:
-    if (wfs(ns)._cyclecounter == 1) {
-      smes = smes - *wfs(ns)._refmes;
-    }
-    
-    // compute the TT and subtract if required:
-    wfs(ns)._tt(1) = sum( smes * (*wfs(ns)._tiprefvn) );
-    wfs(ns)._tt(2) = sum( smes * (*wfs(ns)._tiltrefvn) );
-    if (wfs(ns).filtertilt) {
-      smes = smes - wfs(ns)._tt(1) * (*wfs(ns)._tiprefv) \
-        - wfs(ns)._tt(2) * (*wfs(ns)._tiltrefv);
-    }
-    if (wfs(ns)._cyclecounter == 1) {
-      wfs(ns)._lastvalidtt = wfs(ns)._tt;
-    }
-
-    grow,mes,smes;
-  }
-  return mes;
-}
 //----------------------------------------------------
 func aoall(parfile,disp=,dpi=,clean=,controlscreen=)
+/* DOCUMENT aoall(parfile,disp=,dpi=,clean=,controlscreen=)
+   Shorthand for aoread, aoinit, aoloop and go
+   SEE ALSO: aoread, aoinit, aoloop, go
+ */
 {
   aoread,parfile;
   aoinit,disp=disp,dpi=dpi,clean=clean;
   aoloop,disp=disp,dpi=dpi,controlscreen=controlscreen;
+  after,0.1,go;
 }
 //----------------------------------------------------
 
 func aoread(parfile)
-/* DOCUMENT func aoread(parfile)
+/* DOCUMENT aoread(parfile)
    Define the relevant structure/variable, and reads out the
    AO simulation parameter file (e.g. "sh6.par"),
    Does a check of the WFS pixel/subaperture sizes.
@@ -2101,17 +1546,7 @@ func aoread(parfile)
    > loop.niter = 1000
    > aoinit
 
-   This routine uses:
-   - the parameter file (e.g. "sh6.par")
-     
-   This routine calls:
-   - wfsCheckPixelSize
-     
-   This routine sets:
-   - the atm,sim,wfs,dm,mat,tel,target,gs,loop structure contents
-   - parprefix
-
-   SEE ALSO: aoinit, aoloop
+   SEE ALSO: aoinit, aoloop, go
 */
 {
   extern atm,opt,sim,wfs,dm,mat,tel,target,gs,loop,parprefix,oparfile;
@@ -2159,36 +1594,32 @@ func aoread(parfile)
   //=====================================
   // PARAMETER CHECKS. SETS SOME DEFAULTS
   //=====================================
-  checkParameters;
+  check_parameters;
+  wfs._origpixsize = wfs.pixsize;
   gui_message,"Next step: click on aoinit";
 }
 
 //----------------------------------------------------
 
 func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
-/* DOCUMENT func aoinit(disp=,forcemat=)
+/* DOCUMENT aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
    Second function of the ao serie.
    Initialize everything in preparation for the loop (aoloop).
-   Follows a call to aoread,parfile.
-   Keywords:
-   disp: set to display stuff
-   forcemat: set to force measuring new iMat and computing new cMat.
-   keepdmconfig: when forcemat=1, the default behavior is to agregate the
-   previously determined active and extrapolated actuators and do the
-   new interacton matrix with all of them. The selection of valid/extrapolated
-   is then reset (and re-executed when the interaction matrix is done).
-   Setting keepdmconfig=1 impose that the valid/extrapolated setting remains
-   as it was.
+   Follows a call to aoread, parfile.
 
-   This routine uses:
-   - the ao structures (atm, wfs, ...)
-
-   This routine calls:
-   - a bunch of initialization routines
-
-   This routine sets:
-   - a bunch of things.
-
+   disp         = set to display stuff
+   clean        = if set, aoinit will start fresh. *Nothing* is kept from
+                  previous runs.
+   forcemat     = set to force measuring new iMat and computing new cMat.
+   svd          = set to enter SVD threshold condition by hand
+   dpi          = dpi of graphic window
+   keepdmconfig = when forcemat=1, the default behavior is to agregate the
+                  previously determined active and extrapolated actuators 
+                  and do the new interacton matrix with all of them. The 
+                  selection of valid/extrapolated is then reset (and 
+                  re-executed when the interaction matrix is done).
+                  Setting keepdmconfig=1 impose that the valid/extrapolated 
+                  setting remains as it was.
    SEE ALSO: aoread, aoloop
 */
 {
@@ -2198,8 +1629,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   extern _n,_n1,_n2,_p1,_p2,_p;
   extern def,mircube;
   extern tip1arcsec,tilt1arcsec;
-  extern aoinit_disp,aoinit_clean,aoinit_forcemat,aoinit_svd,aoinit_keepdmconfig;
-
+  extern aoinit_disp,aoinit_clean,aoinit_forcemat;
+  extern aoinit_svd,aoinit_keepdmconfig;
+  extern tipvib, tiltvib;
 
   disp = ( (disp==[])? (aoinit_disp==[]? 0:aoinit_disp):disp );
   clean = ( (clean==[])? (aoinit_clean==[]? 0:aoinit_clean):clean );
@@ -2218,7 +1650,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //=====================================
   // PARAMETER CHECKS. SETS SOME DEFAULTS
   //=====================================
-  checkParameters;
+  check_parameters;
   if (!is_set(disp)) {disp = 0;}
   if (!is_set(dpi)) {dpi = 60;}
   if (is_set(clean)) {forcemat=1;}
@@ -2226,7 +1658,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // Sets other parameters:
   sim._size = int(2^ceil(log(sim.pupildiam)/log(2)+1));
-  size	    = sim._size;
+  size      = sim._size;
   // mircube will receive the shape of each DM (one plan per DM):
   mircube   = array(float,sim._size,sim._size,ndm);
 
@@ -2239,7 +1671,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     f = open(YAO_SAVEPATH+parprefix+".res","w");
     close,f;
   }
-  f	= open(YAO_SAVEPATH+parprefix+".res","a+");
+  f = open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,format="=============================\n%s\n",sim.name;
   close,f;
 
@@ -2267,7 +1699,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (wfs(i).npixpersub) {
         npixpersub = wfs(i).npixpersub;
       } else {
-        npixpersub	= float(sim.pupildiam)/wfs(i).shnxsub;
+        npixpersub  = float(sim.pupildiam)/wfs(i).shnxsub;
         if (npixpersub != int(npixpersub)) {
           write,"sim.pupildiam should be a multiple of wfs.shnxsub !";
           return -1;
@@ -2284,7 +1716,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       grow,cent,sim._size/2+1;
     } else if (wfs(i).type == "pyramid") {
       grow,cent,sim._size/2+0.5;
-    } else write,"Unknown wfs";
+    } else {
+      write,"FIXME: user wfs function: assuming cent is at size/2+1";
+      if (cent(1)) grow,cent,cent(1);
+      else grow,cent,sim._size/2+1;
+    }
   }
   if (anyof(cent != cent(1))) {
     write,"Wrong mix of hartmann/curvature or subaperture odd/even !";
@@ -2297,9 +1733,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // Initialize pupil array:
 
-  pupil	 = float(MakePupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,real=1,cobs=tel.cobs));
-  ipupil = float(MakePupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,cobs=tel.cobs));
+  pupil  = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
+                          real=1,cobs=tel.cobs));
+  ipupil = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
+                          cobs=tel.cobs));
 
+  if (user_pupil) user_pupil;
+  
+  pupil = float(pupil);
+  ipupil = float(ipupil);
+  
   //==================================
   // DEFINE INDICES FOR SUBARRAY WORK:
   //==================================
@@ -2323,9 +1766,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       // not a problem if not using it.
       winkill,0;
       winkill,2;
-      window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),height=long(425*(dpi/50.)),wait=1;
+      window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),\
+                      height=long(425*(dpi/50.)),wait=1;
     }
-    disp2D,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,init=1;
+    if (wfs_display_mode=="spatial") {
+      disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
+                    zoom=wfs.dispzoom,init=1;
+    } else {
+      disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,init=1;
+    }
   }
 
   //==================================
@@ -2334,7 +1783,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   if (sim.verbose>=1) {write,"\n> INITIALIZING PHASE SCREENS";}
   gui_message,"Initializing phase screens";
-  getTurbPhaseInit;
+  get_turb_phase_init;
 
   //==================================
   // INITIALIZE SENSOR
@@ -2348,29 +1797,40 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if (wfs(n).type == "curvature") {
 
       // build subaperture geometry:
-      MakeCurvWfsSubs,n,size,sim.pupildiam;
+      make_curv_wfs_subs,n,size,sim.pupildiam;
       // init WFS
-      CurvWfs,pupil,pupil*0.0f,n,init=1;
+      curv_wfs,pupil,pupil*0.0f,n,init=1;
       wfs(n)._nsub = int(sum(*(wfs(n).nsubperring)));
       wfs(n)._nmes = wfs(n)._nsub;
 
     } else if (wfs(n).type == "hartmann") {
 
       // init WFS:
-      ShWfsInit,ipupil,n,imat=1;
+      if (wfs(n).disjointpup) {
+        shwfs_init,disjointpup(,,n),n,imat=1,clean=clean;
+      } else shwfs_init,ipupil,n,imat=1,clean=clean;
       wfs(n)._nmes = 2*wfs(n)._nsub;
 
     } else if (wfs(n).type == "pyramid") {
 
       // init WFS (does not work for version 2)
       error,"Not Upgraded to version 2";
-      v = PyramidWfs(pupil,pupil*0.,disp=disp,init=1);
+      v = pyramid_wfs(pupil,pupil*0.,disp=disp,init=1);
       wfs(n).nsub = numberof(v)/2;
       wfs(n)._nmes = 2*wfs(n)._nsub;
 
     } else if (wfs(n).type == "zernike") {
-      ZernikeWfs,ipupil,ipupil*0.,n,init=1;
+      zernike_wfs,ipupil,ipupil*0.,n,init=1;
+
+    } else { 
+      // assign user_wfs to requested function/type:
+      cmd = swrite(format="user_wfs = %s",wfs(n).type);
+      include,[cmd],1;
+      user_wfs,ipupil,ipupil*0.,n,init=1;
     }
+
+    if ( (wfs(n).disjointpup) && (disjointpup==[]) ) \
+      error,swrite(format="wfs(%d).disjointpup set but disjointpup does not exist\n",n);
   }
 
   // set up array for uplink TT compensation:
@@ -2390,8 +1850,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   for (ns=1;ns<=nwfs;ns++) {
     wfs(ns)._refmes = &(array(0.0f,wfs(ns)._nmes));
   }
-  refmes = multWfsIntMat(disp=disp);
-  wfs._refmes = splitWfsVector(refmes);
+  refmes = mult_wfs_int_mat(disp=disp);
+  wfs._refmes = split_wfs_vector(refmes);
 
   wfs.filtertilt = mem;
 
@@ -2409,9 +1869,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   mircube *= 0.0f;
   mircube(,,1) = float(tip1arcsec*push);
 
-  mes = multWfsIntMat(disp=disp)/push;  // mes in arcsec
+  mes = mult_wfs_int_mat(disp=disp)/push;  // mes in arcsec
 
-  wfs._tiprefv = splitWfsVector(mes);
+  wfs._tiprefv = split_wfs_vector(mes);
 
   for (ns=1;ns<=nwfs;ns++) {
     wfs(ns)._tiprefvn = &(*wfs(ns)._tiprefv/sum(*wfs(ns)._tiprefv^2.));
@@ -2423,9 +1883,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // tilt:
   mircube(,,1) = float(tilt1arcsec*push);
 
-  mes = multWfsIntMat(disp=disp)/push;  // mes in arcsec
+  mes = mult_wfs_int_mat(disp=disp)/push;  // mes in arcsec
 
-  wfs._tiltrefv = splitWfsVector(mes);
+  wfs._tiltrefv = split_wfs_vector(mes);
 
   for (ns=1;ns<=nwfs;ns++) {
     wfs(ns)._tiltrefvn = &(*wfs(ns)._tiltrefv/sum(*wfs(ns)._tiltrefv^2.));
@@ -2437,13 +1897,18 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //==================================
   // INITIALIZE DM INFLUENCE FUNCTIONS
   //==================================
-
   if (sim.verbose>=1) {write,"\n> Initializing DM influence functions";}
   gui_message,"Initializing DMs";
 
   // loop over DMs:
   for (n=1;n<=ndm;n++) {
+    if ( (dm(n).disjointpup) && (disjointpup==[]) ) \
+    error,swrite(format="dm(%d).disjointpup set but disjointpup does not exist\n",n);
+    
+    if (dm(n).pupoffset!=[]) \
+       dm(n)._puppixoffset = long(dm(n).pupoffset/tel.diam*sim.pupildiam);
 
+    if (clean) dm(n)._def = dm(n)._edef = &([]);
     // Set _n1 and _n2, the limit indices
     if (dm(n).type == "stackarray") {
       // find out the support dimension for the given mirror.
@@ -2502,22 +1967,39 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose>=1) {
         write,format="  >> Computing Influence functions for mirror # %d\n",n;
       }
-      if (dm(n).type == "bimorph") {MakeBimorphIF, n, disp=disp,cobs=tel.cobs;}
-      if (dm(n).type == "stackarray") {
+
+      if (dm(n).type == "bimorph") {
+        make_curvature_dm, n, disp=disp,cobs=tel.cobs;
+      } else if (dm(n).type == "stackarray") {
         if (dm(n).elt == 1) {
-          MakeEltPztIF, n, disp=disp;
+          make_pzt_dm_elt, n, disp=disp;
         } else {
-          MakePztIF, n, disp=disp;
+          make_pzt_dm, n, disp=disp;
         }
+      } else if (dm(n).type == "zernike") {
+        make_zernike_dm, n, disp=disp;
+      } else if (dm(n).type == "kl") {
+        make_kl_dm, n, disp=disp;
+      } else if (dm(n).type == "tiptilt") {
+        make_tiptilt_dm, n, disp=disp;
+      } else if (dm(n).type == "segmented") {
+        make_segmented_dm, n, disp=disp;
+      } else if (dm(n).type == "aniso") {
+        make_aniso_dm, n, disp=disp;
+      } else { 
+        // we're dealing with a user defined DM function:
+        // assign user_wfs to requested function/type:
+        cmd = swrite(format="user_dm = %s",dm(n).type);
+        include,[cmd],1;
+        user_dm, n;
       }
-      if (dm(n).type == "zernike") {MakeZernikeIF, n, disp=disp;}
-      if (dm(n).type == "tiptilt") {MakeTipTiltIF, n, disp=disp;}
-      if (dm(n).type == "aniso") {MakeAnisoIF, n, disp=disp;}
+
       // the IF are in microns/volt
       if (sim.verbose>=1) {
-        write,format="\n  >> I.F. stored in %s\n",dm(n).iffile;
+        write,format="\n  >> Storing influence functions in %s...",dm(n).iffile;
       }
       fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
+      if (sim.verbose>=1) write,"Done";
       if ( dm(n).type == "stackarray" ) {
         fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
         fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._y),exttype="IMAGE",append=1;
@@ -2529,11 +2011,34 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
   }
 
+  //==============================
+  // INITIALIZE VIBRATION SPECTRUM
+  //==============================
+
+  if ((tel.tipvib_white_rms) || (tel.tipvib_1overf_rms) || ((*tel.tipvib_peaks)!=[])) {
+    // user has defined at least one of the vibration param.
+    tipvib = generate_vib_time_serie(loop.ittime,loop.niter,tel.tipvib_white_rms,\
+      tel.tipvib_1overf_rms, *tel.tipvib_peaks, *tel.tipvib_peaks_rms, \
+      peak_width = *tel.tipvib_peaks_width);
+  } else {
+    tipvib = [];
+  }
+  if ((tel.tiltvib_white_rms) || (tel.tiltvib_1overf_rms) || ((*tel.tiltvib_peaks)!=[])) {
+    // user has defined at least one of the vibration param.
+    tiltvib = generate_vib_time_serie(loop.ittime,loop.niter,tel.tiltvib_white_rms,\
+      tel.tiltvib_1overf_rms, *tel.tiltvib_peaks, *tel.tiltvib_peaks_rms, \
+      peak_width = *tel.tiltvib_peaks_width);
+  } else {
+    tiltvib = [];
+  }
+
+
   //=========================================
   // DO INTERACTION MATRIX WITH ALL ACTUATORS
   //=========================================
 
-  if (!(allof(fileExist(YAO_SAVEPATH+dm.iffile)) && fileExist(YAO_SAVEPATH+mat.file) && (forcemat != 1))) {
+  if (!(allof(fileExist(YAO_SAVEPATH+dm.iffile)) && \
+             fileExist(YAO_SAVEPATH+mat.file) && (forcemat != 1))) {
 
 
     if (!is_set(keepdmconfig)) { // concatenate dm._def and dm._edef
@@ -2557,10 +2062,21 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if (sim.verbose >= 1) {write,"\n> DOING INTERACTION MATRIX";}
     gui_message,"Doing interaction matrix";
     iMat = array(double,sum(wfs._nmes),sum(dm._nact));
-    cMat = transpose(iMat);
+    cMat = array(double,sum(dm._nact),sum(wfs._nmes));
+    
+    if (sim.verbose>=2) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
+    pause,100;
     
     // measure interaction matrix:
-    doInter,disp=disp;
+    if ( sum(dm._nact) > sum(wfs._nmes) ) {
+      write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",
+           sum(dm._nact),sum(wfs._nmes);
+      write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD"; 
+      typeReturn;
+    }
+
+
+    do_imat,disp=disp;
 
     // select valid actuators by their response, only if
     // 1. at least one of the DM is a stackarray (otherwise it does not make sense)
@@ -2605,7 +2121,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                 dm(nm)._ex = &(dmx(nok));
                 dm(nm)._ey = &(dmy(nok));
               }
-              graphicConfig,dm(nm).subsystem,nm;
+              graphic_config,dm(nm).subsystem,nm;
               write,format="DM #%d: # of valid actuators: %d ",nm,numberof(ok);
               again = "y"; read,prompt="Again ? ",again;
               if (again != "n") {
@@ -2664,7 +2180,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           dm(nm)._enact = (dimsof(*(dm(nm)._edef)))(4);
 
           if (sim.debug >= 1) {
-            tv,compDmShape(nm,&(array(1.0f,dm(nm)._nact)));
+            tv,comp_dm_shape(nm,&(array(1.0f,dm(nm)._nact)));
             mypltitle,swrite(format="Pushing on all actuator of DM#%d",nm),[0.,-0.005],height=12;
             typeReturn;
           }
@@ -2742,7 +2258,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
      for (i=1;i<=numberof(ao.refZernikes);i++) {
      phase += ao.refZernikes(i)*zernike_ext(i+1);}
      noise = ao.WfsNoise; ao.WfsNoise = 0.;
-     WfsRefMes = ShWfs(ipupil,phase);
+     WfsRefMes = sh_wfs(ipupil,phase);
      ao.WfsNoise = noise;
      if (ao.verbose>=1) {write,format="WfsRefMes rms = %f, Min = %f and Max = %f\n",
      WfsRefMes(rms),min(WfsRefMes),max(WfsRefMes);}
@@ -2814,10 +2330,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       imat = iMat(wsswfs,wssdm);
       mg = modalgain(wssdm);
 
-      prepSVD,imat,disp=disp,subs=ss,svd=svd;
+      prep_svd,imat,ss,svd=svd,disp=disp;
 
       tmpdisp = noneof(dm(where(dm.subsystem == ss)).type == "aniso");
-      cmat = buildComMat( (*mat.condition)(ss), mg, subsystem=ss,
+      cmat = build_cmat( (*mat.condition)(ss), mg, subsystem=ss,
                           all=1,disp=tmpdisp);
       cMat(wssdm,wsswfs) = cmat;
       
@@ -2862,7 +2378,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         "part of the anisoplanatism modes !";
     }
     if (numberof(nmlow) > 1) {
-      pyk_warning,swrite(format="Weird. There are %d high-order DMs at altitude=0 (look at console)",numberof(nmlow));
+      pyk_warning,swrite(format=\
+        "Weird. There are %d high-order DMs at altitude=0 (look at console)",\
+        numberof(nmlow));
       write,format="Weird. There are %d high-order DMs at altitude=0:",numberof(nmlow);
       for (i=1;i<=numberof(nmlow);i++) {
         write,format="DM #%d:",nmlow(i);
@@ -2887,7 +2405,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         "part of the anisoplanatism modes !";
     }
     if (numberof(nmhigh) > 1) {
-      pyk_warning,swrite(format="Weird. There are %d high-order DMs at altitude %.0f (look at console)",
+      pyk_warning,swrite(format=\
+        "Weird. There are %d high-order DMs at altitude %.0f (look at console)",
                          numberof(nmhigh),dm(nmaniso).alt);
       write,format="Weird. There are %d high-order DMs at altitude %.0f:",
         numberof(nmhigh),dm(nmaniso).alt;
@@ -2903,14 +2422,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       nmhigh = tmp;
     }
     
-    projectAnisoIF,nmaniso(1),nmlow(1),nmhigh(1),disp=0;
+    project_aniso_dm,nmaniso(1),nmlow(1),nmhigh(1),disp=0;
   }
   
   //==========================
   // OUTPUT GRAPHIC FOR CONFIG
   //==========================
 
-  if ((disp == 1)&&(!yaopy)) { graphicConfig; }
+  if ((disp == 1)&&(!yaopy)) { graphic_config; }
   hcp_finish;
   
   //===================================
@@ -2936,7 +2455,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   }
   
   // same in result file:
-  f	= open(YAO_SAVEPATH+parprefix+".res","a+");
+  f = open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,"";
   write,f,format="%s:\n","Summary";
   for (nm=1;nm<=ndm;nm++) {
@@ -2955,14 +2474,31 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   close,f;
 
   gui_message,"aoinit done: click on aoloop";
+  yicon = Y_HOME+"icons/yicon48.png";
+  //  system,swrite(format=                                             \
+  //      "growlnotify yao --image '%s' -m '%s: aoinit done'",yicon,parprefix);
   
 }
 
 //---------------------------------------------------------------
-func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
-
-/* DOCUMENT func aoloop(disp=)
-   Belongs to the yao package suite.
+func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=,anim=)
+/* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=,anim=)
+   Prepare all arrays for the execution of the loop (function go()).
+   
+   disp          = set to display stuff as the loop goes
+   savecb        = set to save "circular buffers"
+   dpi           = dpi of graphic window
+   controlscreen = set to display an additional graphic window with main
+                   loop parameters updating as the loop goes.
+   nographinit   = not sure. this must be for the GUI
+   gui           = not sure
+   anim          = set to 1 to use double buffering. Avoids flicker but
+                   might confuse the user if not turned off in normal operation
+                   see animate() yorick function
+   SEE ALSO: aoread, aoinit, go, restart
+ */
+{
+/* Old help.
    The parameters are entered in a parameter file, called for instance
    "sh12.par". The sequence for running an AO simulation is -to date-
    as follow:
@@ -2974,7 +2510,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
      
    This simulates the ao loop. After the initialization, the loop
    steps include:
-   - get the turbulent phase from getTurbPhase()
+   - get the turbulent phase from get_turb_phase()
    - subtract the mirror figure (previous iteration)
    - get the WFS measurements (SH or curvature)
    - computes the command vector from command matrix
@@ -2985,7 +2521,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
    - displays and writes out the results
 
    I have changed the structure of this routine on June 11, 2002 to
-   include the getTurbPhase function. One of the goal of this new
+   include the get_turb_phase function. One of the goal of this new
    structure is to allow for better statistics in doing short time
    sequences separated by large gaps. In other words, the time sequence
    is as follow:
@@ -3011,11 +2547,6 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
    get a biased estimate (lower performance than with the regular
    continuous loop scheme)
 */
-{
-  //  extern mircube,sphase,bphase;
-  //  extern fwhm, strehl, e50;
-  //  extern ditherMes,sairy,niterok;
-  //  extern imav,im;
   extern looptime, mircube, command, wfsMesHistory, cubphase;
   extern im, imav, imtmp, airy, sairy, fwhm, e50;
   extern niterok;
@@ -3029,15 +2560,19 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
   extern dispImImav;
   extern loopCounter, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
+  extern animFlag;
   extern aoloop_disp,aoloop_savecb;
+  extern commb,errmb; // minibuffers
 
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
+  if (anim==[]) anim=1; // let's make it the default
   dispFlag = disp;
   savecbFlag = savecb;
   dpiFlag = dpi;
   controlscreenFlag = controlscreen;
   nographinitFlag = nographinit;
+  animFlag = anim;
 
   gui_message,"Initializing loop";
 
@@ -3056,22 +2591,22 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
     }
   }
   if (is_set(controlscreen) && !is_set(nographinit)) {
-    controlScreen,0,init=1;
+    control_screen,0,init=1;
   }
   
-  size		= sim._size;
+  size    = sim._size;
 
   
   // Some arrays initialization:
   looptime      = 0.;
-  mircube	= array(float,[3,size,size,ndm]);
+  mircube = array(float,[3,size,size,ndm]);
   command       = array(float,sum(dm._nact));
   wfsMesHistory = array(float,[2,sum(wfs._nmes),loop.framedelay+1]);
   cubphase      = array(float,[3,size,size,target._ntarget]);
-  im	        = array(float,[3,size,size,target._ntarget]);
-  imav	        = array(float,[4,size,size,target._ntarget,target._nlambda]);
-  imtmp	        = array(float,[2,size,size]);
-  airy	        = calcPSFVE(pupil,pupil*0.);
+  im          = array(float,[3,size,size,target._ntarget]);
+  imav          = array(float,[4,size,size,target._ntarget,target._nlambda]);
+  imtmp         = array(float,[2,size,size]);
+  airy          = calc_psf_fast(pupil,pupil*0.);
   sairy         = max(airy);
   fwhm = e50 = array(float,[2,target._ntarget,target._nlambda]);
   pp            = array(complex,[2,size,size]);
@@ -3093,6 +2628,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
     cbcom         = array(float,[2,sum(dm._nact),loop.niter]);
     cberr         = array(float,[2,sum(dm._nact),loop.niter]);
   }
+  // minibuffers for up to 10th order filters (control laws):
+  commb          = array(float,[2,sum(dm._nact),10]);
+  errmb          = array(float,[2,sum(dm._nact),10]);
+  
   
 
   // Special: re-init the WFS, since it includes the computation of
@@ -3109,9 +2648,11 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
     if (wfs(ns).type=="zernike") continue;
     wfs(ns)._dispimage = &(*wfs(ns)._fimage*0.0f);
     if (wfs(ns).type == "hartmann") {
-      ShWfsInit,ipupil,ns,silent=1;
+      if (wfs(ns).disjointpup) {
+        shwfs_init,disjointpup(,,ns),ns,silent=1;
+      } else shwfs_init,ipupil,ns,silent=1;
     } else if (wfs(ns).type == "curvature") {
-      CurvWfs,pupil,pupil*0.0f,ns,init=1,silent=1;
+      curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
     }
   }
   // reset cyclecounters
@@ -3165,19 +2706,26 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
                           tel.diam*sim.pupildiam/sim._size/2*sim._size];
       // last 2 terms to accomodate internal dispzoom scaling
     }
-    disp2D,im,*target.xposition,*target.yposition,1, 
+    disp2d,im,*target.xposition,*target.yposition,1, 
       zoom=*target.dispzoom,init=1;
-    disp2D,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,
-      init=1;
+      if (wfs_display_mode=="spatial") {
+        disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
+           zoom=wfs.dispzoom,init=1;
+      } else {
+        disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,\
+           init=1; 
+      }
   }
 
-  dispImImav = 1; // 1 is to display im, 2 to display imav
+  dispImImav = 0; // 0 is to display im, 1 to display imav
 
   olddisp = disp;
   oldcontrolscreen = controlscreen;
   
   // Main loop:
-
+  if (animFlag&&dispFlag) {
+    plsys,1; animate,1;
+  }
 
   loopCounter=0;
   nshots = -1;
@@ -3188,15 +2736,47 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,gui=)
   gui_message,"Initializing loop...done. \"go\" to start, \"pause\" to pause";
 }
 
-func go(nshot)
+
+func go(nshot,all=)
+/* DOCUMENT
+   go will start or resume the AO loop
+   go will go once through this function, and then call itself, until
+     loop.niter has been reached or nshot has been done since last user-
+     entered go. Because go() comes back to the main yorick prompt after each
+     iteration, the user can enter commands, or ask to pause the loop, at any
+     time.
+   example:
+   ... aoloop,disp=1
+   go
+   ... the loop goes, one iteration after another and prints out thing on screen
+   dispFlag=0      // turns off display. the loop keeps going
+   loop.gain = 0.2 // change the loop integrator gain
+   reset           // flatten the DMs
+   stop            // pause the loop
+   cont            // continues the loop
+  
+   nshot = # of iterations to go through. if not set, will go until 
+           loop.niter (total # of iterations) has been done
+   all   = do all remaining iteration without returning to the yorick prompt.
+     This is useful in scripts to avoid messy side effects of set_idler.
+   SEE ALSO: aoloop, stop, cont, reset, restart, whereat, after_loop
+ */
+
 {
-  extern niterok, starttime, now, nshots;
+  extern niterok, starttime, endtime, endtime_str, now, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
   extern cbmes, cbcom, cberr;
-
+  extern commb,errmb; // minibuffers (last 10 iterations)
+  
   gui_show_statusbar1;
   
-  if (nshot!=[]) nshots = nshot;
+  if (nshot!=[]) {
+    if (animFlag&&dispFlag) {
+      plsys,1;
+      animate,1;
+    }
+    nshots = nshot;
+  }
   disp = dispFlag;
   savecb = savecbFlag;
   dpi = dpiFlag;
@@ -3207,7 +2787,8 @@ func go(nshot)
     // initialize timers
     tic,2; starttime = _nowtime(2); 
   }
-  now = tac(2);
+  
+  go_start:  now = tac(2);
 
   loopCounter++;
   nshots--;
@@ -3215,9 +2796,11 @@ func go(nshot)
   gui_progressbar_frac,float(loopCounter)/loop.niter;
   gui_progressbar_text,swrite(format="%d out of %d iterations",loopCounter,loop.niter);
   
-  if (savecb) comvec=[];
+  comvec=[];
   
-  if (loopCounter>loop.niter) error,"LoopCounter > loop.niter !";
+  if (loopCounter>loop.niter) {
+    exit,"Can't continue: loopCounter > loop.niter !";
+  }
   i=loopCounter;
   tic; time(1) = tac();
 
@@ -3258,7 +2841,7 @@ func go(nshot)
     
   // get the turbulent phase:   
   // Do the wavefront sensing:
-  WfsMes = multWfs(i,disp=disp);
+  WfsMes = mult_wfs(i,disp=disp);
 
   time(2) +=  tac();
 
@@ -3268,7 +2851,7 @@ func go(nshot)
     njumpsinceswap++;
     if (njumpsinceswap==loop.jumps2swapscreen) {
       if (sim.verbose) write,"Reset and screens swap";
-      swapScreens;        // swap screens
+      swap_screens;        // swap screens
       njumpsinceswap = 0; // reset "jumps since last swap" counter
     } else { write,"Reset"; }
     command *=0.0f; // bug noticed on 2006mar01:
@@ -3285,13 +2868,16 @@ func go(nshot)
 
   time(3) += tac();
     
+  // RECONSTRUCTION:
   // computes the actuator error vector from the measurements:
-  err      = cMat(,+)*usedMes(+);
+  err      = cMat(,+) * usedMes(+);
+
+  if (user_loop_err!=[]) user_loop_err;
 
   // get the anisoplanatism mode coefficients and project it
   // in the actuator space
   if (aniso) {
-    err -= comaniso(,+)*err(waniso)(+);
+    err -= comaniso(,+) * err(waniso)(+);
     err(waniso) = 0.;
     //      dm(wdmaniso)._command = invcomaniso(+,)*
   }
@@ -3301,7 +2887,10 @@ func go(nshot)
   // Computes the mirror shape using influence functions:
   for (nm=1; nm<=ndm; nm++) {
 
-    if (dm(nm).type == "aniso") {continue;}
+    if (dm(nm).type == "aniso") {
+      grow,comvec,*dm(nm)._command;
+      continue;
+    }
 
     n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
 
@@ -3309,23 +2898,62 @@ func go(nshot)
     dmerr = err(indexDm(1,nm):indexDm(2,nm));
 
     // update the command vector for this DM:
-    *dm(nm)._command -= loop.gain*dm(nm).gain*dmerr;
+    // CONTROL LAW
+    // leak term:
+    *dm(nm)._command *= (1-loop.leak(1));
+    // integrator
+    *dm(nm)._command -= loop.gain * dm(nm).gain * dmerr;
+    
+    // higher order (up to 9!):
+    maxorder = clip(numberof(*loop.gainho)+1,,10);
+    for (order=2;order<=maxorder;order++) {
+      // deal with first iterations:
+      if ((i-order)<=0) break;
+      // which element should we fetch in mini buffer?
+      imb = (i-order)%10;
+      // leak term of orderth order
+      *dm(nm)._command += \
+          (1-(*loop.leakho)(order-1)) * commb(indexDm(1,nm):indexDm(2,nm),imb);
+      // integrator term of orderth order
+      *dm(nm)._command -= \
+        (*loop.gainho)(order-1) * dm(nm).gain * errmb(indexDm(1,nm):indexDm(2,nm),imb);
+    }
     
     if (dm(nm).hyst > 0.) {*dm(nm)._command = hysteresis(*dm(nm)._command,nm);}
       
     if (dm(nm).maxvolt != 0) {
-      dm(nm)._command=&(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt));
+      dm(nm)._command=&(float(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt)));
     }
 
-    mircube(n1:n2,n1:n2,nm) = compDmShape(nm,dm(nm)._command);
+    if (user_loop_command!=[]) user_loop_command,nm;
 
-    if (savecb) grow,comvec,*dm(nm)._command;
+    mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
+
+    grow,comvec,*dm(nm)._command;
 
     // extrapolated actuators:
     if ((dm(nm)._enact != 0) && (dm(nm).noextrap == 0)) {
       ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
-      mircube(n1:n2,n1:n2,nm) += compDmShape(nm,&ecom,extrap=1);
+      mircube(n1:n2,n1:n2,nm) += comp_dm_shape(nm,&ecom,extrap=1);
     }
+  }
+
+  // fill minibuffers
+  errmb(,(i%10)) = err; // 10 will go in 0, which is 10.
+  commb(,(i%10)) = comvec; // 10 will go in 0, which is 10.
+
+  if (tipvib!=[]) { // add tip vibrations
+    // if there is a TTM, add it there
+    if (anyof(dm.type=="tiptilt")) nmvib=where(dm.type=="tiptilt")(1);
+    else nmvib=1; // otherwise put it to 1.
+    mircube(,,nmvib) += tipvib(i)*tip1arcsec;
+  }
+
+  if (tiltvib!=[]) { // add tilt vibrations
+    // if there is a TTM, add it there
+    if (anyof(dm.type=="tiptilt")) nmvib=where(dm.type=="tiptilt")(1);
+    else nmvib=1; // otherwise put it to 1.
+    mircube(,,nmvib) += tiltvib(i)*tilt1arcsec;
   }
 
   time(5) += tac();
@@ -3342,12 +2970,13 @@ func go(nshot)
     // compute integrated phases and fill phase cube
     for (jl=1;jl<=target._nlambda;jl++) {
       for (jt=1;jt<=target._ntarget;jt++) {
-        cubphase(,,jt)  = getPhase2dFromDms(jt,"target") + \
-          getPhase2dFromOptics(jt,"target") + \
-          getTurbPhase(i,jt,"target");
+        cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") + \
+          get_phase2d_from_optics(jt,"target") + \
+          get_turb_phase(i,jt,"target");
+          // vibration already added to dm1
       }
       // compute image cube from phase cube
-      status = _calcPSFVE(&pupil,&cubphase,&im,dimpow2,
+      status = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
                        target._ntarget,float(2*pi/(*target.lambda)(jl)));
         
       // Accumulate statistics:
@@ -3374,10 +3003,10 @@ func go(nshot)
     fma;
     // PSF Images
     plt,sim.name,0.01,0.01,tosys=0;
-    if (dispImImav == 1) {
-      disp2D,im,*target.xposition,*target.yposition,1,power=0.5;
+    if (dispImImav) {
+      disp2d,imav,*target.xposition,*target.yposition,1,power=0.5;
     } else {
-      disp2D,imav,*target.xposition,*target.yposition,1,power=0.5;
+      disp2d,im,*target.xposition,*target.yposition,1,power=0.5;
     }
     for (j=1;j<=nwfs;j++) {
       plg,wfs(j).gspos(2),wfs(j).gspos(1),marker='\2',
@@ -3388,15 +3017,33 @@ func go(nshot)
 
     // WFS spots
     if (!allof(wfs.shmethod ==1)) {
-      disp2D,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2;
-      mypltitle,"WFSs",[0.,-0.005],height=12;
+      if (wfs_display_mode=="spatial") {
+        disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
+        mypltitle,"WFSs (spatial mode)",[0.,-0.005],height=12;
+      } else {
+        disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2;
+        mypltitle,"WFSs",[0.,-0.005],height=12;
+      }
     }
       
     // mirror surface
     plsys,3;
     limits,square=1;
-    pli,mircube(,,1)*ipupil,1,0.,2,1.;
-    for (nm=2;nm<=ndm;nm++) {pli,mircube(,,nm),nm,0.,nm+1,1.;}
+    if (mergedms4disp) { //e.g. GMT case
+      tmp = mircube(,,sum);
+      pli,(tmp-min(tmp))*ipupil,1,0.,2,1.;
+      range,0.25,0.75;
+    } else {
+      pli,(mircube(,,1)-min(mircube(,,1)))*ipupil,1,0.,2,1.;
+      for (nm=2;nm<=ndm;nm++) {
+        //pli,mircube(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2,nm),nm,0.,nm+1,1.;
+        if (dm(nm).alt==0) {
+          pli,(mircube(,,nm)-min(mircube(,,nm)))*ipupil,nm,0.,nm+1,1.;
+        } else {
+          pli,(mircube(,,nm)-min(mircube(,,nm))),nm,0.,nm+1,1.;
+        }
+      }
+    }
     mypltitle,"DM(s)",[0.,0.008],height=12;
 
     // Strehl plots
@@ -3408,10 +3055,10 @@ func go(nshot)
                                      (*target.lambda)(0)),[0.025,-0.01],height=9;
       range,0;
     }
-    if (userPlot != []) userPlot,i,init=(i==1);  // execute user's plot routine if it exists.
+    if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
   }
 
-  if (okcscreen) { controlScreen,i; }
+  if (okcscreen) { control_screen,i; }
 
   time(7) += tac();
 
@@ -3419,7 +3066,7 @@ func go(nshot)
   if (is_set(savecb)) {
     cbmes(,i) = WfsMes;
     cbcom(,i) = comvec;
-    cberr(,i) = err;  // err was overwritten by calcPSFVE, corrected 2007mar12
+    cberr(,i) = err;  // err was overwritten by calc_psf_fast, corrected 2007mar12
   }
 
   glt      = 0.02;
@@ -3474,29 +3121,81 @@ func go(nshot)
   }
   time(8) += tac();
 
-  if (nshots==0) return;
+  if (nshots==0) {
+    if (animFlag&&dispFlag) {
+      plsys,1;
+      animate,0;
+    }
+    return;
+  }
 
+  tic,2; endtime=_nowtime(2); endtime_str = gettime();
 //  if (loopCounter<loop.niter) after, 0.001, go;
-  if (loopCounter<loop.niter) set_idler, go;
-  else {
+  if (loopCounter<loop.niter) {
+    if (all) goto go_start;
+    else set_idler, go;
+  } else {
     if (yaopy) pyk,"aoloop_to_end()";
     gui_hide_statusbar1;
     after_loop;
+    //    yicon = Y_HOME+"icons/yicon48.png";
+    //    system,swrite(format=                                         \
+    //        "growlnotify yao --image '%s' -m '%s: %d iterations completed'", \
+    //        yicon,parprefix,loop.niter);
   }
 }
 
-func stop {
+func reset(void)
+/* DOCUMENT reset(void)
+   Flattens all the DMs
+   SEE ALSO:
+ */
+{
+  extern command,mircube,wfsMeshistory,dm,ndm;
+  
+  command *=0.0f; // bug noticed on 2006mar01:
+  for (nm=1;nm<=ndm;nm++) *dm(nm)._command *=0.0f; // < this should work instead.
+  mircube *=0.0f; wfsMesHistory *=0.0f;
+}
+
+
+func stop(void) 
+/* DOCUMENT stop(void) 
+   Pause the loop
+   SEE ALSO: cont, go, restart
+ */
+{
   write,format="Stopping @ iter=%d\n",loopCounter;
   gui_hide_statusbar1;
+  if (animFlag&&dispFlag) {
+    plsys,1;
+    animate,0;
+  }
   set_idler;
 }
 
-func cont {
+
+func cont(void)
+/* DOCUMENT cont(void)
+   Resume the loop
+   SEE ALSO: stop, restart, go
+ */
+{
   write,"Proceeding...";
+  if (animFlag&&dispFlag) {
+    plsys,1;
+    animate,1;
+  }
   set_idler,go;
 }
 
-func restart {
+
+func restart(void)
+/* DOCUMENT restart(void)
+   Re-initialize all variable and reset loop counter to zero.
+   SEE ALSO: go
+ */
+{
   extern imav, ditherMesCos, ditherMesSin;
   extern niterok, loopCounter;
   extern command, mircube, wfsMesHistory;
@@ -3514,31 +3213,40 @@ func restart {
   niterok = 0;
   //          set_idler,go;
 }
-func disptoggle { dispFlag=1-dispFlag; }
-func whereat { write,format="@ iter=%d\n",loopCounter; }
-func do_prompt { write,format="%s ",">"; }
+
+
+func disptoggle(void) { dispFlag=1-dispFlag; }
+func whereat(void) { write,format="@ iter=%d\n",loopCounter; }
+func do_prompt(void) { write,format="%s ",">"; }
 
 func after_loop(void)
+/* DOCUMENT after_loop(void)
+   Wraps up when all iterations have been done. Compute various performance
+   criteria (Strehl, FWHM, various performance timers, ...)
+   SEE ALSO: aoloop, go
+ */
 {
   extern strehllp,strehsp, itv;
   extern cbmes, cbcom, cberr;
   extern strehl,e50,fwhm;
+  extern iter_per_sec;
 
   savecb = savecbFlag;
 
-  gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...",YAO_SAVEPATH+parprefix);
-  write,format="Dumping results in %s.res (ps,imav.fits)...\n",YAO_SAVEPATH+parprefix;
+  gui_message,swrite(format="Saving results in %s.res (ps,imav.fits)...",YAO_SAVEPATH+parprefix);
+  write,format="Saving results in %s.res (ps,imav.fits)...\n",YAO_SAVEPATH+parprefix;
   
-  time = (time - roll(time,1))/loopCounter;
+  time2 = (time - roll(time,1))/loopCounter;
   timeComments = ["WF sensing","Reset and measurement history handling","cMat multiplication",\
                   "DM shape computation","Target PSFs estimation","Displays",\
                   "Circular buffers, end-of-loop printouts"];
   for (i=2;i<=8;i++) {
-    write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time(i)*1e3,timeComments(i-1);}
+    write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time2(i)*1e3,timeComments(i-1);}
   
-  write,format="Finished on %s\n",gettime();
-  tic,2; tottime = (_nowtime(2) - starttime);
-  write,format="%f iterations/second in average\n",loop.niter/tottime;
+  write,format="Finished on %s\n",endtime_str;
+  tottime = (endtime - starttime);
+  iter_per_sec = loopCounter/tottime;
+  write,format="%f iterations/second in average\n",iter_per_sec;
   
   // Save the circular buffers:
   if (is_set(savecb)) {
@@ -3546,11 +3254,11 @@ func after_loop(void)
     fitsWrite,YAO_SAVEPATH+"cbcom.fits",cbcom;
     fitsWrite,YAO_SAVEPATH+"cberr.fits",cberr;
     write,"cbmes, cbcom and cberr are saved.";
-    write,"You can run modalGainOptimization() to optimize and update the gains";
+    write,"You can run modal_gain_optimization() to optimize and update the gains";
   }
   
   // End of loop calculations (fwhm, EE, Strehl):
-  fairy	 = findfwhm(airy);
+  fairy  = findfwhm(airy);
   e50airy= encircled_energy(airy,ee50);
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
 
@@ -3582,7 +3290,7 @@ func after_loop(void)
   }
   
   // Some logging of the results in file parprefix+".res":
-  f	= open(YAO_SAVEPATH+parprefix+".res","a+");
+  f = open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,format=
     "\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
@@ -3621,9 +3329,9 @@ func after_loop(void)
   window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
   fma;
 
-  disp2D,im,*target.xposition,*target.yposition,1,zoom=*target.dispzoom,init=1;
+  disp2d,im,*target.xposition,*target.yposition,1,zoom=*target.dispzoom,init=1;
   for (jl=1;jl<=target._nlambda;jl++) {
-    disp2D,imav(,,,jl),*target.xposition,*target.yposition,1,power=0.5;
+    disp2d,imav(,,,jl),*target.xposition,*target.yposition,1,power=0.5;
   }
 
   for (j=1;j<=nwfs;j++) {
@@ -3652,324 +3360,62 @@ func after_loop(void)
   return imav;
 }
 
-//----------------------------------------------------
-
-/* DOCUMENT wfs, dm, atmospheric, etc.. structures:
-   Main structures for the AO simul package parameters
-   If additional parameters are needed, they should be entered in these
-   structures definition and changes reflected in the parameter file
-   (e.g. sh12.par)
-
-   There are several type of entries:
-   - long, float, string scalars: e.g.
-   > atm.dr0at05mic = 33.;
-   - pointers: These are pointers to variables that can have arbitrary
-   number of elements. You have to define them in the following way:
-   > wfs.nsubperring = &( [6,12,18] );
-
-   Structure members can be accessed in the following way:
-   var = dm.type;
-   var = *atm.layerfrac;  // "*" dereference a pointer
-
-   If there are several instance of a given structure: for instance, it is
-   common to have a system with several dm:
-   dm.type is thus a vector of the types of all instance of structure "dm"
-   dm(1).type is a scalar
-   *wfs(1).nsubperring is a vector.
-   (*wfs(1).nsubperring)(1) is the first element of this vector.
-   
-   The variables with a "_" in frnt of them are internal variables. they are set
-   and used while the program is running. You can still access them, and possibly
-   modify them to reach a particular purpose.
-
-   The following generic structures are instanced into structures of the same
-   name, without the "_struct" appended, when the parameter file is read. For
-   instance, "atm" will be the structure containing the atmospheric parameters
-   as defined in the generic type atm_struct below. 
-
-
-   SYNTAX OF THE COMMENTS BELOW:
-   For each entries, we give the type (scalar, vectorptr -vector pointer-, etc),
-   what the parameter is, possible comments, whether the parameter is
-   required or optional, and the default between [].
-   As a general comment: when the structures are instanciated, all their elements
-   get a default value. This is zero (0) for a float or long (scalar or vector),
-   empty string for a string, and 0x0 for a pointer.
-
-   modified 2004oct18 for aosimulv3.3 to 3.5
-   modified 2004july for aosimulv3.0 to 3.3
-   modified 2004jan-mar for aosimulv2.4 to 3.0
-   modified 2003dec20-24 for aosimul-v2.3
-   modified 2003dec19 for aosimul-v2.2
-   modified 2003feb19 for aosimul-v1.2
-   AUTHOR: F.Rigaut, beginning 2002
-   SEE ALSO: All ao simul functions (aoread, aoinit, aoloop).
-*/
-
-struct sim_struct
-{
-  string  name;           // A name for this simulation run. Optional [none]
-  long    pupildiam;      // Pupil diameter in pixels. Required [none]
-  long    debug;          // set the debug level (0:no debug, 1:some, 2: most). Optional [0]
-  long    verbose;        // set the verbose level (0:none, 1: some, 2: most). Optional [0]
-  // Internal keywords:
-  long    _size;          // Internal. Size of the arrays [pixels]
-  float   _cent;          // Internal. Pupil is centered on (_cent,_cent)
-};
-
-struct atm_struct
-{
-  float   dr0at05mic;     // Dr0 at sensing wavelength, at zenith. Required [none].
-  pointer screen;         // string vectorptr. Screen file names. Required [none].
-  pointer layerfrac;      // float vectorptr. Layer fraction. Sum to one is insured
-  // in aoinit. Required [none]
-  pointer layerspeed;     // float vectorptr. Layer speed. Required [none]
-  pointer layeralt;       // float vectorptr. Layer altitude (m). Specified at Zenith.
-  // Required [none]
-  pointer winddir;        // Wind dir (use 0 for now)
-  // Internal variables
-  pointer _layeralt;      // float vectorptr. Actual layer altitude (m), from atm.alt & zen.angle
-};
-
-struct opt_struct
-{
-  string   phasemaps;      // filename of phasemap. Z scale should be in microns
-  float    alt;            // float. equivalent altitude in m.
-  float    misreg(2);      // float vector. misreg. (similar to DM, see below)
-  float    _cent;          // center of the phase maps arrays (similar to sim._cent)
-};
-
-struct wfs_struct
-{
-  string  type;           // WFS type: "curvature", "hartmann", "pyramid" or "zernike".
-                          // Required [none]
-  long    subsystem;      // Subsystem this WFS belongs to. Optional [1]
-  float   lambda;         // WFS wavelength in microns. Required [none]
-  long    noise;          // Enable noise (photon noise/read out noise). Optional [0=no].
-  float   ron;            // Read out noise in electrons. Optional [0]
-  float   darkcurrent;    // dark current in e-/sec/pixel or APD. Optional [0]
-  float   gspos(2);       // This WFS guide star position (x<y) in arcsec. Optional [0,0]
-  float   gsalt;          // This WFS guide star altitude in meter. 0 for infinity.
-  // Specified at zenith. Optional [0]
-  float   gsdepth;        // This WFS GS depth in meter (e.g. Na layer thickness).
-  // Specified at zenith. Optional [0]
-  float   laserpower;     // this wfs laser power (Na laser only), in Watts projected on sky.
-  // Required when using lasers. Exclusive with gsmag; i.e. define one
-  // OR the other. gs.
-  float   gsmag;          // This WFS guide star magnitude. Optional [0]. For LGSs, see above.
-  float   skymag;         // This WFS sky mag. Optional [no sky]
-  long    filtertilt;     // Filter TT on this sensor? Optional [0=no]
-  long    correctUpTT;    // Correct up link tp-tilt ? Optional [0=no]
-  float   uplinkgain;     // Up link TT loop gain. Optional [0]
-  float   dispzoom;       // Zoom factor for the display (typically around 1). Optional [1]
-  float   optthroughput;  // optical throughput to WFS. Optional [1.0]
-  // Curvature WFS only keywords:
-  pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
-  pointer angleoffset;    // float vectorptr. offset angle for first subaperture of ring.
-  float   l;              // Extra focal distance in a F/60 beam. Required [none]
-  pointer rint;           // float vectorptr. if set, specify the inner radius for each ring
-  pointer rout;           // float vectorptr. if set, specify the outer radius for each ring
-  float   fieldstopdiam;  // diameter of field stop in arcsec. Optinal [1]. used only
-  // to compute sky contribution (with skymag).
-  // Shack-Hartmann WFS only keywords:
-  long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
-  long    shnxsub;        // # of subaperture in telescope diameter. Required [none]
-  long    npixpersub;     // to force npixpersub and bypass constraint that
-                          // pupildiam should be a multiple of this number
-                          // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
-  float   pixsize;        // Subaperture pixel size in arcsec. Required [none]
-  long    npixels;        // Final # of pixels in subaperture. Required [none]
-  float   shthreshold;    // Threshold in computation of subaperture signal, >=0. Optional [0]
-  float   biasrmserror;   // rms error on WFS bias in electron. Optional [0]
-  float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]
-                          // Typical value can be 0.01
-  string  submask;        // fits file with subaperture amplitude mask. It should have
-                          // dimension 2^sdimpow2 square. can be float or long.
-  float   kernel;         // FWHM in arcsec of WFS gaussian kernel. Optional.
-                          // Default is computed as a function of D/r0
-  int     nintegcycles;   // # of cycles/iterations over which to integrate. Optional [1]
-  float   fracIllum;      // fraction illuminated to be valid. Optional [0.5]
-  float   LLTxy(2);       // 2 element vector with (x,y) of laser projector [m]
-  long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and 
-  // filtertilt must be set). Optional [0]
-  int     rayleighflag;   // set to one to take rayleigh into account
-  // zernike wfs only
-  int     nzer;           // # of zernike sensed
-  // Internal keywords:
-  float   _gsalt;         // This WFS guide star altitude in meter. 0 for infinity.
-  float   _gsdepth;       // This WFS GS depth in meter (e.g. Na layer thickness).
-  int     _nsub;          // Internal. Tot # of subs.
-  long    _nmes;          // internal. Tot # of measurements.
-  pointer _sind;          // Internal: see CurvWFS
-  pointer _nsind;         // Internal: see CurvWFS
-  pointer _cxdef;         // Internal: see CurvWFS
-  pointer _sxdef;         // Internal: see CurvWFS
-  pointer _tiltsh;        // Internal: see ShWfs
-  pointer _masks;         // Internal: see ShWfs
-  pointer _fluxpersub;    // Internal: see ShWfs
-  pointer _raylfluxpersub;// Internal: see ShWfs
-  pointer _skyfluxpersub; // Internal: see ShWfs
-  float   _nphotons;      // Internal: see WFS routines
-  float   _skynphotons;   // Internal: see WFS routines
-  float   _tt(2);         // Internal: WFS measured Tip and tilt
-  float   _lastvalidtt(2);// Internal: WFS measured Tip and tilt
-  float   _upttcommand(2);// Internal:
-  pointer _refmes;        // internal: reference measurement vector
-  pointer _tiprefv;       // internal: tip reference meas. vector
-  pointer _tiltrefv;      // internal: tilt reference meas. vector
-  pointer _tiprefvn;      // internal: tip reference meas. vector. normalized (norm=1)
-  pointer _tiltrefvn;     // internal: tilt reference meas. vector. normalized.
-  pointer _istart;        //
-  pointer _jstart;        //
-  pointer _binindices;    //
-  int     _binxy;         //
-  pointer _centroidw;     //
-  pointer _fimage;        //
-  pointer _fimage2;       //
-  pointer _imistart;      //
-  pointer _imjstart;      //
-  int     _fimnx;         //
-  int     _fimny;         //
-  pointer _bias;          // internal: array of bias error
-  pointer _flat;          // internal: array of flat error
-  long    _domask;        // internal. flag to do submask calculations in _shwfs
-  pointer _submask;       // internal: array. subaperture amplitude mask.
-  pointer _kernel;        // internal: kernel for _shwfs. use: dointer or LGS uplink im.
-  pointer _kernels;       // internal: subaperture dependant image kernel
-  pointer _kerfftr;       // internal: storage of FFTs of kernels
-  pointer _kerffti;       // internal: storage of FFTs of kernels
-  int     _kernelconv;    // interal: convolve with kernel in _shwfs?
-  int     _cyclecounter;  // counter in integration sequence (see nintegcycles above)
-  pointer _dispimage;     // image to display (same as fimage except if nintegcycles!=1)
-  pointer _x;             // shwfs: X positions of subaperture centers
-  pointer _y;             // shwfs: Y positions of subaperture centers
-  float   _centroidgain;  // internal: centroid gain if dithering on
-  pointer _rayleigh;      // pointer to rayleigh images array for this sensor
-  pointer _bckgrdcalib;   // pointer to background array calibration
-  int     _bckgrdinit;    // set to one to fill calibration array
-  int     _bckgrdsub;     // set to one to subtract background (default)
-};
-
-struct dm_struct
-{
-  string  type;           // "bimorph", "stackarray" "tiptilt", "zernike", "aniso". Required [none]
-  long    subsystem;      // Subsystem this DM belongs to. Optional [1]
-  string  iffile;         // Influence function file name. Leave it alone.
-  float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
-  float   hyst;           // DM actuator hysteresis (0. to 1.). Optional [0]
-  float   push4imat;      // Voltage to apply for imat calibration. Optional [20].
-                          // Note: the default is not OK for many configs. Change at will.
-  float   thresholdresp;  // Normalized response threshold for an act. to be valid. Optional [0.3]
-  float   unitpervolt;    // Influence function sensitivity in unit/volt. Optional [0.01]
-                          // Stackarray: mic/volt, Tip-tilt: arcsec/volt.
-  float   maxvolt;        // Saturation voltage (- and +) in volt. Optional [none if not set]
-  float   gain;           // loop gain for this DM (total = this x loop.gain). Optional [1]
-  float   misreg(2);      // dm misregistration (pixels). optional [0,0]
-  // Bimorph-only keywords:
-  pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
-  pointer angleoffset;    // float vectorptr. offset angle for first electrode in ring.
-  pointer rint;           // float vectorptr. if set, specify the inner radius for each ring
-  pointer rout;           // float vectorptr. if set, specify the outer radius for each ring
-  float   supportRadius;  // radius of support points, normalized in pupil radius
-  float   supportOffset;  // angle offset of first support points, in degree (default=90)
-  // Stackarray-only keywords:
-  long    nxact;          // # of act. in pupil diameter. Required [none]
-  long    pitch;          // Actuator pitch IN PIXEL. Required [none]
-  float   pitchMargin;    // margin to include more corner actuators when creating inf.functions
-                          // optional [1.44]
-  float   coupling;       // coupling coef in influence function. optional [0.2].
-                          // valid values from 0.04 to 0.30.
-  string  ecmatfile;      // valid to extrap. actuator matrix (extrap_com). Optional.
-  long    noextrap;       // set to 1 if no extrapolated actuators whatsoever are to be used [0]
-  long    elt;            // set to 1 if fast dmsum to be used
-  // Zernike-only keywords:
-  long    nzer;           // Number of modes, including piston. Required [none]
-  // Internal keywords:
-  float   _alt;           // Actual conjugation altitude in meter, from dm.alt and zen.
-  long    _nact;          // Internal. Tot # of actuators.
-  pointer _def;           // Internal: Pointer to IF data
-  pointer _x;             // Internal: x position of actuator in pixels
-  pointer _y;             // Internal: x position of actuator in pixels
-  pointer _i1;            // 
-  pointer _j1;            // 
-  pointer _ei1;           // 
-  pointer _ej1;           // 
-  string  _eiffile;       // Influence function file name for extrap. actuators
-  pointer _edef;          // Internal: Pointer to IF data for extrap. actuators
-  pointer _ex;            // Internal: x position of extrap. actuator in pixels
-  pointer _ey;            // Internal: x position of extrap. actuator in pixels
-  long    _enact;         // Internal. Tot # of extrap. actuators.
-  long    _n1;            // Internal: position of leftmost pixel in ao._size^2 array
-  long    _n2;            // Internal: position of leftmost pixel in ao._size^2 array
-  pointer _vold;          // internal: hysteresis
-  pointer _posold;        // internal: hysteresis
-  pointer _chpos;         // internal: hysteresis
-  pointer _chv;           // internal: hysteresis
-  pointer _dir;           // internal: hysteresis
-  pointer _delta;         // internal: hysteresis
-  pointer _command;       // pointer to command vector
-  pointer _extrapcmat;    // extrapolation matrix: extrap_com = extrapmat(,+)*valid_com(+)
-  int     _eltdefsize;    // size of def in case elt=1
-};
-
-struct mat_struct
-{
-  pointer condition;      // float vecorptr. Condition numbers for SVD, per subsystem. Required [none]
-  string  file;           // iMat and cMat filename. Leave it alone.
-};
-
-struct tel_struct
-{
-  float   diam;           // Telescope diameter in meters. Required [none]
-  float   cobs;           // Central obstruction / telescope diameter ratio. Optional [0]
-};
-
-struct target_struct
-{
-  pointer lambda;         // float vectorptr. Image wavelengths in micron. Required [none]
-  pointer xposition;      // float vectorptr. X positions in arcsec. Required [none]
-  pointer yposition;      // float vectorptr. Y positions in arcsec. Required [none]
-  pointer dispzoom;       // float vectorptr. Display zoom (typically around 1.). Optional [1.]
-  // Internal keywords
-  long    _ntarget;       // Internal: # of target
-  long    _nlambda;       // Internal: # of lambda
-};
-
-struct gs_struct
-{
-  float   zeropoint;      // Photometric zero point (#photons@pupil/s/full_aper, mag0 star).
-                          // Required [none]
-  float   zenithangle;    // zenith angle. Optional [0.]. The zenith angle is used to compute:
-                          // - r0 off-zenith
-                          // - atmopheric turbulence layer altitude
-                          // - LGS altitude and thickness of Na Layer
-                          // - LGS brighness
-                          // note that dm altitude is unchanged.
-  float  lgsreturnperwatt;// Sodium LGS return in photons/cm2/s at entrance pupil.
-                          // Specified at zenith. Modified by gs.zenithangle. Optional [22.]
-                          // basically, you have to fold in this the sodium density
-                          // and your model of return.
-};
-
-struct loop_struct
-{
-  float   gain;            // Loop gain. Optional, but important! [0]
-  long    framedelay;      // loop delay (# of frames). Optional [0]
-                           // Regular CCD 1 frame integration -> framedelay=1
-                           // + readout & Calculation -> framedelay=2
-  long    niter;           // # of total iteration. Required [none]
-  float   ittime;          // Iteration time in seconds. Required [none]
-  long    startskip;       // # iter to skip before collecting statistics. Optional [10]
-  long    skipevery;       // skip by "skipby" every "skipevery" iterations. Optional [0=none]
-  long    skipby;          // see above. this is to get better statistical
-                           // coverage. Optional [10000]
-  long    stats_every;     // compute stats every so many iteration (default 4)
-  long    jumps2swapscreen;//number of jumps (i.e. niter/skipevery) after which screens
-                           // will be swapped (rotation, 2->1, 3->2... 1->last
-  string  modalgainfile;   // Name of file with mode gains. Optional.
-  //float   dithering;     // TT dithering for centroid gain (volts).
-};
-
 dtor = pi/180.;
 radeg = 1./dtor;
+
+
+//===================
+// API compatibility:
+//===================
+ZernikeWfs            = zernike_wfs;
+PyramidWfs            = pyramid_wfs;
+ShWfsInit             = shwfs_init;
+multWfsIntMat         = mult_wfs_int_mat;
+multWfs               = mult_wfs;
+wfsCheckPixelSize     = wfs_check_pixel_size;
+checkParameters       = check_parameters;
+graphicConfig         = graphic_config;
+modalGainOptimization = modal_gain_optimization;
+MakePupil             = make_pupil;
+FindDmModes           = build_dm_modes;
+disp2D                = disp2d;
+ftcbAoSimul           = ft_cb_ao_simul;
+make_curv_wfsSubs     = make_curv_wfs_subs;
+ssNoise               = ss_noise;
+ShWfs                 = sh_wfs;
+MakeCurvWfs           = make_curv_wfs;
+CurvWfs               = curv_wfs;
+doInter               = do_imat;
+prepSVD               = prep_svd;
+buildComMat           = build_cmat;
+swapScreens           = swap_screens;
+getTurbPhaseInit      = get_turb_phase_init;
+getTurbPhase          = get_turb_phase;
+getPhase2dFromDms     = get_phase2d_from_dms;
+getPhase2dFromOptics  = get_phase2d_from_optics;
+correctUpLinkTT       = correct_uplink_tt;
+splitWfsVector        = split_wfs_vector;
+splitDMCommandVector  = split_dm_vector;
+MakePztIF             = make_pzt_dm;
+MakeEltPztIF          = make_pzt_dm_elt;
+MakeKLIF              = make_kl_dm;
+MakeZernikeIF         = make_zernike_dm;
+MakeBimorphIF         = make_curvature_dm;
+MakeTipTiltIF         = make_tiptilt_dm;
+projectAnisoIF        = project_aniso_dm;
+MakeAnisoIF           = make_aniso_dm;
+compDmShape           = comp_dm_shape;
+controlScreen         = control_screen;
+mcaoRayleigh          = mcao_rayleigh;
+progressBar           = progress_bar;
+PhaseStructFunc       = phase_struct_func;
+CreatePhaseScreens    = create_phase_screens;
+generateVKspectrum    = generate_von_karman_spectrum;
+generatePhaseWithL0   = generate_phase_with_L0;
+plotMTF               = plot_mtf;
+plotDphi              = plot_dphi;
+userPlot              = user_plot;
+
+
+
 

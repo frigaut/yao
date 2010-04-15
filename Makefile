@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/home/frigaut/yorick-2.1.05x-jaunty
-Y_EXE=/home/frigaut/yorick-2.1.05x-jaunty/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick
+Y_EXE=/usr/lib/yorick/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/home/frigaut/yorick-2.1.05x-jaunty
-Y_EXE_SITE=/home/frigaut/yorick-2.1.05x-jaunty
+Y_EXE_HOME=/usr/lib/yorick
+Y_EXE_SITE=/usr/lib/yorick
 
 # ----------------------------------------------------- optimization flags
 
@@ -37,7 +37,7 @@ PKG_CLEAN=
 # autoload file for this package, if any
 PKG_I_START=
 # non-pkg.i include files for this package, if any
-PKG_I_EXTRA=yao.i aoutil.i newfits.i yao_util.i turbulence.i yao_gui.i yaopy.i
+PKG_I_EXTRA=yao.i aoutil.i yaokl.i newfits.i yao_util.i turbulence.i yao_gui.i yaopy.i yao_wfs.i yao_structures.i yao_dm.i
 
 # -------------------------------- standard targets and rules (in Makepkg)
 
@@ -72,7 +72,6 @@ clean::
 	-rm -rf binaries
 
 install::
-	@echo "passing here"
 	mkdir -p $(DEST_Y_SITE)/python
 	mkdir -p $(DEST_Y_SITE)/glade
 	mkdir -p $(DEST_Y_SITE)/g
@@ -111,7 +110,7 @@ uninstall::
 # for the binary package production (add full path to lib*.a below):
 PKG_DEPLIBS_STATIC=-lm /usr/lib/libfftw3f.a
 PKG_ARCH = $(OSTYPE)-$(MACHTYPE)
-# The above usually don't work. Edit manually and change the PKG_ARCH below:
+# The above usually don t work. Edit manually and change the PKG_ARCH below:
 # PKG_ARCH = linux-x86
 PKG_VERSION = $(shell (awk '{if ($$1=="Version:") print $$2}' $(PKG_NAME).info))
 # .info might not exist, in which case he line above will exit in error.

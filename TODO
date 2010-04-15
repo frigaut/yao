@@ -1,0 +1,146 @@
+Upgrades:
+- add KL DM (done in 4.3.0)
+- add vibration spectrum (done)
+- slow down imat display (done in 4.3.0, use sleep=ms)
+- accept an odd # of pixels / subaperture (on CCD) (upgraded in 4.3.1)
+- add neighbor overlap between SH subapertures (done in 4.3.2)
+- implement field stops (done in 4.3.2)
+- leaky integrator (done in 4.3.2)
+- up to tenth order filter (done in 4.3.2)
+- all SH possible config work (odd/even # subap and odd/even # of pixel/subap)
+- add non contiguous/arbitrary pupil (done)
+- add different pupil for WFS and imager (already exist)
+- segmented pupil (done)
+- segmented DM (done)
+- added a number of user functions, that are called if they are defined (user_pupil, user_loop_err, user_loop_command)
+- cleanup the code somewhat:
+  - created yao_wfs.i and relocated all wfs related functions
+  - created yao_dm.i and relocated all dm related functions
+  - created yao_structures.i and relocated all struct definitions
+  - changed all function names from old style (with capitals, 
+    e.g. checkParameters) to new style (no capital, but underscores,
+    e.g. check_parameters). To keep the API compatibility with existing user
+    code, I have copied the function names into the old names (see API compat
+    section at the end of yao.i).
+
+future plans (not done):
+- hexagonal stackarray configuration
+- POLC
+- User cmat
+- separate display routines (e.g. that can be called by the user, like
+  display wfs 1 config, or display filtered modes in svd, etc...)
+- clean up and fine tune the rayleigh calculatio. Right now I have a feeling
+  it's only one number per subaperture. I mean, the subap is assumed to be
+  punctual, located at the center of the subap. a better approach would
+  be to compute the thing for a number of point in the subaperture entrance
+  pupil.
+
+
+bug to fix / fixed:
+- desired pixel size is wrong (done 4.3.0)
+- bug with extrapolated counted several time (clean=1) (done 4.3.0)
+- solved zernike IF for altitude DM (radius was not good 4.3.0)
+- merged many new things from yao_mcao (done in 4.3.0)
+- added dm.xflip and yflip (done in 4.3.0)
+- added dm.irexp (done in 4.3.0)
+- can now use dm.elt with aniso modes. (done in 4.3.0)
+- skymag not set to zero when doing imat (done)
+- bad normalization of sky with field stop (done)
+- bad normalization of star with field stop (done)
+- fix mesvec length in shwfs_simple (done)
+- fixed bug in which user would be stuck at prompt when doing interactive SVD (fixed)
+- dispImImav reverse behavior to expected. (fixed)
+- setting npixpersub is not taken into account system wide (fixed)
+- fixed a small bug in phase screen generation (max offseted (1,1))
+- fixed mess in actuator/subaperture order. now both go from bottom left to top right, in line (i.e. subap/act#2 is at right of subap/act#1)
+
+
+Other for changelog:
+- updated many help document section (yao.i, yao_wfs.i)
+
+TO SOLVE for GMT:
+- bug with extraps
+- when makepztif and displayed, IF are not offseted
+- find a simple way to select between gspos-based and pupoffset based for display of wfs._fimage (done, wfs_display_mode="spatial")
+- one DM overlap on neighbor primary (solved)
+- there is a tilt in the corrected phase (on the dms) while the image is centered (not sure) no, was not a problem. it's the DM shape that are displayed, stupid.
+- does not seem to play well with the gtk GUI (solved)
+
+
+
+
+
+
+---------------------------------------------------------------
+
+for GMT:
+
+see gmt.par
+
+need a special pupil definition func(), user_pupil
+
+need to redefine ipupil (wfs) and pupil (image)
+but also to define disjointpup a datacube of which each
+plan is dimsof(ipupil) and represent the pupil to apply for
+a particular primary (up to 7 in th ecase of the GMT)
+
+set keywords:
+dm.disjointpup = 1
+wfs.disjointpup = 1
+
+for the dm and wfs (resp) to take into account the disjoint pupils, i.e. to
+*not* see the part fo the phase that it should not see because it goes through
+different optics.
+
+
+wfs_display_mode = "spatial" set if any wfs.pupoffset is non-zero.
+sorry, for now can't have both the spatial AND angular display
+
+Compatibility:
+new yao is fully compatible with old parfile and user code. 
+However, it is *not* compatible with binary configs saved with previous version. This means that you will have to remember to re-run aoinit with option clean=1
+
+
+for doc:
+
+new go,all=1 api
+
+describe API to user_pupil, user_wfs and user_dm
+user_loop_err
+user_loop_command,nm
+
+
+
+------------------------------------------------------------------
+RAM requirement:
+
+teldiam	= 42;
+pupd    = 84*10;
+nxsub   = 84;
+seeing  = 0.7;
+shmethod = 2
+1350MB peak @ imat taking
+1.1 actuator/seconds -> 85mn for imat
+
+
+teldiam	= 16;
+pupd    = 240;
+nxsub   = 40;
+seeing  = 0.7;
+166MB peak @ imat taking
+9.501409 iterations/second in average
+400MB peak at inversion
+280MB peak in aoloop
+
+
+
+teldiam	= 30;
+pupd    = 500;
+nxsub   = 50;
+seeing  = 0.7;
+340MB while taking imat
+imat 50 act in 15 sec -> 3.2 act/sec
+RAM 830MB peak during inverse
+RAM 650MB during loop
+it/sec loop: 2.7
+

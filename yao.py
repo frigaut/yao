@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.8 2007-12-20 13:34:53 frigaut Exp $
+# $Id: yao.py,v 1.9 2010-04-15 02:36:53 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,12 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.8  2007-12-20 13:34:53  frigaut
+# Revision 1.9  2010-04-15 02:36:53  frigaut
+#
+#
+# final commit to upgrade this repo to yao 4.5.1
+#
+# Revision 1.8  2007/12/20 13:34:53  frigaut
 # - various bug fixes
 # - better handlng of default parfile path
 # - better handling of options menu (WFS and DM)
@@ -96,7 +101,7 @@ class yao:
          'on_debug_toggled': self.on_debug_toggled,
          'on_quit1_activate' : self.on_quit1_activate,
          'on_show_wfss_and_dms_toggled' : self.on_show_wfss_and_dms_toggled,
-         'on_drawingarea1_map_event' : self.on_drawingarea1_map_event,
+         'on_window1_map_event' : self.on_window1_map_event,
          'on_edit_clicked' : self.on_edit_clicked,
          'on_edit2_activate' : self.on_edit2_activate,
          'on_create_phase_screens_activate': self.on_create_phase_screens_activate,
@@ -461,12 +466,12 @@ class yao:
       self.py2yo('do_aoloop_disp')
 
    def on_go_clicked(self,wdg):
-      self.py2yo('toggle_animate 1')
-      self.py2yo('go')
+      #self.py2yo('toggle_animate 1')
+      self.py2yo('cont')
 
    def on_pause_clicked(self,wdg):
       self.py2yo('stop')
-      self.py2yo('toggle_animate 0')
+      #self.py2yo('toggle_animate 0')
 
    def on_step_clicked(self,wdg):
       self.py2yo('go 1')
@@ -493,7 +498,7 @@ class yao:
       self.glade.get_widget('instavg_hbox').set_sensitive(sens)
       
    def on_disp_pause_clicked(self,wdg):
-      self.py2yo('toggle_animate 0')
+      #self.py2yo('toggle_animate 0')
       self.py2yo('fma')
       self.py2yo('funcset dispFlag 10000')
       self.disp_panel_set_sensitivity(0)
@@ -502,18 +507,18 @@ class yao:
 
    def on_disp_resume_clicked(self,wdg):
       self.py2yo('funcset dispFlag %d' % self.dispflag)
-      self.py2yo('toggle_animate 1')
+      #self.py2yo('toggle_animate 1')
       self.disp_panel_set_sensitivity(1)
       self.glade.get_widget('disp_pause').set_sensitive(1)
       self.glade.get_widget('disp_resume').set_sensitive(0)
 
    def on_image_disp_inst_clicked(self,wdg):
       if wdg.get_active():
-         self.py2yo('toggle_im_imav 1')
+         self.py2yo('toggle_im_imav 0')
 
    def on_image_disp_avg_clicked(self,wdg):
       if wdg.get_active():
-         self.py2yo('toggle_im_imav 2')
+         self.py2yo('toggle_im_imav 1')
 
    def on_disp_rate_value_changed(self,wdg):
       self.dispflag = wdg.get_value()
@@ -705,14 +710,21 @@ class yao:
       self.py2yo('yaopy_quit')
 #      raise SystemExit
    
-   def on_drawingarea1_map_event(self,wdg,*args):   
-      # only reparent once the widget is mapped.
-      # note this only need to happen once
-      mwid = wdg.window.xid;
+   def on_window1_map_event(self,wdg,*args):
+      drawingarea = self.glade.get_widget('drawingarea1')
+      mwid = drawingarea.window.xid;
       self.py2yo('yao_win_init %d' % mwid)
       # update parameters from yorick:
       self.py2yo('gui_update')
-
+   
+#   def on_drawingarea1_map_event(self,wdg,*args):   
+#      # only reparent once the widget is mapped.
+#      # note this only need to happen once
+#      mwid = wdg.window.xid;
+#      self.py2yo('yao_win_init %d' % mwid)
+#      # update parameters from yorick:
+#      self.py2yo('gui_update')
+#
       return False
 
    #
@@ -731,15 +743,16 @@ class yao:
       if cb_condition == gobject.IO_HUP:
          raise SystemExit, "lost pipe to yorick"
       # handles string command from yorick
-      # note: inidividual message needs to end with /n for proper ungarbling
+      # note: individual message needs to end with /n for proper ungarbling
       while 1:
          try:
             msg = sys.stdin.readline()
             msg = "self."+msg
-            #debug hack: write on stderr so that it is not processed by yorick
-            if (self.pyk_debug): 
-               sys.stderr.write("Python stdin: "+msg)
-            exec(msg)
+            #  self.py2yo('\"%s\"' % msg)
+            try:
+               exec(msg)
+            except Exception, e:
+               sys.stderr.write('yo2py eval: '+str(e)+'\n')
          except IOError, e:
             if e.errno == errno.EAGAIN:
                # the pipe's empty, good
@@ -748,7 +761,9 @@ class yao:
             raise SystemExit, "yo2py unexpected IOError:" + str(e)
          except Exception, ee:
             raise SystemExit, "yo2py unexpected Exception:" + str(ee)
-         return True
+      # carefull with the ident here
+      return True
+
 
    def set_cursor_busy(self,state):
       if state:

@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.i,v 1.2 2007-12-13 16:04:21 frigaut Exp $
+ * $Id: yao_fast.i,v 1.3 2010-04-15 02:36:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,12 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.i,v $
- * Revision 1.2  2007-12-13 16:04:21  frigaut
+ * Revision 1.3  2010-04-15 02:36:53  frigaut
+ *
+ *
+ * final commit to upgrade this repo to yao 4.5.1
+ *
+ * Revision 1.2  2007/12/13 16:04:21  frigaut
  * - modification to broken Makefile
  * - reshuffling of plug_in statement
  *
@@ -36,10 +41,10 @@
 
 //write,"Yao FFTW version";
 
-func calcPSFVE(pupil,phase,scale=)
-/* DOCUMENT func calcPSFVE(pupil,phase,scale=)
+func calc_psf_fast(pupil,phase,scale=)
+/* DOCUMENT func calc_psf_fast(pupil,phase,scale=)
    Similar to calcpsf, but way faster.
-   This function calls the C routine _calcPSFVE that uses the vectorial
+   This function calls the C routine _calc_psf_fast that uses the vectorial
    library vDSP fft functions.
    Pupil and phase have to be float, this is insured in this wrapper
    routine. If you have any care for speed, I recommend that your
@@ -50,7 +55,7 @@ func calcPSFVE(pupil,phase,scale=)
    Scale is a scaling factor on phase (the used phase is = to
    input phase * scaling factor)
    Warning: Works only for powers of 2 !
-   SEE ALSO: _calcPSFVE
+   SEE ALSO: _calc_psf_fast
  */
 {
   if (typeof(pupil) != "float") {pupil=float(pupil);}
@@ -66,13 +71,13 @@ func calcPSFVE(pupil,phase,scale=)
 
   if (dims(1) == 3) {nplans = int(dims(4));} else {nplans = 1n;}
   
-  err = _calcPSFVE(&pupil,&phase,&outimage,n2,nplans,scale);
+  err = _calc_psf_fast(&pupil,&phase,&outimage,n2,nplans,scale);
 
   return outimage;
 }
-extern _calcPSFVE
+extern _calc_psf_fast
 /* PROTOTYPE
-   int _calcPSFVE(pointer pupil, pointer phase, pointer image, int n2, int nplans, float scale)
+   int _calc_psf_fast(pointer pupil, pointer phase, pointer image, int n2, int nplans, float scale)
 */
 
 func fftw_wisdom(void)
@@ -176,20 +181,20 @@ extern _shwfs
 /* PROTOTYPE
    int _shwfs(pointer pupil, pointer phase, float phasescale,
    pointer phaseoffset, int dimx, pointer istart, pointer jstart,
-   int nx, int ny, int nsubs, int sdimpow2, long domask, pointer submask, pointer kernel,
-   pointer kernels, pointer kerfftr, pointer kerffti, int initkernels,
-   int kernelconv, pointer binindices, int binxy, pointer centroidw,
-   pointer fimage, pointer imistart, pointer jmistart, int fimnx,
-   int fimny, pointer flux, pointer rayleighflux, pointer skyflux,
-   pointer threshold, pointer bias,
+   int nx, int ny, int nsubs, int sdimpow2, long domask, pointer submask, 
+   pointer kernel, pointer kernels, pointer kerfftr, pointer kerffti, 
+   int initkernels, int kernelconv, pointer binindices, int binxy, int binxy2, int rebinfactor,
+   pointer centroidw, pointer fimage, pointer imistart, pointer jmistart, 
+   pointer imistart2, pointer jmistart2, int fimnx, int fimny, pointer flux, 
+   pointer rayleighflux, pointer skyflux, pointer threshold, pointer bias,
    pointer flat, float ron, float darkcurrent, int noise,
    int rayleighflag, pointer rayleigh, pointer bckgrdcalib, int bckgrdinit,
-   int bckgrdsub, pointer mesvec, int counter, int niter)
+   int bckgrdsub, pointer validsubs, pointer mesvec, int counter, int niter)
 */
 
-extern _shwfsSimple
+extern _shwfs_simple
 /* PROTOTYPE
-   int _shwfsSimple(pointer pupil, pointer phase, float phasescale,
+   int _shwfs_simple(pointer pupil, pointer phase, float phasescale,
    pointer phaseoffset, int dimx, int dimy, pointer istart, pointer jstart,
    int nx, int ny, int nsubs, float toarcsec, pointer mesvec)
 */
