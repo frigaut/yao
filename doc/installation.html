@@ -1,429 +1,118 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-<title>yao: installation</title>
+<title>yao::installation</title>
 <script type="text/javascript" src="scripts.js">void=null;</script>
 <link rel="stylesheet" href="styles.css" type="text/css">
 </head>
 <body>
 
 
-<div id="content">
+  <div id="left-column"><img src="images/kbkheaderleft.jpg"></div>
+  <div id="right-column"><img src="images/kbkheaderright.jpg"></div>
 
-<h1>yao</h1>
+  <div id="center">
 
-<div id="links">
-<p><b>Links</b></p>
-<a href="aosimul.html">Main page</a><br>
-<a href="installation.html">Installation</a><br>
-<ul class="linkpacked">
-<li><a href="#fromSources">From Sources</a>
-<li><a href="#fromBinaries">From Binaries</a>
-<li><a href="#InstallingFFTW3">Installing FFTW3</a>
-<li><a href="#OsXYorickCompilation">Compile Yorick on OsX</a>
-</ul>
-<a href="examples.html">Examples and Scripts</a><br>
-<a href="performance.html">Performance</a><br>
-<a href="data-structures.html">Data structures and parfiles</a><br>
-<a href="feature-control.html">Controlling Features</a><br>
-<a href="screenshots.html">Screenshots</a><br>
-<a href="algorithms.html">Algorithms</a><br>
-<a href="ytkcontrol.html">Yao tk dynamic control</a><br>
-<a href="weblog.html">News/Weblog</a><br>
-</div>
+   <div id="banner">yao::installation</div>
 
+  <div id="links2">
+    <a href="index.html">HOME</a> &nbsp; | &nbsp;
+    <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp; 
+    <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp; 
+<!--     <a href="screenshots.html">SCREENSHOTS</a> &nbsp;  | &nbsp;  -->
+    <a href="news.html">NEWS</a> 
 
-<h2>Installation</h2>
+    </div>
 
-Installation presupposes a basic familiarity with the command line
+  <div id="container">
+<h2>Installation overview</h2>
+
+<p>These instructions have been updated on 12 October 2009.</p>
+<p>Basically there are three install methods (pick one):
+<ol>
+<li> <font class="highlight">From source</font>. You'll get the latest version of everything. Not too many dependencies to yao, so it's not too challenging. You will need a C compiler, <strong>or</strong>
+<li> using <font class="highlight">yorick's pkg_mngr</font>. <strong>or</strong> 
+  <li> on several Linux distributions (Ubuntu, Archlinux, Fedora), using the <font class="highlight">distribution package manager</font> (apt-get/synaptic, pacman,yum)
+</ol>
+
+Yorick/yao generally install without problem on any recent flavor of Linux or  osx. As usual, it will work better if your OS is up to date and not too old. Note that yorick, as it is written in ANSI-C, should basically compile on any xorg-enabled platform with a gcc compiler. The same goes for FFTW, and yao (except the optional gtk interface, which requires gtk libraries and, mostly, a whole gnome environment).
+
+<h2>Option 1: From Source</h2>
+
+<p>Installation from source presupposes a basic familiarity with the command line
 environment. In the following, I give instructions that should be
-enough to get you out of troubles.  
-
-<p>If you want to install Yao on an Apple machine and do not want to
-go through the trouble of installing from source, jump <a
-href="#fromBinaries">here</a>.
-
-<p>Thanks to Yorick, Yao runs on a variety of *nix platforms. The
-installation ranges from straighforward (installing binaries on an
-apple platform) to moderately complex.
-
-The following gives a <font class="highlight">summary</font> of what
-your options are and <font class="highlight">what you will need to
-install</font>:
-
-<ul>
-<li>On a <font class="highlight">Macintosh</font>:
-<ul>
-<li>From binaries (everything included: yao_mac_binaries.tgz) 
-<li>From source:
-<ul>
-<li>Yorick distribution (yorick-1.6.01.tgz) if you don't already have
-yorick installed.  
-<li>Yao package (yao.tar.gz). This includes ytk.
-<li>FFTW if you select to run yao_fftw.
-</ul>
-</ul>
-<li>On a <font class="highlight">Linux/Unix machine </font>(from source):
-<ul>
-<li>Yorick distribution (yorick-1.6.01.tgz) if you don't already have
-yorick installed.  
-<li>Yao package (yao.tar.gz). This includes ytk.
-<li>FFTW
-</ul>
-<li>On top of that, you will have to have 
-<font class="highlight">tcltk</font> installed to use yaotk (optional).
-</ul>
-
-<p>Once you are done with the installation, go to the <a
-href="examples.html">Examples & Scripts</a> page.
-
-<a name="fromSources"></a>
-<h2>Install from sources</h2>
-
-<ol class="spaced">
-
-<li>Download the latest Yorick distribution from the <a
-href="../yorick/doc/index.html">yorick
-site</a> (here is a copy of <a
-href="../yorick/yorick-1.6.01.tgz">yorick-1.6.01.tgz</a>). Installation is
-straighforward (see the README file in the main distribution
-directory). I suggest you
-install yorick in <code>~/yorick-1.6</code> (just put
-<code>yorick-1.6.01.tgz</code> in your home directory, gunzip and
-untar). If you already have yorick installed you may of course skip
-this last point.
-
-
-<li>Once you have yorick compiled, checked and installed (in essence:
-<code>make config; make; make check; make install;</code>, see this 
-<a href="#OsXYorickCompilation">link</a> for details on how to 
-compile on OsX machines), download
-<a href="yao.tar.gz">yao.tar.gz</a>.  
-
-<li>Create a directory "contrib" in the main yorick directory
-(<code>~/yorick-1.6/contrib</code>). Put <code>yao.tar.gz</code> in
-the contrib directory. Gunzip and untar (<code>gunzip yao.tar.gz; tar
-xvf yao.tar;</code>).
-
-<li>Copy the graphic style file directory where it belongs:
-<pre>
-mv ~/yorick-1.6/contrib/Gist ~/.
-</pre>
-or just copy the graphic files into the main distribution directory:
-<pre>
-cp ~/yorick-1.6/contrib/Gist/* ~/yorick-1.6/g/.
-</pre>
-
-at this point you may want to create a yorick user's directory, copy
-the yao example directory in there and create a directory for the
-phase screens:
-<pre>
-mkdir ~/Yorick
-cp -pR ~/yorick-1.6/contrib/yao/examples ~/Yorick/examples
-mkdir ~/Yorick/data
-</pre>
-<li>Compile the Yao package.
-<ul>
-<li><font class="highlight">Apple platforms</font> (anything
-running OsX):
-<ul>
-<li>You will need to have a C compiler installed. The vanilla version
-of OsX does not come with one. Install the Developer tools, normally
-provided on a CD with your OsX distribution.
-        
-<li>Yorick's graphics run on Xwindows. You need apple's X11.app or
-Xfree86 installed and started.
-
-<li><code>cd ~/yorick-1.6/contrib/yao/yao_veclib</code>
-
-<li>All instructions to compile and link yao are in the README
-file. Just cut and paste from there. Note that if you elect to run the 
-FFTW version of yao (I don't see why, as the veclib version is 
-simpler to install and faster), you may have to edit the Makefile 
-to point to your
-fftw3 include and lib directories. Instructions are in the README file.
-Basically, the whole process boils down to (you may want to set the
-environment variable COPTIONS or specify the COPTIONS on the make 
-plugin line, see the README file):
-<pre>
-yorick -batch make.i
-make plugin
-make check-plug
-make install-plug
-</pre>
-You will have to edit the Makefile and modify the YORICK_EXE
-variable to point to the yorick executable (see the README file).
-
-<li>You are set.
-</ul>
-    
-<li><font class="highlight">Linux platform</font>:
-<ul>
-<li>You will need to install FFTW3 before you install Yao. This <a
-href="#InstallingFFTW3">link</a> will guide you. Once it is done,
-proceed to the next step.
-
-<li><code>cd ~/yorick-1.6/contrib/yao/yao_fftw</code>
-
-<li>All instructions to compile and link yao are in the README
-file. Just cut and paste from there. It 
-boils down to:
-<pre>
-yorick -batch make.i
-make plugin
-make check-plug
-make install-plug
-</pre>
-
-You will most probably have to edit the Makefile to point to your FFTW3
-distribution (you'll need to update YORICK_EXE as well, see README).
-
-<li>You are set. Before running yao, you should however go through
-some initialization of FFTW. On each machine, FFTW can be optimized to
-run as fast as possible. To do that, the code goes through many (or
-all) possible factorization for any given array dimension. This has to
-be done only once. I have written a small routine to do that. Follow
-this <a href="#fftw_wisdom">link</a>. If you don't do that I believe
-yao will still run but in a non-optimized mode (somwwhat slower).
-
-</ul>
-</ul>
-</ol>
-
-<a name="fromBinaries"></a>
-<h2>Install the Binaries (Apple only)</h2>
-
-The binary distribution includes both yorick-1.6.01, Yao and ytk. Do
-not install from binaries if you already have yorick installed.
-
-<p>Given the variety of Linux platforms and versions, I do not provide
-binaries for Linux. Also, Yao on Linux needs FFTW, which is a pretty
-big download which I did not want to include in a binary
-distribution. In any case, it's much better that you compile the
-package on your own platform to get the best results.
-
-<p>The following will install Yorick and Yao:
-<ol class="spaced">
-
-<li>Download the tarball <a href="yao_mac_binaries.tgz">
-yao_mac_binaries.tgz</a> and move it to your home directory.
-
-<li>gunzip and untar.
-
-<li>You should now have a yorick-1.06-01 directory, which contains the
-binary yorick distribution and the yao plugin.
-
-<li>For convenience, you should create a symlink to the yorick executable 
-somewhere in your path, e.g. (I have mine in ~/bin):
-<pre>
-cd ~/bin
-ln -s ~/yorick-1.6-01/bin/yorick ./yorick
-</pre>
-
-<li>You are done. Test it:
-<ul>
-
-<li>In a terminal, type "rehash" (if you have tcsh) or open a new
-Terminal/xterm to make you shell aware of the newly created "yorick"
-file
-
-<li>type "yorick". You should get this message:
-
-<pre>
-% yorick
- Copyright (c) 1996.  The Regents of the University of California.
- All rights reserved.  Yorick 1.6.01 ready.  For help type 'help'
-> 
-</pre>
-
-If you do, you are in business. Type "quit" to exit yorick. 
-You may want to run the test package
-to check that everything runs smoothly:
-
-<pre>
-cd ~/yorick-1.6-01/contrib/yao/examples
-yorick -batch test-all.i
-</pre>
-This might take a few minutes. It first creates phase screen for the
-simulations and then run a few test cases (shack-hartmann and
-curvature systems, with NGS and LGS). If all goes well, it should end with the message "All Tests OK".
-
-
-You can proceed with the <a
-href="examples.html">Examples and Scripts</a> page
-</ul>
-</ol>
-
-<a name="InstallingFFTW3"></a>
-<h2>Installing FFTW3</h2>
+enough to get you out of troubles. The process is essentially the same whatever OS you're on:</p>
 
 <ol>
-
-<li>The package can be obtained from <a
-href="http://www.fftw.org/download.html">www.fftw.org</a>. Download
-the vectorial version (Enabling the use of SIMD or Altivec), <a
-href="http://www.fftw.org/fftw-3.0.1-fma.tar.gz">fftw-3.0.1-fma.tar.gz</a>. Gunzip
-and untar.
-
-<li>Configure and compile. You have to use special compilation flags
-to enable the use of the vectorial processor on your machine (if you
-have any). Also, you have to enable fftw3f, i.e. float operation (yao
-uses floats for FFTs). --enable-float enables float operations.
-
-<p>If you don't have root privilege, you can install fftw3
-locally. Use the --prefix to do that (see an example below)
-
-<p>Each machine takes different flags. A good resource to find out
-which one you should use is the speed benchmark pages at fftw.org (<a
-href="http://www.fftw.org/speed/">http://www.fftw.org/speed/</a>)
-i.e. <a
-href="http://www.fftw.org/speed/g5-2GHz/">http://www.fftw.org/speed/g5-2GHz/</a>
-for the G5.
-
-<p>For an Dual Ahtlon, I used:
-
-<pre>
-./configure --enable-float --enable-k7 CFLAGS="-O2 -fomit-frame-pointer -Wall -W
-  -Wcast-qual -Wpointer-arith -Wcast-align -pedantic -malign-double -fstrict-aliasing
-  -mpreferred-stack-boundary=4 -mcpu=pentiumpro" -prefix="/home/frigaut/fftw3/"</pre>
-
-The <code>-prefix="/home/frigaut/fftw3/"</code> points to the local
-installation directory. Use this if you don't have the root password
-to install stuff in /usr/local/ on your system. If you do have root
-privileges, you might as well not use the <code>--prefix</code> flag
-and run the <code>make install</code> as root, which will install
-fftw3 in <code>/usr/local</code>.
-
-<p>For a G5, I use:
-<pre>
-./configure --enable-float --enable-altivec CFLAGS="-O3 -fomit-frame-pointer 
-  -fstrict-aliasing -mcpu=970 -mtune=970 -mpowerpc-gpopt"</pre>
-
-<p>For a G4:
-<pre>
-./configure --enable-float --enable-altivec CFLAGS="-O3 -fomit-frame-pointer 
-  -mcpu=7450 -faltivec"</pre>
-
-<li>Then:
-<pre>
-make
-make install
-</pre>
-or <code>sudo make install</code> to install as root.
+  <li>Install yorick (<a href="installation_details.html#install_yorick">howto</a>)</li>
+  <li>Install the plugins yorick-yutils and yorick-imutil (<a href="installation_details.html#install_plugins">howto</a>)</li>
+  <li>Install FFTW (<a href="installation_details.html#install_fftw">howto</a>)</li>
+  <li>Install yao (<a href="installation_details.html#install_yao">howto</a>)</li>
 </ol>
 
-<a name="OsXYorickCompilation"></a>
-<h2>Compiling Yorick on OsX</h2>
+<p>Detailled instructions are <a href="installation_details.html">here</a>. Once you are done, proceed to the <a href="#test_yao">test</a> section.</p>
 
-<p>These notes apply to Panther. I haven't tested it with 10.2, but there 
-should be no major issues.
+<h2>Option 2: Using yorick's pkg_mngr</h2>
 
-<p>You will need to have a C compiler installed. The vanilla version
-of OsX does not come with one. Install the Developer tools, normally
-provided on a CD with your OsX distribution.
+<p>This method does not install yorick; only yao and its dependent plugins and libraries (refer to method 1 or 3 if you need to install yorick).</p> 
+<p>Using <code>pkg_mngr</code> should be very simple. One thing though: the pkg_mngr binary packages are not always up to date; they are released for a number of binary platforms (osx and linux: ppc, i386/x86 and amd64/x86-64), but because I'm the sole maintainer and there are so many platforms, I am often short of time or machine availability to update all plugins (in particular, I do not have access to PPC anymore). Nevertheless, it should generally work. The bonus of this approach is that it also include static libraries for the dependent packages (e.g. FFTW), so the install is much streamlined. Yorick's pkg_mngr is safe: it will only install things in your yorick tree. There's also a "remove" option so you will always be able to come back if anything goes wrong.</p>
 
-<p><b>Note</b>: if you are using a Panther version < 10.3.4, there is a 
-bug in the system libm that breaks yorick SIGFRE delivery (ability to detect 
-and thus prevent NaNs). I strongly advise to upgrade to 10.3.4 or later if 
-you have the option. Otherwise, there are ways around it (David Munro 
-described it all in this <a href="MacOS103-bug.txt">file</a>). I'm not going 
-to expand on it further, as this has been fixed since 10.3.4.
-
-<p>The process of building Yorick is otherwise very simple. Basically, you do:
-
-<pre>cd ~/yorick-1.6/
-make config
-make
-make check (X11 need to be started at this point)
-make install
-</pre>
-<p>The executable is in <code>~/yorick-1.6/Darwin-Power_Macinstosh/bin/</code>.
-
-<p>You can gain a few percent speed by tweaking some flags during the 
-compilation. Use:
+<p>The instructions are simple:</p>
 <pre>
-make COPTIONS="some flags"
+$ yorick
+> #include "pkg_mngr.i"
+> pkg_setup
 </pre>
-
-<p>Alternatively, you can edit Make.cfg after the <code>make
-config</code>, or you can set the environment variable
-<code>CFLAGS</code> before doing the <code>make config</code>.  
-
-<p>I personaly use 
-<pre>COPTIONS="-O3 -fomit-frame-pointer -fstrict-aliasing -mcpu=970 -mtune=970 -mpowerpc-gpopt"</pre>
-for the G5, and
-<pre>COPTIONS="-O3 -fomit-frame-pointer -mcpu=7450"</pre>
-for the G4.
-
-
-Back to "<a href="#fromSources">Installation from Sources</a>".
-
-<a name="fftw_wisdom"></a>
-<h2>Running FFTW_wisdom</h2>
-
-If you are running using FFTW, you need to initialize/optimize FFTW
-for your hardware (valid only on one machine!).
-
-Start yao. The first time you run it, you should have the following
-message :
-
+<p>Except for the OS field, all the default should be ok, so just type return everywhere. When prompted about your OS:</p>
 <pre>
-frigaut:yao_fftw% ./yao
- I did not find a fftw_wisdom.dat file in ~/Yorick/
- When you have a minute (actually it takes several hours), run:
-
- init_fftw_wisdom; (default)
-
- or init_fftw_wisdom,nlimit; (run optimization up to n^nlimit)
-
- Copyright (c) 1996.  The Regents of the University of California.
- All rights reserved.  Yorick 1.6.01 ready.  For help type 'help'
-> 
+  What is your OS-machine type?
+    (1) darwin-i386
+    (2) darwin-ppc
+    (3) linux-x86
+    (4) linux-ppc
+    (5) linux-amd64
+    (6) darwin10-x86_64
+  PKG_OS (enter a number):
 </pre>
-
-<p>At this time you can choose to do it (run
-<code>init_fftw_wisdom</code>). Because it can take several hours, you
-can also choose to postpone it to the next night. But you will need to
-run before doing any serious work with yao (fftw version). To test if
-everything is okay, you can run now init_fftw_wisdom up to a low power
-of 2, e.g.
-
+Just type the corresponding number (note that darwin = OsX).Then:
 <pre>
-> init_fftw_wisdom,8
+> pkg_sync
+> pkg_list
+> pkg_install,"yao"
 </pre>
+This will fetch and install yao and its plugins dependencies (yutils and imutil). You will have to quit yorick and restart for it to find yao. Proceed to the <a href="#test_yao">test</a> section.
 
-<p>which will optimize fftw for array up to 128x128. That will get you
-going. Remember that when you have time, you should run the full monty
-(<code>init_fftw_wisdom</code>). Before you can run
-<code>init_fftw_wisdom</code> again, you need to delete the
-fftw_wisdom file (<code>~/Yorick/fftw_wisdom.dat</code>).
 
-<a name="directory_organization"></a>
-<h2>A note on directory organization</h2>
+<h2>Option 3: Using your Linux package manager</h2>
 
-<p>As already said, I advise to install yorick in
-<code>~/yorick-1.6</code>
+<p>For the easiest way to install yao, the winner is debian (and debian derivatives, e.g.
+Ubuntu): 
+<pre>sudo apt-get install yao</pre> 
+and then <code>yao</code> to
+run it (with the gtk GUI). Easy, but you won't get the very last version. For instance, I just release 4.5.0 and I am fairly sure it won't make it in Debian/Ubuntu before a few months.
+I have also built packages for Fedora and Mandriva,
+but I am afraid I haven't updated it lately (if you want to try it, the
+instructions are <a
+href="http://yorick.sourceforge.net/phpBB2/viewtopic.php?t=184">here</a>.
+These are the repos for yorick, but also include the plugins, and yao in
+particular). For archlinux (these ones are fresh as of october09), look <a href="http://yorick.sourceforge.net/phpBB2/viewtopic.php?t=243">here</a>.</p>
 
-<p>The root directory of Yao is in
-<code>~/yorick-1.6/contrib/yao</code>
+<h2>Test it</h2>
 
-<p>You will have to create <code>~/Yorick</code>, which is the yorick user 
-directory. It is convenient to put every yao user files in there. For 
-instance, you can copy the <code>yao/examples</code> directory somewhere 
-in <code>~/Yorick</code>. I have also my data directory (the one containing 
-the phase screens for yao, see the <a href="examples.html">
-Examples & Scripts</a> page) in <code>~/Yorick/data</code>.
-
-<p>
-
+<p>However you have installed <code>yao</code>, it should have created an "examples" directory with many example parameter files (use the command <code>find_examples_path()</code> within yao to print the path to the example directory).</p>
+<p>To test yao:
+<pre>cd yao_examples_directory  (see above)
+yorick -i test-all.i
+</pre>
+ </div>
 </div>
-Page updated on UT $Date: 2007-12-12 23:29:15 $
-<p>
- <a href="http://jigsaw.w3.org/css-validator/">
-  <img style="border:0;width:88px;height:31px"
-       src="http://jigsaw.w3.org/css-validator/images/vcss" 
-       alt="Valid CSS!">
- </a>
-</p>
+
+
+<div id="footer">
+<div id="footer-left"><img src="images/kbkfooterleft.jpg"></div>
+<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>  
+<div id="footer-center"></div>
+</div>
+
 </body>
 </html>

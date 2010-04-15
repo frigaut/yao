@@ -1,0 +1,85 @@
+// Aosimul par file, V2.4.0
+//-------------------------------
+sim.name           = "Simple SH6x6 w/ TT mirror, full diffraction WFS";
+sim.pupildiam      = 60;
+sim.debug          = 0;
+sim.verbose        = 0;
+
+//-------------------------------
+atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen         = &(Y_USER+"data/screen"+["1"]+".fits");
+atm.layerfrac      = &([1.0]);
+atm.layerspeed     = &([11.]);
+atm.layeralt       = &([0.]);
+atm.winddir        = &([0]);
+
+//-------------------------------
+nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+n   = 1;
+wfs(n).type          = "hartmann";
+wfs(n).lambda        = 0.65;
+wfs(n).gspos         = [0.,0.];
+wfs(n).gsalt         = 0.;
+wfs(n).gsmag         = 5.;
+wfs(n).shmethod      = 1;
+wfs(n).shnxsub       = 6;
+wfs(n).pixsize       = 0.1;
+wfs(n).npixels       = 10;
+wfs(n).noise         = 1;
+wfs(n).ron           = 3.5;
+wfs(n).shthreshold   = 0.;
+wfs(n).nintegcycles  = 1;
+wfs(n).optthroughput =0.5;
+
+//-------------------------------
+ndm                = 2;
+dm = array(dms,ndm);
+
+n  =1;
+dm(n).type         = "stackarray";
+dm(n).iffile       = "";
+dm(n).nxact        = 7;
+dm(n).pitch        = 10;
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.01;
+dm(n).push4imat    = 2;
+
+n  =2;
+dm(n).type         = "tiptilt";
+dm(n).iffile       = "";
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.0005;
+dm(n).push4imat    = 2;
+
+//-------------------------------
+mat.condition      = &([15.]);
+mat.file           = "";
+
+//-------------------------------
+tel.diam           = 7.9;
+tel.cobs           = 0.1125;
+
+//-------------------------------
+target.lambda      = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint       = 2e11;
+gs.zenithangle     = 0.;
+
+//-------------------------------
+loop.gain    = 0.6;
+loop.framedelay    = 1;
+loop.niter         = 2000;
+loop.ittime        = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 1000;
+loop.skipby        = 10000;
+loop.stats_every   = 200;
+loop.modalgainfile = "simulModeGains.fits";
+
+//-------------------------------

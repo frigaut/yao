@@ -1,0 +1,1507 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>yao::manual</title>
+  <script type="text/javascript" src="scripts.js">void=null;</script>
+  <!-- Uncomment the print.css line and comment the style.css line to get a printable version -->
+  <!-- <link rel="stylesheet" href="print.css" type="text/css"> -->
+  <link rel="stylesheet" href="styles.css" type="text/css">
+  <link rel="stylesheet" href="section_counters.css" type="text/css">
+</head>
+<body>
+
+  <div id="left-column"><img src="images/kbkheaderleft.jpg"></div>
+  <div id="right-column"><img src="images/kbkheaderright.jpg"></div>
+
+  <div id="center">
+
+    <div id="banner">yao::manual</div>
+
+    <div id="links2">
+      <a href="index.html">HOME</a> &nbsp; | &nbsp;
+      <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp; 
+      <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp; 
+<!--       <a href="screenshots.html">SCREENSHOTS</a> &nbsp;  | &nbsp;  -->
+      <a href="news.html">NEWS</a> 
+    </div>
+
+
+    <div id="container">
+
+      <p style="margin-top:20px;">
+
+
+<div id="toc">
+<div style="font-size:140%;padding:20px 0 10 0;"><strong>Table of Contents</strong></div>
+<ul>
+<li class="tocsec"><a href="#a_session_at_a_glance">1. A session at a glance</a></li>
+<li class="tocsubsec"><a href="#a_basic_yao_session">1.1 A basic yao session</a></li>
+<li class="tocsubsec"><a href="#the_basics">1.2 The Basics</a></li>
+<li class="tocsec"><a href="#the_parameter_file">2. The Parameter File</a></li>
+<li class="tocsec"><a href="#controlling_features">3. Controlling features</a></li>
+<li class="tocsubsec"><a href="#overall_geometry">3.1 Overall Geometry</a></li>
+<li class="tocsubsec"><a href="#pupil">3.2 Pupil</a></li>
+<li class="tocsubsec"><a href="#wavefront_sensors">3.3 Wavefront Sensors</a></li>
+<li class="tocsubsec"><a href="#deformable_mirrors">3.4 Deformable Mirrors</a></li>
+<li class="tocsubsec"><a href="#other_features">3.5 Other Features</a></li>
+<li class="tocsec"><a href="#yao_structures">4. Yao structures</a>         </li>        
+<li class="tocsec"><a href="#scripting_and_hacking_yao">5. Scripting and Hacking Yao</a></li>
+<li class="tocsubsec"><a href="#scripting">5.1 Scripting</a></li>
+<li class="tocsubsec"><a href="#hacking_yao">5.2 Hacking yao</a></li>
+</ul>
+</div>
+This manual is for yao v4.5.0. It was almost entirely re-written from previous versions. Written by Francois Rigaut on November 2009. Here is a link to a <a href="yao_manual.pdf">PDF version</a> of this manual.
+<a href="javascript:ReverseDisplay('notes_on_yorick');
+javascript:ReverseDisplay('make_square_pupil');
+javascript:ReverseDisplay('details_wfs_pupoffset');
+javascript:ReverseDisplay('user_defined_field_stop');
+javascript:ReverseDisplay('cwfs_subapertures_map');
+javascript:ReverseDisplay('user_defined_wfs');
+javascript:ReverseDisplay('dm_threshold_interactive');">
+Expand/Collapse</a> all detailled comments.</p>
+
+
+
+<a name="a_session_at_a_glance"</a>
+   
+<h2 style="clear:none;">A session at a glance...</h2>
+
+<a name="a_basic_yao_session"></a>
+
+<h3 style="clear:none;">A basic yao session</h3>
+<p>... consist of a few steps:</p>
+<ol>
+  <li>Craft up a parameter file describing the system you want to model, say <code>"mysystem.par"</code></li>
+  <li>Start yorick/yao</li>
+  <li><code>aoread,"mysystem.par"</code></li>
+  <li><code>aoinit,some keywords...</code></li>
+  <li><code>aoloop,some keywords...</code></li>
+  <li><code>go</code></li>
+</ol>
+
+
+<br><p>Let us now enter into some details.</p>
+
+<!-- <ol>
+  <li><strong>Craft up a parameter file describing the system you want to model</strong>, say <code>"mysystem.par"</code> <p>It is much better to start from an existing parameter file (<em>parfile</em> in the following). You can find example parfiles for many different kind of systems in the <code>examples</code> directory (to find out where your example directory is, use <code>find_examples_path()</code> within yao).</li>
+  <li><strong>Start yorick/yao</strong><p>Yorick has to be in your path (see installation instructions). cd to where your parfile is and type
+<pre>frigaut:~ $ yorick -i yao.i
+ Copyright (c) 2005.  The Regents of the University of California.
+ All rights reserved.  Yorick 2.1.05x ready.  For help type 'help'
+ Yao version 4.5.0, Last modified 2009oct23
+> 
+</pre>If you see this message, you should be good as far as the install.</li>
+  <li><strong>aoread,"mysystem.par"</strong>
+  <p>This includes the parameter file (which means it executes the statements in there) and checks syntax, missing values and consistency of parameters</p>
+<pre>> aoread,"sh6x6.par"
+Yao, Version 4.5.0, 2009oct23
+Checking parameters ... 
+No field stop defined for wfs 1. Setting to 'square'
+wfs(1).fssize has not been set, will be forced to subap FoV
+dm(1).coupling set to 0.200000
+dm(1).iffile set to sh6x6-if1.fits
+dm(2).iffile set to sh6x6-if2.fits
+ OK
+> </pre>
+<p>See? So, here the parfile cleared and there are only a few information messages. Sometime, it will put out warnings or even errors if the case arise. The parfile (link) that you feed yao is in fact a yorick include file, where you give a serie of values and directives. You will notice that you are filling structures (wfs, dm, atm, ...). These structures define your system and will be used throughout the yao session.</li>
+<li><strong>aoinit,disp=1</strong><p>
+<pre>> aoinit,clean=1,disp=1
+Checking parameters ... 
+OK
+WFS# |       Pixel sizes         | Subap. size | Number of pixels | #photons
+     | Desired  Quantum  Actual  | Max  Actual | Desired   Actual | /sub/iter
+1      0.10000  0.03182  0.09547   1.02  0.95    10x10      10x10   70735.5
+></pre></li>
+<li><strong>aoloop,disp=10</strong></li>
+<li><strong>go</strong>
+<pre>> aoloop,disp=10
+> go
+      /Short expo. image/Long expos. image/
+ Iter#/Max.S/Min.S/Avg.S/Max.S/Min.S/Avg.S/Time Left
+     1 0.000 0.000 0.000 0.000 0.000 0.000 Time left 00:00:00.0
+    51 0.345 0.345 0.345 0.371 0.371 0.371 Time left 00:00:00.0
+   101 0.371 0.371 0.371 0.391 0.391 0.391 Time left 00:00:-0.0
+   [...]
+   951 0.468 0.468 0.468 0.435 0.435 0.435 Time left 00:00:-0.0
+Finished on 00:38:50
+61.011659 iterations/second in average
+
+         lambda  XPos  YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.
+Star# 1    1.65   0.0   0.0       44.5   0.434      207.8         27.5
+Field Avg  1.65                   44.5   0.434      207.8
+Field rms                          0.0   0.000        0.0
+></pre></li>
+</ol>
+      
+<p>A very simple but typical run of <b>yao</b> starts with your favorite text 
+editor. First, you have to define the parameter file for your system. 
+Start from one of the given examples (*.par in the examples directory). 
+Run it. Then go back to the file, and together with these web pages (in 
+particular, have a look at the <a href="#yao_structures">Data 
+Structure</a> and the <a href="#controlling_features">Controlling features</a> 
+sections), try to figure out what all the variables mean and what they do. 
+Next you can edit the parfiles and change them as you see fit.</p> -->
+
+
+
+
+
+<a name="the_basics"></a>
+<h3>The Basics</h3>
+
+<p>Is yorick installed ? All set up as per the 
+<a href="installation.html">installation instructions</a> ?  Then go
+to the <code>examples</code> directory of the yao distribution; this might be in different locations
+depending on how you installed yao. To determine where is it is, run
+the command <code>find_examples_path()</code> within yao.
+Type the following at the unix prompt:</p>
+<pre>
+poliahu:~ $ yorick -i yao.i
+ Copyright (c) 2005.  The Regents of the University of California.
+ All rights reserved.  Yorick 2.1.05x ready.  For help type 'help'
+ Yao version 4.5.0, Last modified 2009oct23
+></pre>
+<p>You get the yorick and yao welcome messages and the yorick prompt.
+  Alternatively, you can start a normal yorick session and then
+  include yao at any time by typing:</p>
+<pre>> #include "yao.i"</pre>
+<p>You can double check everything is normal by typing:</p>
+<pre>> info,aoread
+func aoread(parfile)</pre>
+<p>if you get this message, you are in business. If not, fix your yorick 
+  installation. Click <a href="javascript:ReverseDisplay('notes_on_yorick')">here</a> to show/hide 
+notes on Yorick.</p>
+<div id="notes_on_yorick" style="display:none;">
+<ul>
+  <li>At this point it might be worth to mention that yorick, in its basic 
+    mode, does not have line recall or line editing capabilities. You can get that 
+    very easily into emacs, by installing yorick.el and yorick-auto.el in your 
+    emacs file/directory (if you installed yorick with the debian/ubuntu package manager, 
+    yorick.el should already be installed). See the instructions on top of yorick-#.#/emacs/yorick.el 
+    on how to do that. It's not complicated, and worth every second you 
+    invest in this 5mn installation. An alternative, that I personally use, is
+    to run yorick within rlwrap, a wrapper of readline. rlwrap provides command
+    recall, filename completion, main command completion, and history from 
+    session to session. Just install rlwrap and define yorick as an alias:
+    <pre>alias yorick='rlwrap -s 2000 -c -f ~/.yorick/yorick.commands yorick'</pre> 
+    or something equivalent. See the rlwrap man pages for more details.</li>
+  <li>Soon, you will need to know more about yorick and its syntax. The yorick 
+    manual is in <code>Y_HOME/doc/yorick.pdf</code>. A short help is at 
+    <code>Y_HOME/doc/refs.pdf</code> (<code>Y_HOME</code>, as well as 
+    <code>Y_SITE</code> and <code>Y_USER</code>, are yorick variables, get them at the yorick prompt).
+</ul>
+</div>
+
+<p>The first thing to do is to <strong>create phase screens</strong> (to simulate
+  turbulence). Type</p>
+<pre>> create_phase_screens,2048,256,prefix="screen"</pre>
+<p>This will create N (N=long dimension/short dimension, 8 in that case) 
+  phase screens of dimension 2048x256 suitable for use by <b>yao</b>. 
+  It is advised to choose dimensions that are powers of 2. Depending on 
+  your platform and CPU, it may take some time (1mn or so), 
+  as this routine is absolutely not optimized. This is a one shot run. 
+  You will not need to do that everytime you run <b>yao</b>, 
+  as you can, and are encouraged, to use the same phase screens. You may 
+  need to run it once more to create larger phase screens 
+  if the need arises, but that's about it. The phase screens
+  (screen1.fits to screen8.fits in the example above) will be created in the current
+  working directory. Move them somewhere convenient (I have them in
+  <code>Y_USER/data=.yorick/data</code> in my case). You will need to edit 
+  the <b>yao</b> parameter files to reflect the path and names of these 
+  phase screens if you put it somewhere different or used a different name (look for "atm.screen" in the parfile).</p>
+
+<p>Next, we will try to run "sh6x6", which is a simple 6x6 Shack-Hartmann 
+  example. After you have edited the "sh6x6.par" file (in the <code>examples</code> directory) and modified the 
+  path and filename of the newly created phase screens, if needed, type:</p>
+<pre>> aoread,"sh6x6.par"
+Yao, Version 4.5.0, 2009oct23
+Checking parameters ... 
+No field stop defined for wfs 1. Setting to 'square'
+wfs(1).fssize has not been set, will be forced to subap FoV
+dm(1).coupling set to 0.200000
+dm(1).iffile set to sh6x6-if1.fits
+dm(2).iffile set to sh6x6-if2.fits
+OK
+></pre>
+
+<p>What <code>aoread()</code> does is (a) read, or rather include, the
+  parameter file, which will fill the various structures containing
+  the definitions of the WFS, DM, loop, etc... and (b) go through a
+  simple check of the parameters to see if anything is missing or if
+  there are incompatible assigments, in which case it will print out an
+  error message (hopefully understandable). Otherwise, it prints out
+  informational messages or warnings.</p>
+<p>Then we need to initialize the system. <code>aoinit()</code> will
+  do that for us. It will initialize all
+  the arrays (pupil, etc), initialize the system pupil, the various
+  WFS, DM, etc. It will then compute the interaction matrix, invert it
+  and finally plot (if requested) a graphical system
+  configuration. The amount of information you get during
+  the <code>aoinit</code> is set by <code>sim.verbose</code>. The default verbose
+  in <code>sh6x6.par</code> is 0, which means you get no feedback
+  at all except for warnings and error messages. Let's set <code>sim.verbose</code>
+  to 1 and run <code>aoinit()</code>:
+  <pre>> sim.verbose=1
+> aoinit,disp=1,clean=1
+Checking parameters ... 
+OK
+ 
+> INITIALIZING PHASE SCREENS
+Reading phase screen "~/.yorick/data/screen1.fits"
+Reading phase screen "~/.yorick/data/screen2.fits"
+Reading phase screen "~/.yorick/data/screen3.fits"
+Reading phase screen "~/.yorick/data/screen4.fits"
+ 
+> INITIALIZING SENSOR GEOMETRY
+Kernel FWHM for the iMat calibration = 0.364983
+Pre-computing Kernels for the SH WFS
+ WFS# |       Pixel sizes         | Subap. size | Number of pixels | #photons
+      | Desired  Quantum  Actual  | Max  Actual | Desired   Actual | /sub/iter
+ 1      0.20000  0.03182  0.19093   2.04  1.91    10x10      10x10   70735.5
+NGS#1 flux varies between 42795 and 70736 photon/subap/it
+ 
+> Initializing DM influence functions
+  >> Computing Influence functions for mirror # 1
+
+Creating Influence function for actuator #1 2 3 4 5 6 7 8 9 10 11 12
+13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35
+36 37 38 39 40 41 42 43 44 45 46 47 48 49  
+
+  >> Storing influence functions in sh6x6-if1.fits... Done
+  >> Computing Influence functions for mirror # 2
+
+  >> Storing influence functions in sh6x6-if2.fits... Done
+ 
+> DOING INTERACTION MATRIX
+  DM #1: # of valid actuators: 45. (I got rid of 4 actuators after iMat)
+  >> valid I.F. stored in sh6x6-if1.fits
+Computing valid to extrap. matrix for DM#1
+ 
+> INITIALIZING MODAL GAINS
+I did not find simulModeGains.fits or it did not have the right
+   number of elements (should be 47), so I have generated
+   a modal gain vector with ones in it.
+
+ 
+> INTERACTION AND COMMAND MATRICES
+ >> Preparing SVD and computing command matrice
+Smallests 2 normalized eigenvalues = 0.014315    1.62232e-07
+4 modes discarded in the inversion
+ 
+Summary:
+Mirror #1, stackarray, 45 actuators, conjugated @ 0 m
+Mirror #2, tiptilt, 2 actuators, conjugated @ 0 m
+WFS # 1, hartmann (meth. 2), 32 subap., offaxis (+0.0",+0.0"), noise enabled
+D/r0 (500nm) = 42.4; 5000 iterations
+> </pre>
+  
+<p>At this point you have initialized everything.
+  The <code>aoinit()</code> keyword <code>clean</code> indicates that you want to
+  start from scratch, and ignore any influence function or
+  interaction/command matrix files on your disk.  The <code>disp=1</code> is to
+  get some graphical feedback. You are now ready to run the loop:</p>
+
+<pre>> loop.niter = 1000
+> aoloop,disp=10
+NGS#1 flux varies between 42795 and 70736 photon/subap/it
+
+> Starting loop with 1000 iterations
+> go
+ Iter#  Inst.Strehl  Long expo.Strehl  Time Left
+     1  0.000        0.000             00:00:18.8
+    51  0.407        0.393             00:00:15.1
+   101  0.412        0.410             00:00:13.7
+   [...]
+   901  0.647        0.504             00:00:01.4
+   951  0.546        0.507             00:00:00.7
+Saving results in /home/frigaut/yorick-2.1/share/yao/examples/sh6x6.res (ps,imav.fits)...
+time(1-2) =  9.49 ms  (WF sensing)
+time(2-3) =  0.03 ms  (Reset and measurement history handling)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.85 ms  (DM shape computation)
+time(5-6) =  1.44 ms  (Target PSFs estimation)
+time(6-7) =  1.53 ms  (Displays)
+time(7-8) =  0.05 ms  (Circular buffers, end-of-loop printouts)
+Finished on 00:26:30
+69.040800 iterations/second in average
+
+         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.
+Star# 1    1.65    0.0    0.0       44.1   0.507      172.0         35.1
+Field Avg  1.65                     44.1   0.507      172.0
+Field rms                            0.0   0.000        0.0
+> </pre>
+<p>You have ran 1000 iterations (<code>loop.niter</code>
+  in <code>sh6x6.par</code> is larger so we changed it before starting
+  the loop in the example above to keep your demo time reasonable). <code>disp=10</code> in the call means "<i>do your 
+  displays every 10 iterations</i>". Depending on your graphic card, 
+  displays can be pretty expensive (time), thus it helps to display less frequently.</p>
+
+<p>At any time, while the loop is running, you have access to the
+  yorick prompt. You can type regular commands, but the most useful
+  are:</p>
+  <ul>
+    <li><code>stop</code> which will pause the execution of the
+    loop, </li>
+    <li><code>cont</code> which will resume the loop where it paused,</li>
+    <li><code>reset</code> which will reset commands and dm
+    shape,</li>
+    <li><code>restart</code> which will restart from iteration 1. </li>
+  </ul>
+
+<p>at the completion of the requested number of
+  iterations, <code>go()</code> will automatically call the
+  function <code>after_loop()</code>, which outputs a number of things
+  as shown above (starting from "Saving results..."): Some statistics on execution time and number of
+  iterations per seconds, and the Strehl, FWHM, etc, on every "target"
+  for which positions were specified in the parameter file. You can
+  call <code>after_loop()</code> by hand at any time also, and you
+  can call it multiple times.</p>
+  
+<p>The resulting average images have been saved on disk ("sh6x6-imav.fits"), 
+  together with a small postscript file ("sh6x6.ps") that contains some 
+  graphics. Strehl, FWHM and 50 percent encircled energy are available as 
+  extern variables under the name strehl, fwhm and e50 (the averaged PSFs 
+  are also available, together with the history of DM commands, DM errors and 
+  WFS measurements if the keyword <code>savecb=</code> has been set):</p>
+<pre>> strehl
+[[0.434317]]
+</pre>
+<p>These variables contains the values for all the images (here there is only 
+  one, but there can be an arbitrary number of positions and wavelengths at 
+  which you want to estimate the performance). This can be useful in 
+  script, as detailled below.</p>
+
+<p>Finally, note that you can have access to some documentation on
+  each function by typing <code>help,function_name</code>, e.g:</p>
+<pre>> help, aoinit
+ /* DOCUMENT aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
+    Second function of the ao serie.
+    Initialize everything in preparation for the loop (aoloop).
+    Follows a call to aoread, parfile.
+ 
+    disp         = set to display stuff
+    clean        = if set, aoinit will start fresh. *Nothing* is kept from
+[...]</pre> Tip: sometimes the document section of a
+function is not up to date. You can get a peek on the actual function API by using info:
+<pre>> info, aoinit
+func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)</pre>
+
+
+
+
+<!-- <a name="main_functions"></a> -->
+
+<!-- <h2>Main Functions</h2> -->
+
+
+
+<a name="the_parameter_file"></a>
+
+<h2>The Parameter File</h2>
+
+<p>Here is an example of a parameter file (parfile). Comments below.</p>
+
+<pre>// YAO parameter file
+//-------------------------------
+sim.name           = "SH6x6 w/ TT mirror and WFS, full diffraction WFS";
+sim.pupildiam      = 120;
+sim.debug          = 0;
+sim.verbose        = 0;
+
+//-------------------------------
+atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen	   = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
+atm.layerspeed     = &([11.,20,29,35]);
+atm.layeralt	   = &([0.,400,6000,9000]);
+atm.winddir        = &([0,0,0,0]);
+
+//-------------------------------
+nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+wfs                = array(wfss,nwfs);
+
+wfs(1).type	   = "hartmann";
+wfs(1).lambda	   = 0.65;
+wfs(1).gspos       = [0.,0.];
+wfs(1).gsalt       = 0.;
+wfs(1).gsmag       = 5.;
+wfs(1).shmethod	   = 2;
+wfs(1).shnxsub	   = 6;
+wfs(1).pixsize     = 0.2;
+wfs(1).npixels     = 10;
+wfs(1).noise       = 1;
+wfs(1).ron         = 3.5;
+wfs(1).shthreshold = 0.;
+wfs(1).nintegcycles= 1;
+
+//-------------------------------
+ndm                = 2;
+dm                 = array(dms,ndm);
+
+n  =1;
+dm(n).type	   = "stackarray";
+dm(n).iffile	   = "";
+dm(n).nxact	   = 7;
+dm(n).pitch	   = 20;
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.01;
+dm(n).push4imat    = 100;
+
+n  =2;
+dm(n).type	   = "tiptilt";
+dm(n).iffile	   = "";
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.0005;
+dm(n).push4imat    = 400;
+
+//-------------------------------
+mat.condition      = &([15.]);
+mat.file	   = "";
+
+//-------------------------------
+tel.diam	   = 7.9;
+tel.cobs	   = 0.1125;
+
+//-------------------------------
+target.lambda	   = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint	   = 1e11;
+
+//-------------------------------
+loop.gain	   = 0.6;
+loop.framedelay    = 1;
+loop.niter	   = 5000;
+loop.ittime	   = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 10000;
+loop.skipby        = 10000;
+loop.modalgainfile = "simulModeGains.fits";
+
+//-------------------------------
+</pre>
+
+<p>The parfile defines entirely your system. As you see, it is made of
+  several (9) subsections, in which the 9 main yao structures are filled.
+  All of the structure members are listed in
+  the <a href="#yao_structures">yao structure</a> section, together with
+  a short explanation of each parameters (structure member). How to
+  combine these parameters to get yao to do what you want is explained
+  in the <a href="#controlling_features">controlling features</a>
+  section below.</p>
+<p>Several comments:</p>
+<ul>
+  <li>A parfile, and the one above in particular, does not have to
+    include <b>all</b> parameters. Only a few are mandatory for each
+    elements (WFS, DM) and the rest have reasonable defaults.</li>
+  <li>The parfile is in fact a yorick include file, and those are
+    yorick statements you see in there. So you can make use of yorick
+    loops, etc (see for example <a href="mcao2-bench.par">mcao2-bench.par</a> on how the wfs structure
+    is filled).</li>
+  <li>Because they can have variable length, and be dynamically re-defined, many structure members
+  are actually pointers (to vectors or arrays). A pointer in yorick
+  is assigned with the symbol <code>&</code> so
+  that <code>&a</code> is the pointer to the
+  quantity <code>a</code>. The notation <pre>atm.layerfrac = &([0.4,0.2,0.3,0.1]);</pre>
+  is a shorthand for<pre>a=[0.4,0.2,0.3,0.1];
+atm.layerfrac = &a;</pre>If you forget the &amp; sign, it should
+  generate an error.</li>
+  <li>There are about 20 parfiles in the example directory
+    (remember? <code>find_examples_path()</code> will tell you where
+    this directory is). Browse through these examples. It is
+    recommended to actually start from one of these, preferably one that is close to
+    the system you want to simulate, and adapt it to your needs, rather
+    than starting from scratch.</li>
+  <li>Once you are done, save the parfile and, in the same directory,
+  start yao and go through the sequence of <code>aoread(), aoinit(),
+      aoloop()</code> and <code>go()</code> as shown in section 1.</li>
+</ul>
+
+
+<a name="controlling_features"></a>
+
+<h2>Controlling Features</h2>
+
+<a name="overall_geometry"></a>
+
+<h3>Overall Geometry</h3>
+<p>In yao, you have to define the AO system you want to simulate. It 
+  starts by defining an entrance aperture (the system pupil). This is done 
+  through 2 parameters: the physical pupil size (e.g. diameter) in real world
+  units, meters. And because yao is a monte-carlo code, that uses arrays to 
+  generate phases and PSFs, we will need a pupil array and thus a pupil diameter 
+  in pixel. </p>
+<pre>sim.pupildiam  <- this is the pupil diameter in pixel (unitless)
+tel.diam       <- this is the telescope diameter in meters</pre>
+<div class="figure" style="width:50%;">
+  <a href="images/yao_pp_sh_setup.png">
+    <img class="scaled" src="images/yao_pp_sh_setup.png" /></a>
+  <p>Typical geometry of a system (WFS and DM)</p>
+</div>
+<p>yao also uses arrays to store the deformable mirror influence functions, etc.
+Generally speaking, there are two types of variable and arrays: the one referring 
+to quantities in the <font class="highlight">near field</font> (pupil plane or 
+close to it, e.g. altitude layers) and the one referring to quantities in the 
+<font class="highlight">far field</font> (Shack-Hartmann WFS spots, PSF image, 
+observed object, etc...). </p>
+<p>The figure on the right illustrates how you can set up a Shack-Hartmann + 
+  Stackarray deformable mirror (allegedly the most common type of AO system 
+  to date). I will review all these parameters in sections below, but 
+  what I want to emphasize here is the following:</p>
+<ul>
+  <li>The pupil is defined on a pixel array</li>
+  <li>The WFS has to be defined (at least SHWFS) to span an area commensurate 
+    with the pupil (see <a href="#wavefront_sensors">below</a>). However, it is possible to 
+    slightly oversize, downsize or even shift the WFS w.r.t. the pupil, if needed.</li>
+  <li>The DM actuator positions and span also has to be defined to span an area 
+    commensurate with the pupil and WFS (see <a href="#deformable_mirrors">below</a>). 
+    For a stackarray mirror, for instance, you typically want to have the 
+    DM pitch equal to the subaperture size (it doesn't have to be, but it is 
+    often the case). As for the WFS, you have the possibility to mismatch WFS 
+    and DMs by choosing a different pitch, or shifting the DM to induce 
+    misregistration.</li>
+</ul>
+<a name="field_of_view"></a>
+<h4>Field of view considerations</h4>
+<p>The size of the pupil is actually quite important. By property of the 
+  Fourier transform, the field of view in the far field will be defined by 
+  the sampling in the near field, following the relation:<pre>FoV = lambda/ps</pre>
+  where <code>ps = tel.diam/sim.pupildiam</code> is the pixel size in meter 
+  in the near field. So, for instance, </p>
+<table>
+  <tr><td><code>tel.diam [m]</code></td><td><code>sim.pupildiam [pixels]</code></td><td>FoV @650nm ['']</td><td>FoV @1.65microns ['']</td><td>Comment</td></tr>
+  <tr><td>8</td><td>128</td> <td>2.14</td><td>5.44</td><td></td></tr>
+  <tr><td>30</td><td>256</td><td>1.14</td><td>2.90</td><td>Probably too low</td></tr>
+  <tr><td>30</td><td>512</td><td>2.28</td><td>5.80</td><td></td></tr>
+</table>
+<p>Choose the field of view according to your application. But because 
+  eventually you will want to run simulations in presence of turbulence, 
+  <strong>I generally advise to take at least 2 points per r0</strong> 
+  (near field), and preferably 3. For <code>r0 = 16 cm</code>, that means a 
+  sampling of 8 cm (resp 5.33 cm), and for a 8-m telescope that would translate 
+  into 100 points (resp 150) across the pupil (<code>sim.pupildiam = 100</code>).
+  If this is not done, you will likely end up with aliasing in the SHWFS 
+  subaperture images (probably less so in the final image if it is estimated 
+  in the Near Infrared and the WFS works in the visible). 
+  This is bad and will bias your results. You have been warned.</p>
+
+
+<a name="pupil"></a>
+
+<h3>Pupil</h3>
+
+<p>Historically, yao was developed assuming circular pupils. So in any case, 
+  as said above, you will have to define <code>sim.pupildiam</code> and 
+  <code>tel.diam</code>. If another pupil shape is desired, it can be defined 
+  through a call to a user defined function <code>user_pupil()</code>. Click 
+  <a href="javascript:ReverseDisplay('make_square_pupil')">here</a> to show/hide 
+  an example.</p>
+<div id="make_square_pupil" style="display:none;">
+<pre>func make_square_pupil(void)
+{
+  extern ipupil, pupil;
+
+  ipupil = array(0.0f,[2,sim._size,sim._size]);
+  ipupil(sim._cent-sim.pupildiam/2+1:sim._cent+sim.pupildiam/2,
+         sim._cent-sim.pupildiam/2+1:sim._cent+sim.pupildiam/2) = 1.0f;
+  pupil = ipupil;
+}
+user_pupil = make_square_pupil;</pre>
+<p>This function needs to (re)define <code>ipupil</code> (used for the WFS) and 
+<code>pupil</code> (used for the PSF or for CWFS) to override the default 
+circular pupil definition (so ipupil and pupil needs to be in extern in your function). 
+Both arrays have to have dimension = <code>sim._size * sim._size</code>.
+The yao parameters that can be used to define the pupil arrays are </p>
+<ul>
+  <li> <code>sim._size</code>: size of the primary near field arrays used by 
+    yao: pupil, phase, etc...</li>
+  <li><code>sim._cent</code>: where the pupil center should be located in the 
+    pupil arrays. This could be <code>sim._size/2+1</code> (on a pixel) or 
+    <code>sim._size/2+0.5</code> (in between the 4 central pixels of the array), 
+    depending of your WFS configuration (see below).
+</ul>
+<p> A SH WFS geometry has some consequences on the centering of the pupil 
+  (<code>sim._cent</code>): if the number of subapertures in the telescope 
+  diameter (<code>sh.shnxsub</code>) is even, then obviously the center of the 
+  pupil will have to be within the 4 central subapertures, and because the 
+  subapertures size is defined as an integer number of pixels, this means the 
+  pupil has to be center in between 4 pixels. Conversely, if 
+  <code>wfs.shnxsub</code> is odd, <strong>and</strong> <code>wfs.npixpersub</code> 
+  is odd too, then the pupil has to be centered on a pixel 
+  (<code>sim._cent = sim/_size/2+1</code>). This is all handled automatically by 
+  the shwfs initialization function, but mentioned here for completeness as 
+  it is needed within user_pupil().</p>
+</div>
+
+
+
+
+<a name="wavefront_sensors"></a>
+
+<h3>Wavefront Sensors</h3>
+
+<h4>Shack-Hartmann WFS</h4>
+
+<p>Set <code>wfs.type="hartmann"</code>. The only other mandatory parameters to 
+  define are <code>wfs.shnxsub, wfs.npixpersub, wfs.npixels, wfs.pixsize and wfs.lambda</code>. 
+  Below I expand on these parameters.</p>
+
+
+<h5>Near Field</h5>
+<p>The <strong>near field parameters</strong> that need to be defined are:</p>
+<ul>
+  <li><code>wfs.shnxsub</code>: The number of subapertures in the aperture diameter</li>
+  <li><code>wfs.npixpersub</code>: The number of pixels across one subaperture, in the near field. 
+</ul>
+<p>For a "normal" system, we want <code>wfs.shnxsub * wfs.npixpersub = sim.pupildiam</code>. 
+  But as said above, you can make npixpersub larger or smaller if you want to 
+  investigate the effect of subapertures larger or smaller than ideal. Also, 
+  by setting <code>wfs.pupoffset</code> [meter], you can investigate the effect of 
+  misregistration of the WFS w.r.t the entrance pupil 
+  (<a href="javascript:ReverseDisplay('details_wfs_pupoffset')">Show/Hide details</a>).</p>
+<div id="details_wfs_pupoffset" style="display:none;">
+<p><i>For instance, I have this AO system mounted at Nasmyth and the derotator 
+  is not very well aligned, and shifts the pupil image on the 
+  lenslet array by 3% of the overall pupil diameter (say in X). There are 2 
+  ways to simulate this: I can either re-define the pupil (using 
+  <code>user_pupil()</code> as above) or I can use the pupoffset parameter:</i></p>
+  <pre>wfs.pupoffset = [0.03*tel.diam,0.];</pre>
+  <p><i>Of course, make sure tel.diam is defined in your parfile before this 
+    instruction (or put an explicit numerical value). Depending on what you want,
+    you will have to also offset the DM (or not) using dm.pupoffset (same units).</i></p>
+</div>
+
+<h5>Far Field</h5>
+<p>The <strong>far field parameters</strong> to define for a SHWFS are:</p>
+<ul>
+  <li><code>wfs.npixels</code>: The number of (CCD) pixel per subaperture in 
+    the far field</li>
+  <li><code>wfs.pixsize</code>: The SHWFS (CCD) pixel size, in arcsec.</li>
+</ul>
+<p>So that of course, the subaperture field of view will be 
+  <code>wfs.npixels * wfs.pixsize</code>. The whole discussion about 
+  sampling <a href="#field_of_view">above</a> of course applies here too, and 
+  field of view can not be arbitrary large. The pixel size is also constrained 
+  by FFT properties, and yao will round the pixel size you have selected to the 
+  nearest possible value (this should be printed out on screen during 
+  <code>aoinit</code> if <code>sim.verbose>=1</code>).</p>
+
+<h5>Field Stops</h5>
+<p>Since v4.5.0, yao can handle field stops (before also, but not in the same 
+  easy fashion), defined using the parameters <code>wfs.fstop, wfs.fssize and wfs.fsoffset</code>. 
+  You have the choice between no field stop (<code>wfs.fstop="none"</code>), 
+  or a square or round field stop (<code>wfs.fstop="square" or "round"</code>). 
+  If needed, you can use your own defined geometry by setting <code>wfs.fsname</code> 
+  to the name of a fits file that contains the image of a field stop 
+  (<a href="javascript:ReverseDisplay('user_defined_field_stop')">show/hide how</a>). 
+  The default is to use a square field stop of size equal to the subaperture 
+  field of view (i.e. optimal).</p>
+  <div id="user_defined_field_stop" style="display:none;">
+  <p> If you elect to do that, I advise you to first run the <code>aoinit()</code> 
+    without this parameter, but with some field stop defined 
+    (<code>wfs.fstop and wfs.fssize</code>). When aoinit is done, look at the 
+    array <code>*wfs(ns)._submask</code>. This is the field stop that has been 
+    computed with the fstop and fssize parameters. Note that this mask is 
+    applied in the C shwfs() routine on an image of the subaperture spots that 
+    has a different sampling than the one you requested with <code>wfs.npixsize</code>, 
+    so that the pixel size in <code>*wfs(ns)._submask</code> is 
+    actually <code>wfs.npixsize/wfs._rebinfactor</code>. 
+    You can start with <code>*wfs(ns)._submask</code> and create your own field 
+    stop image, save it into a fits file, set <code>wfs.fsname</code> 
+    and re-start <code>aoinit()</code>. Note that the field stop image can be 
+    real, i.e. represent partially transparent material.</p>
+  </div>
+
+<h5>Subaperture Coupling</h5>
+<div class="figure" style="width:40%;">
+  <a href="images/shfp.png">
+    <img class="scaled" src="images/shfp.png" /></a>
+  <p>Shack-Hartmann focal plane features</p>
+</div>
+<!-- <a href="images/shfp.png"><img src="images/shfp.png"  class="imglink" style="float:right;clear:both;" width="40%"/></a> -->
+<p>Since v4.5.0, yao correctly includes <strong>coupling between neighbor 
+  subapertures</strong>: In a real system, if there is no field stop, the spot 
+  image of a subaperture can wander into a neighbor subaperture and wreak 
+  havoc the slope estimation. yao now correctly handle this behavior: all 
+  subaperture images are computed, then added to an image that will include all 
+  spots. When all spots have been computed, each spot image is extracted and 
+  the spot position is estimated from there (center of gravity, soon
+  to come weighted CoG, etc...).</p>
+  
+<h5>Graphic configuration</h5>
+<p>When the correct debug setting is selected (<code>sim.debug>=1</code>), <code>aoinit()</code> will 
+  display a SHWFS far field graphic configuration diagram as shown on the 
+  right (click on it to enlarge). Reported on it are:</p>
+<ul>
+  <li>The SHWFS image. This image is accesible to the user in 
+    <code>*wfs._fimage</code>, if the need arises. This image includes the 
+    spots from <strong>all subapertures</strong>, including the ones which 
+    are not "valid" (because their fractional flux is lower than <code>wfs.fracIllum</code>). 
+    The valid subaperture spots are indicated by the thin grey squares.</li>
+  <li>For one spot, the diagram plots :
+  <ul>
+    <li>the subaperture effective field of view (green square), </li>
+    <li>the total field of view spanned by this subaperture (see discussion on 
+      field of view <a href="#field_of_view">above</a>), in which the spot 
+      can wander (red square) and</li>
+    <li>the outline of the field stop (in magenta).</li>
+  </ul>
+  </li>
+</ul>
+
+<a name="curvature_wfs"></a>
+
+<h4>Curvature WFS</h4>
+<p>Set <code>wfs.type="curvature"</code>. The only other mandatory parameters 
+  to define are <code>wfs.l, wfs.nsubperring and wfs.lambda</code>:</p>
+  <div class="figure">
+    <img class="scaled" src="images/cwfs_subaps_map.png" />
+    <p>CWFS Subaperture map</p>
+  </div>
+<ul>
+  <li><code>wfs.l</code> is the extra focal distance in an F/60 beam. 
+    The first curvature system for astronomy, the UH13, had a WFS input beam 
+    of F/60 (on the membrane mirror), and thus use to define extra focal distance
+    in a F/60 beam. I wrote aosimul, the precursor to yao, to model PUEO, the 
+    curvature system for the CFHT, which was largely based on UH13. So from then
+    on, to have a common ground, I (and other people) used to quote extra focal
+    distances in a F/60 beam. It is easy to make the conversion to another F ratio,
+    but yao only handles these units.<br>Note that the extra-focal image is 
+    computed as the Fresnel diffraction of the pupil complex amplitude, using 
+    the following algorithm:
+    <ul>
+      <li>Fourier Transform the pupil complex amplitude</li>
+      <li>add a quadratic (focus) term with amplitude <em>alpha</em></li>
+      <li> Fourier transform back</li>
+    </ul>
+    What you get after that is a defocused pupil image. This has limitations. 
+    For instance, it is not possible to compute an image too close to focus, as 
+    this would imply alpha = &#8734;. Of course, this depends of the sampling
+    in the near field, but typically, one can cover reasonable extra focal
+    distances of 5-10cm up (typical systems like PUEO use 15-20cm depending 
+    on the seeing, NICI on Gemini uses 40cm).</li>
+  <li><code>wfs.nsubperring</code>: typically, to date, most of the curvature
+    WFS for astronomy were based on a polar design: rings of subapertures. 
+    <code>wfs.nsubperring</code> is a pointer to a long vector that contains
+    the number of subaperture per ring: the first element is the number of
+    subapertures in the first ring, the second element the number
+    of subaperture in the second ring, etc.. so that <code>wfs.nsubperring</code>
+    could look like <code>&([6,12,18])</code> for a system with 3 rings of
+    with 6, 12 and 18 subapertures (the & is because <code>wfs.nsubperring</code>
+    is a pointer). yao automatically computes the inner and outer radius of
+    each ring so that every subaperture receives the same amount of light. 
+    The user can modify this behavior by setting <code>wfs.rint</code> and 
+    <code>wfs.rout</code> to speficy the inner and outer radius of each ring.
+    (<a href="javascript:ReverseDisplay('cwfs_subapertures_map')">show/hide details</a>).
+    <div id="cwfs_subapertures_map" style="display:none;">
+        <div class="figure"> <!-- style="padding:0px 0 0 0; margin-bottom:0px;"> -->
+          <img class="scaled" src="images/cwfs_subaps_map2.png" />
+          <p>CWFS, effect of rint and rout</p>
+        </div>
+    The subapertures are defined on an array, that is, each pixels of an array
+    of the same size as ipupil belongs to one and only one subaperture. After
+    an <code>aoinit()</code>, you can get a view of the subaperture number map
+    (figure 3) by calling:
+    <pre style="width:70%;">// call again the subap init function:
+subs = make_curv_wfs_subs(ns,sim._size,sim.pupildiam,cobs=tel.cobs);
+// build the one image where pixel value = subaperture number
+submap = (subs*(indgen(wfs(ns)._nsub)(-,-,)))(,,sum);
+// display it:
+fma; pli submap;</pre>
+<p><code>wfs.rint and wfs.rout</code> can modify this behavior and let the user 
+impose his/her own inner and outer radius for each ring. Just set 
+<code>wfs.rint</code> and <code>wfs.rout</code> to 
+the <em>N</em> ring inner radius (in fraction of pupil radius), e.g.</p>
+<pre style="width:70%;">
+  wfs.rint = &([0.2,0.6,0.9]);
+  wfs.rout = &([0.55,0.85,1.5]);
+</pre>
+<p>to produce something like on figure 4 (the red line is the pupil outline). This comes handy to take into
+  account dead zones between rings due to glue, etc... We will see later that the
+  same can be done for curvature DM. You can also rotate rings using 
+  <code>wfs.angleoffset</code>, which points to a float vector of same 
+  dimension as <code>wfs.nsubperring</code>, containing the angle offset per 
+  ring. For instance in the figure 4 case, if I wanted to have the external 
+  ring rotated 90 degrees CCW so that the green/white subaperture edge is 
+  at 12:00 o'clock, I would use <code>wfs.angleoffset = &float([0,0,90.])</code>
+</div>
+</li></ul>
+    
+<h4>Zernike WFS</h4>
+
+<p>Set <code>wfs.type="zernike"</code>. The only other mandatory parameter 
+  is <code>wfs.nzer</code>, which, as its name says, define the number
+  of zernike in the WFS. Note that this include piston, so <code>wfs.nzer=11</code>
+  would include up to spherical (included). Important note: The Zernike are 
+  the <strong>Noll Zernike</strong> (see Noll 1976), which are not the 
+  standard Zernike, but the one used most commonly in AO. Normalization??</p>
+
+
+<h4>User defined WFS</h4>
+
+<p>Set <code>wfs.type="name_of_your_function"</code>. </p>
+
+<p>Users can define their own WFS, to be integrated into the yao flow. The API 
+are relatively straighforward:</p>
+<pre>func user_wfs_func(ipupil,phase,ns,init=)</pre>
+where 
+<ul>
+  <li>ipupil and phase are the pupil and phase (size <code>sim._size</code>),</li>
+  <li><code>ns</code> is the WFS number (as defined in the parfile), and</li>
+  <li>init is just a flag set the first time this function is called (in 
+    <code>aoinit()</code>) that allow the user function to make some 
+    initializations, if needed.</li>
+</ul>
+<p>The function should <strong>return</strong> a measurement vector 
+  (<a href="javascript:ReverseDisplay('user_defined_wfs')">show/hide example</a>).</p>
+<div id="user_defined_wfs" style="display:none;">
+  <p><em>This is the simplest and dumbest example: a WFS that return the absolute 
+  piston of the input phase (I know...)</em></p>
+<pre>func piston_wfs(pup,phase,ns,init=)
+{
+  if (init) {
+    /* do whatever you need to do and keep possible
+       init variable in extern 
+       here we don't need to init anything. */
+  }
+  return avg(phase(where(pup)));
+}</pre>
+</div>
+
+<h4>Photometry and noise</h4>
+
+<p>Photometry and noise are only relevant (and implemented) for Shack-Hartmann and 
+Curvature WFS.</p>
+<p>All the photometry is controlled with the <code>wfs.gsmag, wfs.skymag</code>
+  and <code>wfs.zeropoint</code>. <code>wfs.zeropoint</code> is defined in 
+  photons/second/full_aperture (incident on the telescope aperture, i.e. after
+  crossing the atmosphere). Note that this depends on the telescope diameter 
+  (may be it was a bad choice to define it like that, but now it's done). It is
+  simple enough to convert known photometric zero point to yao zeropoint. The 
+  number of photons available for WFSing is derived from this zeropoint and the
+  above mentioned magnitude following regular equations (see also <code>wfs.optthroughput</code>).</p>
+<p>yao doesn't have a concept of ADU. Or rather, I am assuming one electron/ADU
+  across the board. So the signal in in electrons, and the noise is also in 
+  electrons.</p>
+
+
+<a name="deformable_mirrors"></a>
+
+<h3>Deformable Mirrors</h3>
+
+<p>The deformable mirrors are entirely and solely defined through their 
+  influence functions (shape and location). During the <code>aoinit()</code> phase, yao calls
+  DM influence function definition functions, for each DM in the parameter
+  file. Once computed, the influence functions are stored in the dm
+  structure (<code>*dm._def</code>) and saved on disk for future runs (<code>name-if#.fits</code> files). Note that if you have a set of commands, 
+  you can get the DM surface by calling</p>
+  <pre>surf = compute_dm_shape(nm,command_ptr);</pre>
+  <p>where command_ptr is a pointer to a float vector containing the DM
+  commands (e.g. <code>command_ptr = &(float(indgen(dm._nact)))</code>).</p>
+
+<h4>Stackarray (PZT,SAM,Piezo) DM</h4>
+<p>Set <code>dm.type="stackarray"</code>. The only other mandatory parameters
+  for stackarrays are <code>dm.pitch</code> and <code>dm.nxact</code>.</p>
+
+<h5>Dimensioning</h5>
+
+<p><code>dm.nxact</code> sets the number of actuators in the diameter of the DM
+(along the X or Y axis). This includes extrapolated/slaved actuators/guard rings.</p>
+
+<p><code>dm.pitch</code> sets the pitch (i.e. interactuator distance) in 
+near field <em>pixels</em>.</p>
+
+<p>Note that you have to dimension the stackarray DM according to your base system
+definition (<code>sim.pupildiam</code>). If you set 
+<code>sim.pupildiam=60</code> and <code>dm.nxact=7</code> and you do not desire
+an extra ring of actuator, then you should set <code>dm.pitch=10</code> to span
+the entire pupil diameter (7 actuators, 6 spaces between actuators...).</p>
+
+<h5>Influence functions</h5>
+
+<p>This was the first type of DM implemented in yao. With time, we have 
+implemented several type of influence functions. By default, it uses
+a functional form which was first derived by J.-P. Gaffard of then CGE 
+(now CILAS) to fit ZIGO measurements of CGE DM's real influence functions.
+It is possible to use newer (but not necessarily better) forms by
+  setting <code>dm.irexp</code>:
+<table border="0">
+  <tr><td><code>dm.irexp</code></td><td>functional form</td></tr>
+  <tr><td>0</td><td>Old, adhoc functional form fitted on actual ZIGO data</td></tr>
+  <tr><td>1</td><td>exp(-(d/irfact)^1.5)</td></tr>
+  <tr><td>2</td><td>sinc*gaussian</td></tr>
+</table>
+<p>irfact is set through <code>dm.irfact</code>.</p>
+
+<h5>Actuator Coupling</h5>
+
+<p>You can set the inter-actuator coupling with <code>dm.coupling</code>. 
+<code>dm.coupling=0.3</code> means 30% coupling between an actuator and its
+nearest neighbor. Typical value are 0.1-0.4. The almost universal consensus
+nowadays is to use coupling values of about 0.3.</p>
+
+<h5>Saving RAM &amp; Disk with dm.elt</h5>
+
+<p>Stackarray mirrors have very local influence functions. Therefore, for
+large number of actuators, most of the surface of the DM is zero. It
+is thus a big waste of RAM and disk (these influence functions take
+a lot of space). Enabling dm.elt will save most of this space back:
+only a small subsection of the whole DM surface is kept, surrounding
+the actuator. The coordinates of this subimage is kept, and used later
+by <code>comp_dm_shape()</code> to compute the correct DM shape. The
+call to <code>comp_dm_shape()</code> is transparent. Depending on the
+value of <code>dm.elt</code> for the current
+  DM, <code>comp_dm_shape()</code> will call the relevant C
+  routine. In fact, there is no compromise in setting <code>dm.elt</code>, but its
+  benefit really only show up for large stackarray DM (dm.nxact&ge;10).</p>
+
+
+<h5>Extrapolated/Slaved actuators</h5>
+
+<p>The idea in yao is to define all of your stackarray mirror in your parameter
+file, then run <code>aoinit()</code> and calibrate the iMat, then select 
+which actuators are controlled and which are extrapolated based on the WFS
+sensitivity to it. Use <code>dm.thresholdresp</code> to select this threshold.
+This is a fractional number, so 0 would filter all actuators and 1 would retain
+them all. 0.5 would retain all actuator which measurement <em>max response</em> 
+is larger than the max response of all actuators. Note that if you set 
+<code>dm.thresholdresp</code> to a negative value, <code>aoinit()</code> will
+enter an interactive mode into which you can test various values of 
+<code>dm.thresholdresp</code> 
+(<a href="javascript:ReverseDisplay('dm_threshold_interactive')">Show/Hide example</a>).</p>
+<div id="dm_threshold_interactive" style="display:none;">
+<p><em>In this example, I have a SHWFS with 8x8 subapertures and a stackarray
+  DM with 13x13 actuators. The relevant parts of the parfile are as follow:</em></p>
+<pre>sim.pupildiam       = 256;
+
+wfs                 = array(wfss,1);
+wfs(1).type         = "hartmann";
+wfs(1).shnxsub      = 8;
+wfs(1).npixpersub   = 32;
+wfs(1).lambda       = 0.65;
+wfs(1).pixsize      = 0.25;
+wfs(1).npixels      = 8;
+
+dm                  = array(dms,1);
+dm(1).type          = "stackarray";
+dm(1).iffile        = "";
+dm(1).nxact         = 13;
+dm(1).pitch         = 32;
+dm(1).alt           = 0.;
+dm(1).thresholdresp = -0.1;</pre>
+  <center>
+<img src="images/dmthres_before.png">
+<img src="images/dmthres_after.png">
+</center>
+<p><em>After doing the iMat calibration in <code>aoinit()</code>, and if 
+<code>dm.thresholdresp&lt;0</code>, you will be presented with the figure shown 
+above on the left. Notice that all actuators are red, which means they are
+currently all valid. In the yorick console, yao will write the current number of
+valid actuators. Answer "y" and enter a new threshold (here I entered 0.5). The
+plot updates (see figure above on the right) and now shows valid actuator (still in red) and extrapolated
+actuators (now in foreground color -here black-). Once you are satisfied, 
+answer "n" to "Again?" and yao will proceed.</em></p>
+<pre>DM #1: # of valid actuators: 157 Again ? y
+Threshold (old = -0.100000) : 0.5
+type return to continue...
+DM #1: # of valid actuators: 69 Again ? n
+  DM #1: # of valid actuators: 69. (I got rid of 88 actuators after iMat)
+  >> valid I.F. stored in test-if1.fits</pre>
+</div>
+<p>Once extrapolated actuators are selected, yao stores the valid influence functions
+and the extrapolated ones in 2 different files (e.g. 
+<code>test-if1.fits</code> and <code>test-if1-ext.fits</code>). Influence functions
+are not recomputed in further calls to <code>aoinit()</code> unless the
+clean keyword is set (in which case <code>aoinit()</code> restart from scratch
+and recompute <em>everything</em>).</p>
+
+<p>Normalization??</p>
+
+
+<h4>Bimorph (curvature) DM</h4>
+<p>Set <code>dm.type="bimorph"</code>. The other mandatory parameter
+  is <code>dm.nelperring</code>. </p>
+
+<p><code>dm.nelperring</code>: This is similar to wfs.nsubperring
+  (see <a href="#curvature_wfs">here</a>) and defines the number of
+  electrodes per ring.  </p>
+
+<p>Now, most curvature mirror are a bit different from this simple
+  design provided by defining <code>dm.nelperring</code>, in which
+  there is no gap between rings. Many curvature DMs
+  have for instance a large gap between the outer ring of electrodes
+  (the one that create mostly boundary conditions) and the next inner
+  electrode ring. To create more realistic DM electrode pattern, use
+  <code>angleoffset</code>, <code>rint</code>, <code>rout</code>,
+  <code>supportRadius</code> and <code>supportOffset</code>.</p>
+
+<p>The general idea follows what has been exposed in the curvature WFS
+  area above. With <code>rint</code> and <code>rout</code>, one can
+  define the inner and outer radius of each ring of electrodes, expressed 
+  in fraction of the pupil radius. With
+  <code>angleoffset</code>, one can define a global rotation per ring,
+  and with the <code>support*</code> parameters, one can define the
+  physical properties of the 3 DM support points.</p>
+
+<p>That brings us to the next subject: how curvature DMs are
+  modelled. Right now, what we do is solve the Poisson equation,
+  imposing a given curvature over a given electrode and integrating
+  twice to get the DM surface. Then, we impose that the three points
+  defined as the support location go through the z=0 plane. It's that
+  simple. It means that we do not currently support fancier support
+  method like continuous support (e.g. by a rubber ring), 6 points support, etc..</p>
+
+
+
+<h4>Modal (Zernike, Karhuenen-Loeve) DM</h4>
+<p>Set <code>dm.type="zernike" or "kl"</code>. Other mandatory
+  keywords are <code>dm.nzer</code> (for zernike)
+  or <code>dm.nkl</code> (for KL), which specify the number of
+  modes. Note that nzer will start and include piston, while nkl will
+  not (there is formally no piston mode in the KL basis).</p>
+
+<h4>Segmented DM</h4>
+<p>Set <code>dm.type="segmented"</code>. The other mandatory
+  keywords is <code>dm.nxseg</code>.</p>
+
+<p><code>dm.nxseg</code> is the number of segment in the long diameter
+  (X axis).</p>
+<p><code>dm.fradius</code> stands for "filter radius". Segments are
+  created over a wider area than the nxseg defined above. Only
+  segments which distance to the (0,0) pupil coordinates is &le; fradius
+  will be kept. default dm.pitch*dm.nxseg/2. </p>
+
+<h4>User defined DM</h4>
+<p>Set <code>dm.type="name_of_your_function"</code> (as a string).</p>
+
+
+    <p>The API for the user provided DM function are as follow:</p>
+<p><pre>func make_my_dm(nm,disp=)</pre> where nm is the DM number. Use
+  the disp keyword to display whatever you need to display when this
+  routine is called. The goal of this routine is to create maps of the
+  influence functions. These maps have to be stored (thus this function
+  has to create and fill) in the array *dm._def
+  (dm._def is a pointer to the data). The proper way to do that is:</p>
+<pre>
+func make_my_dm(nm)
+{
+  extern dm;   // dm is extern (global)
+  dim = dm(nm)._n2-dm(nm)._n1+1; // <- important
+  def = array(float,[3,dim,dim,n_actuator]);
+  for (i=1;i<=n_actuator;i++) def(,,i) = some_form; // <- fill it to your taste
+  dm(nm)._def = &def;  // <- store influence functions
+  dm(nm)._nact = n_actuator;  // <- important, number of actuators
+}</pre>
+<p>Explanation: In this user supplied function, you have to define the
+  influence functions (*dm._def) and, importantly, the number of
+  actuators (dm._nact). Prior to the call to this
+  function, <code>aoinit()</code> has defined <code>dm._n1</code>
+  and <code>dm._n2</code>, which are the indices at which these
+  influence function will go in the big <code>sim._size x
+  sim._size</code> array used for FFT, etc. The influence functions
+  are reduced in size to save RAM, as they can
+  potentially take a lot of memory
+  space. Normally, <code>dm._n1</code> and <code>dm._n2</code> are
+  defined to include the pupil pixel diameter
+  (<code>sim.pupildiam</code>) plus 4 pixels padding on each side if
+  the DM altitude is zero (in the pupil), and are defined to span the
+  entire sim._size array if the DM altitude is above ground (as there
+  is no simple way to know where to stop exactly as this depends on
+  the WFS and target locations). Note that <code>dm</code> is defined
+  in extern as you are modifying its value.
+
+<h4>Tip-Tilt Mirror</h4>
+<p>Set <code>dm.type="tiptilt"</code>.</p>
+
+<p>This creates a regular tip-tilt mirror. The units in the command
+  vector are arcsecs.</p>
+
+
+<h4>Anisoplanatism "DM"</h4>
+<p>Set <code>dm.type="aniso"</code>.</p>
+
+<p>This has been implemented because of the need in MCAO to control
+  plate scale modes (also called anisoplanatism modes or quadratic
+  modes). You will need to set <code>dm.alt</code> to the altitude of
+  an existing DM of a regular type (e.g. stackarray) that will be
+  responsible for the creation of the anisoplanatism modes (see
+  <a href="mcao2-bench.par">mcao2-bench.par</a> for an example of aniso DM).</p>
+
+
+<h4>Hysteresis and misregistration/offset</h4>
+
+<h5>Hysteresis</h5>
+
+<p>Hysteresis is implemented at the top level so that it works for any
+  kind of DM (during the AO loop only). The parameter <code>dm.hysteresis</code> 
+  is fairly self explanatory: <code>dm.hysteresis=0.1</code> means 10% hysteresis.
+  
+<h5>Misregistration</h5>
+
+<p><code>dm.misreg</code> allow to induce DM misregistration (on the fly).
+  <code>dm.misreg</code> is expressed in pixels, so you will have to do
+  a small conversion to get it in other units, but this way, it works for
+  any kind of DM. Note that <code>dm.misreg</code> can be fractional (fraction of a pixel). Because 
+  the size of the array containing the DM influence function is limited to save
+  memory space, the misregistration using this parameter 
+  can only be of a few pixels (up to 4 I believe for a ground-conjugated DM). If you
+  wish to induce more registration, use the parameter <code>dm.pupoffset</code>
+  (see below).</p>
+  
+<h5>Offsets</h5>
+ 
+<p>Yao v4.5.0 introduced a new kind of influence function offset parameter: 
+  <code>dm.pupoffset</code>. <code>dm.pupoffset</code> is entered 
+  in <strong>meters</strong> (a 2 elements vector which contains the x and the y
+  offsets). Those are transversal offset of the influence functions in the
+  near field. This functionality is implemented in the 
+  <code>compute_dm_shape()</code> function, so it is general and works for
+  all types of DM. <code>dm.pupoffset</code> is intended for large offsets, 
+  and the influence functions are shifted by an integer number of pixels 
+  (the requested offset in meter, rounded to the nearest pixel, see
+  <code>sim.pupildiam</code> and <code>tel.diam</code>). If you want finer control over
+  the DM position, use <code>dm.misreg</code> (see above).
+<code>dm.pupoffset</code> is similar to <code>wfs.pupoffset</code> (see WFS 
+section), but for the DMs.</p>
+
+<a name="other_features"></a>
+
+<h3>Other Features</h3>
+
+<p>More to come (a note to myself).</p>
+
+<ul>
+  <li>disjoint pupils</li>
+  <li>loop parameters: framedelay, control law</li>
+  <li>Normalization of various parameters and arrays</li>
+  <li>Variables (aoinit or not aoinit?)</li>
+  <li>Vibrations parametrization</li>
+</ul>
+
+<a name="yao_structures"></a>
+
+<h2>Yao Structures</h2>
+
+Comment on notation: 
+<code>&float</code> = pointer to a float array/vector (idem for &long, &string, etc...). Define it as:
+<pre>
+atm(1).layerfrac = &([0.5,0.2,0.3]);
+</pre>
+I know, it seems weird, but there is a good reason to have done it like this.
+
+<table width="100%" style="clear:both;" class="struct">
+  <tr><th colspan="6">sim structure</th></tr>
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">name              </td><td>string   </td><td>N/A        </td><td>none       </td><td>no  </td><td>A name for this simulation run</td></tr>
+  <tr><td class="varname">pupildiam         </td><td>long     </td><td>pixels     </td><td>none       </td><td>yes </td><td>Pupil diameter</td></tr>
+  <tr><td class="varname">debug             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Debug level</td></tr>
+  <tr><td class="varname">verbose           </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Verbose level</td></tr>
+  <tr><th colspan="6">atm structure</th></tr>                     
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">dr0at05mic        </td><td>float    </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Dr0 at 0.5 microns, at zenith                   </td></tr>
+  <tr><td class="varname">screen            </td><td>&string  </td><td>N/A        </td><td>none       </td><td>yes </td><td>Phase screen file names                         </td></tr>
+  <tr><td class="varname">layerfrac         </td><td>&float   </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Layer fraction. Sum to one is insured in aoinit </td></tr>
+  <tr><td class="varname">layerspeed        </td><td>&float   </td><td>meter/sec  </td><td>none       </td><td>yes </td><td>Layer speed                                     </td></tr>
+  <tr><td class="varname">layeralt          </td><td>&float   </td><td>meter      </td><td>none       </td><td>yes </td><td>Layer altitude, at Zenith                       </td></tr>
+  <tr><td class="varname">winddir           </td><td>&long    </td><td>Unitless   </td><td>0          </td><td>yes </td><td>Wind dir (not operational, use 0 for now)       </td></tr>
+  <tr><th colspan="6">wfs structure</th></tr>
+  <tr><td>VARIABLE NAME                     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">type              </td><td>string   </td><td>N/A        </td><td>none       </td><td>yes </td><td>Valid types are "curvature", "hartmann", "pyramid", "zernike" or "user_function" where user_function is the name of a function defined by the user (see doc)     </td></tr>
+  <tr><td class="varname">lambda            </td><td>float    </td><td>micron     </td><td>none       </td><td>yes </td><td>WFS wavelength in microns                                                           </td></tr>
+  <tr><td class="varname">subsystem         </td><td>long     </td><td>N/A        </td><td>1          </td><td>no  </td><td>Subsystem this WFS belongs to                                                       </td></tr>
+  <tr><td class="varname">gsmag             </td><td>float    </td><td>Unitless   </td><td>0          </td><td>no  </td><td>WFS guide star magnitude. For LGSs, see below                                       </td></tr>
+  <tr><td class="varname">skymag            </td><td>float    </td><td>Unitless   </td><td>0 (no sky) </td><td>no  </td><td>WFS sky magnitude/arcsec^2. [0 means no sky]                                        </td></tr>
+  <tr><td class="varname">noise             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Enable noise (photon noise & read out noise)                                        </td></tr>
+  <tr><td class="varname">ron               </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>Read out noise                                                                      </td></tr>
+  <tr><td class="varname">darkcurrent       </td><td>float    </td><td>e-/s/pixel </td><td>0          </td><td>no  </td><td>Dark current                                                                        </td></tr>
+  <tr><td class="varname">gspos(2)          </td><td>float    </td><td>arcsec     </td><td>[0,0]      </td><td>no  </td><td>WFS guide star position [x,y]                                                       </td></tr>
+  <tr><td class="varname">gsalt             </td><td>float    </td><td>meter      </td><td>0          </td><td>no  </td><td>WFS guide star altitude, at zenith. 0 for infinity.                                 </td></tr>
+  <tr><td class="varname">gsdepth           </td><td>float    </td><td>meter      </td><td>0          </td><td>no  </td><td>WFS guide star depth in meter, at zenith (e.g. Na layer thickness)                  </td></tr>
+  <tr><td class="varname">laserpower        </td><td>float    </td><td>Watt       </td><td>0          </td><td>See comment</td><td>WFS laser power projected on sky (Na laser only). Required when using lasers. Exclusive with gsmag i.e. define one OR the other<td></tr>
+  <tr><td class="varname">filtertilt        </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Filter TT on this sensor (0=no)                                                    </td></tr>
+  <tr><td class="varname">correctUpTT       </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Correct uplink tip-tilt (0=no)                                                     </td></tr>
+  <tr><td class="varname">uplinkgain        </td><td>float    </td><td>Unitless   </td><td>0          </td><td>no  </td><td>Uplink TT loop gain                                                                 </td></tr>
+  <tr><td class="varname">dispzoom          </td><td>float    </td><td>N/A        </td><td>1.0        </td><td>no  </td><td>Zoom factor for the display, useful in multi-WFS configuration (typically around 1) </td></tr>
+  <tr><td class="varname">optthroughput     </td><td>float    </td><td>Unitless   </td><td>1.0        </td><td>no  </td><td>Optical throughput to WFS                                                           </td></tr>
+  <tr><td class="varname">disjointpup       </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>If set, the WFS#n will be filtered by an array disjointpup(,,n) that has to be defined by the user. see user_pupil(). Allow for GMT-type topology </td></tr>
+  <tr><td colspan="6" class="subth">Curvature WFS only keywords</td></tr>
+  <tr><td class="varname">l                 </td><td>float    </td><td>meter      </td><td>none       </td><td>yes </td><td>Extra focal distance in a F/60 beam                                                 </td></tr>
+  <tr><td class="varname">nsubperring       </td><td>&long    </td><td>Unitless   </td><td>none       </td><td>yes </td><td># of subapertures per ring. See doc                                                 </td></tr>
+  <tr><td class="varname">angleoffset       </td><td>&float   </td><td>degree     </td><td>0          </td><td>no  </td><td>CCW Offset angle for first subaperture of ring. See doc                                </td></tr>
+  <tr><td class="varname">rint              </td><td>&float   </td><td>Unitless   </td><td>See comment</td><td>no  </td><td>Inner radius for each ring, in fraction of pupil radius                             </td></tr>
+  <tr><td class="varname">rout              </td><td>&float   </td><td>Unitless   </td><td>See comment</td><td>no  </td><td>Outer radius for each ring, in fraction of pupil radius                             </td></tr>
+  <tr><td class="varname">fieldstopdiam     </td><td>float    </td><td>arcsec     </td><td>1.0       </td><td>no  </td><td>Diameter of field stop. Used <strong>only</strong> to compute sky contribution (with skymag)         </td></tr>
+  <tr><td colspan="6" class="subth"> Shack-Hartmann WFS only keywords</td></tr>
+  <tr><td class="varname">shmethod          </td><td>long     </td><td>N/A        </td><td>none       </td><td>yes </td><td>1= Geometric, simple gradient average over subaperture. 2=Diffractive, full propagation  </td></tr>
+  <tr><td class="varname">shnxsub           </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td># of subapertures in telescope diameter                                                  </td></tr>
+  <tr><td class="varname">pixsize           </td><td>float    </td><td>arcsec     </td><td>none       </td><td>yes </td><td>Focal plane: Subaperture CCD pixel size in arcsec                                        </td></tr>
+  <tr><td class="varname">npixels           </td><td>int      </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Focal plane: Final # of pixels per subaperture                                           </td></tr>
+  <tr><td class="varname">npixpersub        </td><td>long     </td><td>Unitless   </td><td>none       </td><td>no  </td><td>Pupil plane: # of pixel in a subaperture (to force npixpersub and bypass constraint that pupildiam should be a multiple of this number e.g. to investigate lenslet larger than pupildiam</td></tr>
+  <tr><td class="varname">pupoffset(2)      </td><td>float    </td><td>meter      </td><td>[0,0]      </td><td>no  </td><td>Pupil plane: Offset of the whole WFS subapertures w.r.t telescope aperture. Allow misregistration w.r.t telescope pupil and other funky configurations                </td></tr>
+  <tr><td class="varname">shthreshold       </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>Threshold for the computation of the subaperture signal from CCD spots  >= 0             </td></tr>
+  <tr><td class="varname">biasrmserror      </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>rms error on WFS CCD bias in electron                                                    </td></tr>
+  <tr><td class="varname">flatrmserror      </td><td>float    </td><td>Unitless   </td><td>0          </td><td>no  </td><td>rms error on WFS CCD flat, referenced to 1 (i.e. 0.1 mean 10% rms error). Typical value can be 0.01 </td></tr>
+  <tr><td class="varname">fsname            </td><td>string   </td><td>N/A        </td><td>none       </td><td>no  </td><td>Fits file with subaperture amplitude mask. It should have dimension 2^sdimpow2 square. Can be float or long.</td></tr>
+  <tr><td class="varname">fstop             </td><td>string   </td><td>N/A        </td><td>"square"   </td><td>no  </td><td>Valid fiels stop type are "none", "square" or "round"                                     </td></tr>
+  <tr><td class="varname">fssize            </td><td>float    </td><td>arcsec     </td><td>sub. size  </td><td>no  </td><td>Side (square) or diameter (round) of field stop                                           </td></tr>
+  <tr><td class="varname">fsoffset(2)       </td><td>float    </td><td>arcsec     </td><td>[0,0]      </td><td>no  </td><td>Field stop offsets [x,y]                                                                  </td></tr>
+  <tr><td class="varname">kernel            </td><td>float    </td><td>arcsec     </td><td>See comment</td><td>no  </td><td>FWHM in arcsec of WFS spot gaussian kernel. Default is computed as a function of D/r0 and only used during iMat calibration                                                                              </td></tr>
+  <tr><td class="varname">nintegcycles      </td><td>int      </td><td>Unitless   </td><td>1          </td><td>no  </td><td># of iterations over which to integrate before delivering slopes                          </td></tr>
+  <tr><td class="varname">fracIllum         </td><td>float    </td><td>Unitless   </td><td>0.5        </td><td>no  </td><td>Focal plane: Fraction of subaperture illuminated for the subaperture to be valid          </td></tr>
+  <tr><td class="varname">LLTxy(2)          </td><td>float    </td><td>meter      </td><td>[0,0]      </td><td>no  </td><td>Coordinates [x,y] of the laser projector, if any                                          </td></tr>
+  <tr><td class="varname">centGainOpt       </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Centroid gain optimization flag. Only for LGS (correctupTT and filtertilt must also be set for this to work) </td></tr>
+  <tr><td class="varname">rayleighflag      </td><td>int      </td><td>N/A        </td><td>0          </td><td>no  </td><td>Take rayleigh into account?                                                                </td></tr>
+  <tr><td colspan="6" class="subth">Zernike WFS only keywords</td></tr>
+  <tr><td class="varname">nzer </td>        <td>int           </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Zernike to be sensed. Starts at piston included. </td></tr>
+  <tr><th colspan="6">dm structure</th></tr>
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">type              </td><td>string   </td><td>N/A        </td><td>none       </td><td>yes </td><td>Valid types are "bimorph", "stackarray" "tiptilt", "zernike", "kl", "segmented", "aniso" or "user_function", where user_function is the name of a function provided by the user       </td></tr>
+  <tr><td class="varname">pitch             </td><td>long     </td><td>pixel      </td><td>none       </td><td>yes </td><td>Actuator pitch (pixel). stackarray/segmented only                                                   </td></tr>
+  <tr><td class="varname">subsystem         </td><td>long     </td><td>N/A        </td><td>1          </td><td>no  </td><td>Subsystem this DM belongs to                                                                        </td></tr>
+  <tr><td class="varname">iffile            </td><td>string   </td><td>N/A        </td><td>""         </td><td>no  </td><td>Influence function file name. Leave it alone.                                                       </td></tr>
+  <tr><td class="varname">alt               </td><td>float    </td><td>meter      </td><td>0          </td><td>no  </td><td>Conjugation altitude, at zenith                                                                     </td></tr>
+  <tr><td class="varname">hyst              </td><td>float    </td><td>Unitless   </td><td>0          </td><td>no  </td><td>DM actuator hysteresis (0. to 1.)                                                                   </td></tr>
+  <tr><td class="varname">push4imat         </td><td>float    </td><td>Volt       </td><td>20         </td><td>no  </td><td>Voltage to apply for iMat calibration. Note: the default is not OK for many configs. Change at will </td></tr>
+  <tr><td class="varname">thresholdresp     </td><td>float    </td><td>Unitless   </td><td>0.3        </td><td>no  </td><td>Normalized response threshold (in WFS signal) below which an actuator will not be kept as valid     </td></tr>
+  <tr><td class="varname">unitpervolt       </td><td>float    </td><td>mic/Volt   </td><td>0.01       </td><td>no  </td><td>Influence function sensitivity in unit/volt.  Stackarray: micron/Volt, Tip-tilt: arcsec/Volt.       </td></tr>
+  <tr><td class="varname">maxvolt           </td><td>float    </td><td>Volt       </td><td>none       </td><td>no  </td><td>Saturation voltage (- and +) in Volt. None if not set                                               </td></tr>
+  <tr><td class="varname">gain              </td><td>float    </td><td>Unitless   </td><td>1.0        </td><td>no  </td><td>Loop gain for this DM (total = this times loop.gain)                                                </td></tr>
+  <tr><td class="varname">misreg(2)         </td><td>float    </td><td>pixel      </td><td>[0,0]      </td><td>no  </td><td>DM misregistration [x,y]                                                                            </td></tr>
+  <tr><td class="varname">xflip             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Flip DM left/right (0=no)                                                                                 </td></tr>
+  <tr><td class="varname">yflip             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Flip DM up/down (0=no)                                                                                   </td></tr>
+  <tr><td class="varname">pupoffset(2)      </td><td>float    </td><td>meter      </td><td>[0,0]      </td><td>no  </td><td>Global offset of whole actuator pattern w.r.t pupil                                                 </td></tr>
+  <tr><td class="varname">disjointpup       </td><td>long     </td><td>M/A        </td><td>0          </td><td>no  </td><td>If set, dm(n) will be filtered by an array disjointpup(,,n) that has to be defined by the user. See user_pupil(). Allow for GMT-type topology.   </td></tr>
+  <tr><td colspan="6" class="subth">Stackarray-only (SAM, PZT) keywords</td></tr>
+  <tr><td class="varname">nxact             </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of actuator in pupil diameter                                                                </td></tr>
+  <tr><td class="varname">elt               </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>ELT mode: allow to save huge amount of RAM and time for the computation of the DM shape. No drawback</td></tr>
+  <tr><td class="varname">coupling          </td><td>float    </td><td>Unitless   </td><td>0.2        </td><td>no  </td><td>Influence function coupling coefficient                                                             </td></tr>
+  <tr><td class="varname">ecmatfile         </td><td>string   </td><td>N/A        </td><td>none       </td><td>no  </td><td>Valid to extrapolated projection matrix (extrap_com)                                                </td></tr>
+  <tr><td class="varname">noextrap          </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Set to disable use of extrapolated actuators                                                        </td></tr>
+  <tr><td class="varname">pitchMargin       </td><td>float    </td><td>Unitless   </td><td>1.44       </td><td>no  </td><td>Margin to include more corner actuators when creating inf.functions optional [1.44]                 </td></tr>
+  <tr><td class="varname">irexp             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Use original functional form (irexp=0) or exp(-(d/irfact)^1.5) model (irexp=1) or sinc*gaussian (irexp=2) </td></tr>
+  <tr><td class="varname">irfact            </td><td>float    </td><td>Unitless   </td><td>1.0         </td><td>no  </td><td>use when irexp=1 (see above)                                                                        </td></tr>
+  <tr><td colspan="6" class="subth">Bimorph-only keywords</td></tr>
+  <tr><td class="varname">nelperring        </td><td>&long    </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of electrodes per ring, e.g &([6,12,18])                                                     </td></tr>
+  <tr><td class="varname">angleoffset       </td><td>&float   </td><td>degree     </td><td>0          </td><td>no  </td><td>Offset angle for first electrode in ring                                                            </td></tr>
+  <tr><td class="varname">rint              </td><td>&float   </td><td>Unitless   </td><td>See comment</td><td>no  </td><td>Inner radius for each ring, see doc                                                                 </td></tr>
+  <tr><td class="varname">rout              </td><td>&float   </td><td>Unitless   </td><td>See comment</td><td>no  </td><td>Outer radius for each ring, see doc                                                                 </td></tr>
+  <tr><td class="varname">supportRadius     </td><td>float    </td><td>Unitless   </td><td>2.2        </td><td>no  </td><td>Radius of DM 3 support points, normalized in pupil radius                                           </td></tr>
+  <tr><td class="varname">supportOffset     </td><td>float    </td><td>dgree      </td><td>90         </td><td>no  </td><td>Angle offset of first support point                                                                 </td></tr>
+  <tr><td colspan="6" class="subth">Zernike DM-only keywords </td></tr>
+  <tr><td class="varname">nzer              </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Zernike modes, including piston??? </td></tr>
+  <tr><td colspan="6" class="subth">Karhuenen-Loeve DM-only keywords </td></tr>
+  <tr><td class="varname">nkl               </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Karhuenen-Loeve modes, including piston??? </td></tr>
+  <tr><td colspan="6" class="subth">Segmented DM-only keywords</td></tr>
+  <tr><td class="varname">nxseg             </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of segments in long axis (X)                                                                                                                                                                </td></tr>
+  <tr><td class="varname">fradius           </td><td>float    </td><td>pixel      </td><td>See comment</td><td>no  </td><td>Segments are created over a wider area than the nxseg defined above. Only segments which distance to the (0,0) pupil coordinates is <= fradius will be kept. default dm.pitch*dm.nxseg/2. </td></tr>
+  <tr><th colspan="6">mat structure</th></tr>
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">condition         </td><td>&float   </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Condition numbers for SVD, per subsystem. </td></tr>
+  <tr><td class="varname">file              </td><td>string   </td><td>N/A        </td><td>none       </td><td>??? </td><td>iMat and cMat filename. Leave it alone.                    </td></tr>
+  <tr><th colspan="6">tel structure</th></tr>
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">diam              </td><td>float    </td><td>meter      </td><td>none       </td><td>yes </td><td>Telescope diameter</td></tr>
+  <tr><td class="varname">cobs              </td><td>float    </td><td>Unitless   </td><td>0.         </td><td>no  </td><td>Central obstruction / telescope diameter ratio </td></tr>
+  <tr><td colspan="6" class="subth">Tip vibration parameters</td></tr>
+  <tr><td class="varname">tipvib_white_rms  </td><td>float    </td><td>arcsec     </td><td>0.         </td><td>no  </td><td>rms of vibration white noise                   </td></tr>
+  <tr><td class="varname">tipvib_1overf_rms </td><td>float    </td><td>arcsec     </td><td>0.         </td><td>no  </td><td>rms of vibration 1/f noise (from 1 Hz to cutoff) </td></tr>
+  <tr><td class="varname">tipvib_peaks      </td><td>&float   </td><td>Hz         </td><td>0          </td><td>no  </td><td>positions of vibration peak in PSD                 </td></tr>
+  <tr><td class="varname">tipvib_peaks_rms  </td><td>&float   </td><td>arcsec     </td><td>0          </td><td>no  </td><td>rms of each vibration peaks (defined above)    </td></tr>
+  <tr><td class="varname">tipvib_peaks_width</td><td>&float   </td><td>Hz         </td><td>1freq bin</td><td>no  </td><td>width of each vibration peaks (default 1 freq bin) </td></tr>
+  <tr><td colspan="6" class="subth">tilt vibration parameters</td></tr>
+  <tr><td class="varname">tiltvib_white_rms </td><td>float    </td><td>arcsec     </td><td>0.         </td><td>no  </td><td>rms of vibration white noise                   </td></tr>
+  <tr><td class="varname">tiltvib_1overf_rms</td><td>float    </td><td>arcsec     </td><td>0.         </td><td>no  </td><td>rms of vibration 1/f noise (from 1 Hz to cutoff) </td></tr>
+  <tr><td class="varname">tiltvib_peaks     </td><td>&float   </td><td>Hz         </td><td>0          </td><td>no  </td><td>positions of vibration peak in PSD                 </td></tr>
+  <tr><td class="varname">tiltvib_peaks_rms </td><td>&float   </td><td>arcsec     </td><td>0          </td><td>no  </td><td>rms of each vibration peaks (defined above)    </td></tr>
+  <tr><td class="varname">tiltvib_peaks_width</td><td>&float  </td><td>Hz         </td><td>1freq bin</td><td>no  </td><td>width of each vibration peaks (default 1 freq bin) </td></tr>
+  <tr><th colspan="6">target structure</th></tr>                  
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">lambda            </td><td>&float   </td><td>micron     </td><td>none       </td><td>yes </td><td>Image wavelengths in micron      </td></tr>
+  <tr><td class="varname">xposition         </td><td>&float   </td><td>arcsec     </td><td>none       </td><td>yes </td><td>"Targets" X positions in the field of view           </td></tr>
+  <tr><td class="varname">yposition         </td><td>&float   </td><td>arcsec     </td><td>none       </td><td>yes </td><td>"Targets" Y positions in the field of view            </td></tr>
+  <tr><td class="varname">dispzoom          </td><td>&float   </td><td>Unitless   </td><td>1.         </td><td>no  </td><td>Display zoom, useful for multi-targets. Typically around 1</td></tr>
+  <tr><th colspan="6">gs structure</th></tr>
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">zeropoint         </td><td>float    </td><td>See comment</td><td>none       </td><td>yes </td><td>Photometric zero point (#photons@pupil/s/full_aper, mag0 star). </td></tr>
+  <tr><td class="varname">zenithangle       </td><td>float    </td><td>degree     </td><td>0          </td><td>no  </td><td>Zenith angle. The zenith angle is used to compute: r0 off-zenith, atmopheric turbulence layer altitude, LGS altitude and thickness of Na Layer,  LGS brighness note that dm altitude is unchanged </td></tr>
+  <tr><td class="varname">lgsreturnperwatt  </td><td>float    </td><td>phot/cm2/s </td><td>22.        </td><td>no  </td><td>Sodium LGS return in photons/Watt/cm2/s at entrance pupil, at zenith. Modified by gs.zenithangle. Basically, you have to fold in this the sodium density and your model of return </td></tr>
+  <tr><th colspan="6">loop structure</th></tr>                    
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">niter             </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Total number of iterations                                                                                              </td></tr>
+  <tr><td class="varname">ittime            </td><td>float    </td><td>second     </td><td>none       </td><td>yes </td><td>Iteration time (sampling time)                                                                                   </td></tr>
+  <tr><td class="varname">gain              </td><td>float    </td><td>Unitless   </td><td>0          </td><td>See comment</td><td>Loop gain. Optional, but important!                                                                                             </td></tr>
+  <tr><td class="varname">leak              </td><td>float    </td><td>Unitless   </td><td>0          </td><td>no  </td><td>Leak term (0 means no leak)                                                                                                     </td></tr>
+  <tr><td class="varname">gainho            </td><td>&float   </td><td>Unitless   </td><td>0          </td><td>no  </td><td>Higher order gains (starting at 2nd order, up to 10th)                                                                                </td></tr>
+  <tr><td class="varname">leakho            </td><td>&float   </td><td>Unitless   </td><td>0          </td><td>no  </td><td>Higher order leaks (starting at 2nd order, up to 10th)                                                                                </td></tr>
+  <tr><td class="varname">framedelay        </td><td>long     </td><td>frames     </td><td>0          </td><td>no  </td><td>Loop delay (# of frames). Regular CCD 1 frame integration -> framedelay=1 + readout & Calculation -> framedelay=2      </td></tr>
+  <tr><td class="varname">startskip         </td><td>long     </td><td>iteration  </td><td>10         </td><td>no  </td><td>Number of iteration to skip before collecting statistics                                                                         </td></tr>
+  <tr><td class="varname">skipevery         </td><td>long     </td><td>iteration  </td><td>0          </td><td>no  </td><td>In phase screen, skip by "skipby" steps every "skipevery" iterations (0=none). See doc                                                                    </td></tr>
+  <tr><td class="varname">skipby            </td><td>long     </td><td>iteration  </td><td>10000      </td><td>no  </td><td>See above. This is to get better statistical coverage                                                             </td></tr>
+  <tr><td class="varname">stats_every       </td><td>long     </td><td>iteration  </td><td>4          </td><td>no  </td><td>Compute stats every so many iteration                                                                                   </td></tr>
+  <tr><td class="varname">jumps2swapscreen  </td><td>long     </td><td>Unitless   </td><td>0          </td><td>no  </td><td>Number of jumps (i.e. niter/skipevery) after which screens will be swapped (rotation, 2->1, 3->2... 1->last). Default is no jump.                          </td></tr>
+  <tr><td class="varname">modalgainfile     </td><td>string   </td><td>N/A        </td><td>""         </td><td>no  </td><td>Name of file with mode gains                                                                                             </td></tr>
+  <tr><th colspan="6">opt structure</th></tr>                     
+  <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">phasemaps         </td><td>string   </td><td>N/A        </td><td>none       </td><td>no  </td><td>Filename of phasemap. Z scale should be in microns     </td></tr>
+  <tr><td class="varname">alt               </td><td>float    </td><td>meter      </td><td>0          </td><td>no  </td><td>Equivalent altitude in m.                       </td></tr>
+  <tr><td class="varname">misreg(2)         </td><td>float    </td><td>pixels     </td><td>[0,0]      </td><td>no  </td><td>Misregistration [x,y] (similar to DM, see above)       </td></tr>
+  <!-- <tr><td>_cent          </td><td>float    </td><td>pixels     </td><td>sim._cent  </td><td>no  </td><td>center of the phase maps arrays (similar to sim._cent) </td></tr> -->
+  <!-- <tr><td colspan="6" class="subth"></td></tr>
+  <tr><th colspan="6"></th></tr>
+  <tr><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td></tr> -->
+</table>
+
+
+
+<a name="scripting_and_hacking_yao"></a>
+
+<h2>Scripting and Hacking Yao</h2>
+
+<a name="scripting"></a>
+<h3>Scripting</h3>
+
+<p>Thanks to yorick and the structure of yao, scripting is relatively easy. The principle is as follow:</p>
+<ul>
+  <li>read the parfile</li>
+  <li>init yao (aoinit)</li>
+  <li>Loop on parameters you want to loop on:</li>
+  <ul>
+    <li>set parameters</li>
+    <li>if needed, redo the aoinit (some parameters will need that)
+    <li>go through the loop N iterations</li>
+    <li>store the results</li>
+  </ul>
+  <li>Plot/save results</li>
+</ul>    
+
+<p>Here is a simple example you can find in the examples directory (<code>yao_loop_example.i</code>):</p>
+<pre>
+require,"yao.i";
+
+// check if generic phase screens exist, if not, create them:
+write,"CREATING PHASE SCREENS";
+if (!open(Y_USER+"data/screen1.fits","r",1)) {
+  create_phase_screens,1024,256,prefix=YUSER+"data/screen";
+ }
+
+// the "wait" is needed here:
+window,33,wait=1;
+
+// read out parfile
+aoread,"test.par";
+atm.dr0at05mic = 35; // be more gentle
+
+// Define vector on which we want to loop and final strehl array.
+// We want to estimate performance for 3 values of the guide star 
+// magnitude and 4 values of the loop gain (for instance)
+gsmagv = [6,9,12];           // guide star mag vector
+gainv  = [0.01,0.1,0.5,1.0]; // gain vector
+// strehl array to store results:
+strehlarray = array(0.,[2,numberof(gsmagv),numberof(gainv)]);
+
+// loop on gsmag and gain
+for (ii=1;ii<=numberof(gsmagv);ii++) {
+  for (jj=1;jj<=numberof(gainv);jj++) {
+    wfs(1).gsmag=gsmagv(ii);
+    loop.gain=gainv(jj);
+    // it's safer, but not always necessary, to call again
+    // aoinit (here for gsmag). some parameters do not need it.
+    aoinit,disp=1;
+    // Setup loop:
+    aoloop,disp=1;
+    // go: do all loop.niter
+    go, all=1;
+    // after_loop() is now called automatically at last iter of go()
+    strehlarray(ii,jj) = strehllp(0); // fill in result array
+    // and display results as we go:
+    window,33;
+    fma;
+    for (ll=1;ll<=ii;ll++) {
+      plg,strehlarray(ll,),gainv,color=-ll-4;
+      plp,strehlarray(ll,),gainv,color=-ll-4,symbol=4,size=0.6;
+      ylims=limits()(3:4); ymax=ylims(2); yspace=(ylims(2)-ylims(1))/15.;
+      plt,swrite(format="gsmag=%d",gsmagv(ll)),0.011,ymax-yspace*(ll-1), \
+        justify="LT",tosys=1,color=-ll-4;
+    }
+    logxy,1,0;
+    xytitles,"Loop Gain",swrite(format="Strehl @ %.2fmicrons",(*target.lambda)(0));
+    window,0;
+  }
+}
+</pre>
+<p>You can do all kind of scripting like this to find for instance the optimal 
+working point for a system in given conditions (above, what is the best gain for a 
+given GS magnitude). We could also have added a loop on <code>wfs.ittime</code> 
+in the example above. One has however to be careful: Probing multi-dimensional 
+spaces can quickly be overwhelming in execution time. Generally, I consider 
+that 10000 iterations are needed to give a statistically significant answer.
+So for instance, in the example 
+above. that would mean 4x3x10000=120000 iterations total.
+At 90 iterations/seconds, this means 1300 seconds (about 20mn). Adding 4 points for 
+<code>wfs.ittime</code> would lead to 480000 iterations, or 1 hour and 20mn. 
+This can quickly become prohibitive.</p>
+
+<a name="hacking_yao"></a>
+<h3>Hacking Yao</h3>
+
+<p>At one point or another, if you are serious about simulating your system, it 
+  is likely that you will need this or that feature, or modification to the existing
+  yao code.</p>
+<p>Go ahead and dive. Feel free to modify yao. It's open source after all. 
+  The goal of this too-short section is to give you some head start for doing
+  just that: hacking yao.</p>
+
+<p>So, various points, in no particular order:</p>
+<ul>
+  <li>The functions are kind of gathered by themes. The main file is <code>yao.i</code>, and includes the base functions <code>aoread(), aoinit(), aoloop(), go(), after_loop()</code> and more. Other important include files are:
+<ul>
+  <li><code>yao_wfs.i</code>: All functions related to WFS and their initialization.</li>
+  <li><code>yao_dm.i</code>: All functions related to DM and their initialization.</li>
+  <li><code>turbulence.i</code>: Functions to generate turbulent phase screens. Some more turbulence functions are in yao.i</li>
+    <li><code>yao_structures.i</code>: Definitions of yao structures.</li>
+  <li><code>aoutil.i and yao_util.i</code>: check_parameters, and in general utility functions that didn't fit anywhere else. </li>
+    <li><code>yao_fast.i and yao_utils.i</code>: Interface functions to the C routines. Mostly declaration of prototypes as per yorick plug_in APIs.</li>
+    <li><code>yaokl.i</code>: KL creation functions.</li>
+    <li><code>yao_fast.c</code>: C code for the SHWFS and CWFS, plus some Poisson and Gaussian noise fast functions.</li>
+</ul></li>
+  <li>Many variables are defined in extern. This means they are available at any level. Here is a subset of them:
+  <ul>
+    <li>All the yao structures: wfs, dm, atm, sim, mat, tel, target, gs, loop. There are sufficient examples in the code of how to address them. These will contain most of the information you may want.</li>
+    <li>Variables that may be useful to catch and store/analyze when the loop is finished are (loop in <code>go()</code> and <code>after_loop()</code> for more details):
+    <ul>
+      <li><code>imav(sim._size,sim._size,#_target,#_lambda)</code>: the averaged images for each target and at each requested wavelength. </li>
+      <li><code>strehl(#_target,#_lambda)</code> contains the long exposure image Strehl ratio for each target and each requested wavelength.</li>
+      <li><code>fwhm(#_target,#_lambda)</code> contains the long exposure image FWHM for each target and each requested wavelength [mas].</li>
+      <li><code>e50(#_target,#_lambda)</code> contains the long exposure image 50% encircled energy diameter for each target and each requested wavelength [mas].</li>
+      <li><code>cbmes, cbcom, cberr</code> are the "circular buffers" that contain all WFS measurements, DM commands and DM errors (updates to DMs at each iterations). Only saved if keyword <code>savecb</code> is set in call to <code>aoloop()</code>.</li>
+    </li>
+  </ul>
+  <li><code>iMat, cMat</code>: Interaction and control matrices. One axis is the WFS axis. The WFS measurements are put in sequence: all X, then all Y for WFS#1, then all X, then all Y for WFS#2, etc... The other axis is the DM axis. Here also, all valid actuators for DM#1, then DM#2, etc...</li>
+  <li><code>modToAct, mesToMod, eigenvalues</code>: The U, transpose of V and eigenvalues of the SVD inversion. Over the unmasked eigenvalues, cMat is computed as follow:
+<pre>cmat = ( modToAct(,+) * mev(+,) )(,+) * mesToMod(+,);</pre></li>
+
+  </ul>  
+  </li>
+</ul>
+
+
+<h2>Conclusion</h2>
+
+<p>There is a lot of things missing in this documentation. I will try to complement it as time allows. I hope however that this will help you getting the best out of yao and avoiding frustration. Yao is a fairly complete AO simulation tool. It is flexible and fast. Flexibility means I can not exert too much control over the user input parameters. If I were to do that, I would necessarily impose a carcan over your creativity, and we want to avoid this at all cost. So, yes, there is a steep learning curve, but at the end, you should be able to wrestle yao into submission! I have only one more advice to give: check your results. And recheck them. And make sure it makes physical sense.
+
+
+    </div>
+  </div>
+
+
+  <div id="footer">
+    <div id="footer-left"><img src="images/kbkfooterleft.jpg"></div>
+    <div id="footer-right"><img src="images/kbkfooterright.jpg"></div>  
+    <div id="footer-center"></div>
+  </div>
+
+</body>
+</html>

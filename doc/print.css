@@ -2,12 +2,12 @@ body {
   background: #FFFFFF; 
   /*background: #333366; */
   color:#202020; 
-  font-size:10pt;
-  margin:30px 80px 30px 80px;
+  font-size:11pt;
+  margin:30px 20px 30px 20px;
   padding:0px 0px 0px 0px;
   font-family : Verdana, sans-serif;
   line-height: 140%;
-  background-image: url("images/kbkbgcolor.jpg");
+  width:950px;
 }
 
 #left-column
@@ -16,6 +16,7 @@ body {
   width: 45px;
   margin: 0;
   padding: 0;
+  visibility : hidden; display : none;
 }
 
 #right-column
@@ -24,14 +25,13 @@ body {
   width: 45px;
   margin: 0;
   padding: 0;
+  visibility : hidden; display : none;
 }
 
 #center
 {
   background:white;
   margin: 0 9 0 9;
-  border-left:   2px solid #bbbbbb;
-  border-right:   2px solid #bbbbbb;
 
 }
 
@@ -39,21 +39,23 @@ body {
 #banner
 {
   width:100%;
-  height: 100px;
+  height: 60px;
   margin:0 0 0 0;
-  padding:36 0 0 0;
-  background-image: url("images/kbkheadercenter.jpg");
-  background-repeat:repeat-x;
-  font: 25pt Courier, "Courier New", monospace; 
-  color:white;
+  padding:36 0 0 40;
+/*  font: 25pt Courier, "Courier New", monospace; */
+  font-size: 25pt;
+  color:black;
+/*  color:white;*/
+/*  background:#404040;*/
+  text-align:center;
 }
 
 
 #container
 {
   width:92%;
-  margin:-36 4% 0 4%;
-  padding:35 0 0 0;
+  margin:0 4% 0 4%;
+  padding:45 0 0 0;
   background:#ffffff;
 }
 
@@ -69,6 +71,7 @@ body {
   width: 45px;
   margin: 0;
   padding: 0;
+  visibility : hidden; display : none;
 }
 
 #footer-right
@@ -77,6 +80,7 @@ body {
   width: 45px;
   margin: 0;
   padding: 0;
+  visibility : hidden; display : none;
 }
 
 #footer-center
@@ -85,14 +89,15 @@ body {
   height: 100px;
   margin:0 0 0 0;
   padding:0 0 0 0;
-  background-image: url("images/kbkfootercenter.jpg");
-  background-repeat:repeat-x;
 }
 
 div.figure {
   float: right;
   margin: 10px;
   padding: 10px;
+  padding-top: 60px; /* for firefox printing */
+  padding-bottom:-60px;
+  margin-bottom: -50px;
 }
 
 div.figure p {
@@ -299,8 +304,8 @@ p {
   background: #ffffff;
   font-size: 120%;
   font-weight: bold; 
+  visibility : hidden; display : none;
 }
-
 #links2 a{
   color:#3937A6;
   color:#FF8000;
@@ -315,6 +320,7 @@ p {
   font-weight: bold;
   /*text-shadow: #000 2px 2px 2px;*/
 }  
+
 
 #toc {
   width:17em;
@@ -361,12 +367,12 @@ div.cloak {
 }
 
 #blogentry { 
-  padding: 30px 5px 5px 5px;
+  padding: 10px 5px 5px 5px;
 }
 
 #entrytitle {
   margin: -20px 0px 0px 0px;
-  font-size:130%;
+  font-size:12pt;
   color: #99DD55;
   color:#FF9900;
   color:#8AA627;
