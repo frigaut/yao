@@ -1137,7 +1137,7 @@ func shwfs_tests_plots(name)
   tv,*wfs(1)._fimage;
   pltitle,name;
   stat,*wfs(1)._fimage;
-  r = strlower(kinput("Proceed/Spydr/show Bckgrdinit/Exit","P"));
+  r = strcase(0,kinput("Proceed/Spydr/show Bckgrdinit/Exit","P"));
   if (r=="s") {
     spydr,*wfs(1)._fimage;
     exit;

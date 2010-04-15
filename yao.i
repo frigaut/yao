@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.14 2010-04-15 02:36:53 frigaut Exp $
+ * $Id: yao.i,v 1.15 2010-04-15 18:11:24 frigaut Exp $
  *
  * Copyright (c) 2002-2009, Francois Rigaut
  *
@@ -25,7 +25,11 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.14  2010-04-15 02:36:53  frigaut
+ * Revision 1.15  2010-04-15 18:11:24  frigaut
+ *
+ * - strlower -> strcase
+ *
+ * Revision 1.14  2010/04/15 02:36:53  frigaut
  *
  *
  * final commit to upgrade this repo to yao 4.5.1
@@ -182,7 +186,7 @@ write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 f = popen("uname",0); 
 rep = ""; read,f,format="%s",rep; 
 close,f;
-rep = strlower(rep);
+rep = strcase(0,rep);
 if ( (rep=="darwin") || (rep=="linux") ) os_env = rep; else os_env="unknown";
 
 plug_in,"yao";
