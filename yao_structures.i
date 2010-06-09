@@ -277,6 +277,10 @@ struct dm_struct
                           // to the (0,0) pupil coordinates is <= fradius
                           // will be kept (pixels). default dm.pitch*dm.nxseg/2.
 
+  // Least-squares and sparse matrix reconstructor parameters:
+  float   regparam;       // regularization parameter
+  string  regtype;        // regulatization matrix generation method. 
+  pointer regmatrix;      // matrix used in the regularization
   // Internal keywords:
   long    _puppixoffset(2);
   float   _alt;           // Actual conjugation altitude in meter, from dm.alt and zen.
@@ -305,11 +309,16 @@ struct dm_struct
   pointer _command;       // pointer to command vector
   pointer _extrapcmat;    // extrapolation matrix: extrap_com = extrapmat(,+)*valid_com(+)
   int     _eltdefsize;    // size of def in case elt=1
+  pointer _regmatrix;     // regularization matrix used, if any
 };
 
 struct mat_struct
 {
+  string  method;         // reconstruction method: "svd" (default), "least-squares", "sparse" 
   pointer condition;      // float vecorptr. Condition numbers for SVD, per subsystem. Required [none]
+  long    sparse_MR;      // maximum number of rows for sparse method
+  long    sparse_MN;      // maximum number of elements for sparse method
+  float   sparse_thresh;  // threshold for non-zero sparse elements
   string  file;           // iMat and cMat filename. Leave it alone.
 };
 

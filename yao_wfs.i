@@ -721,8 +721,23 @@ func sh_wfs(pupsh,phase,ns)
     sdim       = long(2^ceil(log(subsize)/log(2)+1));
     // sdimpow2 such that sdim = 2^sdimpow2
     sdimpow2   = int(log(sdim)/log(2));
-    threshold = array(float,wfs(ns)._nsub4disp)+wfs(ns).shthreshold;
-
+    threshold = array(float,wfs(ns)._nsub4disp+1)+wfs(ns).shthreshold;
+    // "feature" noticed on 2010apr16 (thanks to Yann Clenet):
+    // the threshold was correctly applied to the valid subap,
+    // but not to the background surrounding the valid subap (fimage
+    // unused pixels). This has no effect on the simulation, but
+    // 1) may be surprising/misleading for the user
+    // 2) thresholding these pixels may be useful for the user to
+    //    decide on a threshold value.
+    // hence, on v4.5.2, I have upgraded yao_fast.c to also threshold
+    // these pixels. But as we are passing now a array of thresholds
+    // (one per subap, in case in the future we want to upgrade the
+    //  code to allow this as input), which value to chose? solution:
+    // have a vector of threshold of dim # of subap + 1 (the last one
+    // value is the one to apply to these outside pixels/area).
+    // by default for now, we apply of course the same value as the
+    // given scalar wfs.shthreshold. Hence the +1 in the formula above.
+    
     // C function call
     err = _shwfs(&pupsh, &phase, phasescale, wfs(ns)._tiltsh, int(size), 
                  wfs(ns)._istart, wfs(ns)._jstart, int(subsize), int(subsize), 

@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.15 2010-04-15 18:11:24 frigaut Exp $
+ * $Id: yao.i,v 1.16 2010-06-09 15:03:42 frigaut Exp $
  *
  * Copyright (c) 2002-2009, Francois Rigaut
  *
@@ -25,7 +25,15 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.15  2010-04-15 18:11:24  frigaut
+ * Revision 1.16  2010-06-09 15:03:42  frigaut
+ * - Merged changes of Marcos Van Dam: This implements new reconstructors
+ *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
+ *   using sparse matrices, very fast). This adds a dependency on soy.
+ *   There's now a few more elements in the dm and mat structures
+ *
+ * - added thback and cleaned up indentation in yao_fast.c
+ *
+ * Revision 1.15  2010/04/15 18:11:24  frigaut
  *
  * - strlower -> strcase
  *
@@ -176,8 +184,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.5.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010apr14";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.5.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010jun09";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -559,6 +567,11 @@ func do_imat(disp=)
   gui_progressbar_frac,0.;
   gui_progressbar_text,"Doing interaction matrix";
   
+  if (mat.method == "sparse"){
+    extern MR, MN;
+    MR = mat.sparse_MR;
+    MN = mat.sparse_MN;
+  }
 
   indexDm       = array(long,2,ndm);
   indexDm(,1)   = [1,dm(1)._nact];
@@ -573,7 +586,8 @@ func do_imat(disp=)
   for (nm=1;nm<=ndm;nm++) {
     n1 = dm(nm)._n1;
     n2 = dm(nm)._n2;
-    if (sim.verbose==2) {write,format="Doing DM# %d, actuator %s",nm," ";}
+    //    if (sim.verbose==2) {write,format="\rDoing DM# %d, actuator %s",nm," ";}
+    write,"";
     // Loop on each actuator:
     command = array(float,dm(nm)._nact);
     for (i=1;i<=dm(nm)._nact;i++) {
@@ -581,12 +595,17 @@ func do_imat(disp=)
       gui_progressbar_frac,float(ncur)/ntot;
       gui_progressbar_text,\
         swrite(format="Doing interaction matrix, DM#%d, actuator#%d",nm,i);
-      if (sim.verbose==2) {write,format="%d ",i;}
+      if (sim.verbose==2) {write,format="\rDoing DM# %d, actuator %d/%d",nm,i,dm(nm)._nact;}
+      //      if (sim.verbose==2) {write,format="%d ",i;}
       mircube  *= 0.0f; command *= 0.0f;
       command(i) = float(dm(nm).push4imat);
       mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
-      // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
-      iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp)/dm(nm).push4imat;
+      if (mat.method != "sparse"){
+        // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
+        iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp)/dm(nm).push4imat;
+      } else {
+        rcobuild, iMatSP, mult_wfs_int_mat(disp=disp)/dm(nm).push4imat, mat.sparse_thresh;
+      }
       // display, if requested:
       // WFS spots:
       if (is_set(disp)) {
@@ -631,7 +650,7 @@ func do_imat(disp=)
 
 
   // Display if needed:
-  if ((sim.debug>=1) || (disp == 1)) {
+  if ((mat.method != "sparse") && ((sim.debug>=1) || (disp == 1))) {
     tv,-iMat,square=1;
     mypltitle,"Interaction Matrix",[0.,-0.005],height=12;
     if (sim.debug >= 1) typeReturn;
@@ -1629,6 +1648,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 {
   extern pupil,ipupil;
   extern iMat,cMat;
+  extern iMatSP,AtAregSP;
   extern modalgain;
   extern _n,_n1,_n2,_p1,_p2,_p;
   extern def,mircube;
@@ -1642,6 +1662,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   forcemat = ( (forcemat==[])? (aoinit_forcemat==[]? 0:aoinit_forcemat):forcemat );
   svd = ( (svd==[])? (aoinit_svd==[]? 0:aoinit_svd):svd );
   keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
+  if (mat.method == "sparse"){
+    require,"soy.i";
+    extern MR,MN;
+    MR = mat.sparse_MR;
+    MN = mat.sparse_MN;
+    mat.file = parprefix+"-iMat.rco";
+  }
+  else {
+    mat.file = parprefix+"-mat.fits";
+  }
 
   if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+
                        "forcemat=%d,svd=%d,keepdmconfig=%d\n",
@@ -2041,10 +2071,34 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // DO INTERACTION MATRIX WITH ALL ACTUATORS
   //=========================================
 
-  if (!(allof(fileExist(YAO_SAVEPATH+dm.iffile)) && \
-             fileExist(YAO_SAVEPATH+mat.file) && (forcemat != 1))) {
+  // determine whether a new interaction matrix is needed
+    
+  need_new_iMat = (forcemat || anyof(!fileExist(YAO_SAVEPATH+dm.iffile)));
 
+  if (need_new_iMat == 0){
+    if (!fileExist(YAO_SAVEPATH+mat.file)){
+      if (mat.method == "sparse" && fileExist(YAO_SAVEPATH + parprefix+"-mat.fits")){ // convert the full matrix into a sparse matrix
+        write, "Saving " + parprefix + "-mat.fits" + " as a sparse matrix";
+        tmp = fitsRead(YAO_SAVEPATH+ parprefix + "-mat.fits");
+        iMat = tmp(,,1);
+        iMatSP = sprco(float(iMat));
+        save_rco,iMatSP,YAO_SAVEPATH+mat.file;
+        svd = 1; // need to generate a new reconstructor
+      }
+      else if (mat.method != "sparse" && fileExist(YAO_SAVEPATH + parprefix+"-iMat.rco")){
+        write, "Saving " + parprefix + "-iMat.rco" + " as a full matrix";
+        iMatSP = restore_rco(YAO_SAVEPATH + parprefix+"-iMat.rco");
+        iMat = rcoinf(iMatSP);
+        fitsWrite, YAO_SAVEPATH + mat.file, [iMat,iMat];
+        svd = 1; // need to generate a new reconstructor
+      }
+      else {
+        need_new_iMat = 1;
+      }
+    }
+  }
 
+  if (need_new_iMat == 1){
     if (!is_set(keepdmconfig)) { // concatenate dm._def and dm._edef
       for (nm=1;nm<=ndm;nm++) {  // loop on DMs
         if ((*dm(nm)._edef) != []) {  // if _edef == [], there is no extrap. act. defined
@@ -2065,18 +2119,23 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     
     if (sim.verbose >= 1) {write,"\n> DOING INTERACTION MATRIX";}
     gui_message,"Doing interaction matrix";
-    iMat = array(double,sum(wfs._nmes),sum(dm._nact));
-    cMat = array(double,sum(dm._nact),sum(wfs._nmes));
-    
-    if (sim.verbose>=2) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
-    pause,100;
+    if (mat.method != "sparse"){
+      iMat = array(double,sum(wfs._nmes),sum(dm._nact));
+      cMat = array(double,sum(dm._nact),sum(wfs._nmes));
+
+      if (sim.verbose>=2) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
+      pause,100;
+    } else {
+      iMatSP = rco();
+    }
     
     // measure interaction matrix:
     if ( sum(dm._nact) > sum(wfs._nmes) ) {
-      write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",
-           sum(dm._nact),sum(wfs._nmes);
-      write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD"; 
-      typeReturn;
+      write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",sum(dm._nact),sum(wfs._nmes);
+      if (mat.method == "svd"){
+        write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD"; 
+        typeReturn;
+      }
     }
 
 
@@ -2095,8 +2154,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       // response from actuators:
-      resp = sqrt((iMat^2.)(sum,));
-      resp = (abs(iMat))(max,);
+      if (mat.method == "sparse"){
+        AtA = rcoata(iMatSP);
+        resp = sqrt((*AtA.xd)(1:AtA.r)); // take the diagonal
+        actuators_to_remove = []; 
+      } else {
+        resp = sqrt((iMat^2.)(sum,));
+        //resp = (abs(iMat))(max,); // marcos commented this. problem?
+      }
 
       if (sim.debug >= 2) {fma; plh,resp; limits,square=0; typeReturn;}
 
@@ -2189,12 +2254,27 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             typeReturn;
           }
 
-          iMat(,indexDm(1,nm)-1+nok) *=0.;
-
+          if (mat.method == "sparse"){
+            grow, actuators_to_remove, indexDm(1,nm)-1+nok;
+          }
+          else {
+            iMat(,indexDm(1,nm)-1+nok) *=0.;
+          }
+          
         }
       }
-      iMat = iMat(,where(iMat(rms,) != 0.));
-      cMat = transpose(iMat)*0.;
+      if (mat.method == "sparse"){
+        // remove all the rows with a response that is too low
+        // need to remove them from the end so as not to disturb numbering
+        if (numberof(actuators_to_remove) > 0){
+          for (act_ii = numberof(actuators_to_remove); act_ii >=1; act_ii--){
+            rcodr,iMatSP,actuators_to_remove(act_ii);
+          }
+        }
+      } else {
+        iMat = iMat(,where(iMat(rms,) != 0.));
+        cMat = transpose(iMat)*0.;
+      }
     }
   }
 
@@ -2275,30 +2355,32 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // INITIALIZE MODAL GAINS:
 
-  if (sim.verbose>=1) {write,"\n> INITIALIZING MODAL GAINS";}
-  gui_message,"Initializing modal gains";
+  if (mat.method == "svd"){
+    if (sim.verbose>=1) {write,"\n> INITIALIZING MODAL GAINS";}
+    gui_message,"Initializing modal gains";
+    
+    modalgain = [];
 
-  modalgain = [];
+    if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
 
-  if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
+      if (sim.verbose>=1) {write,format=" >> Reading file %s\n\n",loop.modalgainfile;}
+      modalgain = fitsRead(YAO_SAVEPATH+loop.modalgainfile);
 
-    if (sim.verbose>=1) {write,format=" >> Reading file %s\n\n",loop.modalgainfile;}
-    modalgain = fitsRead(YAO_SAVEPATH+loop.modalgainfile);
-
-  }
-  
-  if (numberof(modalgain) != sum(dm._nact)) {
-
-    if (sim.verbose>=1) {
-      write,format="I did not find %s or it did not have the right\n ",
-        loop.modalgainfile;
-      write,format="  number of elements (should be %i), so I have generated\n",
-        sum(dm._nact);
-      write,"  a modal gain vector with ones in it.\n";
     }
+  
+    if (numberof(modalgain) != sum(dm._nact)) {
+      
+      if (sim.verbose>=1) {
+        write,format="I did not find %s or it did not have the right\n ",
+          loop.modalgainfile;
+        write,format="  number of elements (should be %i), so I have generated\n",
+          sum(dm._nact);
+        write,"  a modal gain vector with ones in it.\n";
+      }
+      
+      modalgain = array(1.,sum(dm._nact));
 
-    modalgain = array(1.,sum(dm._nact));
-
+    }
   }
 
   // INITIALIZE COMMAND MATRIX:
@@ -2309,53 +2391,163 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
     if (sim.verbose>=1) {write,format="  >> Reading file %s\n",mat.file;}
-    // read out mat file and stuff iMat and cMat:
-    tmp = fitsRead(YAO_SAVEPATH+mat.file);
-    iMat = tmp(,,1);
-    cMat = transpose(tmp(,,2));
-    tmp = [];
-
+    if (mat.method != "sparse"){    
+      // read out mat file and stuff iMat and cMat:
+      tmp = fitsRead(YAO_SAVEPATH+mat.file);
+      iMat = tmp(,,1);
+      cMat = transpose(tmp(,,2));
+      tmp = [];
+    } else {
+      iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
+      if (fileExist(YAO_SAVEPATH+parprefix+"-AtAreg.ruo")){
+        AtAregSP = restore_ruo(YAO_SAVEPATH+parprefix+"-AtAreg.ruo");
+      }
+      else {
+        svd = 1;
+      }
+    }
   }
 
   // in the opposite case, plus if svd=1 (request re-do SVD):
   if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
-    
-    if (sim.verbose>=1) {
-      write,">> Preparing SVD and computing command matrice";
-    }
-    // do the SVD and build the command matrix:
-    sswfs = ssdm = [];
-    for (ns=1;ns<=nwfs;ns++) {grow,sswfs,array(wfs(ns).subsystem,wfs(ns)._nmes);}
-    for (nm=1;nm<=ndm;nm++)  {grow,ssdm,array(dm(nm).subsystem,dm(nm)._nact);}
-    for (ss=1;ss<=max(dm.subsystem);ss++) {
+    if (mat.method == "svd"){
+      if (sim.verbose>=1) {
+        write,">> Preparing SVD and computing command matrice";
+      }
+      // do the SVD and build the command matrix:
+      sswfs = ssdm = [];
+      for (ns=1;ns<=nwfs;ns++) {grow,sswfs,array(wfs(ns).subsystem,wfs(ns)._nmes);}
+      for (nm=1;nm<=ndm;nm++)  {grow,ssdm,array(dm(nm).subsystem,dm(nm)._nact);}
+      for (ss=1;ss<=max(dm.subsystem);ss++) {
+        
+        wsswfs = where(sswfs == ss);
+        wssdm  = where(ssdm  == ss);
+        imat = iMat(wsswfs,wssdm);
+        mg = modalgain(wssdm);
+        
+        prep_svd,imat,ss,svd=svd,disp=disp;
 
-      wsswfs = where(sswfs == ss);
-      wssdm  = where(ssdm  == ss);
-      imat = iMat(wsswfs,wssdm);
-      mg = modalgain(wssdm);
-
-      prep_svd,imat,ss,svd=svd,disp=disp;
-
-      tmpdisp = noneof(dm(where(dm.subsystem == ss)).type == "aniso");
-      cmat = build_cmat( (*mat.condition)(ss), mg, subsystem=ss,
+        tmpdisp = noneof(dm(where(dm.subsystem == ss)).type == "aniso");
+        cmat = build_cmat( (*mat.condition)(ss), mg, subsystem=ss,
                           all=1,disp=tmpdisp);
-      cMat(wssdm,wsswfs) = cmat;
-      
-    }
+        cMat(wssdm,wsswfs) = cmat;
+      }
+    } else if (mat.method == "least-squares"){
+      // create the regularization matrices for each DM      
+      nAct = (dimsof(iMat))(3);
+      nDMs = numberof(dm);
 
-    // More debug display
-    if (sim.debug>=3) {
-      tv,cMat(,+)*iMat(+,);
-      mypltitle,"cMat(,+)*iMat(+,)",[0.,-0.005],height=12;
-      typeReturn;
-      tv,iMat(,+)*cMat(+,);
-      mypltitle,"iMat(,+)*cMat(+,)",[0.,-0.005],height=12;
-      typeReturn;
-    }
-      
-    // save the results:
-    fitsWrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
+      for (nm=1;nm<=nDMs;nm++){
+        if (*dm(nm).regmatrix == []){
+          if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
+            xpos = *dm(nm)._x;
+            ypos = *dm(nm)._y;
+            pitch2 = dm(nm).pitch^2;
 
+            L = array(float,dm(nm)._nact, dm(nm)._nact);
+
+            for (ii=1;ii<=dm(nm)._nact;ii++){
+
+              xii = xpos(ii);
+              yii = ypos(ii);
+              
+              dx = xpos - xii;
+              dy = ypos - yii;
+              
+              dist2= dx^2+dy^2;
+
+              L(ii,ii) = -1.;
+              L(ii,where(dist2 == pitch2)) = 0.25;              
+            }
+            dm(nm)._regmatrix = &(L(+,)*L(+,));
+          }
+          else { // identity matrix
+            dm(nm)._regmatrix = &unit(dm(nm)._nact);
+          }
+        }
+      }
+      
+      Cphi = array(double,[2,nAct,nAct]);
+
+      mc = 0; // matrix counter
+      for (nm=1;nm<=nDMs;nm++){
+        Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
+        mc += dm(nm)._nact;
+      }
+      cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi)(,+)*iMat(,+);      
+    } else if (mat.method == "sparse"){
+
+      // create the regularization matrices for each DM
+      nAct = iMatSP.r;
+      nDMs = numberof(dm);
+
+      CphiSP = [];
+      
+      for (nm=1;nm<=nDMs;nm++){
+        if (*dm(nm).regmatrix == []){
+          if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
+            xpos = *dm(nm)._x;
+            ypos = *dm(nm)._y;
+            pitch2 = dm(nm).pitch^2;
+            
+            laplacian_mat = rco();
+  
+            for (ii=1;ii<=dm(nm)._nact;ii++){
+              xii = xpos(ii);
+              yii = ypos(ii);
+              
+              dx = xpos - xii;
+              dy = ypos - yii;
+              
+              dist2= dx^2+dy^2;
+
+              lvec = array(float,dm(nm)._nact);
+              lvec(ii) = -1.;
+              lvec(where(dist2 == pitch2)) = 0.25;
+
+              rcobuild,laplacian_mat,lvec,mat.sparse_thresh;
+            }
+            dm(nm)._regmatrix = &rcoata(laplacian_mat);
+          }
+          else { // identity matrix
+            dm(nm)._regmatrix = &spruo(float(unit(dm(nm)._nact)));
+            (*dm(nm)._regmatrix).n = dm(nm)._nact; // gets very confused when concatenating otherwise              
+          }
+        }
+        
+        regmatrix = *dm(nm)._regmatrix;
+        ruox, regmatrix, dm(nm).regparam; // multiply the matrix by a constant
+
+        if (CphiSP == []){        
+          CphiSP = regmatrix;
+        }
+        else {
+          spcon, CphiSP,regmatrix, diag=1, ruo=1;
+        }
+      }
+
+      AtA = rcoata(iMatSP);
+      AtAregSP = ruoadd(AtA,CphiSP);
+      
+      save_rco,iMatSP,YAO_SAVEPATH+mat.file;
+      save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
+    }
+    
+    if (mat.method != "sparse") {
+
+      // More debug display
+      if (sim.debug>=3){
+        tv,cMat(,+)*iMat(+,);
+        mypltitle,"cMat(,+)*iMat(+,)",[0.,-0.005],height=12;
+        typeReturn;
+        tv,iMat(,+)*cMat(+,);
+        mypltitle,"iMat(,+)*cMat(+,)",[0.,-0.005],height=12;
+        typeReturn;
+      }
+
+      // save the results:
+      fitsWrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
+    } 
   }
 
   //===================================================================
@@ -2770,6 +2962,7 @@ func go(nshot,all=)
   extern niterok, starttime, endtime, endtime_str, now, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
   extern cbmes, cbcom, cberr;
+  extern iMatSP, AtAregSP
   extern commb,errmb; // minibuffers (last 10 iterations)
   
   gui_show_statusbar1;
@@ -2874,7 +3067,26 @@ func go(nshot,all=)
     
   // RECONSTRUCTION:
   // computes the actuator error vector from the measurements:
-  err      = cMat(,+) * usedMes(+);
+
+  if (mat.method == "sparse"){      
+    if (i == 1){      
+      MR = mat.sparse_MR;
+      MN = mat.sparse_MN;
+    }
+    
+    initvec = array(float,iMatSP.r);
+    
+    if (sum(usedMes != 0) == 0){ // does not work if all zeros
+      err = array(float,iMatSP.r);
+    }
+    else {
+      Ats=rcoxv(iMatSP,usedMes);
+      err = float(ruopcg(AtAregSP,Ats,initvec, tol=1.e-3));
+    }  
+  }
+  else {
+    err = cMat(,+) * usedMes(+); // the general case
+  }
 
   if (user_loop_err!=[]) user_loop_err;
 

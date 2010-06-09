@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.8 2010-04-15 02:36:53 frigaut Exp $
+ * $Id: aoutil.i,v 1.9 2010-06-09 15:03:42 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,15 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.8  2010-04-15 02:36:53  frigaut
+ * Revision 1.9  2010-06-09 15:03:42  frigaut
+ * - Merged changes of Marcos Van Dam: This implements new reconstructors
+ *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
+ *   using sparse matrices, very fast). This adds a dependency on soy.
+ *   There's now a few more elements in the dm and mat structures
+ *
+ * - added thback and cleaned up indentation in yao_fast.c
+ *
+ * Revision 1.8  2010/04/15 02:36:53  frigaut
  *
  *
  * final commit to upgrade this repo to yao 4.5.1
@@ -521,14 +529,29 @@ func check_parameters(void)
         write,format="dm(%d).irfact set to %f\n",nm,dm(nm).irfact;
       }
     }
+    // check that laplacian only applies to stackarrays
+    if ((dm(nm).regtype == "laplacian") && (dm(nm).type != "stackarray")){
+      exit, "regtype can only be set to laplacian for stackarray DMs";
+    }
+    // set the regparam for stack arrays to something other than 0
+    if ((dm(nm).type == "stackarray") && (dm(nm).regparam == 0)){
+      write,"Setting regparam to 1e-5";
+      dm(nm).regparam = 1e-5;
+    }
   }
 
   // MAT STRUCTURE
+  if (mat.method == string()) {mat.method = "svd";};
+  if (mat.method == "svd"){  
   if ((*mat.condition) == []) {exit,"mat.condition has not been set";}
   if (numberof(*mat.condition) != max(_(wfs.subsystem,dm.subsystem)) ) {
     exit,"dimension of *mat.condition is not equal to the number of subsystems";
   }
+  }
   if (mat.file == string()) {mat.file = "";}
+  if (mat.sparse_MR == long()){mat.sparse_MR = 10000;}
+  if (mat.sparse_MN == long()){mat.sparse_MN = 200000;}
+  if (mat.sparse_thresh == float()){mat.sparse_thresh = 1e-8;}
 
   // TEL STRUCTURE
   if (tel.diam == 0) exit,"tel.diam has not been set";
@@ -558,7 +581,7 @@ func check_parameters(void)
   // LOOP STRUCTURE
   if (loop.gain == 0) write,format="%s\n","Warning: loop.gain = 0";
   if ( (numberof(*loop.gainho)) != (numberof(*loop.leakho)) ) \
-    exit,"*loop.gainho should have same number of element as *loop.leakho";
+    exit,"*loop.gainho should have same number of elements as *loop.leakho";
   if (loop.niter == 0) exit,"loop.niter has not been set";
   if (loop.ittime == 0) exit,"loop.ittime has not been set";
   if (loop.startskip == 0) loop.startskip = 10;
@@ -1152,8 +1175,8 @@ func nollmat(ord)
       n    = tmp(1);  m  = tmp(2);
       np   = tmpp(1); mp = tmpp(2);
 
-      print,(n+np-14./3.+3.)/2.,(np-n+14./3.+1.)/2.,
-        (n-np+14./3.+1.)/2.,(n+np+14./3.+3.)/2.;
+      //print,(n+np-14./3.+3.)/2.,(np-n+14./3.+1.)/2.,
+      //  (n-np+14./3.+1.)/2.,(n+np+14./3.+3.)/2.;
 
       innp = gamma(14./3.)*gamma((n+np-14./3.+3.)/2.)/
         (2.^(14./3.)*gamma((np-n+14./3.+1.)/2.)*gamma((n-np+14./3.+1.)/2.)*
