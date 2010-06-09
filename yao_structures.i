@@ -277,7 +277,7 @@ struct dm_struct
                           // to the (0,0) pupil coordinates is <= fradius
                           // will be kept (pixels). default dm.pitch*dm.nxseg/2.
 
-  // Least-squares and sparse matrix reconstructor parameters:
+  // MMSE and sparse MMSE matrix reconstructor parameters:
   float   regparam;       // regularization parameter
   string  regtype;        // regulatization matrix generation method. 
   pointer regmatrix;      // matrix used in the regularization
@@ -314,7 +314,7 @@ struct dm_struct
 
 struct mat_struct
 {
-  string  method;         // reconstruction method: "svd" (default), "least-squares", "sparse" 
+  string  method;         // reconstruction method: "svd" (default), "mmse", "mmse-sparse" 
   pointer condition;      // float vecorptr. Condition numbers for SVD, per subsystem. Required [none]
   long    sparse_MR;      // maximum number of rows for sparse method
   long    sparse_MN;      // maximum number of elements for sparse method

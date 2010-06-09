@@ -456,7 +456,6 @@ dm(n).push4imat    = 400;
 
 //-------------------------------
 mat.condition      = &([15.]);
-mat.file	   = "";
 
 //-------------------------------
 tel.diam	   = 7.9;
@@ -1167,8 +1166,62 @@ func make_my_dm(nm)
 <code>dm.pupoffset</code> is similar to <code>wfs.pupoffset</code> (see WFS 
 section), but for the DMs.</p>
 
-<a name="other_features"></a>
+<a name="building_a_reconstructor"></a>
+<h3>Building a Reconstructor</h3>
 
+<p>Up to 4.5.1, yao was only offering reconstructors created with a
+truncated-SVD method. This is in effect a least-square solution where
+"invisible" modes are totally discarded. In June 2010, Marcos Van Dam
+contributed code that enables the possibility to select an alternative
+<b>MMSE</b>-like method (Minimum Mean Square Error). In addition, this MMSE
+reconstructor can be either built using full matrices or sparse
+matrices techniques, which offers a significant speed boost.</p>
+
+<h4>Method selection (provided by M.v.D)</h4>
+
+<p>There are three options for wavefront reconstruction, and these are
+set using the <code>mat.method</code> parameter.</p>
+
+<h5>Truncated singular value decomposition (default)</h5>
+
+<pre>mat.method = "svd"
+mat.condition = &([desired conditioning])</pre>
+
+<h5>Minimum Mean Square Error Reconstructor</h5>
+
+<p>This method computes the reconstructor as</p>
+
+  <center><p>R = (H<sup>T</sup> H + a C)<sup>-1</sup> H<sup>T</sup></p></center>
+  
+<p>where H is the interaction matrix (poke matrix), a is a
+regularization parameter and C is a regularization matrix. The
+regularization matrix can be user specified or computed by YAO. If it
+is computed, it will use an identity matrix by default, or a matrix
+created by convolving a laplacian operator by itself. This matrix has
+similar statistics to the inverse covariance matrix for Kolmogorov
+turbulence and penalizes local waffle in the DM.</p>
+
+<p>The relevant parameters for the MMSE inversion process are
+<code>mat.method = "mmse"</code>,
+<code>dm.regparam</code>,
+<code>dm.regtype</code> and
+<code>dm.regmatrix</code>.</p>
+
+<p><b>MMSE Sparse method</b></p>
+
+<p>A sparse matrix implementation of the above is also available.
+Set <code>mat.method = "mmse-sparse"</code>. This is ideal for very large
+systems with thousands of actuators, as it reduces memory requirements
+and increases computational speed. Do not use the sparse method when
+the interaction matrices are not actually sparse (e.g., when using a
+Zernike DM). <code>mat.method = "mmse-sparse"</code> uses the same
+parameters as "mmse" as well as <code>mat.sparse_MR</code>
+and <code>mat.sparse_MN</code> (see table below for meaning of these
+parameters). You will need to set these values to a higher level than
+the default if you have extremely large system.</p>
+
+
+<a name="other_features"></a>
 <h3>Other Features</h3>
 
 <p>More to come (a note to myself).</p>
@@ -1282,7 +1335,10 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">noextrap          </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Set to disable use of extrapolated actuators                                                        </td></tr>
   <tr><td class="varname">pitchMargin       </td><td>float    </td><td>Unitless   </td><td>1.44       </td><td>no  </td><td>Margin to include more corner actuators when creating inf.functions optional [1.44]                 </td></tr>
   <tr><td class="varname">irexp             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Use original functional form (irexp=0) or exp(-(d/irfact)^1.5) model (irexp=1) or sinc*gaussian (irexp=2) </td></tr>
-  <tr><td class="varname">irfact            </td><td>float    </td><td>Unitless   </td><td>1.0         </td><td>no  </td><td>use when irexp=1 (see above)                                                                        </td></tr>
+  <tr><td class="varname">irfact            </td><td>float    </td><td>Unitless   </td><td>1.0        </td><td>no  </td><td>use when irexp=1 (see above)                                                                        </td></tr>
+  <tr><td class="varname">regparam          </td><td>float    </td><td>Unitless   </td><td>0.0        </td><td>no  </td><td>Parameter that determines the strength of the regularization. Set to zero for systems like tip-tilt mirrors and to a small positive value (e.g., 1e-4) for stackarray DMs. Experiment by trial an error to get the value that produces the highest Strehl. Experience shows that any value within a factor of four of optimal produces the same results.   </td></tr>
+  <tr><td class="varname">regtype           </td><td>string   </td><td>N/A        </td><td>"identity" </td><td>no  </td><td>Regularization approach: "identity" (default) or "laplacian"                                       </td></tr>
+  <tr><td class="varname">regmatrix         </td><td>&float   </td><td>Unitless   </td><td>none       </td><td>no  </td><td>Pointer to the regularization matrix to use instead of computing one of the two options. This is usually not necessary, but is left as an option for advanced users. A good choice would be the inverse covariance matrix of the turbulence, for example.</td></tr>
   <tr><td colspan="6" class="subth">Bimorph-only keywords</td></tr>
   <tr><td class="varname">nelperring        </td><td>&long    </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of electrodes per ring, e.g &([6,12,18])                                                     </td></tr>
   <tr><td class="varname">angleoffset       </td><td>&float   </td><td>degree     </td><td>0          </td><td>no  </td><td>Offset angle for first electrode in ring                                                            </td></tr>
@@ -1299,8 +1355,11 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">fradius           </td><td>float    </td><td>pixel      </td><td>See comment</td><td>no  </td><td>Segments are created over a wider area than the nxseg defined above. Only segments which distance to the (0,0) pupil coordinates is <= fradius will be kept. default dm.pitch*dm.nxseg/2. </td></tr>
   <tr><th colspan="6">mat structure</th></tr>
   <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
+  <tr><td class="varname">method            </td><td>string   </td><td>N/A        </td><td>"svd"      </td><td>no  </td><td>Reconstructor creation method ("svd", "mmse" or "mmse-sparse") </td></tr>
   <tr><td class="varname">condition         </td><td>&float   </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Condition numbers for SVD, per subsystem. </td></tr>
   <tr><td class="varname">file              </td><td>string   </td><td>N/A        </td><td>none       </td><td>??? </td><td>iMat and cMat filename. Leave it alone.                    </td></tr>
+  <tr><td class="varname">sparse_MR         </td><td>long     </td><td>Unitless   </td><td>10000      </td><td>no </td><td>Sparse only: maximum number of rows (actuators) in the imat </td></tr>
+  <tr><td class="varname">sparse_MN         </td><td>long     </td><td>Unitless   </td><td>200000     </td><td>no </td><td>Sparse only: maximum number of elements in the imat </td></tr>
   <tr><th colspan="6">tel structure</th></tr>
   <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
   <tr><td class="varname">diam              </td><td>float    </td><td>meter      </td><td>none       </td><td>yes </td><td>Telescope diameter</td></tr>

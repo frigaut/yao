@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.16 2010-06-09 15:03:42 frigaut Exp $
+ * $Id: yao.i,v 1.17 2010-06-09 16:42:30 frigaut Exp $
  *
  * Copyright (c) 2002-2009, Francois Rigaut
  *
@@ -25,7 +25,12 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.16  2010-06-09 15:03:42  frigaut
+ * Revision 1.17  2010-06-09 16:42:30  frigaut
+ * - changed "least-squares" -> "mmse"
+ * - changed "sparse" -> "mmse-sparse"
+ * - updated documentation with input from Marcos Van Dam
+ *
+ * Revision 1.16  2010/06/09 15:03:42  frigaut
  * - Merged changes of Marcos Van Dam: This implements new reconstructors
  *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
  *   using sparse matrices, very fast). This adds a dependency on soy.
@@ -567,7 +572,7 @@ func do_imat(disp=)
   gui_progressbar_frac,0.;
   gui_progressbar_text,"Doing interaction matrix";
   
-  if (mat.method == "sparse"){
+  if (mat.method == "mmse-sparse"){
     extern MR, MN;
     MR = mat.sparse_MR;
     MN = mat.sparse_MN;
@@ -600,7 +605,7 @@ func do_imat(disp=)
       mircube  *= 0.0f; command *= 0.0f;
       command(i) = float(dm(nm).push4imat);
       mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
-      if (mat.method != "sparse"){
+      if (mat.method != "mmse-sparse"){
         // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
         iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp)/dm(nm).push4imat;
       } else {
@@ -650,7 +655,7 @@ func do_imat(disp=)
 
 
   // Display if needed:
-  if ((mat.method != "sparse") && ((sim.debug>=1) || (disp == 1))) {
+  if ((mat.method != "mmse-sparse") && ((sim.debug>=1) || (disp == 1))) {
     tv,-iMat,square=1;
     mypltitle,"Interaction Matrix",[0.,-0.005],height=12;
     if (sim.debug >= 1) typeReturn;
@@ -1662,7 +1667,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   forcemat = ( (forcemat==[])? (aoinit_forcemat==[]? 0:aoinit_forcemat):forcemat );
   svd = ( (svd==[])? (aoinit_svd==[]? 0:aoinit_svd):svd );
   keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
-  if (mat.method == "sparse"){
+  if (mat.method == "mmse-sparse"){
     require,"soy.i";
     extern MR,MN;
     MR = mat.sparse_MR;
@@ -2077,7 +2082,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   if (need_new_iMat == 0){
     if (!fileExist(YAO_SAVEPATH+mat.file)){
-      if (mat.method == "sparse" && fileExist(YAO_SAVEPATH + parprefix+"-mat.fits")){ // convert the full matrix into a sparse matrix
+      if (mat.method == "mmse-sparse" && fileExist(YAO_SAVEPATH + parprefix+"-mat.fits")){ // convert the full matrix into a sparse matrix
         write, "Saving " + parprefix + "-mat.fits" + " as a sparse matrix";
         tmp = fitsRead(YAO_SAVEPATH+ parprefix + "-mat.fits");
         iMat = tmp(,,1);
@@ -2085,7 +2090,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         save_rco,iMatSP,YAO_SAVEPATH+mat.file;
         svd = 1; // need to generate a new reconstructor
       }
-      else if (mat.method != "sparse" && fileExist(YAO_SAVEPATH + parprefix+"-iMat.rco")){
+      else if (mat.method != "mmse-sparse" && fileExist(YAO_SAVEPATH + parprefix+"-iMat.rco")){
         write, "Saving " + parprefix + "-iMat.rco" + " as a full matrix";
         iMatSP = restore_rco(YAO_SAVEPATH + parprefix+"-iMat.rco");
         iMat = rcoinf(iMatSP);
@@ -2119,7 +2124,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     
     if (sim.verbose >= 1) {write,"\n> DOING INTERACTION MATRIX";}
     gui_message,"Doing interaction matrix";
-    if (mat.method != "sparse"){
+    if (mat.method != "mmse-sparse"){
       iMat = array(double,sum(wfs._nmes),sum(dm._nact));
       cMat = array(double,sum(dm._nact),sum(wfs._nmes));
 
@@ -2154,7 +2159,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       // response from actuators:
-      if (mat.method == "sparse"){
+      if (mat.method == "mmse-sparse"){
         AtA = rcoata(iMatSP);
         resp = sqrt((*AtA.xd)(1:AtA.r)); // take the diagonal
         actuators_to_remove = []; 
@@ -2254,7 +2259,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             typeReturn;
           }
 
-          if (mat.method == "sparse"){
+          if (mat.method == "mmse-sparse"){
             grow, actuators_to_remove, indexDm(1,nm)-1+nok;
           }
           else {
@@ -2263,7 +2268,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           
         }
       }
-      if (mat.method == "sparse"){
+      if (mat.method == "mmse-sparse"){
         // remove all the rows with a response that is too low
         // need to remove them from the end so as not to disturb numbering
         if (numberof(actuators_to_remove) > 0){
@@ -2391,7 +2396,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
     if (sim.verbose>=1) {write,format="  >> Reading file %s\n",mat.file;}
-    if (mat.method != "sparse"){    
+    if (mat.method != "mmse-sparse"){    
       // read out mat file and stuff iMat and cMat:
       tmp = fitsRead(YAO_SAVEPATH+mat.file);
       iMat = tmp(,,1);
@@ -2432,7 +2437,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                           all=1,disp=tmpdisp);
         cMat(wssdm,wsswfs) = cmat;
       }
-    } else if (mat.method == "least-squares"){
+    } else if (mat.method == "mmse"){
       // create the regularization matrices for each DM      
       nAct = (dimsof(iMat))(3);
       nDMs = numberof(dm);
@@ -2475,7 +2480,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         mc += dm(nm)._nact;
       }
       cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi)(,+)*iMat(,+);      
-    } else if (mat.method == "sparse"){
+    } else if (mat.method == "mmse-sparse"){
 
       // create the regularization matrices for each DM
       nAct = iMatSP.r;
@@ -2533,7 +2538,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
     }
     
-    if (mat.method != "sparse") {
+    if (mat.method != "mmse-sparse") {
 
       // More debug display
       if (sim.debug>=3){
@@ -3068,7 +3073,7 @@ func go(nshot,all=)
   // RECONSTRUCTION:
   // computes the actuator error vector from the measurements:
 
-  if (mat.method == "sparse"){      
+  if (mat.method == "mmse-sparse"){      
     if (i == 1){      
       MR = mat.sparse_MR;
       MN = mat.sparse_MN;

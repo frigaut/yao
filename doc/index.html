@@ -28,7 +28,10 @@
    <h2>Introduction</h2>
    
    These pages present information about <b>yao</b>, a Monte-Carlo simulation tool for Adaptive optics (AO) systems.
-   <b>Yao</b> is open source released under the GPLv3. You are welcome to use it, expand it and even distribute it, but please link back to this page, as I am releasing updates semi-regularly. The last version of yao to date (Nov'09) is 4.5.0. <a name="features" id="features"></a></p>
+   <b>Yao</b> is open source released under the GPLv3. You are welcome
+   to use it, expand it and even distribute it, but please link back
+   to this page, as I am releasing updates semi-regularly. The last
+   version of yao to date (June 2010) is 4.5.2. <a name="features" id="features"></a></p>
  
    <h2>Main features</h2>
 
@@ -94,7 +97,10 @@
      <li>Separate loop gain per DM</li>
      <li>Adjustable DM sensitivity (micron/volt) to hook to real systems</li>
      <li>Adjustable subaperture and actuator validation thresholds</li>
-     <li>Adjustable condition numbers for the interaction matrix inversion. Currently, only SVD is supported, but users can hook into yao and use their own code to compute the reconstructor</li>
+     <li>Various reconstructors: least-square with truncation (SVD)
+     and MMSE-like. MMSE can use either full matrix or sparse methods
+     (fast). Users can hook into yao and use their own code to compute
+     the reconstructor <font class="new">NEW</font></li> 
      <li>Adjustable multi-wavelength, multi-position performance estimate</li>
      <li>"Skip and reset" along the phase screens at adjustable interval, to reach statistically significant performance estimates faster</li>
      <li>Uplink tip-tilt correction for LGS</li>
@@ -107,7 +113,10 @@
    </ul>
    <h3>Comments and shorcomings</h3>
    <ul class="spaced">
-     <li>Dependency on <font class="highlight">FFTW</font> for the fast FFT C implementation.</li>
+     <li>Dependency on <font class="highlight">FFTW</font> for the
+     fast FFT C implementation.</li>
+     <li>Dependencies on the following yorick packages: yutils
+     (general utilities), imutil (image manipulation), soy (sparse operations with yorick)</li>
      <li>The set-up routines (aoinit) have not yet been optimized for speed, thus, in particular, inverting large matrices can take some time. This optimization may come in due time, if deemed necessary.</li>
      <li>
        <font class="highlight">There is no GUI to configure the systems</font>. The parfile has to be edited manually, which in my view is not a big deal and actually allows for more compact &amp; clever parfiles, as yorick loops can be used to set repetitive variables.
