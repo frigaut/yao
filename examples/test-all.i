@@ -9,6 +9,8 @@ f = findfiles("test*.par");
 f = f(sort(f));
 if (get_argv()(0)=="bench") f = findfiles("*-bench.par");
 
+if (get_argv()(0)=="toy") f = findfiles("toy*.par");
+
 struct perf_s{string parfile; string name; float itps; string display; float strehl; float lambda;};
 perf = array(perf_s,numberof(f)+1);
 
