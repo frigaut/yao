@@ -387,6 +387,66 @@ func make_zernike_dm(nm,&def,disp=)
 }
 
 //----------------------------------------------------
+func make_diskharmonic_dm(nm,&def,disp=)
+
+  /* DOCUMENT function make_diskharm_dm,dm_structure
+     adapted on 2010jun from the modal zernike dm function above.
+   */
+{
+
+  extern zr,ztheta;
+  
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,"Computing Influence Functions for modal DM : disk harmonics";
+  dim   = dm(nm)._n2-dm(nm)._n1+1;
+  cobs  = tel.cobs;
+  max_order = dm(nm).max_order; // create this variable in dm structure
+  cent  = sim._cent;
+  psize = tel.diam/sim.pupildiam;
+  // below: bug discovered 2009mar24: << REDO mcao matrices
+  // was using linear distance (abs(wfs.gspos), not working), not XY !!!
+  gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
+  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*(dm(nm).alt)/psize;
+
+  // the function below prepares the zr and ztheta necessary for evaluating 
+  // the dh, exactly as in the zernike mode.
+  prepdiskharmonic,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
+  
+  ntmodes = sum(indgen(max_order+1));
+  load_dh_bjprime_zero_tab;
+  ndh=0;
+  
+  for (i=0;i<=max_order;i++) {
+    for (k=0;k<=i;k++) {
+      ndh = ndh+1;
+      if (ndh == 1) { 
+        def = array(float,dim,dim,1); 
+      } else {
+        grow,def,array(float,dim,dim,1);
+      }
+      p = dh_dhindex(i,k);
+      def(,,ndh) = dh_dh(p(1),p(2),zr,ztheta);
+      if (disp == 1) {fma; pli,def(,,ndh);}
+    }
+    gui_progressbar_frac,float(ndh)/float(ntmodes);
+  }
+  if (sim.verbose>=1) {write,format="Number of DH modes :%d\n",ntmodes;}
+
+  // I am not sure if the normalization factor is correct for DH, but I am leaving it! (aurea)
+  // normalization factor: one unit of tilt gives 1 arcsec:
+  current = def(dim/2,dim/2,3)-def(dim/2-1,dim/2,3);
+  fact = (dm(nm).unitpervolt*tel.diam/sim.pupildiam)*4.848/current;
+  
+  def = float(def*fact);
+
+  dm(nm)._nact = (dimsof(def))(4);  // This is equal to ndh
+  dm(nm)._def = &def;
+
+  clean_progressbar;
+  return def;
+}
+
+//----------------------------------------------------
 func make_tiptilt_dm(nm,&def,disp=)
 
   /* DOCUMENT function make_tiptilt_dm,dm_structure,ActIF,disp=

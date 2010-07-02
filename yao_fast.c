@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.c,v 1.8 2010-06-09 15:03:43 frigaut Exp $
+ * $Id: yao_fast.c,v 1.9 2010-07-02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -21,7 +21,13 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.c,v $
- * Revision 1.8  2010-06-09 15:03:43  frigaut
+ * Revision 1.9  2010-07-02 21:26:51  frigaut
+ * - merged Aurea Garcia-Rissmann disk harmonic code
+ * - implemented parallel extension (sim.svipc and wfs.svipc)
+ * - a few bug fixes (and many more bug introduction with these major
+ *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
+ *
+ * Revision 1.8  2010/06/09 15:03:43  frigaut
  * - Merged changes of Marcos Van Dam: This implements new reconstructors
  *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
  *   using sparse matrices, very fast). This adds a dependency on soy.
@@ -59,10 +65,18 @@
 
 
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>
+
+#include <sys/time.h>
+
+
+#include "ydata.h"
+
+
 
 #define FFTWOPTMODE FFTW_EXHAUSTIVE
 
@@ -165,7 +179,7 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
                    float *image, /* output images, dim [ 2^n2 , 2^n2 , nplans ] */
                    int n2,       /* log2 of side linear dimension (e.g. 6 for 64x64 arrays) */
                    int nplans,   /* number of plans (min 1, mostly to spped up calculations */
-                   /* by avoiding multiple setups and mallocs */
+                                 /* by avoiding multiple setups and mallocs */
                    float scal)   /* phase scaling factor */
 {
   /* Declarations */
@@ -312,8 +326,6 @@ void _fftVE2(fftwf_complex *in,
 }
 
 
-
-
 /* Shack- Hartmann coded in C
    pass one phase array and a set of indices (start and end of each subapertures)
    then this routine puts the phase sections in one larger phase and does a serie
@@ -343,7 +355,7 @@ void _fftVE2(fftwf_complex *in,
    fimage: final image into which all the subaperture images have been placed 
    at pre-defined positions.
 */
-int _shwfs(float *pupil,        // input pupil
+int _shwfs_phase2spots(float *pupil,        // input pupil
            float *phase,        // input phase
            float phasescale,    // phase scaling factor
            float *phaseoffset,  // input phase offset
@@ -375,41 +387,25 @@ int _shwfs(float *pupil,        // input pupil
                                 // image should one pixel in the FFT'd image be added.
            int   binxy,         // side size of binned subaperture image,
                                 // (simage rebinnned)
-           int   binxy2,        // side size of the image extracted from the
-                                // final image which only corresponds to the
-                                // subaperture (=wfs.npixels)
            int   rebinfactor,   // rebin factor from small to big pixels
-           float *centroidw,    // centroid weight vector for centroid computations, X & Y
            
            float *fimage,       // final image with spots
+           int   *svipc_subok,  // to skip (0) subap for svipc partial spot comput.
            int   *imistart,     // vector of i starts of each image
            int   *imjstart,     // vector of j starts of each image
-           int   *imistart2,     // vector of i starts of each image
-           int   *imjstart2,     // vector of j starts of each image
            int   fimnx,         // final image X dimension
            int   fimny,         // final image Y dimension
            
            float *flux,         // vector of flux (input), dim nsubs
            float *rayleighflux, // vector of flux for rayleigh (input), dim nsubs
            float *skyflux,      // vector of flux for sky (input), dim nsubs
-           float *threshold,    // vector of threshold (input), dim nsubs
-           float *bias,         // bias array, dim = nsubs*binxy*binxy, in e-
-           float *flat,         // flat array, dim = nsubs*binxy*binxy, normalized @ 1.
-           float ron,           // read-out noise
            float darkcurrent,   // dark current, e-/pix/frame
-           int   noise,         // compute noise
            
            int   rayleighflag,  // enable rayleigh processing
            float *rayleigh,     // rayleigh background, ns*ns*nsubs
            // here I separated background and rayleigh. the background includes
            // not only the rayleigh, but also the sky and the dark current.
-           float *bckgrdcalib,  // background calib array, binxy*binxy*nsubs
            int   bckgrdinit,    // init background processing. fill bckgrdcalib
-           int   bckgrdsub,     // subtract background
-           
-           int   *validsubs,    // valid subaps within the set of subap 
-                                // for which an image is computed (0/1)
-           float *mesvec,       // final measurement vector
            
            int   counter,       // current counter (in number of cycles)
            int   niter)         // total # of cycles over which to integrate
@@ -422,17 +418,15 @@ int _shwfs(float *pupil,        // input pupil
   float         *simage;
   float         *bimage;
   float         *bsubmask;
-  float         *bimage2;
   float         *brayleigh;
-  float         *gnoise2;
-  float         *fnoise;
   fftwf_plan    p,p1;
-  float         centx, centy, centi, tot, totrayleigh, krp, kip, sky;
-  float         corfact,totdark,tmpf,thback;
-  long          log2nr, log2nc, n, ns, nb, nb2;
+  float         tot, totrayleigh, krp, kip, sky;
+  float         corfact,totdark;
+  long          log2nr, log2nc, n, ns, nb;
   int           i,j,k,l,koff,integrate;
-  int           nvalidsubs, vsc; // vsc = valid sub counter
+  int           vsc; // vsc = valid sub counter
 
+  
   /*
     Global setup for FFTs:
   */
@@ -443,45 +437,34 @@ int _shwfs(float *pupil,        // input pupil
   n  = 1 << ( log2nr + log2nc ); // total number of pixels in small array
   ns = 1 << log2nr;  // side of small array, pixels, n=ns*ns
   nb = binxy * binxy;
-  nb2 = binxy2 * binxy2;
 
   integrate = 1; // force to pass by the end (subap overlap upgrade)
   if (niter > 1) {integrate = 1;}  // we are in "integrating mode"
 
   // Allocate memory for the input operands and check its availability.
-  bimage       = ( float* ) malloc ( nb * sizeof ( float ) );
-  bsubmask     = ( float* ) malloc ( nb * sizeof ( float ) );
-  bimage2      = ( float* ) malloc ( nb2 * sizeof ( float ) );
-  brayleigh    = ( float* ) malloc ( nb * sizeof ( float ) );
-  gnoise2      = ( float* ) malloc ( nb2 * sizeof ( float ) );
-  fnoise       = ( float* ) malloc ( fimnx * fimny * sizeof ( float ) );
-  simage       = ( float* ) malloc ( n * sizeof ( float ) );
   A            = fftwf_malloc ( n * sizeof ( fftwf_complex ) );
   K            = fftwf_malloc ( n * sizeof ( fftwf_complex ) );
   result       = fftwf_malloc ( n * sizeof ( fftwf_complex ) );
-
+  bimage       = ( float* ) malloc ( nb * sizeof ( float ) );
+  simage       = ( float* ) malloc ( n * sizeof ( float ) );
+  brayleigh    = ( float* ) malloc ( nb * sizeof ( float ) );
+  bsubmask     = ( float* ) malloc ( nb * sizeof ( float ) );
+  
+  
   if ( A == NULL || K == NULL || result == NULL || 
-       bimage == NULL || bimage2 == NULL || simage == NULL || 
-       brayleigh == NULL || gnoise2 == NULL || bsubmask == NULL ||
-       fnoise == NULL ) { return (1); }
+       bimage == NULL || simage == NULL || brayleigh == NULL ||
+       bsubmask == NULL ) { return (1); }
 
   //Zero out final image if first iteration
   if (counter == 1) {
     // in fact, let's put the dark current value in there:
     //for (i=0;i<(fimnx*fimny);i++) { fimage[i] = 0.0f; }
-    totdark = (float) niter * darkcurrent;
-    for (i=0;i<(fimnx*fimny);i++) { fimage[i] = totdark; }
+    // these 2 lines temporarily disabled for svipc shm_var of ffimage:
+    // FIXME (remove comments):FIXME FIXME FIXME
+    //    totdark = (float) niter * darkcurrent;
+    //    for (i=0;i<(fimnx*fimny);i++) { fimage[i] = totdark; }
   }
 
-  // how many valid subs?
-  nvalidsubs = 0;
-  for( i = 0; i < nsubs; i++) { nvalidsubs += validsubs[i]; }
-
-  // zero out mesurement vector
-  for ( l=0 ; l<nvalidsubs ; l++ ) {
-    mesvec[l]   = 0.0f;
-    mesvec[nvalidsubs+l] = 0.0f;
-  }
 
   // compute bsubmask from submask and binindices:
   for ( i = 0; i < nb; i++ ) { bsubmask[i] = (float)(1-domask); }
@@ -540,6 +523,8 @@ int _shwfs(float *pupil,        // input pupil
   vsc = 0;
   for ( l=0 ; l<nsubs ; l++ ) {
 
+    if (svipc_subok[l]==0) continue;
+    
     // reset A and result
     ptr = (void *)A;
     for ( i=0; i<n ; i++ ) {  
@@ -674,7 +659,8 @@ int _shwfs(float *pupil,        // input pupil
     for ( j=0 ; j<binxy ;j++) {
       for ( i=0 ; i<binxy ;i++) {
         k = koff + i + j*fimnx;
-        fimage[k] += bimage[i+j*binxy];
+        //        fimage[k] += bimage[i+j*binxy];
+        *(fimage+k) += bimage[i+j*binxy];
       }
     }
   }
@@ -683,131 +669,193 @@ int _shwfs(float *pupil,        // input pupil
   // END OF LOOP ON SUBAPERTURES
   //============================
 
-  // last cycle in integrate mode:
-  if (counter == niter) {
-    // ok, so at this point, we have, for niter frames, done the following:
-    // added darkcurrent to entire fimage
-    // cumulated star images in each subapertures
-    // cumulated sky
-    // cumulated rayleight, if needed.
-    // applied field stop to star, sky and rayleight.
-    // we haven't done anything yet about bias and flat
-    // 
-    // first, if this is a call to establish the calibration background, 
-    // let's do it (before we apply bias, flat and noise):
-    if (bckgrdinit) {
-      for ( i = 0; i < (fimnx*fimny); i++ ) { bckgrdcalib[i] = fimage[i]; }
-    }
-    
-		
-    // first we have to multiply by the gain (flat) before applying
-    // the noise:
-    for (i = 0; i < (fimnx*fimny); i++) { fimage[i] *= flat[i]; }
-		
-    // Then apply photon and gaussian (read-out) noise
-    if (noise == 1) {
-      _poidev(fimage,fimnx*fimny);
-      _gaussdev(fnoise,fimnx*fimny);
-      for ( i = 0; i <  (fimnx*fimny); i++ ) { fimage[i] += ron*fnoise[i]; }
-    }
-
-    // Then add the bias (counted as many time as there were frames)
-    // No noise on the bias, normally (sure?)
-    for (i = 0; i < (fimnx*fimny); i++) { fimage[i] += (float) niter * bias[i]; }
-
-    // let's clarify something, as I'm not sure it was as I understood it
-    // initially: the bias and flat entries in the parfile are for
-    // *errors* in the bias and flat. Those are supposed to be calibrated
-    // out, hence here we don't correct for the given value, as it is
-    // supposed to result from miscalibrations
-    
-    // if requested, we should now subtract the background:
-    if (bckgrdsub) {
-      for ( i = 0; i < (fimnx*fimny); i++ ) { fimage[i] -= bckgrdcalib[i]; }
-    }
-
-    // 2010apr16: see note on outside pixels not being thresholded
-    // in yao_wfs.i (func sh_wfs). not a big issue, but we solve it here.
-    // we need to threshold the fimage pixels outside the valid
-    // subap. Let's remove this value here and then adjust by the
-    // difference below:
-    thback = (float) niter * threshold[nsubs];
-    for ( i = 0; i < (fimnx*fimny); i++ ) { fimage[i] -= thback; }
-    
-    for ( l=0 ; l<nsubs ; l++ ) {
-
-      // retrieve the final/integrated subaperture image from fimage:
-      koff = imistart2[l] + imjstart2[l]*fimnx;    
-      for ( j=0 ; j<binxy2 ;j++) {
-        for ( i=0 ; i<binxy2 ;i++) {
-          k = koff + i + j*fimnx;
-          bimage2[i+j*binxy2] = fimage[k];
-        }
-      }
-
-      // Apply threshold
-      tmpf = (float) niter * threshold[l];
-      for ( i = 0; i < nb2; i++ ) { 
-        //bimage2[i] = (bimage2[i] - bias[l*nb2+i])/flat[l*nb2+i];
-        // see above for thback meaning
-        bimage2[i] = bimage2[i] + thback - tmpf; 
-        if (bimage2[i] < 0.0f) bimage2[i] = 0.0f;
-      }
-
-      // put back image where it belongs in large image for displays
-      // a big stupid: the only operation we did was the threshold...
-      koff = imistart2[l] + imjstart2[l]*fimnx;
-
-      for ( j=0 ; j<binxy2 ;j++) {
-        for ( i=0 ; i<binxy2 ;i++) {
-          k = koff + i + j*fimnx;
-          fimage[k] = bimage2[i+j*binxy2];
-        }
-      }
-
-      // is that a valid subaperture?
-      if (validsubs[l]) {
-        // Compute centroids
-        centx = centy = centi = 0.0f;
-        for ( i=0 ; i<binxy2 ; i++ ) {
-          for ( j=0 ; j<binxy2 ; j++ ) {
-            centx += centroidw[i]*bimage2[i+j*binxy2];
-            centy += centroidw[j]*bimage2[i+j*binxy2];
-            centi += bimage2[i+j*binxy2];
-          }
-        }
-
-        // Compute measurements
-        if (centi > 0.0f) {
-          mesvec[vsc]   = centx/centi;
-          mesvec[nvalidsubs+vsc] = centy/centi;
-        }
-        vsc++; // increment valid subaperture counter
-      }
-    }
-    // with respect to the noise in the outskirt of the fimage:
-    // the threshold has been applied everywhere, but the condition
-    // if (pixel<0) pixel=0 only has been applied in the valid
-    // subapertures. Let's make sure it is applied everywhere here:
-    for ( i = 0; i < (fimnx*fimny); i++ ) {
-      if (fimage[i] < 0.0f) fimage[i] = 0.0f;
-    }
-
-  }
 
   fftwf_destroy_plan(p);
   fftwf_destroy_plan(p1);
 
-  free ( bimage );
-  free ( bsubmask );
-  free ( bimage2 );
-  free ( brayleigh ); /* fixed memleak 2008nov18 */
-  free ( gnoise2 );
-  free ( fnoise );
-  free ( simage );
   fftwf_free ( A );
   fftwf_free ( K );
   fftwf_free ( result );
+  free ( bimage );
+  free ( simage );
+  free ( brayleigh ); /* fixed memleak 2008nov18 */
+  free ( bsubmask );
+
+
+  return (0);
+}
+
+int _shwfs_spots2slopes(
+           float *fimage,       // final image with spots
+           int   *imistart2,    // vector of i starts of each image
+           int   *imjstart2,    // vector of j starts of each image
+           int   nsubs,         // # of subapertures
+           int   binxy2,        // side size of the image extracted from the
+                                // final image which only corresponds to the
+                                // subaperture (=wfs.npixels)
+           int   fimnx,         // final image X dimension
+           int   fimny,         // final image Y dimension
+           int   yoff,          // y offset (to process only part of the image)
+           float *centroidw,    // centroid weight vector for centroid computations, X & Y
+           float *threshold,    // vector of threshold (input), dim nsubs
+           float *bias,         // bias array, dim = nsubs*binxy*binxy, in e-
+           float *flat,         // flat array, dim = nsubs*binxy*binxy, normalized @ 1.
+           float ron,           // read-out noise
+           long  noise,         // compute noise
+           float *bckgrdcalib,  // background calib array, binxy*binxy*nsubs
+           int   bckgrdinit,    // init background processing. fill bckgrdcalib
+           int   bckgrdsub,     // subtract background
+           int   *validsubs,    // valid subaps within the set of subap 
+                                // for which an image is computed (0/1)
+           int   *svipc_subok,  // to skip (0) subap for svipc partial spot comput.
+           int   niter,         // total # of cycles over which to integrate
+           float *mesvec)       // final measurement vector
+           
+{
+  /* Declarations */
+
+  float         *bimage2;
+  float         *fnoise;
+  float         centx, centy, centi, tmpf, thback;
+  long          nb2;
+  int           i, j, k, l, koff, xyoff;
+  int           nvalidsubs, vsc; // vsc = valid sub counter
+  
+  // Set the size of 2d FFT.
+  nb2 = binxy2 * binxy2;
+  vsc = -1;
+  xyoff = yoff * fimnx;
+  
+  // Allocate memory for the input operands and check its availability.
+  bimage2      = ( float* ) malloc ( nb2 * sizeof ( float ) );
+  fnoise       = ( float* ) malloc ( fimnx * fimny * sizeof ( float ) );
+  
+  if ( bimage2 == NULL || fnoise == NULL ) { return (1); }
+
+
+  // how many valid subs?
+  nvalidsubs = 0;
+  for( i=0; i<nsubs; i++) nvalidsubs += validsubs[i];
+
+  // zero out mesurement vector ( now done in sh_wfs() )
+
+  // ok, so at this point, we have, for niter frames, done the following:
+  // added darkcurrent to entire fimage
+  // cumulated star images in each subapertures
+  // cumulated sky
+  // cumulated rayleight, if needed.
+  // applied field stop to star, sky and rayleight.
+  // we haven't done anything yet about bias and flat
+  // 
+  // first, if this is a call to establish the calibration background, 
+  // let's do it (before we apply bias, flat and noise):
+  if (bckgrdinit) {
+    for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) bckgrdcalib[i] = fimage[i];
+  }
+    
+  
+  // first we have to multiply by the gain (flat) before applying
+  // the noise:
+  for ( i=xyoff; i<(xyoff+fimnx*fimny); i++) fimage[i] *= flat[i];
+		
+  // Then apply photon and gaussian (read-out) noise
+  if ( noise==1 ) {
+    // poisson noise
+    _poidev(fimage+xyoff,fimnx*fimny);
+    // add gaussian noise
+    _gaussdev(fnoise,fimnx*fimny);
+    for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) fimage[i] += ron*fnoise[i-xyoff];
+  }
+  
+  // Then add the bias (counted as many time as there were frames)
+  // No noise on the bias, as this is a bias *error* (see below)
+  for ( i=xyoff; i<(xyoff+fimnx*fimny); i++) fimage[i] += (float) niter * bias[i];
+
+  // let's clarify something, as I'm not sure it was as I understood it
+  // initially: the bias and flat entries in the parfile are for
+  // *errors* in the bias and flat. Those are supposed to be calibrated
+  // out, hence here we don't correct for the given value, as it is
+  // supposed to result from miscalibrations
+    
+  // if requested, we should now subtract the background:
+  if (bckgrdsub) {
+    for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) fimage[i] -= bckgrdcalib[i];
+  }
+
+  // 2010apr16: see note on outside pixels not being thresholded
+  // in yao_wfs.i (func sh_wfs). not a big issue, but we solve it here.
+  // we need to threshold the fimage pixels outside the valid
+  // subap. Let's remove this value here and then adjust by the
+  // difference below:
+  thback = (float) niter * threshold[nsubs];
+  for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) fimage[i] -= thback;
+
+  
+  // OK, now let's finally compute the slopes over all subaps.
+  for ( l=0 ; l<nsubs ; l++ ) {
+
+    if (validsubs[l]) vsc++;
+    
+    if (svipc_subok[l]==0) continue;
+
+    // retrieve the final/integrated subaperture spot image from fimage:
+    koff = imistart2[l] + imjstart2[l]*fimnx;    
+    for ( j=0 ; j<binxy2 ;j++) {
+      for ( i=0 ; i<binxy2 ;i++) {
+        k = koff + i + j*fimnx;
+        bimage2[i+j*binxy2] = fimage[k];
+      }
+    }
+
+    // Apply threshold
+    tmpf = (float) niter * threshold[l];
+    for ( i=0; i<nb2; i++ ) { 
+      // see above for thback meaning
+      bimage2[i] = bimage2[i] + thback - tmpf; 
+      if (bimage2[i] < 0.0f) bimage2[i] = 0.0f;
+    }
+    
+    // put back image where it belongs in large image for displays
+    // a big stupid: the only operation we did was the threshold...
+    koff = imistart2[l] + imjstart2[l]*fimnx;
+    
+    for ( j=0 ; j<binxy2 ;j++) {
+      for ( i=0 ; i<binxy2 ;i++) {
+        k = koff + i + j*fimnx;
+        fimage[k] = bimage2[i+j*binxy2];
+      }
+    }
+    
+    // is that a valid subaperture?
+    if (validsubs[l]) {
+      // Compute centroids
+      centx = centy = centi = 0.0f;
+      for ( i=0 ; i<binxy2 ; i++ ) {
+        for ( j=0 ; j<binxy2 ; j++ ) {
+          centx += centroidw[i]*bimage2[i+j*binxy2];
+          centy += centroidw[j]*bimage2[i+j*binxy2];
+          centi += bimage2[i+j*binxy2];
+        }
+      }
+      
+      // Compute measurements
+      if (centi > 0.0f) {
+        mesvec[vsc]   = centx/centi;
+        mesvec[nvalidsubs+vsc] = centy/centi;
+      } // otherwise stay at zero (init value)
+      //      vsc++; // increment valid subaperture counter
+    }
+  }
+  // with respect to the noise in the outskirt of the fimage:
+  // the threshold has been applied everywhere, but the condition
+  // if (pixel<0) pixel=0 only has been applied in the valid
+  // subapertures. Let's make sure it is applied everywhere here:
+  for ( i = xyoff; i < (xyoff+fimnx*fimny); i++ ) {
+    if (fimage[i] < 0.0f) fimage[i] = 0.0f;
+  }
+
+  free ( bimage2 );
+  free ( fnoise );
 
   return (0);
 }
@@ -852,27 +900,37 @@ int _shwfs_simple(float *pupil,      // input pupil
         // of the phase X derivative
         // take care of outliers:
         if ( (istart[l]==0) & (i==0) ) { // start of a row
-          avgx += pupil[k] * phasescale * (phase[k+1]-phase[k]+phaseoffset[k+1]-phaseoffset[k]);
+          avgx += pupil[k] * phasescale * \
+            (phase[k+1]-phase[k]+phaseoffset[k+1]-phaseoffset[k]);
         } else if ( ((istart[l]+nx)>=dimx) & (i==(nx-1)) ) { // end of a row
-          avgx += pupil[k] * phasescale * (phase[k]-phase[k-1]+phaseoffset[k]-phaseoffset[k-1]);
+          avgx += pupil[k] * phasescale * \
+            (phase[k]-phase[k-1]+phaseoffset[k]-phaseoffset[k-1]);
         } else if (pupil[k-1]==0) { // edge of the pupil 
-          avgx += pupil[k] * phasescale * (phase[k+1]-phase[k]+phaseoffset[k+1]-phaseoffset[k]);
+          avgx += pupil[k] * phasescale * \
+            (phase[k+1]-phase[k]+phaseoffset[k+1]-phaseoffset[k]);
         } else if (pupil[k+1]==0) { // edge of the pupil 
-          avgx += pupil[k] * phasescale * (phase[k]-phase[k-1]+phaseoffset[k]-phaseoffset[k-1]);
+          avgx += pupil[k] * phasescale * \
+            (phase[k]-phase[k-1]+phaseoffset[k]-phaseoffset[k-1]);
         } else { // then 2 neightbors derivative estimate
-          avgx += pupil[k] * phasescale * (phase[k+1]-phase[k-1]+phaseoffset[k+1]-phaseoffset[k-1])/2.;
+          avgx += pupil[k] * phasescale * \
+            (phase[k+1]-phase[k-1]+phaseoffset[k+1]-phaseoffset[k-1])/2.;
         }
         // same for y:
         if ( (jstart[l]==0) & (j==0) ) { // start of a column
-          avgy += pupil[k] * phasescale * (phase[k+dimx]- phase[k]+phaseoffset[k+dimx]-phaseoffset[k]);
+          avgy += pupil[k] * phasescale * \
+            (phase[k+dimx]- phase[k]+phaseoffset[k+dimx]-phaseoffset[k]);
         } else if ( ((jstart[l]+ny)>=dimy) & (j==(ny-1)) ) { // end of a column
-          avgy += pupil[k] * phasescale * (phase[k]- phase[k-dimx]+phaseoffset[k]-phaseoffset[k-dimx]);
+          avgy += pupil[k] * phasescale * \
+            (phase[k]- phase[k-dimx]+phaseoffset[k]-phaseoffset[k-dimx]);
         } else if (pupil[k-dimx]==0) { // edge of the pupil
-          avgy += pupil[k] * phasescale * (phase[k+dimx]- phase[k]+phaseoffset[k+dimx]-phaseoffset[k]);
+          avgy += pupil[k] * phasescale * \
+            (phase[k+dimx]- phase[k]+phaseoffset[k+dimx]-phaseoffset[k]);
         } else if (pupil[k+dimx]==0) { // edge of the pupil
-          avgy += pupil[k] * phasescale * (phase[k]- phase[k-dimx]+phaseoffset[k]-phaseoffset[k-dimx]);
+          avgy += pupil[k] * phasescale * \
+            (phase[k]- phase[k-dimx]+phaseoffset[k]-phaseoffset[k-dimx]);
         } else {
-          avgy += pupil[k] * phasescale * (phase[k+dimx]- phase[k-dimx]+phaseoffset[k+dimx]-phaseoffset[k-dimx])/2.;
+          avgy += pupil[k] * phasescale * \
+            (phase[k+dimx]- phase[k-dimx]+phaseoffset[k+dimx]-phaseoffset[k-dimx])/2.;
         }
         avgi += pupil[k];
       }

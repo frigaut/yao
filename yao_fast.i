@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_fast.i,v 1.3 2010-04-15 02:36:53 frigaut Exp $
+ * $Id: yao_fast.i,v 1.4 2010-07-02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,13 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_fast.i,v $
- * Revision 1.3  2010-04-15 02:36:53  frigaut
+ * Revision 1.4  2010-07-02 21:26:51  frigaut
+ * - merged Aurea Garcia-Rissmann disk harmonic code
+ * - implemented parallel extension (sim.svipc and wfs.svipc)
+ * - a few bug fixes (and many more bug introduction with these major
+ *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
+ *
+ * Revision 1.3  2010/04/15 02:36:53  frigaut
  *
  *
  * final commit to upgrade this repo to yao 4.5.1
@@ -177,34 +183,48 @@ extern _fftVE2
 
 //==================================================================
 
-extern _shwfs
+extern _shwfs_phase2spots
 /* PROTOTYPE
-   int _shwfs(pointer pupil, pointer phase, float phasescale,
-   pointer phaseoffset, int dimx, pointer istart, pointer jstart,
-   int nx, int ny, int nsubs, int sdimpow2, long domask, pointer submask, 
-   pointer kernel, pointer kernels, pointer kerfftr, pointer kerffti, 
-   int initkernels, int kernelconv, pointer binindices, int binxy, int binxy2, int rebinfactor,
-   pointer centroidw, pointer fimage, pointer imistart, pointer jmistart, 
-   pointer imistart2, pointer jmistart2, int fimnx, int fimny, pointer flux, 
-   pointer rayleighflux, pointer skyflux, pointer threshold, pointer bias,
-   pointer flat, float ron, float darkcurrent, int noise,
-   int rayleighflag, pointer rayleigh, pointer bckgrdcalib, int bckgrdinit,
-   int bckgrdsub, pointer validsubs, pointer mesvec, int counter, int niter)
+   int _shwfs_phase2spots(float array pupil, float array phase,
+   float phasescale, float array phaseoffset, int dimx,
+   int array istart, int array jstart, int nx, int ny,
+   int nsubs, int sdimpow2, long domask, float array submask, 
+   float array kernel, float array kernels, float array kerfftr,
+   float array kerffti, int initkernels, int kernelconv,
+   int array binindices, int binxy, int rebinfactor,
+   float array fimage, int array svipc_subok,
+   int array imistart, int array jmistart, int fimnx, int fimny,
+   float array flux, float array rayleighflux, float array skyflux, 
+   float darkcurrent, int rayleighflag, float array rayleigh,
+   int bckgrdinit, int counter, int niter)
+*/
+
+extern _shwfs_spots2slopes
+/* PROTOTYPE
+   int _shwfs_spots2slopes( float array fimage, int array imistart2,
+   int array imjstart2, int nsubs, int binxy2, int fimnx, int fimny,
+   int yoffset, float array centroidw, float array threshold,
+   float array bias, float array flat,
+   float ron, long noise, float array bckgrdcalib,
+   int bckgrdinit, int bckgrdsub, int array validsubs, int array svipc_subok,
+   int niter, float array mesvec)
 */
 
 extern _shwfs_simple
 /* PROTOTYPE
-   int _shwfs_simple(pointer pupil, pointer phase, float phasescale,
-   pointer phaseoffset, int dimx, int dimy, pointer istart, pointer jstart,
-   int nx, int ny, int nsubs, float toarcsec, pointer mesvec)
+   int _shwfs_simple(float array pupil, float array phase,
+   float phasescale, float array phaseoffset, int dimx, int dimy,
+   int array istart, int array jstart, int nx, int ny, int nsubs,
+   float toarcsec, float array mesvec)
 */
 
 extern _cwfs
 /* PROTOTYPE
-   int _cwfs(pointer pupil, pointer phase, float phasescale, pointer phaseoffset,
-   pointer cxdef,pointer sxdef, int dimpow2, pointer sind, pointer nsind,
-   int nsubs, pointer fimage, pointer fimage2, float nphotons, float skynphotons,
-   float ron, float darkcurrent, int noise, pointer mesvec)
+   int _cwfs(float array pupil, float array phase, float phasescale,
+   float array phaseoffset, float array cxdef, float array sxdef,
+   int dimpow2, int array sind, int array nsind, int nsubs,
+   float array fimage, float array fimage2, float nphotons, float skynphotons,
+   float ron, float darkcurrent, int noise, float array mesvec)
 */
 
 fftw_wisdom;

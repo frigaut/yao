@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_util.i,v 1.5 2010-04-15 02:36:53 frigaut Exp $
+ * $Id: yao_util.i,v 1.6 2010-07-02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,13 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_util.i,v $
- * Revision 1.5  2010-04-15 02:36:53  frigaut
+ * Revision 1.6  2010-07-02 21:26:51  frigaut
+ * - merged Aurea Garcia-Rissmann disk harmonic code
+ * - implemented parallel extension (sim.svipc and wfs.svipc)
+ * - a few bug fixes (and many more bug introduction with these major
+ *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
+ *
+ * Revision 1.5  2010/04/15 02:36:53  frigaut
  *
  *
  * final commit to upgrade this repo to yao 4.5.1
@@ -50,13 +56,13 @@ require,"pkg_mngr.i"; // kinput
 require,"util_fr.i"; // nprint, wheremin, wheremax, typeReturn, exist
 require,"linalg.i";
 
-func rdfile(file)
-{
-  f = open(file,"r");
-  fcontent = [];
-  while (line=rdline(f)) grow,fcontent,line;
-  return fcontent;
-}
+// func rdfile(file)
+// {
+//   f = open(file,"r");
+//   fcontent = [];
+//   while (line=rdline(f)) grow,fcontent,line;
+//   return fcontent;
+// }
 
 func escapechar(s)
 {

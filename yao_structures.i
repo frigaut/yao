@@ -59,6 +59,17 @@ struct sim_struct
   long    pupildiam;      // Pupil diameter in pixels. Required [none]
   long    debug;          // set the debug level (0:no debug, 1:some, 2: most). Optional [0]
   long    verbose;        // set the verbose level (0:none, 1: some, 2: most). Optional [0]
+  long    svipc;          // set to the number of process for parallelization
+                          // 0 = no parallelization
+                          // bits    effect
+                          // 0(1)    WFS/DM global split (2 process)
+                          // 1(2)    PSFs calculation parallelization
+                          // e.g. sim.svipc = 1 -> split WFS/DM 
+                          // e.g. sim.svipc = 2 -> parallelize PSFs
+                          // e.g. sim.svipc = 3 -> WFS/DM & PSFs
+  long    shmkey;         // shared memory key (there's a default).
+                          // Change to run multiple simul in parallel.
+  long    semkey;         // shared memory key (there's a default)
   // Internal keywords:
   long    _size;          // Internal. Size of the arrays [pixels]
   float   _cent;          // Internal. Pupil is centered on (_cent,_cent)
@@ -115,7 +126,8 @@ struct wfs_struct
   long    disjointpup;    // boolean. if set, wfs(n) will be filtered by an array
                           // disjointpup(,,n) that has to be defined by the user
                           // see user_pupil(). Allow for GMT-type topology.
-  
+  long    svipc;          // number of parallel process to use for this WFS.
+                          // (0 or 1: don't parallelize)
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first subaperture of ring.
@@ -156,6 +168,12 @@ struct wfs_struct
   int     nzer;           // # of zernike sensed
 
   // Internal keywords:
+  int     _initkernels;   // put in wfs struct for svipc sync 2010jun25
+  int     _svipc_init_done; // svipc init done for this wfs
+  pointer _svipc_subok;   // vector (length=nsub4disp) 0-> skip comput. of spot. 1->do it.
+  pointer _fork_subs;   // matrix signing which subap have to be processed by the various
+                          // wfs fork (dim=nforkxnsub). 0-> skip, 1-> process.
+  pointer _fork_subs2;  // same, but for call to _shwfs_spots2slopesa
   pointer _validsubs;     // 0/1 mark invalid/valid, out of the ones selected for display
   float   _origpixsize;   // Internal.
   int     _rebinfactor;   // fft pixels to big pixels
@@ -194,8 +212,10 @@ struct wfs_struct
   pointer _imjstart;      //
   pointer _imistart2;     //
   pointer _imjstart2;     //
-  int     _fimnx;         //
-  int     _fimny;         //
+  int     _fimnx;         // x dim of wfs._fimage
+  int     _fimny;         // y dim of wfs._fimage
+  pointer _fimny2;        // y dim of (possibly split) wfs._fimage for _shwfs_spots2slopes (svipc)
+  pointer _yoffset;       // y offset of wfs._fimage for _shwfs_spots2slopes (svipc)
   pointer _bias;          // internal: array of bias error
   pointer _flat;          // internal: array of flat error
   long    _domask;        // internal. flag to do submask calculations in _shwfs
@@ -218,10 +238,10 @@ struct wfs_struct
 
 struct dm_struct
 {
-  string  type;           // valid types are "bimorph", "stackarray" "tiptilt", 
-                          // "zernike", "kl", "segmented", "aniso" or "user_function",
-                          // where user_function is the name of a function provided
-                          // by the user. Required [none]
+  string  type;           // valid types are "bimorph", "stackarray" "tiptilt",
+                          // "diskharmonic", "zernike", "kl", "segmented", "aniso" or 
+                          // "user_function", where user_function is the name of 
+                          // a function provided by the user. Required [none]
   long    subsystem;      // Subsystem this DM belongs to. Optional [1]
   string  iffile;         // Influence function file name. Leave it alone.
   long    pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
@@ -266,6 +286,9 @@ struct dm_struct
 
   // Zernike-only keywords:
   long    nzer;           // Number of modes, including piston. Required [none]
+  
+  // Disk-Harmonic only keywords
+  long    max_order;     // maximum order included in the dm modal IF (min_order is always 0)
 
   // KL-only keywords:
   long    nkl;            // Number of modes, including piston. Required [none]

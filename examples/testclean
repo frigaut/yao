@@ -1,2 +1,2 @@
 #!/bin/sh
-\rm *.fits *.ps *.res
+\rm *.fits *.ps *.res *.ruo *.rco *~ 2> /dev/null

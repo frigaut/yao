@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.9 2010-06-09 15:03:42 frigaut Exp $
+ * $Id: aoutil.i,v 1.10 2010-07-02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,13 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.9  2010-06-09 15:03:42  frigaut
+ * Revision 1.10  2010-07-02 21:26:51  frigaut
+ * - merged Aurea Garcia-Rissmann disk harmonic code
+ * - implemented parallel extension (sim.svipc and wfs.svipc)
+ * - a few bug fixes (and many more bug introduction with these major
+ *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
+ *
+ * Revision 1.9  2010/06/09 15:03:42  frigaut
  * - Merged changes of Marcos Van Dam: This implements new reconstructors
  *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
  *   using sparse matrices, very fast). This adds a dependency on soy.
@@ -102,6 +108,7 @@
  * func make_pzt_dm(nm,&def,disp=)
  * func make_pzt_dm_elt(nm,&def,disp=)
  * func make_zernike_dm(nm,&def,disp=)
+ * func make_diskharmonic_dm(nm,&def,disp=)
  * func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
  * func make_aniso_dm(nm,&def,disp=)
  * func make_tiptilt_dm(nm,&def,disp=)
@@ -123,6 +130,22 @@
  * func findfwhm(image,psize)
  *
  */
+
+
+//----------------------------------------------------
+func create_yao_window(dpi)
+{
+  if (!dpi) dpi=60;
+  
+  winkill,0;
+  winkill,2;
+  //  if (dpi) {
+  window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),       \
+    height=long(425*(dpi/50.)),wait=1;
+  //  } else {
+  //    window,0,style="aosimul3.gs",wait=1;
+  //  }
+}
 
 
 //----------------------------------------------------
@@ -414,41 +437,54 @@ func check_parameters(void)
     if (wfs(ns).type == string()) {
       exit,swrite(format="wfs(%d).type has not been set",ns);
     }
+
     if (wfs(ns).subsystem == 0) {wfs(ns).subsystem = 1;}
+
     if (wfs(ns).lambda == 0) {
       exit,swrite(format="wfs(%d).lambda has not been set",ns);
     }
+
     if (wfs(ns).dispzoom == 0) {wfs(ns).dispzoom = 1;}
+
     if ((wfs(ns).type == "curvature") && ((*wfs(ns).nsubperring) == [])) {
       write,format="wfs(%d).nsubperring has not been set.\n",ns;
       write,"Valid values are, for example:";
       exit,"wfs(n).nsubperring = &([6,12,18]);";
     }
+
     if ((wfs(ns).type == "curvature") && (wfs(ns).l == 0)) {
       exit,swrite(format="wfs(%d).l has not been set",ns);
     }
+
     if ((wfs(ns).type == "curvature") && (wfs(ns).gsdepth > 0)) {
       exit,swrite(format="wfs(%d): gsdepth not implemented for CWFS, sorry",ns);
     }
+
     if ((wfs(ns).type == "curvature") && (wfs(ns).rayleighflag == 1)) {
       exit,swrite(format="wfs(%d): Rayleigh not implemented for CWFS, sorry",ns);
     }
+
     if ((wfs(ns).gsalt == 0) && (wfs(ns).rayleighflag == 1)) {
       write,swrite(format="wfs(%d): gsalt = 0 and Rayleigh flag is set !",ns);
       exit,"Rayleigh is not computed for NGS sensors, sorry.";
     }
+
     if ((wfs(ns).gsalt > 0) && (wfs(ns).laserpower == 0)) {
       exit,swrite(format="wfs(%d): this is a LGS and you haven't set wfs.laserpower",ns);
     }
+
     if ((wfs(ns).type == "curvature") && (wfs(ns).fieldstopdiam == 0)) {
       wfs(ns).fieldstopdiam = 1.f;
     }
+
     if ((wfs(ns).type == "hartmann") && (wfs(ns).shmethod == 0)) {
       exit,swrite(format="wfs(%d).shmethod has not been set",ns);
     }
+
     if ((wfs(ns).type == "hartmann") && (wfs(ns).shnxsub == 0)) {
       exit,swrite(format="wfs(%d).shnxsub has not been set",ns);
     }
+
     if ((wfs(ns).type == "hartmann") && (wfs(ns).shmethod == 2)) {
       if ((wfs(ns).type == "hartmann") && (wfs(ns).pixsize == 0)) {
         exit,swrite(format="wfs(%d).pixsize has not been set",ns);
@@ -457,6 +493,7 @@ func check_parameters(void)
         exit,swrite(format="wfs(%d).npixels has not been set",ns);
       }
     }
+
     if ((wfs(ns).type == "hartmann") && (wfs(ns).shmethod == 2)) {
       if ((strlen(wfs(ns).fsname)>0) && (strlen(wfs(ns).fstop)>0)) {
         write,format="You have set both wfs(%d).fsname and wfs(%d).fstop\n",ns,ns;
@@ -470,9 +507,13 @@ func check_parameters(void)
         write,format="wfs(%d).fssize has not been set, will be forced to subap FoV\n",ns;
       }
     }    
+
     if (wfs(ns).nintegcycles == 0) {wfs(ns).nintegcycles = 1;}
+
     if (wfs(ns).fracIllum == 0) {wfs(ns).fracIllum = 0.5;}
+
     if (wfs(ns).optthroughput == 0) {wfs(ns).optthroughput = 1.0;}
+    
     wfs.ron = float(wfs.ron);
   }
 
@@ -492,7 +533,7 @@ func check_parameters(void)
     if (dm(nm).thresholdresp == 0) {dm(nm).thresholdresp = 0.3;}
     if (dm(nm).gain == 0) {dm(nm).gain = 1.;}
     if (dm(nm).unitpervolt == 0) {
-      if ( (dm(nm).type == "tiptilt") || (dm(nm).type == "zernike") ){
+      if ( (dm(nm).type == "tiptilt") || (dm(nm).type == "zernike") || (dm(nm).type == "diskharmonic") ){
         dm(nm).unitpervolt = 0.0005;
       } else if (dm(nm).type == "bimorph") {
         dm(nm).unitpervolt = 1.0;
@@ -519,6 +560,9 @@ func check_parameters(void)
     }
     if ( (dm(nm).type == "zernike") && (dm(nm).nzer == 0) ) {
       exit,swrite(format="dm(%d).nzer has not been set",nm);
+    }    
+    if ( (dm(nm).type == "diskharmonic") && (dm(nm).max_order == 0) ) {
+      exit,swrite(format="dm(%d).maxorder has not been set",nm);
     }    
     if ( (dm(nm).type == "kl") && (dm(nm).nkl == 0) ) {
       exit,swrite(format="dm(%d).nkl has not been set",nm);
@@ -660,7 +704,7 @@ func check_parameters(void)
     dm_type = strtolower(dm(nm).type);
     if ( (dm_type != "bimorph") && (dm_type != "stackarray") &&
          (dm_type != "zernike") && (dm_type != "kl") &&
-         (dm_type != "segmented") &&
+         (dm_type != "segmented") && (dm_type != "diskharmonic") &&
          (dm_type != "tiptilt") && (dm_type != "aniso") ) {
       // check if this is a user supplied function
       cmd = swrite(format="totype = typeof(%s)",dm(nm).type);
@@ -712,7 +756,7 @@ func check_parameters(void)
     opt.misreg= float(opt.misreg);
   }
   
-  write,format="%s\n","OK";
+  write,format="%s\n","Check parameters: OK";
 }
 //----------------------------------------------------
 func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
@@ -1797,6 +1841,6 @@ func yaodoc(void)
   if (os_env=="darwin") {
     system,"open "+docpath+"/manual.html";
   } else if (os_env=="linux") {
-    system,"firefox "+docpath+"/manual.html &";
+    system,"firefox "+docpath+"/manual.html";
   }
 }

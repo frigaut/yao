@@ -44,12 +44,13 @@ environment. In the following, I give instructions that should be
 enough to get you out of troubles. The process is essentially the same whatever OS you're on:</p>
 
 <ol>
-  <li>Install yorick (<a href="installation_details.html#install_yorick">howto</a>)</li>
-  <li>Install the plugins yorick-yutils&ge;1.3, yorick-imutil&ge;0.5
-  (<a href="installation_details.html#install_plugins">howto</a>) and yorick-soy&ge;1.2
-  if you plan to use the sparse matrices techniques </li>
-  <li>Install FFTW (<a href="installation_details.html#install_fftw">howto</a>)</li>
-  <li>Install yao (<a href="installation_details.html#install_yao">howto</a>)</li>
+  <li>Install <b>yorick</b> (<a href="installation_details.html#install_yorick">howto</a>)</li>
+  <li>Install the plugins <b>yorick-yutils</b>&ge;1.3, <b>yorick-imutil</b>&ge;0.5
+  (<a href="installation_details.html#install_plugins">howto</a>), <b>yorick-soy</b>&ge;1.2
+  if you plan to use the sparse matrices techniques and <b>yorick-svipc</b>&ge;0.9
+  if you wish to use the parallel features</li>
+  <li>Install <b>FFTW</b> (<a href="installation_details.html#install_fftw">howto</a>)</li>
+  <li>Finally, install <b>yao</b> (<a href="installation_details.html#install_yao">howto</a>)</li>
 </ol>
 
 <p>Detailled instructions are <a href="installation_details.html">here</a>. Once you are done, proceed to the <a href="#test_yao">test</a> section.</p>
@@ -106,6 +107,10 @@ particular). For archlinux (these ones are fresh as of october09), look <a href=
 <pre>cd yao_examples_directory  (see above)
 yorick -i test-all.i
 </pre>
+There is also some tests functions for the SHWFS
+(<code>shwfs_tests()</code> for general sh_wfs testing
+and <code>svipc_shwfs_tests</code> for testing the wfs.svipc features
+(parallel extension). Use help,function for the usage of these 2 functions.
  </div>
 </div>
 

@@ -49,16 +49,27 @@
        <font class="highlight">Curvature</font> and
        <font class="highlight">Modal</font> (Zernike) 
        <font class="highlight">WFS</font>,
-       ON or OFF axis, are supported. It is also possible  to <font class="highlight">add your own WFS</font> <font class="new">NEW</font>.
+       ON or OFF axis, are supported. It is also possible
+       to <font class="highlight">add your own
+       WFS</font> <font class="new">NEW 4.5</font>.
      </li>
      <li>
        <font class="highlight">Stackarray</font> (piezostack), 
        <font class="highlight">curvature</font> (bimorph), 
-       <font class="highlight">segmented</font> <font class="new">NEW</font>, (experimental), 
-       <font class="highlight">modal</font> (zernike or KL) and 
+       <font class="highlight">segmented</font> <font class="new">NEW 4.5</font>, (experimental), 
+       <font class="highlight">modal</font> (zernike,
+       disk-marmonic <font class="new">NEW 4.6</font> or
+       KL) and 
        <font class="highlight">Tip-Tilt deformable mirrors</font> 
-       are supported. The altitude of conjugation is adjustable. It is also possible  to <font class="highlight">add your own DM</font> <font class="new">NEW</font>.
+       are supported. The altitude of conjugation is adjustable. It is
+       also possible  to <font class="highlight">add your own
+       DM</font> <font class="new">NEW 4.5</font>.
      </li>
+     <li><font class="highlight">Various reconstructors:
+     least-square with truncation (SVD) and MMSE-like</font>. MMSE can use
+     either full matrix or sparse methods (fast). Users can hook into
+     yao and use their own code to compute the
+     reconstructor <font class="new">NEW 4.5.2</font></li>
      <li>An <font class="highlight">arbitrary number of WFSs and DMs</font> can be used, with the possibility of mixing types. It is therefore possible  to simulate single DM systems, as well as single non-zero conjugate, GLAO and MCAO systems.
      </li>
      <li>It supports <font class="highlight">Natural and Laser Guide Stars</font> (or a mix).
@@ -67,8 +78,29 @@
      </li>
      <li>It uses a multi-layered atmospheric model, with geometrical propagation only.
      </li>
-     <li>The loop execution has been <font class="highlight">optimized for speed</font>: the critical routines have been coded in C. Yorick is thus used as a convenient "glue" between lower levels optimized C calls. Overall, this is rather efficient: A simple 6x6 Shack-Hartmann system (geometrical model, no diffraction) runs at <font class="highlight">over a 1000 iterations/seconds</font> on modern machines (about 250it/sec for a full diffractive SHWFS). That's including turbulent phase computation, wavefront sensing, reconstruction, calculation of the DM shape and PSF/performance estimation.
-       A 50x50 Shack-Hartmann (full diffraction model) system runs at about 10 iterations/s for an 8-m telescope. A 188 curvature system runs at over 40 iterations/s (see the <a href="news.html#breaking_the_1000itpersec_barrier">this entry</a> for more details). Medium-size AO systems for ELTs can also be simulated, but it takes more time and RAM (a 60x60 SH on a 960 pixel pupil runs at about 1 iteration/s and takes up to 2GB of RAM at peak usage). 
+     <li>The loop execution has been <font class="highlight">optimized
+       for speed</font>: the critical routines have been coded in
+       C. Yorick is thus used as a convenient "glue" between lower
+       levels optimized C calls. Overall, this is rather efficient: A
+       simple 6x6 Shack-Hartmann system (geometrical model, no
+       diffraction) runs at <font class="highlight">over a 1000
+       iterations/seconds</font> on modern machines (about 250it/sec
+       for a full diffractive SHWFS). That's including turbulent phase
+       computation, wavefront sensing, reconstruction, calculation of
+       the DM shape and PSF/performance estimation.  A 50x50
+       Shack-Hartmann (full diffraction model) system runs at about 10
+       iterations/s for an 8-m telescope. A 188 curvature system runs
+       at over 40 iterations/s (see
+       the <a href="news.html#breaking_the_1000itpersec_barrier">this
+       entry</a> for more details). Medium-size AO systems for ELTs
+       can also be simulated, but it takes more time and RAM (a 60x60
+       SH on a 960 pixel pupil runs at about 1 iteration/s and takes
+       up to 2GB of RAM at peak usage).<br>
+       <b>Update</b>: yao 4.6.0 brings parallel computation!
+       See <a href="news.html#Parallel_yao_released_with_improvements">this
+       post</a> in the news. On modern hardware, it is now possible to
+       simulate up to 200x200 SHWFS (1 iteration/s). A 64x64SHWFS runs
+       at 23 iterations/s).
      </li>
      <li>Straightforward <font class="highlight">scriptability</font> to probe parameter space.
      </li>
@@ -84,23 +116,26 @@
        <ol>
          <li>Simple gradient average, no noise, very fast: This allow to do tests of the noiseless performance of a system, for quick performance evaluation of system dimensioning
          </li>
-         <li>Full propagation, with subaperture image formation. Includes adjustable subaperture and pixel size, photon and read-out noise, bias and flat field errors, thresholding, convolution by a gaussian kernel and image elongation in the case of LGS. Proper overlap between subapertures and possibility to put a field stop with adjustable shape, size and position <font class="new">NEW</font> .
+         <li>Full propagation, with subaperture image
+         formation. Includes adjustable subaperture and pixel size,
+         photon and read-out noise, bias and flat field errors,
+         thresholding, convolution by a gaussian kernel and image
+         elongation in the case of LGS. Proper overlap between
+         subapertures and possibility to put a field stop with
+         adjustable shape, size and position <font class="new">NEW 4.5</font> .
          </li>
        </ol>
      </li>
      <li>Separately adjustable integration time for each sensor</li>
      <li>Adjustable frame delay (in integer unit of the quantum loop time)</li>
      <li>Anisoplanatism modes for MCAO</li>
-     <li>Leaky integrator control law, up to 10th order <font class="new">NEW</font></li>
+     <li>Leaky integrator control law, up to 10th
+     order <font class="new">NEW 4.5</font></li>
      <li>DM Hysteresis</li>
      <li>DM saturation</li>
      <li>Separate loop gain per DM</li>
      <li>Adjustable DM sensitivity (micron/volt) to hook to real systems</li>
      <li>Adjustable subaperture and actuator validation thresholds</li>
-     <li>Various reconstructors: least-square with truncation (SVD)
-     and MMSE-like. MMSE can use either full matrix or sparse methods
-     (fast). Users can hook into yao and use their own code to compute
-     the reconstructor <font class="new">NEW</font></li> 
      <li>Adjustable multi-wavelength, multi-position performance estimate</li>
      <li>"Skip and reset" along the phase screens at adjustable interval, to reach statistically significant performance estimates faster</li>
      <li>Uplink tip-tilt correction for LGS</li>
@@ -108,7 +143,8 @@
      <li>Rayleigh Fratricide effect for multiple sodium beacon systems</li>
      <li>Extrapolated actuators</li>
      <li>Centroid Gain optimization, using LGS dithering (only for LGS + Shack-Hartmann)</li>
-     <li>Parametrizable vibration spectrum: white, 1/f, peaks with adjustable rms and width <font class="new">NEW</font>
+     <li>Parametrizable vibration spectrum: white, 1/f, peaks with
+     adjustable rms and width <font class="new">NEW 4.5</font>
      <li>Lots of internal variables are accessible from the outside of the program for debugging/implementation of new features</li>
    </ul>
    <h3>Comments and shorcomings</h3>
@@ -117,7 +153,7 @@
      fast FFT C implementation.</li>
      <li>Dependencies on the following yorick packages: yutils
      (general utilities, v&ge;1.3), imutil (image manipulation,
-     v&ge;0.5), soy (sparse operations with yorick, v&ge;1.2)</li>
+     v&ge;0.5), soy (sparse operations with yorick, v&ge;1.2) and svipc (v0.9)</li>
      <li>The set-up routines (aoinit) have not yet been optimized for speed, thus, in particular, inverting large matrices can take some time. This optimization may come in due time, if deemed necessary.</li>
      <li>
        <font class="highlight">There is no GUI to configure the systems</font>. The parfile has to be edited manually, which in my view is not a big deal and actually allows for more compact &amp; clever parfiles, as yorick loops can be used to set repetitive variables.

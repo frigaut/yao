@@ -50,7 +50,8 @@
 <li class="tocsubsec"><a href="#hacking_yao">5.2 Hacking yao</a></li>
 </ul>
 </div>
-This manual is for yao v4.5.0. It was almost entirely re-written from previous versions. Written by Francois Rigaut on November 2009. Here is a link to a <a href="yao_manual.pdf">PDF version</a> of this manual.
+This manual is for yao v4.5.0. It was almost entirely re-written from
+previous versions. Written by Francois Rigaut on November 2009. <!-- Here is a link to a <a href="yao_manual.pdf">PDF version</a> of this manual.-->
 <a href="javascript:ReverseDisplay('notes_on_yorick');
 javascript:ReverseDisplay('make_square_pupil');
 javascript:ReverseDisplay('details_wfs_pupoffset');
@@ -332,7 +333,9 @@ Field rms                            0.0   0.000        0.0
 > </pre>
 <p>You have ran 1000 iterations (<code>loop.niter</code>
   in <code>sh6x6.par</code> is larger so we changed it before starting
-  the loop in the example above to keep your demo time reasonable). <code>disp=10</code> in the call means "<i>do your 
+  the loop in the example above to keep your demo time reasonable
+  -note if you want to make it larger than the initial value, you will
+  need to re-run <code>aoinit()</code>). <code>disp=10</code> in the call means "<i>do your 
   displays every 10 iterations</i>". Depending on your graphic card, 
   displays can be pretty expensive (time), thus it helps to display less frequently.</p>
 
@@ -433,6 +436,7 @@ wfs(1).noise       = 1;
 wfs(1).ron         = 3.5;
 wfs(1).shthreshold = 0.;
 wfs(1).nintegcycles= 1;
+wfs(n).svipc       = 2;
 
 //-------------------------------
 ndm                = 2;
@@ -1055,12 +1059,14 @@ and recompute <em>everything</em>).</p>
 
 
 
-<h4>Modal (Zernike, Karhuenen-Loeve) DM</h4>
-<p>Set <code>dm.type="zernike" or "kl"</code>. Other mandatory
-  keywords are <code>dm.nzer</code> (for zernike)
-  or <code>dm.nkl</code> (for KL), which specify the number of
-  modes. Note that nzer will start and include piston, while nkl will
-  not (there is formally no piston mode in the KL basis).</p>
+<h4>Modal (Zernike, Disk Harmonic, Karhuenen-Loeve) DM</h4>
+<p>Set <code>dm.type="zernike","diskharmonic" or "kl"</code>. Other mandatory
+  keywords are <code>dm.nzer</code> (for zernike),
+  <code>dm.max_order</code> for disk harmonic or <code>dm.nkl</code>
+  (for KL), which specify the number of modes. Note that nzer
+  (Zernike) &amp; max_order (disk harmonic) will start and include
+  piston, while nkl (KL) will not (there is formally no piston mode in the
+  KL basis).</p>
 
 <h4>Segmented DM</h4>
 <p>Set <code>dm.type="segmented"</code>. The other mandatory
@@ -1195,11 +1201,12 @@ mat.condition = &([desired conditioning])</pre>
   
 <p>where H is the interaction matrix (poke matrix), a is a
 regularization parameter and C is a regularization matrix. The
-regularization matrix can be user specified or computed by YAO. If it
-is computed, it will use an identity matrix by default, or a matrix
-created by convolving a laplacian operator by itself. This matrix has
-similar statistics to the inverse covariance matrix for Kolmogorov
-turbulence and penalizes local waffle in the DM.</p>
+regularization matrix (see <code>dm.regtype</code>
+or <code>dm.regmatrix</code>) can be user specified or computed by
+YAO. If it is computed, it will use an identity matrix by default, or
+a matrix created by convolving a laplacian operator by itself. This
+matrix has similar statistics to the inverse covariance matrix for
+Kolmogorov turbulence and penalizes local waffle in the DM.</p>
 
 <p>The relevant parameters for the MMSE inversion process are
 <code>mat.method = "mmse"</code>,
@@ -1218,8 +1225,189 @@ Zernike DM). <code>mat.method = "mmse-sparse"</code> uses the same
 parameters as "mmse" as well as <code>mat.sparse_MR</code>
 and <code>mat.sparse_MN</code> (see table below for meaning of these
 parameters). You will need to set these values to a higher level than
-the default if you have extremely large system.</p>
+the default if you have extremely large system (for instance for a
+  200x200 SH system I had to set them to (100000 and 2000000 respectively).</p>
 
+
+<a name="parallel_features"></a>
+<h3>Running yao using parallel processes</h3>
+
+Since yao 4.6.0, you can take advantage of multi-core machines to
+speed up the execution time. Gains range from 20% to 350%
+(i.e. 1.2x to 3.5x). Here is a copy of the blog entry I posted when
+announcing yao parallel:
+<blockquote>
+      <p>More work on yao parallel:
+        <ul>
+          <li>I have merged some of the -useful- parallel features
+          implemented in our Gemini local yao_mcao to the yao
+          trunk. Namely,
+            <ul>
+              <li>The DM/WFS parallelization (meaning, taking
+          advantage of the fact that real systems have at least one
+          frame delay (remember that even if the command is applied
+          immediately after the measurements are received, there is
+          still one frame delay due to the zero order hold). The one
+          frame delay means the WFSing at iteration N is not needed to
+          compute the command at iteration N, thus can be computed in
+          parallel.</li>
+              <li>The PSF calculations, which is a no brainer.</li>
+            </ul>
+          <li> I have implemented the parallelization of individual
+          SHWFS. Meaning, an individual SHWFS can now run in parallel
+          on an arbitrary number of "threads" (in fact, forks). This
+          works only for Shack-Hartmann WFS. The good thing is that
+          this is implemented fairly deep into the code, so any call
+          to sh_wfs() will benefit from this, which means the iMat
+          acquisition is accelerated too.</li>
+        </ul>
+        <em>Depending on your system, i.e. WFS order, number of WFSs/DMs,
+        whether you use dm.elt or not, sparse reconstructor or not,
+        and more importantly, on the machine you run yao on, using the
+        parallel features can make you gain anywhere between 20% and
+        200% in execution speed</em>. If you want to use it, you will most
+        probably have to experiment a bit to see what option should be
+        set. Guidelines are given in the manual. The bottom line is
+        that you should not use more forks (processes) than you have
+        CPUs, otherwise swapping processes in/out of L2 cache
+        introduce an overhead which cancels the paralleization
+        advantage. With my core2duo laptop, I can typically gain 30 to
+        50%. With an 8 cores Xeon-based machine we have at work, I
+        gain typically close to a factor of 2 (can be more or
+        less). This does not seem particularly impressive, but one has
+        to consider that a yao loop is made of many different
+        individual operations: WFS, cMat product to retrieve the
+        error, DM shape computation from the DM commands and the
+        influence functions, PSF calculation, etc... So a gain in one
+        of this items is only going to benefit the whole thing
+        marginally. As far as the individual WFS parallelization is
+        concerned, here are some hard numbers:
+        <pre>8 Core Xeon (2 boards) @ 3.33GHz, running RHEL 5, 32 bits. yorick/yao built with -O2.
+16x16 SHWFS system, physical model, no noise. All times (avg &amp; median) in milliseconds for one frame.          
+
+sh16x16_svipc:        1 threads, sh_wfs() avg=2.86, median=2.90
+sh16x16_svipc:        2 threads, sh_wfs() avg=1.87, median=1.89
+sh16x16_svipc:        4 threads, sh_wfs() avg=1.37, median=1.37
+sh16x16_svipc:        8 threads, sh_wfs() avg=1.14, median=1.15
+sh16x16_svipc:       16 threads, sh_wfs() avg=2.33, median=2.30</pre>
+        You can see that the speed increases up to 8 forks (max gain =
+        2.5x). Adding more forks makes the thing slower. The gain does
+        not reach larger value just because (1) there are overheads
+        associated to the use of shared memory/semaphores and (2)
+        there is also a global overhead in the sh_wfs()
+        function. What's parallelize is the core of sh_wfs() (FFTs,
+        noise application and slopes calculations from spots), but any
+        overhead within the sh_wfs() function itself, before calling
+        the FFT/slopes calculation routine is not going to gain from
+        the parallelization. </p>
+      <p>The gain brought by the other, more general parallel features
+      (DM/WFS &amp; PSFs) is nicely illustrated by the following
+      examples. This was run on the same machine (8 cores Xeon), with
+      curvature.par (36 subapertures curvature system ran on a 120
+      pixels pupil). Look at the following results (I have omitted the
+      timing results for items that are not of concerned here and were
+      negligible):</p>
+<pre>sim.svipc=0 (no parallelization)
+time(1-2) =  9.89 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.04 ms  (DM shape computation)
+time(5-6) =  5.84 ms  (Target PSFs estimation)
+59.18 iterations/second in average
+
+
+sim.svipc=1 (WFS/DM parallelized)
+time(1-2) =  4.11 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  0.94 ms  (DM shape computation)
+time(5-6) =  5.78 ms  (Target PSFs estimation)
+91.43 iterations/second in average
+
+sim.svipc=2 (PSFs parallelized)
+time(1-2) = 10.69 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.05 ms  (DM shape computation)
+time(5-6) =  1.23 ms  (Target PSFs estimation)
+76.41 iterations/second in average</pre>
+
+      <p>That's a typical example. The "no parallel" case is dominated by
+        WFSing (10ms) and PSF (6ms) calculations. When parallelizing the WFS
+        (sim.svipc=1), the WFSing time goes down to 4ms. Indeed, now 6ms of it
+        can be done in parallel with other tasks: here, the PSF calculation
+        that takes 6ms. With sim.svipc=2 (only the PSF are parallelized), the
+        PSF calculation time goes to basically to 0 while the WFSing stays at
+        10ms. It all makes sense. I haven't put the sim.svipc=3 results as
+        they are a little more difficult to understand and would just
+        introduce confusion.</p>
+
+      
+      <p>The individual WFS parallel feature is controlled by the
+        parameter wfs.svipc. The "global" DMs/WFSs abd PSF
+        parallelization is controlled by sim.svipc (bit 0 controls
+        DM/WFS and bit 1 controls PSFs, thus sim.svipc=3 means both are
+        turned on).</p>
+      <p>Of course, if you want to use yao parallel facilities, you
+      will need to install the yorick-svipc plugin, through most of
+      the normal channels. It runs on Linux (extensively tested) and
+      OsX (somewhat tested).</p>
+
+</blockquote>
+
+As it says, you need to install yorick-svipc. It is available right
+now (July 2010) through the maumae.net package source web page and on
+archlinux AUR. It will eventually make it in the Debian & Ubuntu
+repos.
+
+<h4>Parallel implementation gotcha &amp; bugs</h4>
+
+<p>It is difficult to code for parallel deployment. Especially for
+  something like yao which offers a lot of various configuration
+  option to the users. I have tested the parallel implementation quite
+  a lot, but I am sure I have left some corners
+  unexplorered/untested. So you might hit some unexpected
+  features. Let me know if you do notice something weird. In the
+  meantime, here is a list of things to watch out for when using the
+  parallel (svipc) thingy (the first three items should not happen. I
+  haven't seen it for a long time. But I originally saw it hence I
+  give you these tricks in the unlikely event it happens) :</p>
+<ul>
+  <li> You can safely turn the sim.svipc features on and off within
+  the same session. If you want to use it though, you need to declare
+  it <em>before</em> the aoinit (so re-run aoinit to enable it). You
+  can disable / re-enable at any time after the first init (init is
+  done within aoinit and forks are done within aoloop).</li>
+  <li> Be a little more careful with the wfs.svipc. If you wish to
+  change the number of threads within a yao session, you will need to
+  run <code>quit_wfs_forks()</code> to kill (quit) the wfs forks to be
+  able to re-fork WFS processes with the correct parameters. So, for
+  instance, you could do the following:
+<pre>> aoread,"some par file"; wfs.svipc=2; aoinit; aoloop; go;
+[...you get your results]
+> quit_wfs_forks
+> wfs.svipc=4; aoloop; go;
+</pre>
+This *should* work. As you get acquainted with the parallel extension,
+I suggest you keep a terminal open on the side, monitoring the yorick
+processes (htop or gnome-system-monitor does fine on linux). If it
+doesn't work, or you get lost, just restart the yorick session. </li>
+<li>If you ever end up with semaphores locked, you can easily Ctrl-C
+  your way out of it. But this may left the shared memory / semaphore
+  mechanism in a weird state. Re-run the yao session (including the
+  svip settings) and quit() yorick. This should cleanup the svipc
+  settings. If push comes to shove, you can list your shared memory
+  segments and semaphores with <code>ipcs</code> and manually kill the
+  culprits with <code>ipcrm -M segment</code> for shared memory
+  or <code>ipcrm -S segment</code> for semaphores. The one yao uses
+  generally start at 0x0badcafe (and up) for the shm and 0xdeadbeef
+  (and up) for semaphores. On modern linux systems, this can not harm
+  your machine or the state of your OS. You should never have to
+  reboot as a consequence of using shm/semaphores.</li>
+<li>Before running long simulations, I advise you to check the
+  graphics to make sure everything runs fine. I have seen instances
+  where the forks get desynchonized from the main process, resulting
+  in partial images or noise badly applied.</li>
+<li>Right now the dark feature I believe is broken. Be aware of it and
+  don't use it.</li>
+</ul>
 
 <a name="other_features"></a>
 <h3>Other Features</h3>
@@ -1252,6 +1440,18 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">pupildiam         </td><td>long     </td><td>pixels     </td><td>none       </td><td>yes </td><td>Pupil diameter</td></tr>
   <tr><td class="varname">debug             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Debug level</td></tr>
   <tr><td class="varname">verbose           </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Verbose level</td></tr>
+  <tr><td class="varname">svipc             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>bitwise set features for parallelization:</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>0 = no parallelization</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>bits    effect</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>0(1)    WFS/DM global split (2 process)</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>1(2)    PSFs calculation parallelization</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>e.g. sim.svipc = 1 -> split WFS/DM </td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>e.g. sim.svipc = 2 -> parallelize PSFs</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td>e.g. sim.svipc = 3 -> WFS/DM & PSFs</td></tr>
+  <tr><td class="varname">shmkey            </td><td>long     </td><td>N/A        </td><td>           </td><td>no  </td><td>shared memory key. Change in each session if running multiple yao session simultaneously.</td></tr>
+  <tr><td class="varname">semkey            </td><td>long     </td><td>N/A        </td><td>           </td><td>no  </td><td>semaphore svipc key. Change in each session if running multiple yao session simultaneously.</td></tr>
+  <tr><td class="varname">                  </td><td>         </td><td>           </td><td>           </td><td>    </td><td></td></tr>
+
   <tr><th colspan="6">atm structure</th></tr>                     
   <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
   <tr><td class="varname">dr0at05mic        </td><td>float    </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Dr0 at 0.5 microns, at zenith                   </td></tr>
@@ -1307,11 +1507,13 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">LLTxy(2)          </td><td>float    </td><td>meter      </td><td>[0,0]      </td><td>no  </td><td>Coordinates [x,y] of the laser projector, if any                                          </td></tr>
   <tr><td class="varname">centGainOpt       </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Centroid gain optimization flag. Only for LGS (correctupTT and filtertilt must also be set for this to work) </td></tr>
   <tr><td class="varname">rayleighflag      </td><td>int      </td><td>N/A        </td><td>0          </td><td>no  </td><td>Take rayleigh into account?                                                                </td></tr>
+  <tr><td class="varname">svipc             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Number of parallel processes (forks) to use for this WFS (0 or 1: don't parallelize, N: use main + (N-1) forks)      </td></tr>
+
   <tr><td colspan="6" class="subth">Zernike WFS only keywords</td></tr>
   <tr><td class="varname">nzer </td>        <td>int           </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Zernike to be sensed. Starts at piston included. </td></tr>
   <tr><th colspan="6">dm structure</th></tr>
   <tr><td>VARIABLE NAME     </td><td>TYPE     </td><td>UNITS      </td><td>DEFAULT    </td><td>REQ?</td><td width="55%">COMMENT</td></tr>
-  <tr><td class="varname">type              </td><td>string   </td><td>N/A        </td><td>none       </td><td>yes </td><td>Valid types are "bimorph", "stackarray" "tiptilt", "zernike", "kl", "segmented", "aniso" or "user_function", where user_function is the name of a function provided by the user       </td></tr>
+  <tr><td class="varname">type              </td><td>string   </td><td>N/A        </td><td>none       </td><td>yes </td><td>Valid types are "bimorph", "stackarray" "tiptilt", "zernike", "diskharmonic", "kl", "segmented", "aniso" or "user_function", where user_function is the name of a function provided by the user       </td></tr>
   <tr><td class="varname">pitch             </td><td>long     </td><td>pixel      </td><td>none       </td><td>yes </td><td>Actuator pitch (pixel). stackarray/segmented only                                                   </td></tr>
   <tr><td class="varname">subsystem         </td><td>long     </td><td>N/A        </td><td>1          </td><td>no  </td><td>Subsystem this DM belongs to                                                                        </td></tr>
   <tr><td class="varname">iffile            </td><td>string   </td><td>N/A        </td><td>""         </td><td>no  </td><td>Influence function file name. Leave it alone.                                                       </td></tr>
@@ -1347,7 +1549,9 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">supportRadius     </td><td>float    </td><td>Unitless   </td><td>2.2        </td><td>no  </td><td>Radius of DM 3 support points, normalized in pupil radius                                           </td></tr>
   <tr><td class="varname">supportOffset     </td><td>float    </td><td>dgree      </td><td>90         </td><td>no  </td><td>Angle offset of first support point                                                                 </td></tr>
   <tr><td colspan="6" class="subth">Zernike DM-only keywords </td></tr>
-  <tr><td class="varname">nzer              </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Zernike modes, including piston??? </td></tr>
+  <tr><td class="varname">nzer              </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Zernike modes, including piston </td></tr>
+  <tr><td colspan="6" class="subth">Disk Marmonic-only keywords </td></tr>
+  <tr><td class="varname">max_order         </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Disk Harmonic modes, including piston </td></tr>
   <tr><td colspan="6" class="subth">Karhuenen-Loeve DM-only keywords </td></tr>
   <tr><td class="varname">nkl               </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Karhuenen-Loeve modes, including piston??? </td></tr>
   <tr><td colspan="6" class="subth">Segmented DM-only keywords</td></tr>

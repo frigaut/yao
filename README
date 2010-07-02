@@ -18,6 +18,97 @@ http://www.maumae.net/yao/aosimul.html (outdated)
 
 RELEASE NOTES:
 --------------
+
+Version 4.6, 2010jun17:
+
+- Merged Aurea Garcia-Rissmann additions for diskharmonic DMs
+  Part of the code from Mark Milton (at the time at UofA). Used
+  with authorization.
+  
+- Merged parallelization code (svipc). Can lead to 3x gains on
+  multicore machines. Tweak with sim.svipc = value (see yao_structures)
+
+- Gotten rid of redondant code in utils.c. poidev was in there, as well
+  as other routines. These are already in imutil and imutil is definitely
+  a dependency. This, combine with using the latest imutil v 0.5.6, solves
+  a bug in which poidev would SIGFPE when using too brights GS in with
+  CWFS mode.
+
+- solved a bug in which not specifying skymag would means skymag=0
+  and thus lots of photons in the sky in CWFS mode. Now skymag=0
+  (default) is interpreted as "no sky".
+
+- upgraded all the PROTOTYPES to new recommended syntax "type array"
+  instead of "pointer".
+  
+V 4.5.6
+- changed "least-squares" -> "mmse"
+- changed "sparse" -> "mmse-sparse"
+- updated documentation with input from Marcos Van Dam
+
+// sorry for inconsistency. Below are cvs revision number of yao.i
+ * Revision 1.16  2010/06/09 15:03:42  frigaut
+ * - Merged changes of Marcos Van Dam: This implements new reconstructors
+ *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
+ *   using sparse matrices, very fast). This adds a dependency on soy.
+ *   There's now a few more elements in the dm and mat structures
+ *
+ * - added thback and cleaned up indentation in yao_fast.c
+ *
+ * Revision 1.15  2010/04/15 18:11:24  frigaut
+ *
+ * - strlower -> strcase
+ *
+ * Revision 1.14  2010/04/15 02:36:53  frigaut
+ *
+ *
+ * final commit to upgrade this repo to yao 4.5.1
+ *
+ * Revision 1.13  2008/11/19 00:53:19  frigaut
+ * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
+ * - fixed comments in newfits.i
+ * - upped version to 4.2.6
+ *
+ * Revision 1.12  2008/05/12 18:23:48  frigaut
+ * version change
+ *
+ * Revision 1.11  2008/05/11 14:03:56  frigaut
+ * - implemented zernike wfs
+ * - gotten rid of faulty round function in yao_util
+ *
+ * Revision 1.10  2007/12/27 09:06:28  frigaut
+ * - bumped to version 4.2.3
+ * - corrected problem with glade path (python does not like ~, so
+ * replaced by expansion)
+ *
+ * Revision 1.9  2007/12/20 13:35:55  frigaut
+ * bumped to v4.2.2
+ *
+ * Revision 1.8  2007/12/20 13:34:53  frigaut
+ * - various bug fixes
+ * - better handlng of default parfile path
+ * - better handling of options menu (WFS and DM)
+ *
+ * Revision 1.7  2007/12/19 20:00:08  frigaut
+ * - statusbar updated to indicates where the results are saved when done
+ * - bumped to 4.2.1
+ *
+ * Revision 1.6  2007/12/19 19:44:19  frigaut
+ * - solved a number of bugs and inconsistencies between regular yao call and
+ *   GUI calls.
+ * - fixed misregistration for curvature systems
+ * - change: misregistration entry from the GUI is now in pupil diameter unit,
+ *   not in subaperture unit!
+ * - changed default efd in c188-bench.par
+ *
+ * Revision 1.5  2007/12/19 15:45:32  frigaut
+ * - implemented yao.conf which defines the YAO_SAVEPATH directory where
+ * all temporary files and result files will be saved
+ * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
+ * - bumped version to 4.2.0
+ * - slight changes to GUI (edit conf file)
+ *
+
 version 4.1.1: 2007dec13:
     - upgrade/update of Makefile
 

@@ -26,6 +26,176 @@
   <div id="container">
     
     
+    <a name="going_for_elt_systems"></a> 
+    <div id="blogentry"> 
+    <div id="entrydate">July 2, 2010</div> 
+    <div id="entrytitle">yao going after ELT-size systems</div> 
+    <div id="entrybody"> 
+
+      <p>The <b>new parallel features</b> (see next post), and especially the
+      <b>new sparse reconstructor</b> options (see 2 posts below)
+      makes running very large systems much more tractable than
+      before. A <b>100x100 Shack-Hartmann system</b> (on a 400 pixels pupil)
+      runs at <b>8 iterations/seconds</b> on an 8 core Xeon-based machine @
+      3.33GHz! So one can get statiscally meaningful results in a few
+      mn. It's not too greedy in RAM either (in modern machine
+      standard) at 120MB for the main process (our machine has 8GB of
+      RAM).</p>
+      <p>A 64x64 system runs at 23 iterations/s and a 200x200 SHWFS at
+      1 iterations/s (note that the later starts to be
+      in the realm of ELT extreme AO, at 15cm actuator pitch on a 30-m). </p>
+      
+    </div> 
+    </div> 
+
+    <a name="Parallel_yao_released_with_improvements"></a> 
+    <div id="blogentry"> 
+    <div id="entrydate">July 2, 2010</div> 
+    <div id="entrytitle">Parallel yao released with improvements!</div> 
+    <div id="entrybody"> 
+
+      <p>More work on yao parallel:
+        <ul>
+          <li>I have merged some of the -useful- parallel features
+          implemented in our Gemini local yao_mcao to the yao
+          trunk. Namely,
+            <ul>
+              <li>The DM/WFS parallelization (meaning, taking
+          advantage of the fact that real systems have at least one
+          frame delay (remember that even if the command is applied
+          immediately after the measurements are received, there is
+          still one frame delay due to the zero order hold). The one
+          frame delay means the WFSing at iteration N is not needed to
+          compute the command at iteration N, thus can be computed in
+          parallel.</li>
+              <li>The PSF calculations, which is a no brainer.</li>
+            </ul>
+          <li> I have implemented the parallelization of individual
+          SHWFS. Meaning, an individual SHWFS can now run in parallel
+          on an arbitrary number of "threads" (in fact, forks). This
+          works only for Shack-Hartmann WFS. The good thing is that
+          this is implemented fairly deep into the code, so any call
+          to sh_wfs() will benefit from this, which means the iMat
+          acquisition is accelerated too.</li>
+        </ul>
+        <em>Depending on your system, i.e. WFS order, number of WFSs/DMs,
+        whether you use dm.elt or not, sparse reconstructor or not,
+        and more importantly, on the machine you run yao on, using the
+        parallel features can make you gain anywhere between 20% and
+        200% in execution speed</em>. If you want to use it, you will most
+        probably have to experiment a bit to see what option should be
+        set. Guidelines are given in the manual. The bottom line is
+        that you should not use more forks (processes) than you have
+        CPUs, otherwise swapping processes in/out of L2 cache
+        introduce an overhead which cancels the paralleization
+        advantage. With my core2duo laptop, I can typically gain 30 to
+        50%. With an 8 cores Xeon-based machine we have at work, I
+        gain typically close to a factor of 2 (can be more or
+        less). This does not seem particularly impressive, but one has
+        to consider that a yao loop is made of many different
+        individual operations: WFS, cMat product to retrieve the
+        error, DM shape computation from the DM commands and the
+        influence functions, PSF calculation, etc... So a gain in one
+        of this items is only going to benefit the whole thing
+        marginally. As far as the individual WFS parallelization is
+        concerned, here are some hard numbers:
+        <pre>8 Core Xeon (2 boards) @ 3.33GHz, running RHEL 5, 32 bits. yorick/yao built with -O2.
+16x16 SHWFS system, physical model, no noise. All times (avg &amp; median) in milliseconds for one frame.          
+
+sh16x16_svipc:        1 threads, sh_wfs() avg=2.86, median=2.90
+sh16x16_svipc:        2 threads, sh_wfs() avg=1.87, median=1.89
+sh16x16_svipc:        4 threads, sh_wfs() avg=1.37, median=1.37
+sh16x16_svipc:        8 threads, sh_wfs() avg=1.14, median=1.15
+sh16x16_svipc:       16 threads, sh_wfs() avg=2.33, median=2.30</pre>
+        You can see that the speed increases up to 8 forks (max gain =
+        2.5x). Adding more forks makes the thing slower. The gain does
+        not reach larger value just because (1) there are overheads
+        associated to the use of shared memory/semaphores and (2)
+        there is also a global overhead in the sh_wfs()
+        function. What's parallelize is the core of sh_wfs() (FFTs,
+        noise application and slopes calculations from spots), but any
+        overhead within the sh_wfs() function itself, before calling
+        the FFT/slopes calculation routine is not going to gain from
+        the parallelization. </p>
+      <p>The gain brought by the other, more general parallel features
+      (DM/WFS &amp; PSFs) is nicely illustrated by the following
+      examples. This was run on the same machine (8 cores Xeon), with
+      curvature.par (36 subapertures curvature system ran on a 120
+      pixels pupil). Look at the following results (I have omitted the
+      timing results for items that are not of concerned here and were
+      negligible):</p>
+<pre>sim.svipc=0 (no parallelization)
+time(1-2) =  9.89 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.04 ms  (DM shape computation)
+time(5-6) =  5.84 ms  (Target PSFs estimation)
+59.18 iterations/second in average
+
+
+sim.svipc=1 (WFS/DM parallelized)
+time(1-2) =  4.11 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  0.94 ms  (DM shape computation)
+time(5-6) =  5.78 ms  (Target PSFs estimation)
+91.43 iterations/second in average
+
+sim.svipc=2 (PSFs parallelized)
+time(1-2) = 10.69 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.05 ms  (DM shape computation)
+time(5-6) =  1.23 ms  (Target PSFs estimation)
+76.41 iterations/second in average</pre>
+
+      <p>That's a typical example. The "no parallel" case is dominated by
+        WFSing (10ms) and PSF (6ms) calculations. When parallelizing the WFS
+        (sim.svipc=1), the WFSing time goes down to 4ms. Indeed, now 6ms of it
+        can be done in parallel with other tasks: here, the PSF calculation
+        that takes 6ms. With sim.svipc=2 (only the PSF are parallelized), the
+        PSF calculation time goes to basically to 0 while the WFSing stays at
+        10ms. It all makes sense. I haven't put the sim.svipc=3 results as
+        they are a little more difficult to understand and would just
+        introduce confusion.</p>
+
+      
+      <p>The individual WFS parallel feature is controlled by the
+        parameter wfs.svipc. The "global" DMs/WFSs abd PSF
+        parallelization is controlled by sim.svipc (bit 0 controls
+        DM/WFS and bit 1 controls PSFs, thus sim.svipc=3 means both are
+        turned on).</p>
+      <p>Of course, if you want to use yao parallel facilities, you
+      will need to install the yorick-svipc plugin (contributed by
+      <b>Matthieu Bec</b>), through most of
+      the normal channels. It runs on Linux (extensively tested) and
+      OsX (somewhat tested).</p>
+      
+    </div> 
+    </div> 
+
+    <a name="new_user_contributions"></a> 
+    <div id="blogentry"> 
+    <div id="entrydate">July 2, 2010</div> 
+    <div id="entrytitle">New features contributed by users</div> 
+    <div id="entrybody"> 
+
+
+      <p><b>Marcos van Dam</b> (flatwavefronts.com), who is using yao
+      to simulate the GMT AO system, has contributed a patch that add
+      MMSE control matrices, with a couple of regularization (identity
+      or laplacian) and a sparse option. The sparse makes it blazingly
+      fast (both the inversion and the reconstruction show more than
+      an order of magnitude speed gain).</p>
+      <p><b>Aurea Garcia-Rissmann</b> (UofA), adapting code
+      developed <b>Mark Milton</b> (at the time at UofA), contributed
+      a new modal basis for the DMs: the disk harmonics. These
+      represent well the kind of deformation produced by deformable
+      secondaries, for instance. They are much better behaved than the
+      Zernike at the edge.</p>
+      <p>Thanks Marcos and Aurea. The code was very clean, hence
+      -relatively- easy to merge.</p>
+
+    </div> 
+    </div> 
+
     <a name="performance_boost_with_parallelization"></a> 
     <div id="blogentry"> 
     <div id="entrydate">April 9, 2010</div> 
@@ -33,7 +203,8 @@
     <div id="entrybody"> 
 
 
-      <p>Following the development here at Gemini of a svipc plugin,
+      <p>Following the development here at Gemini of a svipc plugin
+        (by <b>Matthieu Bec</b>),
         providing shared memory capabilities for yorick, I have been
         working on parallelizing yao. The results so far are
         encouraging. For instance, I get a 4x performance boost on

@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: utils.c,v 1.4 2008-01-02 13:54:53 frigaut Exp $
+ * $Id: utils.c,v 1.5 2010-07-02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,13 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: utils.c,v $
- * Revision 1.4  2008-01-02 13:54:53  frigaut
+ * Revision 1.5  2010-07-02 21:26:51  frigaut
+ * - merged Aurea Garcia-Rissmann disk harmonic code
+ * - implemented parallel extension (sim.svipc and wfs.svipc)
+ * - a few bug fixes (and many more bug introduction with these major
+ *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
+ *
+ * Revision 1.4  2008/01/02 13:54:53  frigaut
  * - correct size for the graphic inserts (no black border)
  * - updated spec files
  *
@@ -67,132 +73,6 @@ void Y_usleep(int nArgs)
 //  us = (useconds_t)(milliseconds*1000l);
   usleep(milliseconds*1000l);
 }
-
-float ran1()
-{
-  float norm;
-  norm = 2147483647.f;
-
-  return random()/norm;
-}
-
-
-void _eclat_float(float *ar, int nx, int ny)
-{
-  int i,j,k1,k2;
-  float a;
-
-  for ( i=0 ; i<(nx/2) ; ++i ) {
-    for ( j=0 ; j<(ny/2) ; ++j ) {
-      k1 = i+j*nx;
-      k2 = (i+nx/2)+(j+ny/2)*nx;
-      a = ar[k1];
-      ar[k1] = ar[k2];
-      ar[k2] = a;
-    }
-  }
-  for ( i=(nx/2) ; i<nx ; ++i ) {
-    for ( j=0 ; j<(ny/2) ; ++j ) {
-      k1 = i+j*nx;
-      k2 = (i-nx/2)+(j+ny/2)*nx;
-      a = ar[k1];
-      ar[k1] = ar[k2];
-      ar[k2] = a;
-    }
-  }
-}
-
-
-
-void _poidev(float *xmv, long n)
-{ 
-  float gammln(float xx); 
-  /*  float ran1(long *idum);*/
-  static float sq,alxm,g,oldm=(-1.0); 
-  float xm,em,t,y; 
-  long i;
-
-  for (i=0;i<n;i++) {
-    xm = xmv[i];
-    if (xm == 0.0f) continue;
-    if (xm < 20.0) { /* Use direct method. */ 
-      if (xm != oldm) { 
-	oldm=xm; 
-	g=exp(-xm);  /* If xm is new, compute the exponential. */
-      } 
-      em = -1; 
-      t=1.0; 
-      do { 
-	++em; 
-	t *= ran1(); 
-      } while (t > g);
-    } else {  /* Use rejection method. */ 
-      if (xm != oldm) { 
-	oldm=xm; 
-	sq=sqrt(2.0*xm); 
-	alxm=log(xm); 
-	g=xm*alxm-gammln(xm+1.0); 
-      } 
-      do { 
-	do { 
-	  y=tan(3.141592654*ran1());
-	  em=sq*y+xm; 
-	} while (em < 0.0); 
-	em=floor(em); 
-	t=0.9*(1.0+y*y)*exp(em*alxm-gammln(em+1.0)-g); 
-      } while (ran1() > t); 
-    } 
-    xmv[i] = em;
-  }
-} 
-
-
-float gammln(float xx) 
-{ 
-  /* Returns the value ln[?(xx)] for xx>0. */
-  double x,y,tmp,ser; 
-  static double cof[6]={76.18009172947146,-86.50532032941677,
-			24.01409824083091,-1.231739572450155, 
-			0.1208650973866179e-2,-0.5395239384953e-5}; 
-  int j; 
-
-  y=x=xx; 
-  tmp=x+5.5; 
-  tmp -= (x+0.5)*log(tmp); 
-  ser=1.000000000190015; 
-  for (j=0;j<=5;j++) ser += cof[j]/++y; 
-  return -tmp+log(2.5066282746310005*ser/x); 
-} 
-
-
-void _gaussdev(float *xmv, long n)
-{ 
-  /* Returns a normally distributed deviate with zero mean and unit variance, 
-     using ran1() as the source of uniform deviates. */ 
-
-  /*  float ran1(long *idum); */
-  static int iset=0; 
-  static float gset; 
-  float fac,rsq,v1,v2; 
-  long i;
-
-  for (i=0;i<n;i++) {
-    if (iset == 0) { 
-      do { 
-	v1=2.0*ran1()-1.0; 
-	v2=2.0*ran1()-1.0; 
-	rsq=v1*v1+v2*v2;
-      } while (rsq >= 1.0 || rsq == 0.0); 
-      fac=sqrt(-2.0*log(rsq)/rsq); 
-      gset=v1*fac; 
-      iset=1; 
-      xmv[i] = v2*fac; 
-    } else { 
-      iset=0; 
-      xmv[i] = gset; 
-    } 
-  }
-} 
 
 int _cosf(float *x, long n)
 {
