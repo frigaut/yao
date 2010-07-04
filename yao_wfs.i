@@ -754,9 +754,10 @@ func sh_wfs(pupsh,phase,ns)
     toarcsec = float(wfs(ns).lambda/2.0/pi/(tel.diam/sim.pupildiam)/4.848);
 
     // define mesvec (alloc space for C function)
-    if (mesvec==[]) mesvec = array(float,2*wfs(ns)._nsub);
+    mesvec = array(float,2*wfs(ns)._nsub);
 
-    err = _shwfs_simple(pupsh, phase, phasescale, *wfs(ns)._tiltsh, size, size,
+    err = _shwfs_simple(pupsh, phase, phasescale, *wfs(ns)._tiltsh,
+                        int(size), int(size),
                         *wfs(ns)._istart, *wfs(ns)._jstart, int(subsize),
                         int(subsize), wfs(ns)._nsub, toarcsec, mesvec);
                        

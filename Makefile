@@ -163,7 +163,7 @@ distbin: package
 
 distsrc:
 	make clean; rm -rf binaries
-	cd ..; tar --exclude binaries --exclude CVS --exclude *.spec -zcvf \
+	cd ..; tar --exclude binaries --exclude CVS --exclude .svn --exclude *.spec -zcvf \
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz yorick-$(PKG_NAME)-$(PKG_VERSION);\
 	ncftpput -f $(HOME)/.ncftp/maumae www/yorick/$(PKG_DEST_URL)/src/ \
 	   $(PKG_NAME)-$(PKG_VERSION)-src.tgz
