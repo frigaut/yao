@@ -26,7 +26,7 @@ func svipc_init(void)
 {
   extern shm_init_done;
 
-  if (shm_init_done==[]) {
+  if (!shm_init_done) {
     if (shm_init(shmkey,slots=nshm)==0) {
       sem_init,semkey,nums=nsem;
       if (sim.verbose>0) write,format="%s\n","SVIPC initialized";
@@ -144,7 +144,7 @@ func svipc_wfs_init(phase,ns)
   }
 
   // restore windows if needed:
-  if (wl!=[]) create_yao_window; // argh. dpi !
+  if (wl!=[]) status = create_yao_window();
   return 0;
 }
 
@@ -302,6 +302,9 @@ func svipc_start_forks(void)
 
   // usual thing: we can't fork() with windows open, so let's kill them
   wl = window_list();
+  // if (anyof(wl==0)) { // that should be the yao window
+  //   w0_dpi = window_geometry(0);
+  // }
   if (wl!=[]) for (i=1;i<=numberof(wl);i++) winkill,wl(i);
 
   all_svipc_procname = [];
@@ -325,8 +328,8 @@ func svipc_start_forks(void)
       for (i=1;i<=ndm;i++) dm(i)._def = &[];
 
       // start listening
-      set_idler,topwfs_listen;
-      // status = topwfs_listen();
+      //set_idler,topwfs_listen;
+      status = topwfs_listen();
       exit;
     }
   }
@@ -340,7 +343,8 @@ func svipc_start_forks(void)
       // get rid of what we don't need
       //
       // start listening
-      set_idler,psf_listen;
+      // set_idler,psf_listen;
+      status = psf_listen();
       exit;
     }
   }
@@ -348,7 +352,7 @@ func svipc_start_forks(void)
   fork_done = 1;
   
   // restore windows if needed:
-  if (wl!=[]) create_yao_window; // argh. dpi !
+  if (wl!=[]) status = create_yao_window();
   return 0;
 }
 
@@ -362,10 +366,35 @@ func quit
 // nforks = sum(clip(wfs.svipc-1,0,));
   for (i=0;i<=nsem;i++) sem_give,semkey,i,count=100;
   usleep,50;
-  svipc_clean;
+  status = svipc_clean();
   yorick_quit;
 }
 
+func quit_forks(void)
+{
+  extern wfs,shm_init_done,fork_done;
+  
+  if ( (sim!=[]) && (sim.svipc) ) {
+    // a previous yao run initialized this and
+    // started forks. we can close them.
+    shm_write,shmkey,"quit?",&([1]);
+    for (i=1;i<=19;i++) sem_give,semkey,i,count=100;
+    clean = 1;
+  }
+  
+  if ( (wfs!=[]) && anyof(wfs.svipc>1) ) {
+    shm_write,shmkey,"quit_wfs_forks?",&([1]);
+    for (i=20;i<=nsem;i++) sem_give,semkey,i,count=100;
+    wfs._svipc_init_done = 0;
+    clean = 1;
+  }
+  if (clean) {
+    usleep,500;
+    status = svipc_clean();
+    shm_init_done = 0;
+    fork_done = 0;
+  }
+}
 
 func quit_wfs_forks(void)
 {
@@ -464,165 +493,101 @@ func psf_listen(void)
 {
   extern mircube, loopCounter;
   extern im,imav;
- 
-  // wait for trigger from master
-  if (smdebug) write,"psf_listen: waiting for trigger from parent";
-  sem_take,semkey,3;
-  if (smdebug) write,"psf_listen: got trigger";
 
-  // check if we have to quit:
-  if (shm_read(shmkey,"quit?")(1)) {
-    write,format="%s child quitting\n",svipc_procname;
-    yorick_quit;
-  }
+  do {
+    // wait for trigger from master
+    if (smdebug) write,"psf_listen: waiting for trigger from parent";
+    sem_take,semkey,3;
+    if (smdebug) write,"psf_listen: got trigger";
 
-  // anything to sync?
-  status = sync_child();
- 
-  // do the PSF calculations
-  loopCounter = shm_read(shmkey,"loop_counter")(1);
-  if (smdebug) write,"psf_listen: doing PSF calculations";
-
-  mircube = shm_read(shmkey,"mircube");
- 
-  for (jl=1;jl<=target._nlambda;jl++) {
-    for (jt=1;jt<=target._ntarget;jt++) {
-      cubphase(,,jt)  = getPhase2dFromDms(jt,"target") +    \
-        getPhase2dFromOptics(jt,"target") +                 \
-        getTurbPhase(loopCounter,jt,"target");
+    // check if we have to quit:
+    if (shm_read(shmkey,"quit?")(1)) {
+      write,format="%s child quitting\n",svipc_procname;
+      yorick_quit;
     }
-    // compute image cube from phase cube
-    err = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
-                     target._ntarget,float(2*pi/(*target.lambda)(jl)));
-       
-    // Accumulate statistics:
-    imav(,,,jl) = imav(,,,jl) + im;
-  }
+
+    // anything to sync?
+    status = sync_child();
  
-  // we're done.
-  if (smdebug) write,"psf_listen: done, writing result in shm";
-  shm_write,shmkey,"imsp",&im;
-  shm_write,shmkey,"imlp",&imav;
+    // do the PSF calculations
+    loopCounter = shm_read(shmkey,"loop_counter")(1);
+    if (smdebug) write,"psf_listen: doing PSF calculations";
 
-  if (smdebug) write,"psf_listen: Giving trigger back to master";
-  sem_give,semkey,4;
+    mircube = shm_read(shmkey,"mircube");
+ 
+    for (jl=1;jl<=target._nlambda;jl++) {
+      for (jt=1;jt<=target._ntarget;jt++) {
+        cubphase(,,jt)  = getPhase2dFromDms(jt,"target") +    \
+          getPhase2dFromOptics(jt,"target") +                 \
+          getTurbPhase(loopCounter,jt,"target");
+      }
+      // compute image cube from phase cube
+      err = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
+                           target._ntarget,float(2*pi/(*target.lambda)(jl)));
+       
+      // Accumulate statistics:
+      imav(,,,jl) = imav(,,,jl) + im;
+    }
+ 
+    // we're done.
+    if (smdebug) write,"psf_listen: done, writing result in shm";
+    shm_write,shmkey,"imsp",&im;
+    shm_write,shmkey,"imlp",&imav;
 
-  if (smdebug) write,"psf_listen: calling oneself";
-  set_idler,psf_listen;
+    if (smdebug) write,"psf_listen: Giving trigger back to master";
+    sem_give,semkey,4;
+
+  } while (1);
+  // if (smdebug) write,"psf_listen: calling oneself";
+  // set_idler,psf_listen;
 }
+
 
 func topwfs_listen(void)
 // for top WFS child
 {
   extern mircube,loopCounter;
 
-  // wait for trigger from master
-  if (smdebug) write,"topwfs_listen: waiting for trigger from master";
-  sem_take,semkey,0;
-  if (smdebug) write,"topwfs_listen: got trigger";
+  do {
+    // wait for trigger from master
+    if (smdebug) write,"topwfs_listen: waiting for trigger from master";
+    sem_take,semkey,0;
+    if (smdebug) write,"topwfs_listen: got trigger";
 
-  // check if we have to quit:
-  if (shm_read(shmkey,"quit?")(1)) {
-    write,format="%s child quitting\n",svipc_procname;
-    yorick_quit;
-  }
+    // check if we have to quit:
+    if (shm_read(shmkey,"quit?")(1)) {
+      write,format="%s child quitting\n",svipc_procname;
+      yorick_quit;
+    }
   
-  // anything to sync?
-  status = sync_child();
+    // anything to sync?
+    status = sync_child();
   
-  // do the wfsing
-  loopCounter = shm_read(shmkey,"loop_counter")(1);
-  if (smdebug) write,"topwfs_listen: doing wfsing";
+    // do the wfsing
+    loopCounter = shm_read(shmkey,"loop_counter")(1);
+    if (smdebug) write,"topwfs_listen: doing wfsing";
 
-  mircube = shm_read(shmkey,"mircube");
-  if ((sim.svipc>>2)&1) { // parallel WFSs
-    mes = svipc_mult_wfs(loopCounter);
-  } else { // single fork
-    mes = mult_wfs(loopCounter);
-  }
+    mircube = shm_read(shmkey,"mircube");
+    if ((sim.svipc>>2)&1) { // parallel WFSs
+      mes = svipc_mult_wfs(loopCounter);
+    } else { // single fork
+      mes = mult_wfs(loopCounter);
+    }
   
-  // we're done.
-  if (smdebug) write,"topwfs_listen: done, writing result in shm";
-  // wfs._tt
-  // wfs._lastvalidtt
-  shm_write,shmkey,"svipc_mes",&mes;
+    // we're done.
+    if (smdebug) write,"topwfs_listen: done, writing result in shm";
+    // wfs._tt
+    // wfs._lastvalidtt
+    shm_write,shmkey,"svipc_mes",&mes;
 
-  if (smdebug) write,"topwfs_listen: Giving trigger back to master";
-  sem_give,semkey,1;
+    if (smdebug) write,"topwfs_listen: Giving trigger back to master";
+    sem_give,semkey,1;
 
-  if (smdebug) write,"topwfs_listen: calling oneself";
-  set_idler,topwfs_listen;
+  } while (1);
+  // if (smdebug) write,"topwfs_listen: calling oneself";
+  // set_idler,topwfs_listen;
 }
 
-
-//func dm_listen(void)
-//// for DMs children
-//{
-//  // wait for trigger from master
-//  if (smdebug) write,"dm_listen: waiting for trigger from master";
-//  sem_take,semkey,sem4dm(svipc_nm);
-//  if (smdebug) write,"dm_listen: got trigger";
-//
-//  // check if we have to quit:
-//  if (shm_read(shmkey,"quit?")(1)) {
-//    write,format="%s child quitting\n",svipc_procname;
-//    yorick_quit;
-//  }
-//  
-//  // anything to sync?
-//  status = sync_child();
-//  
-//  // do something
-//  loopCounter = shm_read(shmkey,"loop_counter")(1);
-//  commands = shm_read(shmkey,swrite(format="dm%d_commands",svipc_nm));
-//  if (smdebug) write,"computing dm shape";
-//  dmshape = compDmShape(svipc_nm,&commands);
-//
-//  // we're done.
-//  if (smdebug) write,"done, writing result in shm";
-//  shm_write,shmkey,swrite(format="dm%d_shape",svipc_nm),&dmshape;
-//
-//  if (smdebug) write,"dm_listen: Giving trigger back to master";
-//  sem_give,semkey,sem4dm(svipc_nm)+1;
-//
-//  if (smdebug) write,"calling oneself";
-//  set_idler,dm_listen;
-//}
-//
-//
-//func cmat_listen(void)
-//// for 1/2 cmat child
-//{
-//  // wait for trigger from master
-//  if (smdebug) write,"cmat_listen: waiting for trigger from master";
-//  sem_take,semkey,18;
-//  if (smdebug) write,"cmat_listen: got trigger";
-//
-//  // check if we have to quit:
-//  if (shm_read(shmkey,"quit?")(1)) {
-//    write,format="%s child quitting\n",svipc_procname;
-//    yorick_quit;
-//  }
-//  
-//  // anything to sync?
-//  status = sync_child();
-//  
-//  // do something
-//  //  loopCounter = shm_read(shmkey,"loop_counter")(1);
-//  allmes = shm_read(shmkey,"allmes");
-//  if (smdebug) write,"computing 1/2 errors";
-//  err = half_cmat(,+)*allmes(+);
-//
-//  // we're done.
-//  if (smdebug) write,"done, writing result in shm";
-//  shm_write,shmkey,"half_err",&err;
-//
-//  if (smdebug) write,"cmat_listen: Giving trigger back to master";
-//  sem_give,semkey,19;
-//
-//  if (smdebug) write,"calling oneself";
-//  set_idler,cmat_listen;
-//}
 
 
 func wfs_listen(void)

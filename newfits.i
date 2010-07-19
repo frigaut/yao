@@ -1,7 +1,7 @@
 /*
  * NEWFITS.I
  *
- * $Id: newfits.i,v 1.3 2009-03-25 14:38:31 frigaut Exp $
+ * $Id: newfits.i,v 1.3 2009/03/25 14:38:31 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *

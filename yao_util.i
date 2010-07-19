@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_util.i,v 1.6 2010-07-02 21:26:51 frigaut Exp $
+ * $Id: yao_util.i,v 1.6 2010/07/02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,7 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_util.i,v $
- * Revision 1.6  2010-07-02 21:26:51  frigaut
+ * Revision 1.6  2010/07/02 21:26:51  frigaut
  * - merged Aurea Garcia-Rissmann disk harmonic code
  * - implemented parallel extension (sim.svipc and wfs.svipc)
  * - a few bug fixes (and many more bug introduction with these major

@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_gui.i,v 1.2 2010-04-15 02:36:53 frigaut Exp $
+ * $Id: yao_gui.i,v 1.2 2010/04/15 02:36:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,7 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_gui.i,v $
- * Revision 1.2  2010-04-15 02:36:53  frigaut
+ * Revision 1.2  2010/04/15 02:36:53  frigaut
  *
  *
  * final commit to upgrade this repo to yao 4.5.1

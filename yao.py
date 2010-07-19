@@ -9,7 +9,7 @@
 # This file is part of the yao package, an adaptive optics
 # simulation tool.
 #
-# $Id: yao.py,v 1.9 2010-04-15 02:36:53 frigaut Exp $
+# $Id: yao.py,v 1.9 2010/04/15 02:36:53 frigaut Exp $
 #
 # Copyright (c) 2002-2007, Francois Rigaut
 #
@@ -30,7 +30,7 @@
 #   when editing a current par file and saving
 # 
 # $Log: yao.py,v $
-# Revision 1.9  2010-04-15 02:36:53  frigaut
+# Revision 1.9  2010/04/15 02:36:53  frigaut
 #
 #
 # final commit to upgrade this repo to yao 4.5.1

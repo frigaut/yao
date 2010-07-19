@@ -1,0 +1,4 @@
+- 4.6.0:
+
+- improper cleaning of svipc demonstrated when running test-all.i
+with sim.svipc or wfs.svipc on

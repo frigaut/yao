@@ -10,7 +10,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yaopy.i,v 1.14 2010-04-15 02:36:53 frigaut Exp $
+ * $Id: yaopy.i,v 1.14 2010/04/15 02:36:53 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -27,7 +27,7 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yaopy.i,v $
- * Revision 1.14  2010-04-15 02:36:53  frigaut
+ * Revision 1.14  2010/04/15 02:36:53  frigaut
  *
  *
  * final commit to upgrade this repo to yao 4.5.1
@@ -202,6 +202,10 @@ func save_conf(void)
 
 func yao_win_init(parent_id)
 {
+  extern yao_pyk_parent_id;
+  // above: for further use if we need to reopen the graphic window
+  yao_pyk_parent_id = parent_id;
+  
   window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),
     height=long(425*(dpi/50.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
 }

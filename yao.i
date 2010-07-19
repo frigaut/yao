@@ -4,7 +4,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao.i,v 1.18 2010-07-02 21:26:51 frigaut Exp $
+ * $Id: yao.i,v 1.18 2010/07/02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2009, Francois Rigaut
  *
@@ -25,7 +25,7 @@
  * all documentation at http://www.maumae.net/yao/aosimul.html
  *
  * $Log: yao.i,v $
- * Revision 1.18  2010-07-02 21:26:51  frigaut
+ * Revision 1.18  2010/07/02 21:26:51  frigaut
  * - merged Aurea Garcia-Rissmann disk harmonic code
  * - implemented parallel extension (sim.svipc and wfs.svipc)
  * - a few bug fixes (and many more bug introduction with these major
@@ -1816,7 +1816,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //===================================================================
   // INIT SVIPC IF NEEDED:
   //===================================================================
-  if ( anyof(wfs.svipc>1) || (sim.svipc>1) ) {
+  if ( anyof(wfs.svipc>1) || (sim.svipc) ) {
     require,"yao_svipc.i";
     status = svipc_init();
   }
@@ -2423,7 +2423,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   for (nm=1;nm<=ndm;nm++) {
 
-    if (dm(nm).type != "stackarray") break;  // possible but not implemented.
+    if (dm(nm).type != "stackarray") continue;  // possible but not implemented.
 
     if (dm(nm).noextrap == 1) { // we have to get rid of any extrapolated actuator now
       dm(nm)._edef = dm(nm)._ex = dm(nm)._ey = &([]);
@@ -2431,10 +2431,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         dm(nm)._ei1 = dm(nm)._ej1 = &([]);
       }
       dm(nm)._enact = 0;
-      break;
+      continue;
     }
 
-    if (dm(nm)._enact == 0) break;  // no extrapolated actuator
+    if (dm(nm)._enact == 0) continue;  // no extrapolated actuator
 
     if (fileExist(YAO_SAVEPATH+dm(nm).ecmatfile)) {
 

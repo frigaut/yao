@@ -11,7 +11,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoSimulUtils.c,v 1.2 2007-12-13 00:58:31 frigaut Exp $
+ * $Id: aoSimulUtils.c,v 1.2 2007/12/13 00:58:31 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -28,7 +28,7 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: aoSimulUtils.c,v $
- * Revision 1.2  2007-12-13 00:58:31  frigaut
+ * Revision 1.2  2007/12/13 00:58:31  frigaut
  * added license and header
  *
  *

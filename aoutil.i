@@ -5,7 +5,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: aoutil.i,v 1.10 2010-07-02 21:26:51 frigaut Exp $
+ * $Id: aoutil.i,v 1.10 2010/07/02 21:26:51 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -22,7 +22,7 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *   
  * $Log: aoutil.i,v $
- * Revision 1.10  2010-07-02 21:26:51  frigaut
+ * Revision 1.10  2010/07/02 21:26:51  frigaut
  * - merged Aurea Garcia-Rissmann disk harmonic code
  * - implemented parallel extension (sim.svipc and wfs.svipc)
  * - a few bug fixes (and many more bug introduction with these major
@@ -133,18 +133,27 @@
 
 
 //----------------------------------------------------
-func create_yao_window(dpi)
+func create_yao_window(void)
+/* DOCUMENT create_yao_window(void)
+   Open or re-open (e.g. after a fork() ) the main and only yao graphical
+   window.
+   SEE ALSO:
+ */
 {
-  if (!dpi) dpi=60;
+  // dpi is in fact already stored in extern (sigh)
+  //  if (!dpi) dpi=60;
   
   winkill,0;
   winkill,2;
-  //  if (dpi) {
-  window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),       \
-    height=long(425*(dpi/50.)),wait=1;
-  //  } else {
-  //    window,0,style="aosimul3.gs",wait=1;
-  //  }
+
+  if (yao_pyk_parent_id) {
+    // there's a GUI, re-parent within GUI drawingarea:
+    yao_win_init,yao_pyk_parent_id;
+  } else {
+    // ther's no GUI, re-open normal graphical window:
+    window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),     \
+      height=long(425*(dpi/50.)),wait=1;
+  }
 }
 
 

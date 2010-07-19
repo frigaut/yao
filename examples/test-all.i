@@ -17,9 +17,16 @@ perf = array(perf_s,numberof(f)+1);
 write,"LOOPING ON TEST*.PAR";
 for (i=1;i<=numberof(f);i++) {
   write,format="\n\nTesting %s\n\n",f(i);
+  if (semkey) status = quit_forks();
+  //  pause,500;
+  //  smdebug=1;
+  //  if (i==2) error;
   aoread,f(i);
   sim.verbose = 1;
   sim.debug=0;
+  sim.svipc = 0;
+  wfs.svipc = 2;
+  //  sim.svipc=3;
   disp = 10;
   if (!strmatch(f(i),"fast")) loop.niter = 500;
   else disp=0; // let's not display for the fast demo
@@ -27,7 +34,7 @@ for (i=1;i<=numberof(f);i++) {
   aoloop,disp=disp,controlscreen=10*(i==2);
   go,all=1;
   //  after_loop;  // to wrap up the analysis and print out results
-  // after_loop now called automatically at last it from go()
+  // after_loop now called automatically at last iter from go()
   perf(i).parfile = f(i);
   perf(i).name=sim.name; 
   perf(i).itps = iter_per_sec;

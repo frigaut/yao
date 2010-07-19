@@ -6,7 +6,7 @@
  * This file is part of the yao package, an adaptive optics
  * simulation tool.
  *
- * $Id: yao_utils.i,v 1.2 2007-12-13 16:04:21 frigaut Exp $
+ * $Id: yao_utils.i,v 1.2 2007/12/13 16:04:21 frigaut Exp $
  *
  * Copyright (c) 2002-2007, Francois Rigaut
  *
@@ -23,7 +23,7 @@
  * Mass Ave, Cambridge, MA 02139, USA).
  *
  * $Log: yao_utils.i,v $
- * Revision 1.2  2007-12-13 16:04:21  frigaut
+ * Revision 1.2  2007/12/13 16:04:21  frigaut
  * - modification to broken Makefile
  * - reshuffling of plug_in statement
  *

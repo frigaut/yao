@@ -1,13 +1,13 @@
-// Aosimul par file, V3.2.1
+// YAO parameter file
 //-------------------------------
 sim.name           = "SH6x6 w/ TT mirror and WFS, full diffraction WFS";
-sim.pupildiam      = 60;
-sim.debug          = 0;
+sim.pupildiam      = 120;
+sim.debug          = 2;
 sim.verbose        = 0;
 
 //-------------------------------
 atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
-atm.screen	       = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.screen	   = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
 atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
 atm.layerspeed     = &([11.,20,29,35]);
 atm.layeralt	   = &([0.,400,6000,9000]);
@@ -22,35 +22,30 @@ wfs(n).type	   = "hartmann";
 wfs(n).lambda	   = 0.65;
 wfs(n).gspos       = [0.,0.];
 wfs(n).gsalt       = 0.;
-wfs(n).gsmag       = 5.;
+wfs(n).gsmag       = 12.;
 wfs(n).shmethod	   = 2;
 wfs(n).shnxsub	   = 6;
-wfs(n).pixsize     = 0.1;
+wfs(n).pixsize     = 0.2;
 wfs(n).npixels     = 10;
 wfs(n).noise       = 1;
 wfs(n).ron         = 3.5;
 wfs(n).shthreshold = 0.;
 wfs(n).nintegcycles= 1;
+wfs(n).fstop       = "square";
+wfs(n).fssize      = 10.;
+
 
 //-------------------------------
-ndm                = 2;
+ndm                = 1;
 dm = array(dms,ndm);
 
 n  =1;
-dm(n).type	   = "stackarray";
+dm(n).type	   = "zernike";
 dm(n).iffile	   = "";
-dm(n).nxact	   = 7;
-dm(n).pitch	   = 10;
+dm(n).nzer	   = 21;
 dm(n).alt          = 0.;
 dm(n).unitpervolt   = 0.01;
-dm(n).push4imat    = 2;
-
-n  =2;
-dm(n).type	   = "tiptilt";
-dm(n).iffile	   = "";
-dm(n).alt          = 0.;
-dm(n).unitpervolt   = 0.0005;
-dm(n).push4imat    = 2;
+dm(n).push4imat    = 1;
 
 //-------------------------------
 mat.condition      = &([15.]);
@@ -72,10 +67,10 @@ gs.zeropoint	   = 1e11;
 //-------------------------------
 loop.gain	   = 0.6;
 loop.framedelay    = 1;
-loop.niter	   = 1000;
+loop.niter	   = 5000;
 loop.ittime	   = 2e-3;
 loop.startskip     = 10;
-loop.skipevery     = 1000;
+loop.skipevery     = 10000;
 loop.skipby        = 10000;
 loop.modalgainfile = "simulModeGains.fits";
 
