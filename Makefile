@@ -74,6 +74,7 @@ clean::
 install::
 	mkdir -p $(DEST_Y_SITE)/python
 	mkdir -p $(DEST_Y_SITE)/glade
+	mkdir -p $(DEST_Y_SITE)/data
 	mkdir -p $(DEST_Y_SITE)/g
 	mkdir -p $(DEST_Y_SITE)/gist
 	mkdir -p $(DEST_Y_SITE)/share/yao
@@ -81,6 +82,7 @@ install::
 #	mkdir -p /usr/local/man/man1
 	cp -p yao.py $(DEST_Y_SITE)/python/
 	cp -p yao.glade $(DEST_Y_SITE)/glade/
+	cp -p besseljprimezeros200.fits $(DEST_Y_SITE)/data/
 	cp -p aosimul3.gs $(DEST_Y_SITE)/g/
 	cp -p letter.gs $(DEST_Y_SITE)/g/
 	cp -p aosimul3.gs $(DEST_Y_SITE)/gist/

@@ -133,15 +133,15 @@
 
 
 //----------------------------------------------------
-func create_yao_window(void)
-/* DOCUMENT create_yao_window(void)
+func create_yao_window(dpi)
+/* DOCUMENT create_yao_window(dpi)
    Open or re-open (e.g. after a fork() ) the main and only yao graphical
    window.
    SEE ALSO:
  */
 {
   // dpi is in fact already stored in extern (sigh)
-  //  if (!dpi) dpi=60;
+  if (!dpi) dpi=default_dpi;
   
   winkill,0;
   winkill,2;

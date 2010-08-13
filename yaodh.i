@@ -306,7 +306,8 @@ func load_dh_bjprime_zero_tab(void)
 extern dh_bjprime_zero_tab;
 require,"hdf5.i";
 
-dh_bjprime_zero_tab  = h5read("besseljprimezeros200.h5","/data");
+//dh_bjprime_zero_tab  = h5read("besseljprimezeros200.h5","/data");
+dh_bjprime_zero_tab  = fits_read(Y_SITE+"data/besseljprimezeros200.fits");
 
 //clear besseljprimezeros200;
 return;

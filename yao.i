@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.6.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010jul19";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.6.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010aug13";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1755,6 +1755,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   extern aoinit_disp,aoinit_clean,aoinit_forcemat;
   extern aoinit_svd,aoinit_keepdmconfig;
   extern tipvib, tiltvib;
+  extern default_dpi;
 
   disp = ( (disp==[])? (aoinit_disp==[]? 0:aoinit_disp):disp );
   clean = ( (clean==[])? (aoinit_clean==[]? 0:aoinit_clean):clean );
@@ -1792,6 +1793,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (!is_set(dpi)) {dpi = 60;}
   if (is_set(clean)) {forcemat=1;}
 
+  default_dpi=dpi;
 
   // Sets other parameters:
   sim._size = int(2^ceil(log(sim.pupildiam)/log(2)+1));
@@ -1909,7 +1911,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   if (is_set(disp) || (sim.debug>0)) {
     if (!yaopy) { // set if using pygtk GUI, which prevents remapping a new window
-      create_yao_window,dpi;
+      status = create_yao_window();
     }
     if (wfs_display_mode=="spatial") {
       disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
@@ -2896,11 +2898,13 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
   extern animFlag;
   extern aoloop_disp,aoloop_savecb;
   extern commb,errmb; // minibuffers
+  extern default_dpi;
 
   
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
   if (anim==[]) anim=1; // let's make it the default
+  
   dispFlag = disp;
   savecbFlag = savecb;
   dpiFlag = dpi;
@@ -2916,7 +2920,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
   if (!is_set(disp)) {disp = 0;}
   if (!is_set(controlscreen)) {controlscreen = 0;}
   if (is_set(disp) && !is_set(nographinit)) {
-    if (!yaopy) create_yao_window,dpi;
+    if (!yaopy) status = create_yao_window();
   }
   if (is_set(controlscreen) && !is_set(nographinit)) {
     control_screen,0,init=1;
@@ -3438,7 +3442,7 @@ func go(nshot,all=)
       plg,strehlsp,itv;
       plg,strehllp,itv,color="red";
       myxytitles,"Iterations",swrite(format="Strehl @ %.2f mic",        \
-                                     (*target.lambda)(0)),[0.025,-0.01],height=9;
+                                     (*target.lambda)(0)),[0.025,-0.01],height=12;
       range,0;
     }
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.

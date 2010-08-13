@@ -565,7 +565,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
       y1 = (*wfs(ns)._imjstart2)(i);
       l1 = wfs(ns).npixels;
       plg,_(y1,y1,y1+l1,y1+l1,y1),_(x1,x1+l1,x1+l1,x1,x1),color=[80,80,80],marks=0;
-      plt,swrite(format="%d",i),x1,y1,tosys=1,color=[80,80,80],height=pltitle_height/2;
+      plt,swrite(format="%d",i),x1,y1,tosys=1,color=[80,80,80],height=lround(pltitle_height*0.75);
     }
     // display the full extent of this example subap FoV
     // to show the user how it overlaps with neightbors

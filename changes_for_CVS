@@ -1,3 +1,9 @@
 v 4.6.1:
 - fixed dpi when re-opening graphic window after fork()
 - re-opening window after fork re-open in GUI drawingarea when using GUI
+
+v 4.6.2:
+
+- changed besseljprimezeros200.h5 in besseljprimezeros200.fits to
+  suppress hdf5 dependency
+- fixed unknown dpi bug in create_yao_window()
