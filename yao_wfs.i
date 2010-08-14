@@ -1010,10 +1010,11 @@ func zernike_wfs(pupsh,phase,ns,init=)
 
 //----------------------------------------------------
 
-func mult_wfs_int_mat(disp=)
-/* DOCUMENT func mult_wfs_int_mat(disp=)
+func mult_wfs_int_mat(disp=,subsys=)
+/* DOCUMENT func mult_wfs_int_mat(disp=,subsys=)
    as mult_wfs but special for IntMat acquisition
    for speed in aoloop
+   If DM subsystem is passed, then only WFS measurements associated with that subsystem are recorded
    SEE ALSO:
  */
 {
@@ -1021,6 +1022,7 @@ func mult_wfs_int_mat(disp=)
   mes = [];
   
   for (ns=1;ns<=nwfs;ns++) {
+   filterTiltOrig = wfs(ns).filtertilt; wfs(ns).filtertilt = 0; 
 
     // Impose noise = rmsbias = rmsflat = 0 for interaction matrix measurements
     // now done within do_imat (no need to do that at each call, and
@@ -1073,8 +1075,14 @@ func mult_wfs_int_mat(disp=)
         - wfs(ns)._tt(2) * (*wfs(ns)._tiltrefv);
     }
 
+    if (subsys != []) {
+      if (subsys != wfs(ns).subsystem){
+        smes *= 0; // different subsystem, so no influence
+      }
+    }
     grow,mes,smes;
     
+    wfs(ns).filtertilt = filterTiltOrig;
     // restore whatever value was in bias and flat
     // again, this was now moved to do_imat()
     //    if (wfs(ns).type == "hartmann" ) {
@@ -1101,10 +1109,13 @@ func mult_wfs(iter,disp=)
   mes = [];
   for (ns=1;ns<=nwfs;ns++) {
 
-    //    offsets = wfs(ns).gspos;
-    phase   = get_phase2d_from_dms(ns,"wfs");
-    phase  += get_phase2d_from_optics(ns,"wfs");
+    offsets = wfs(ns).gspos;
+    phase  = get_phase2d_from_optics(ns,"wfs");
     phase  += get_turb_phase(iter,ns,"wfs");
+    // only look at DMs if not running in open loop
+    if (loop.method != "open-loop") {
+        phase  += get_phase2d_from_dms(ns,"wfs");
+      }
 
     if (wfs(ns).correctUpTT) {
       phase = correct_uplink_tt(phase,ns);

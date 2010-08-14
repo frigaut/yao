@@ -573,6 +573,10 @@ func check_parameters(void)
     if ( (dm(nm).type == "diskharmonic") && (dm(nm).max_order == 0) ) {
       exit,swrite(format="dm(%d).maxorder has not been set",nm);
     }    
+    if (dm(nm).minzer == 0) {
+      dm(nm).minzer = 1;
+    }
+    if ( (dm(nm).filtertilt) && (noneof(dm(nm).type == ["zernike","stackarray"]) )) {write, "WARNING: filtertilt only defined for zernike and stackarray DMs";}    
     if ( (dm(nm).type == "kl") && (dm(nm).nkl == 0) ) {
       exit,swrite(format="dm(%d).nkl has not been set",nm);
     }    
@@ -590,6 +594,13 @@ func check_parameters(void)
     if ((dm(nm).type == "stackarray") && (dm(nm).regparam == 0)){
       write,"Setting regparam to 1e-5";
       dm(nm).regparam = 1e-5;
+    }
+    // check that any virtual DMs have a lower DM number than a DM that uses it
+    if (*dm(nm).fitvirtualdm != []){
+      if (max(*dm(nm).fitvirtualdm) > nm){
+        write,format="Virtual DMs (%d) must have a lower numbering than the DM (%d) that uses them\n",max(*dm(nm).fitvirtualdm),nm;
+        exit, "Exiting";
+      } 
     }
   }
 
@@ -632,6 +643,11 @@ func check_parameters(void)
   }
   
   // LOOP STRUCTURE
+  if (loop.method == string) loop.method = "closed-loop";
+  if ((loop.method == "open-loop") && (loop.gain != 1 || loop.leak != 1)){
+    write, "Warning: For open-loop simulations the recommended settings are";
+    write, "loop.gain = 1. and loop.leak = 1.";
+   }
   if (loop.gain == 0) write,format="%s\n","Warning: loop.gain = 0";
   if ( (numberof(*loop.gainho)) != (numberof(*loop.leakho)) ) \
     exit,"*loop.gainho should have same number of elements as *loop.leakho";

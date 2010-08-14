@@ -234,6 +234,7 @@ struct wfs_struct
   pointer _bckgrdcalib;   // pointer to background array calibration
   int     _bckgrdinit;    // set to one to fill calibration array
   int     _bckgrdsub;     // set to one to subtract background (default)
+  pointer _meashist;      // measurement history, useful for nintegcycles > 1
 };
 
 struct dm_struct
@@ -243,6 +244,8 @@ struct dm_struct
                           // "user_function", where user_function is the name of 
                           // a function provided by the user. Required [none]
   long    subsystem;      // Subsystem this DM belongs to. Optional [1]
+  long    virtual;        // virtual DMs for tomography, don't correct wavefront
+  pointer fitvirtualdm;   // which tomographic virtual DMs are used to drive this DM  
   string  iffile;         // Influence function file name. Leave it alone.
   long    pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
   float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
@@ -283,9 +286,11 @@ struct dm_struct
                           // exp(-(d/irfact)^1.5) model (irexp=1) or
                           // sinc*gaussian (irexp=2)
   float   irfact;         // use when irexp=1 (see above)
+  long    filtertilt;     // Filter TT on this DM? Optional [0=no]
 
   // Zernike-only keywords:
   long    nzer;           // Number of modes, including piston. Required [none]
+  long    minzer;         // lowest order zernike, default=1 (piston)
   
   // Disk-Harmonic only keywords
   long    max_order;     // maximum order included in the dm modal IF (min_order is always 0)
@@ -333,6 +338,7 @@ struct dm_struct
   pointer _extrapcmat;    // extrapolation matrix: extrap_com = extrapmat(,+)*valid_com(+)
   int     _eltdefsize;    // size of def in case elt=1
   pointer _regmatrix;     // regularization matrix used, if any
+  pointer _fMat;          // fitting matrix for tomography
 };
 
 struct mat_struct
@@ -413,4 +419,5 @@ struct loop_struct
                            // will be swapped (rotation, 2->1, 3->2... 1->last
   string  modalgainfile;   // Name of file with mode gains. Optional.
   //float   dithering;     // TT dithering for centroid gain (volts).
+  string  method;          // "closed-loop", "open-loop", "pseudo open-loop" 
 };

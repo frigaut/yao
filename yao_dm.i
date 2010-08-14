@@ -355,6 +355,7 @@ func make_zernike_dm(nm,&def,disp=)
   gui_progressbar_text,"Computing Influence Functions";
   dim   = dm(nm)._n2-dm(nm)._n1+1;
   nzer  = dm(nm).nzer;
+  minzer = dm(nm).minzer;
   cobs  = tel.cobs;
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
@@ -365,10 +366,10 @@ func make_zernike_dm(nm,&def,disp=)
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
   
-  def = array(float,dim,dim,nzer);
+  def = array(float,dim,dim,nzer-minzer+1);
 
-  for (i=1;i<=nzer;i++) {
-    def(,,i) = zernike_ext(i);
+  for (i=1;i<=(nzer-minzer+1);i++) {
+    def(,,i) = zernike_ext(i+minzer-1);
     if (disp == 1) {fma; pli,def(,,i);}
     gui_progressbar_frac,float(i)/nzer;
   }
