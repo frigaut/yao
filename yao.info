@@ -1,12 +1,12 @@
 Package: yao
 Kind: plugin
-Version: 4.7.0
+Version: 4.7.1
 Revision: 1
 Description: Adaptive Optics simulation package
 License: BSD
 Maintainer: Francois Rigaut <frigaut@users.sourceforge.net>
 OS:
-Depends: yorick(>=1.6.02), yutils(>=1.0), imutil(>=0.5)
+Depends: yorick(>=2.2.0), yutils(>=1.0), imutil(>=0.5)
 Source: http://www.maumae.net/yorick/packages/%o/tarballs/yao-%v-%o.tgz
 Source-MD5: 
 Source-Directory: contrib/yao

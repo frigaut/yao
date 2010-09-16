@@ -69,7 +69,7 @@ phaseStructFunc = phase_struct_func;
 
 //+++++++++++++++++++++++++++
 
-func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=)
+func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=)
   /* DOCUMENT create_phase_screens(dimx,dimy,prefix=)
      Create phase screens and save them in fits files.
      The saved phase screens have a dimension dimx*dimy.
@@ -82,6 +82,8 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=)
      dimy = short dimension of result screens
      prefix = Prefix to filename. if prefix is not set, the
        screens are returned by not saved.
+     no_ipart = set to loose the imaginary part. Gain some RAM
+       to reach larger dimension.
 
      Example:
      create_phase_screens,2048,256,prefix="screen256"
@@ -94,8 +96,9 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=)
 {
   if (is_void(l0)) l0 = 0.;
   gui_progressbar_text,"Generating the screen power spectrum";
-  nscreen = dimx/dimy*2;
-  pscreen = generate_phase_with_L0(dimx,l0,nalias=nalias);
+  nps = (no_ipart?1:2);
+  nscreen = dimx/dimy*nps;
+  pscreen = generate_phase_with_L0(dimx,l0,nalias=nalias,no_ipart=no_ipart);
   gui_progressbar_frac,0.25;
 
   print,"Normalizing phase screens";
@@ -103,9 +106,14 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=)
   off = [1,5]; // spatial offset for structure function normalization
   psfunc = array(float,off(2));
   for (i=off(1);i<=off(2);i++ ) {
-    fsx     = avg((pscreen(1:-i,,)-pscreen(i+1:,,))^2.);
-    fsy     = avg((pscreen(,1:-i,)-pscreen(,i+1:,))^2.);
-    psfunc(i)      = sqrt((fsx+fsy)/2.);
+    // need to split over phase screens to reduce load on RAM
+    fsx = fsy = 0.;
+    for (n=1;n<=nps;n++) {
+      fsx += avg((pscreen(1:-i,,n)-pscreen(i+1:,,n))^2.);
+      fsy += avg((pscreen(,1:-i,n)-pscreen(,i+1:,n))^2.);
+    }
+    fsx /= nps; fsy /= nps;
+    psfunc(i) = sqrt((fsx+fsy)/2.);
     gui_progressbar_frac,0.25+0.6*(i-off(1))/(off(2)-off(1));
   }
   theo = sqrt(6.88*indgen(off(2))^1.66);
@@ -115,7 +123,7 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=)
     (nfact=avg(psfunc(off(1):off(2))/theo(off(1):off(2))));
   write,psfunc(off(1):off(2))/theo(off(1):off(2));
 
-  pscreen = pscreen/nfact;
+  pscreen(*) = pscreen(*)/float(nfact);
   
 
   print,"Sectionning and saving phase screens";
@@ -124,7 +132,7 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=)
   if (!is_void(prefix)) {
     for (i=1;i<=nscreen;i++) {
       fname = prefix+((nscreen==1) ? "":swrite(i,format="%i"))+".fits";
-      fitsWrite,fname,pscreen(,,i);
+      fits_write,fname,pscreen(,,i),overwrite=1;
       gui_progressbar_text,swrite(format="Saving %s",fname);
       gui_progressbar_frac,0.85+0.15*i/nscreen;
     }
@@ -211,7 +219,7 @@ func generate_von_karman_spectrum(dim,k0,nalias=,silent=)
 //+++++++++++++++++++++++++++
 
 
-func generate_phase_with_L0(dim,l0,nalias=,silent=)
+func generate_phase_with_L0(dim,l0,nalias=,silent=,no_ipart=)
   /* DOCUMENT generate_phase(size,l0)
      Generate by Fourier an un-normalized 2D phase screen from the 
      -11/3 amplitude and a randomn phase component. Returns the real and 
@@ -222,6 +230,7 @@ func generate_phase_with_L0(dim,l0,nalias=,silent=)
 
      dim: desired dimension of the result phase screens
      l0: outer scale IN PIXELS
+     no_ipart = loose the im part to gain RAM
      
      F.Rigaut, 2001/11/10.
      SEE ALSO: create_phase_screens, phase_struct_func.
@@ -253,6 +262,7 @@ func generate_phase_with_L0(dim,l0,nalias=,silent=)
   im(1,1) = 0.0f;
   if (!silent) write,"Doing FFT...";
   phaout = fftVE(re,im,1);
+  if (no_ipart) phaout = phaout(,,1);
   gui_progressbar_frac,0.20;
   re = im = [];
   return phaout;

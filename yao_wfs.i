@@ -864,8 +864,10 @@ func sh_wfs(pupsh,phase,ns)
     sem_take,semkey,20+4*(ns-1)+3,count=wfs(ns).svipc-1;
     }
     
-    // new, cause of svipc to keep *all* forks results in this var:              
-    if (wfs(ns)._bckgrdinit) *wfs(ns)._bckgrdcalib = ffimage;
+    // new, cause of svipc to keep *all* forks results in this var:
+    // commented out on sept 16, 2010. This was released with 4.7 and
+    // is a bug. Thanks Yann Clenet for pointing out this bug.
+    // if (wfs(ns)._bckgrdinit) *wfs(ns)._bckgrdcalib = ffimage;
     
     //    if (wfs(ns)._refmes) write,mesvec-*wfs(ns)._refmes;
     //    else write,mesvec;

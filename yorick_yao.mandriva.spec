@@ -1,6 +1,6 @@
 %define name yorick-yao
-%define version 4.7.0
-%define release gemini2008nov18
+%define version 4.7.1
+%define release gemini2010sep16
 
 Summary: yorick adaptive optics simulation package
 Name: %{name}

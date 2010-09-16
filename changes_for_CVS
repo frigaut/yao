@@ -22,3 +22,11 @@ Merged a bunch of changes from Marcos van Dam. From his changelog:
 10. Have loop.method set to closed-loop, open-loop and pseudo open-loop. Open loop means WFS sees uncorrected WF, not corrected WF.
 11. Tomographic reconstruction!
 
+
+version 4.7.1, 2010sep16:
+1 fixed nasty bug that was not switching noise off for background calib (SHWFS)
+  Thanks Yann Clenet for noticing and pointing me to the right direction
+2 make screen now can drop the imaginary part (no_ipart=1) to produce larger
+  screens by saving some RAM.
+
+  
