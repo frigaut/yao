@@ -24,9 +24,18 @@ Merged a bunch of changes from Marcos van Dam. From his changelog:
 
 
 version 4.7.1, 2010sep16:
-1 fixed nasty bug that was not switching noise off for background calib (SHWFS)
+- fixed nasty bug that was not switching noise off for background calib (SHWFS)
   Thanks Yann Clenet for noticing and pointing me to the right direction
-2 make screen now can drop the imaginary part (no_ipart=1) to produce larger
+- make screen now can drop the imaginary part (no_ipart=1) to produce larger
   screens by saving some RAM.
+- Gotten rid of hdf5 call in yaodh (and thus of hdf5 dependency)
+- switched the default mode in test-all.i to non svipc
 
-  
+
+version 4.7.2, 2010 oct12:
+- added smooth animate=1 for iMat recording/display
+- added ETA when taking iMat
+- added option to findfwhm() to save RAM requirements (help,findfwhm)
+- merged patch from Marcos van Dam:
+  * implemented virtual DMs for tomography
+  * implemented save of residual phase in go() (help,go)

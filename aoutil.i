@@ -1492,18 +1492,20 @@ func telfto(lambda,dlambda,teldiam,cobs,pixsize,dim,freqc=,npt=,silent=,returnps
     dlamb = 0.;
     lamb  = 1.;
     teld  = 1.;
-    pixs  = freqc*lamb/teld/4.848/dim;}
-  else {
+    pixs  = freqc*lamb/teld/4.848/dim;
+  } else {
     dlamb = dlambda;
     lamb  = lambda;
     teld  = teldiam;
-    pixs  = pixsize;}
+    pixs  = pixsize;
+  }
 
-  if (!is_set(npt)) {npt = 5;}
-  if (dlambda == 0.) {npt = 1;}
+  if (!is_set(npt)) npt = 5;
+  if (dlambda == 0.) npt = 1;
 
-  if (!is_set(silent))
-    {write,format="Cut-off frequency in pixels : %7.4f\n",teld*4.848/lamb*dim*pixs;}
+  if (!is_set(silent)) {
+    write,format="Cut-off frequency in pixels : %7.4f\n",teld*4.848/lamb*dim*pixs;
+  }
 
   mtf = array(float,dim,dim);
   dd = clip(roll(dist(dim)),1e-10,);
@@ -1515,14 +1517,15 @@ func telfto(lambda,dlambda,teldiam,cobs,pixsize,dim,freqc=,npt=,silent=,returnps
     f  = dd/fc;
     mask = (f <= 1.);
     f  = f * mask + f(dim/2+1,dim/2+1) * (1-mask);
-    mtf = mtf + telftot0(f,cobs)*mask/npt;}
+    mtf = mtf + telftot0(f,cobs)*mask/npt;
+  }
 
 
   mtf = mtf*sin(pi*dd/2./dim)/(pi*dd/2./dim);
 
   // big bug detected on 2007feb13: was returning fft(mtf)^2. for PSF
   // fortunately, I was not using the flag in any other routine, so no harm done
-  if (is_set(returnpsf)) {return abs(fft(mtf,1));}
+  if (is_set(returnpsf)) return abs(fft(mtf,1));
   return mtf;
 }
 
@@ -1707,11 +1710,15 @@ func phi2zer(i_num, phase,pup, nzer=, kl=)
   };
 
   //do the loop on each directions here.
-  if (ndir) { ztmp = array(float,[2,ndir,nzer]);}
-  else { ztmp = array(float,[2,1,nzer]); ndir = 1;};
+  if (ndir) ztmp = array(float,[2,ndir,nzer]);
+  else {
+    ztmp = array(float,[2,1,nzer]);
+    ndir = 1;
+  }
 
-  for (nnn=1;nnn<=ndir;nnn++){
-    ztmp(nnn,) = conv(,+)*(phase(,,nnn)(w_def))(+);}
+  for (nnn=1;nnn<=ndir;nnn++) {
+    ztmp(nnn,) = conv(,+)*(phase(,,nnn)(w_def))(+);
+  }
   
   return ztmp;
 

@@ -127,8 +127,7 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
   if (dbprec) {
     rho=double(sqrt(x^2+y^2))/double(r);
     phi=double(atan(y,x+(rho==0)));
-  }
-  else {
+  } else {
     rho=float(sqrt(x^2+y^2))/float(r);
     phi=float(atan(y,x+(rho==0)));
   }
@@ -148,8 +147,7 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
       rho=rho(pts);
       phi=phi(pts);
       mask=mask(pts);
-    }
-    else {
+    } else {
       if (verbose) write,"All points are non-null !";
     }
   }

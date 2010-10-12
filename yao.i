@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.7.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010sep16";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.7.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010oct12";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -2228,15 +2228,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         iMatSP = sprco(float(iMat));
         save_rco,iMatSP,YAO_SAVEPATH+mat.file;
         svd = 1; // need to generate a new reconstructor
-      }
-      else if (mat.method != "mmse-sparse" && fileExist(YAO_SAVEPATH + parprefix+"-iMat.rco")){
+      } else if (mat.method != "mmse-sparse" && fileExist(YAO_SAVEPATH + parprefix+"-iMat.rco")){
         write, "Saving " + parprefix + "-iMat.rco" + " as a full matrix";
         iMatSP = restore_rco(YAO_SAVEPATH + parprefix+"-iMat.rco");
         iMat = rcoinf(iMatSP);
         fitsWrite, YAO_SAVEPATH + mat.file, [iMat,iMat];
         svd = 1; // need to generate a new reconstructor
-      }
-      else {
+      } else {
         need_new_iMat = 1;
       }
     }
@@ -2401,8 +2399,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
           if (mat.method == "mmse-sparse"){
             grow, actuators_to_remove, indexDm(1,nm)-1+nok;
-          }
-          else {
+          } else {
             iMat(,indexDm(1,nm)-1+nok) *=0.;
           }
           
@@ -2545,37 +2542,31 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (anyof(dm.fitvirtualdm)){
         if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){          
           dMat = fitsRead(YAO_SAVEPATH + parprefix + "-dMat.fits");
-        }
-        else {
+        } else {
           svd = 1;
         }
         if (fileExist(YAO_SAVEPATH+parprefix+"-cMat.fits")){          
           cMat = fitsRead(YAO_SAVEPATH + parprefix + "-cMat.fits");
-        }
-        else {
+        } else {
           svd = 1;
         }        
       }
-    } 
-    else {
+    } else {
       iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
       if (fileExist(YAO_SAVEPATH+parprefix+"-AtAreg.ruo")){
         AtAregSP = restore_ruo(YAO_SAVEPATH+parprefix+"-AtAreg.ruo");
-      }
-      else {
+      } else {
         svd = 1;
       }
       if (anyof(dm.fitvirtualdm)){
         if (fileExist(YAO_SAVEPATH+parprefix+"-polcMat.rco")){
           polcMatSP = restore_rco(YAO_SAVEPATH+parprefix+"-polcMat.rco");
-        }
-        else {
+        } else {
           svd = 1;  // need to recreate reconstructors
         }
         if (fileExist(YAO_SAVEPATH+parprefix+"-GxSP.rco")){
           GxSP = restore_rco(YAO_SAVEPATH+parprefix+"-GxSP.rco");
-        }
-        else {
+        } else {
           svd = 1;  // need to recreate reconstructors
         }
       } 
@@ -2617,9 +2608,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
           (*dm(nm)._fMat)(,c1) = float(v1);
         }
-      }
-      
-      else {
+      } else {
         temp = rco();
         for (c1=1;c1<=numberof(xlocv);c1++){
           v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
@@ -2684,8 +2673,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               L(ii,where(dist2 == pitch2)) = 0.25;              
             }
             dm(nm)._regmatrix = &(L(+,)*L(+,));
-          }
-          else { // identity matrix
+          } else { // identity matrix
             dm(nm)._regmatrix = &unit(dm(nm)._nact);
           }
         } else {
@@ -2752,9 +2740,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               // real (ordinary) DM
               vidx = indgen(indexDm(1,nm):indexDm(2,nm));
               fMat(idx,vidx) = float(unit(dm(nm)._nact));
-            }
-            
-            else {
+            } else {
               // tomographic DM
               vidx = [];
               virtualDMs = *dm(nm).fitvirtualdm;
@@ -2771,8 +2757,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         polcMat = Gx(+,)*Dterm(+,)-Cphi;
         dMat = LUsolve(AtA+Cphi)(,+)*polcMat(+,);
         fitsWrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
-      }
-      else {
+      } else {
         Cphi = array(float,[2,nAct,nAct]);
 
       mc = 0; // matrix counter
@@ -2818,8 +2803,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               rcobuild,laplacian_mat,lvec,mat.sparse_thresh;
             }
             dm(nm)._regmatrix = &rcoata(laplacian_mat);
-          }
-          else { // identity matrix
+          } else { // identity matrix
             dm(nm)._regmatrix = &spunit(dm(nm)._nact);
           }
         } else {
@@ -2832,8 +2816,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         if (!dm(nm).fitvirtualdm){
         if (CphiSP == []) {        
           CphiSP = regmatrix;
-          }
-          else {
+          } else {
           spcon, CphiSP,regmatrix, diag=1, ruo=1;
           }
         }
@@ -2910,26 +2893,22 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               
               if (fMatSP == []){
                 fMatSP = sprco(row);
-              }
-              else {        
+              } else {        
                 rcobuild, fMatSP, row, mat.sparse_thresh;
               }
             }
     
-          }
-          else { // an ordinary DM
+          } else { // an ordinary DM
             for (c1=1;c1<=dm(nm)._nact;c1++){
               row = array(float,[2,nEstAct,1]);
               row(indexDm(1,nm)+c1-1)=1;
               if (fMatSP == []){
                 fMatSP = sprco(row);
-              }
-              else {        
+              } else {        
                 rcobuild, fMatSP, row, mat.sparse_thresh;
               }
             }
-        }
-        
+        }        
       }
 
         fMatSP = rcotr(fMatSP);
@@ -2948,9 +2927,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         *CphiSPrco.xn *= -1;
         polcMatSP = rcotr(rcoadd(t2,CphiSPrco));
         save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
-      }  
-
-      else {
+      } else {
         GxSP = iMatSP;
       AtA = rcoata(iMatSP);
       AtAregSP = ruoadd(AtA,CphiSP);
@@ -2975,8 +2952,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       // save the results:
       if (noneof(dm.fitvirtualdm)){
       fitsWrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
-      }
-      else { // just save the iMat and force the recreation of cMat on reload
+      } else { // just save the iMat and force the recreation of cMat on reload
         fitsWrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
       }
     } 
@@ -3539,18 +3515,15 @@ func go(nshot,all=)
     
     if (sum(usedMes != 0) == 0){ // sparse CG method does not work if all zeros
       err = array(float,AtAregSP.r);
-    }
-    else {
+    } else {
       if ((loop.method == "pseudo open-loop") && (i > 1) && (polcMatSP != [])){
         Ats=float(rcoxv(GxSP,usedMes)-rcoxv(polcMatSP,estdmcommand));
-      }
-      else {
+      } else {
         Ats=rcoxv(GxSP,usedMes); 
       }
       err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=1.e-3));
     }
-  }
-  else {
+  } else {
     err = cMat(,+) * usedMes(+);
     if ((loop.method == "pseudo open-loop") && (i > 1) && (dMat != [])){
       err -= dMat(,+) * estdmcommand(+);
@@ -3604,8 +3577,7 @@ func go(nshot,all=)
       *dm(nm)._command -= \
         (*loop.gainho)(order-1) * dm(nm).gain * errmb(indexDm(1,nm):indexDm(2,nm),imb);
     }
-    }
-    else { // tomographic DM; DM commands from virtual DMs
+    } else { // tomographic DM; DM commands from virtual DMs
       virtualDMs = *dm(nm).fitvirtualdm;
       virtualdmcommand = [];
       for (idx=1;idx<= numberof(virtualDMs);idx++){
@@ -3613,8 +3585,7 @@ func go(nshot,all=)
       }
       if (mat.method == "mmse-sparse"){
         *dm(nm)._command = rcoxv(*dm(nm)._fMat,virtualdmcommand);
-      }
-      else {
+      } else {
         *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
       }
     }    
