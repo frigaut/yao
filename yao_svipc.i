@@ -170,7 +170,6 @@ func wfs_fork_listen(ns,nf)
   phasescale  = float(2*pi/wfs(ns).lambda);
   sdim        = long(2^ceil(log(subsize)/log(2)+1));
   sdimpow2    = int(log(sdim)/log(2));
-  threshold   = array(float,wfs(ns)._nsub4disp+1)+wfs(ns).shthreshold;
 
   // to protect from a WFS sync, let's not put it in the wfs structure
   svipc_subok  = (*wfs(ns)._fork_subs)(,nf);
@@ -208,7 +207,7 @@ func wfs_fork_listen(ns,nf)
 
     // write,format="%s ","in fork."; info,phase;
     
-    // do our stuff:
+    // do our stuff: 
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
              *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
              *wfs(ns)._jstart, int(subsize), int(subsize), 
@@ -230,12 +229,15 @@ func wfs_fork_listen(ns,nf)
     sem_give,semkey,20+4*(ns-1)+1;
     
     sem_take,semkey,20+4*(ns-1)+2;
+    if (sim.debug>20) write,format="fork: gotten sem %d\n",20+4*(ns-1)+2;
+    
+    threshold   = array(float,wfs(ns)._nsub4disp+1)+wfs(ns).shthreshold;
     
     err = _shwfs_spots2slopes( ffimage,
                 *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                 wfs(ns)._nsub4disp, wfs(ns).npixels,
                 wfs(ns)._fimnx, fimny2, yoffset, 
-                *wfs(ns)._centroidw, threshold, *wfs(ns)._bias,
+                *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
                 *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise, 
                 *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
                 *wfs(ns)._validsubs, svipc_subok2, wfs(ns).nintegcycles,

@@ -21,6 +21,13 @@ http://www.maumae.net/yao/
 RELEASE NOTES:
 --------------
 
+version 4.7.3, 2010 oct12:
+- merged SH threshold methods #2 and #3, patches from Yann Clenet
+  Credits for original idea of method #3 (compute centroid on N
+  brightest pixels instead of using a flux threshold) go to E.Gendron.
+- added some safety for the choice of shthreshold when using shmethod=3
+  to avoid getting segfaults in yao_fast.
+
 version 4.7.2, 2010 oct12:
 - added smooth animate=1 for iMat recording/display
 - added ETA when taking iMat

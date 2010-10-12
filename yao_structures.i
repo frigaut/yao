@@ -147,6 +147,7 @@ struct wfs_struct
   int     npixels;        // Final # of pixels in subaperture. Required [none]
   float   pupoffset(2);   // offset of the whole wfs subs w.r.t telescope aperture [meter] 
                           // allow misregistration w.r.t tel pupil and funky configurations
+  long    shthmethod;     // 1: yao default, 2: podium, 3: brightest pixels. Required [1]
   float   shthreshold;    // Threshold in computation of subaperture signal, >=0. Optional [0]
   float   biasrmserror;   // rms error on WFS bias in electron. Optional [0]
   float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]

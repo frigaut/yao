@@ -501,6 +501,13 @@ func check_parameters(void)
       if ((wfs(ns).type == "hartmann") && (wfs(ns).npixels == 0)) {
         exit,swrite(format="wfs(%d).npixels has not been set",ns);
       }
+      if ((wfs(ns).type == "hartmann") && (wfs(ns).shthmethod == 0)) {
+        wfs(ns).shthmethod = 1;	
+      }
+      if ((wfs(ns).type == "hartmann") && (wfs(ns).shthmethod == 3) && 
+         ((wfs(ns).shthreshold > (wfs(ns).npixels)^2) || (wfs(ns).shthreshold <= 0))) {
+        exit,swrite(format="Wrong wfs(%d).shthreshold value for wfs(%d).shthmethod = %d",ns,ns,wfs(ns).shthmethod);
+      }
     }
 
     if ((wfs(ns).type == "hartmann") && (wfs(ns).shmethod == 2)) {
@@ -1716,7 +1723,7 @@ func phi2zer(i_num, phase,pup, nzer=, kl=)
     ndir = 1;
   }
 
-  for (nnn=1;nnn<=ndir;nnn++) {
+  for (nnn=1;nnn<=ndir;nnn++){
     ztmp(nnn,) = conv(,+)*(phase(,,nnn)(w_def))(+);
   }
   

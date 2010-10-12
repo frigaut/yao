@@ -151,6 +151,9 @@ func sync_wfs_from_master(ns,nf)
   
   if (sim.debug>1) \
     write,format="WFS sync'ed on WFS#%d fork#%d\n", ns, nf;
+  if (sim.debug>20) \
+    write,format="%d thmethod=%d  thres=%f\n",getpid(),
+      wfs(ns).shthmethod, wfs(ns).shthreshold;
 }
 
 

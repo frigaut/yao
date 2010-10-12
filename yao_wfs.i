@@ -855,7 +855,7 @@ func sh_wfs(pupsh,phase,ns)
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                   wfs(ns)._nsub4disp, wfs(ns).npixels,
                   wfs(ns)._fimnx , fimny, yoffset, 
-                  *wfs(ns)._centroidw, threshold, *wfs(ns)._bias,
+                  *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
                   *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise, 
                   *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
                   *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles,

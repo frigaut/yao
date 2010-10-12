@@ -203,7 +203,7 @@ extern _shwfs_spots2slopes
 /* PROTOTYPE
    int _shwfs_spots2slopes( float array fimage, int array imistart2,
    int array imjstart2, int nsubs, int binxy2, int fimnx, int fimny,
-   int yoffset, float array centroidw, float array threshold,
+   int yoffset, float array centroidw, long shthmethod, float array threshold,
    float array bias, float array flat,
    float ron, long noise, float array bckgrdcalib,
    int bckgrdinit, int bckgrdsub, int array validsubs, int array svipc_subok,
