@@ -376,7 +376,8 @@ func make_zernike_dm(nm,&def,disp=)
   if (sim.verbose>=1) {write,format="Number of zernike :%d\n",nzer;}
 
   // normalization factor: one unit of tilt gives 1 arcsec:
-  current = def(dim/2,dim/2,2)-def(dim/2-1,dim/2,2);
+  z2 = zernike_ext(2);
+  current = z2(dim/2,dim/2)-z2(dim/2-1,dim/2);
   fact = (dm(nm).unitpervolt*tel.diam/sim.pupildiam)*4.848/current;
   
   def = float(def*fact);

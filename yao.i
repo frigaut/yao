@@ -596,6 +596,7 @@ func do_imat(disp=)
   ntot = sum(dm._nact);
   ncur=1;
 
+  if (disp) animate,1;
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
   status = store_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
@@ -603,6 +604,8 @@ func do_imat(disp=)
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
 
+  // for imat ETA:
+  tic; ndone=0;
   
   // Loop on each mirror:
   for (nm=1;nm<=ndm;nm++) {
@@ -620,8 +623,11 @@ func do_imat(disp=)
       gui_progressbar_frac,float(ncur)/ntot;
       gui_progressbar_text,\
         swrite(format="Doing interaction matrix, DM#%d, actuator#%d",nm,i);
-      if (sim.verbose==1) \
-        write,format="\rDoing DM# %d, actuator %d/%d",nm,i,dm(nm)._nact;
+      if (sim.verbose) {
+        eta = (ndone?(ntot-ndone)*tac()/ndone:0.0f);
+        write,format="\rDoing DM# %d, actuator %d/%d, ETA %.1fs",\
+          nm,i,dm(nm)._nact,eta;
+      }
       //      if (sim.verbose==2) {write,format="%d ",i;}
 
       mircube  *= 0.0f; command *= 0.0f;
@@ -675,8 +681,9 @@ func do_imat(disp=)
 
       if (sleep) usleep,sleep;
       if ((sim.debug>=3) && (i==(dm(nm)._nact/2))) hitReturn;
+      ndone++;
     }
-    if (sim.verbose==1) {write," ";}
+    if (sim.verbose) {write," ";}
   }
 
   // restore original values to WFS structure:
@@ -692,6 +699,8 @@ func do_imat(disp=)
     mypltitle,"Interaction Matrix",[0.,-0.005],height=12;
     if (sim.debug >= 1) typeReturn;
   }
+  
+  if (disp) animate,0;
   clean_progressbar;
 }
 
@@ -2132,6 +2141,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         write,format="  >> Computing Influence functions for mirror # %d\n",n;
       }
 
+      if (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) {// delete the extrapolated influence functions
+        remove, YAO_SAVEPATH+dm(n)._eiffile;        
+      }
       if (dm(n).type == "bimorph") {
         make_curvature_dm, n, disp=disp,cobs=tel.cobs;
       } else if (dm(n).type == "stackarray") {
@@ -2262,7 +2274,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
     
     // measure interaction matrix:
-    if ( sum(dm._nact) > sum(wfs._nmes) ) {
+    estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront     
+    if ( sum(dm(estDMs)._nact) > sum(wfs._nmes) ) {
       write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",sum(dm._nact),sum(wfs._nmes);
       if (mat.method == "svd"){
         write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD"; 
@@ -2573,17 +2586,29 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   for (nm=1;nm<=numberof(dm);nm++){
     if (dm(nm).fitvirtualdm){
       
-      xloct = *dm(nm)._x; // location of the tomography actuators
-      yloct = *dm(nm)._y;
-      
       virtualDMs = *dm(nm).fitvirtualdm;
       nVirtualDMs = numberof(virtualDMs);
+
+      if (dm(nm).type == "stackarray"){
+        xloct = *dm(nm)._x; // location of the tomography actuators
+        yloct = *dm(nm)._y;
       
-      xlocv = ylocv = []; // location of the virtual actuators
+        xlocv = ylocv = []; // location of the virtual actuators
     
-      for (c1=1;c1<=nVirtualDMs;c1++){
-        grow, xlocv, *dm(virtualDMs(c1))._x;
-        grow, ylocv, *dm(virtualDMs(c1))._y;
+        for (c1=1;c1<=nVirtualDMs;c1++){
+          grow, xlocv, *dm(virtualDMs(c1))._x;
+          grow, ylocv, *dm(virtualDMs(c1))._y;
+        }
+      } else if (dm(nm).type == "zernike"){
+        xloct = indgen(dm(nm).minzer:dm(nm).nzer);
+        yloct = indgen(dm(nm).minzer:dm(nm).nzer);
+        
+        xlocv = ylocv = []; // location of the virtual actuators
+        
+        for (c1=1;c1<=nVirtualDMs;c1++){
+          grow, xlocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
+          grow, ylocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
+        }
       }
 
       if (mat.method == "mmse"){
@@ -2663,6 +2688,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           else { // identity matrix
             dm(nm)._regmatrix = &unit(dm(nm)._nact);
           }
+        } else {
+          dm(nm)._regmatrix = dm(nm).regmatrix;
         }
       }
       
@@ -2795,6 +2822,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           else { // identity matrix
             dm(nm)._regmatrix = &spunit(dm(nm)._nact);
           }
+        } else {
+          dm(nm)._regmatrix = dm(nm).regmatrix;
         }
         
         regmatrix = *dm(nm)._regmatrix;
@@ -3085,8 +3114,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 }
 
 //---------------------------------------------------------------
-func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
-/* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
+func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
+/* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    Prepare all arrays for the execution of the loop (function go()).
    
    disp          = set to display stuff as the loop goes
@@ -3098,6 +3127,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
    anim          = set to 1 to use double buffering. Avoids flicker but
                    might confuse the user if not turned off in normal operation
                    see animate() yorick function
+   savephase     = set to save residual wavefront on first target as fits file 
    SEE ALSO: aoread, aoinit, go, restart
  */
 {
@@ -3167,7 +3197,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
   extern aoloop_disp,aoloop_savecb;
   extern commb,errmb; // minibuffers
   extern default_dpi;
-
+  extern savephaseFlag;
   
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
@@ -3179,7 +3209,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
   controlscreenFlag = controlscreen;
   nographinitFlag = nographinit;
   animFlag = anim;
-
+  savephaseFlag = savephase;
   
   gui_message,"Initializing loop";
 
@@ -3224,12 +3254,6 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
   remainingTimestring = "";
   njumpsinceswap = 0; // number of jumps since last screen swap
   
-  if (is_set(savecb)) {
-    cbmes         = array(float,[2,sum(wfs._nmes),loop.niter]);
-    cbcom         = array(float,[2,sum(dm._nact),loop.niter]);
-    cberr         = array(float,[2,sum(dm._nact),loop.niter]);
-  }
-
   // minibuffers for up to 10th order filters (control laws):
   // determine number of actuators and commands
   nComm = 0;
@@ -3243,7 +3267,11 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=)
   commb          = array(float,[2,nComm,10]);
   errmb          = array(float,[2,nAct,10]);
   
-  
+  if (is_set(savecb)) {
+    cbmes         = array(float,[2,sum(wfs._nmes),loop.niter]);
+    cbcom         = array(float,[2,sum(nComm),loop.niter]);
+    cberr         = array(float,[2,sum(nAct),loop.niter]);
+  }
 
   // Special: re-init the WFS, since it includes the computation of
   // the # of photons/WFS and the WFS bias anf flats, in case something
@@ -3388,7 +3416,7 @@ func go(nshot,all=)
 
 {
   extern niterok, starttime, endtime, endtime_str, now, nshots;
-  extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
+  extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag,savephaseFlag;
   extern cbmes, cbcom, cberr;
   extern iMatSP, AtAregSP
   extern commb,errmb; // minibuffers (last 10 iterations)
@@ -3408,6 +3436,7 @@ func go(nshot,all=)
   dpi = dpiFlag;
   controlscreen = controlscreenFlag;
   nographinit = nographinitFlag;
+  savephase = savephaseFlag;
 
   if (loopCounter==0) {
     // initialize timers
@@ -3660,6 +3689,16 @@ func go(nshot,all=)
   }
 
   time(5) += tac();
+  
+  if (savephase){
+    // get the residual phase; initially for the first target
+    // display and save the residual wavefront
+    residual_phase=get_phase2d_from_dms(1,"target") +
+    get_phase2d_from_optics(1,"target") +
+    get_turb_phase(i,1,"target");
+
+    result=fitsWrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));
+  } 
     
   ok = ok*((i % loop.stats_every) == 0); // accumulate stats only every 4 iter.
   
@@ -3992,7 +4031,7 @@ func after_loop(void)
   }
   
   // End of loop calculations (fwhm, EE, Strehl):
-  fairy  = findfwhm(airy);
+  fairy  = findfwhm(airy,saveram=1);
   e50airy= encircled_energy(airy,ee50);
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
 
@@ -4008,7 +4047,7 @@ func after_loop(void)
   write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
     for (jt=1;jt<=target._ntarget;jt++) {
-      fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl));
+      fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
       encircled_energy,imav(,,jt,jl),tmp;
       e50(jt,jl)  = tmp*psize(jl);
 

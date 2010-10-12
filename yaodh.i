@@ -19,7 +19,7 @@
  dh_shift_coeff    		- disk harmonic func shifted coefficient
  dh_sin_coeff      		- disk harmonic func sin wave coefficient
  dh_var           	 	- disk harmonic variance
- load_dh_bjprime_zero_tab	- load a table in hdf5 format (dir 
+ load_dh_bjprime_zero_tab	- load init file
  prepdiskharmonic		- prepares the frame with pupil 
 
 
@@ -29,7 +29,7 @@
 */
 
   require,"bessel.i";
-  require,"hdf5.i";
+  // require,"hdf5.i";
   
 /* how to use it: 
    Example:
@@ -304,9 +304,9 @@ func load_dh_bjprime_zero_tab(void)
    dh_init: Initialize disk harmonic global variables
 */
 extern dh_bjprime_zero_tab;
-require,"hdf5.i";
+// require,"hdf5.i";
 
-//dh_bjprime_zero_tab  = h5read("besseljprimezeros200.h5","/data");
+// dh_bjprime_zero_tab  = h5read("besseljprimezeros200.h5","/data");
 dh_bjprime_zero_tab  = fits_read(Y_SITE+"data/besseljprimezeros200.fits");
 
 //clear besseljprimezeros200;

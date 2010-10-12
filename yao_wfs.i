@@ -794,8 +794,9 @@ func sh_wfs(pupsh,phase,ns)
       if (!wfs(ns)._svipc_init_done)  {
         require,"yao_svipc.i";
         status = svipc_wfs_init(phase,ns);
-        //extern shmphase,ffimage;
+        // extern shmphase,ffimage;
         wfs(ns)._svipc_subok = &((*wfs(ns)._fork_subs)(,1));
+        if (shmphase!=[]) shm_unvar,shmphase;
       }
       shm_var,shmkey,swrite(format="wfs%d_phase",ns),shmphase;
       shm_var,shmkey,swrite(format="wfs%d_mesvec",ns),mesvec;

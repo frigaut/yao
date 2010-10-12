@@ -24,8 +24,8 @@ for (i=1;i<=numberof(f);i++) {
   aoread,f(i);
   sim.verbose = 1;
   sim.debug=0;
-  sim.svipc = 0;
-  wfs.svipc = 2;
+  // sim.svipc = 0;
+  // wfs.svipc = 2;
   //  sim.svipc=3;
   disp = 10;
   if (!strmatch(f(i),"fast")) loop.niter = 500;

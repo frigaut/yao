@@ -10,20 +10,32 @@ Developpers:
 Francois Rigaut		frigaut@gemini.edu
 Ralf Flicker		(+ July 2009)
 Damien Gratadour        damien.gratadour@obspm.fr
+Marcos van Dam          marcos@flatwavefronts.com
+Aurea Garcia-Rissmann   agrissmann@gmail.com
 
 Help pages:
 -----------
-http://www.maumae.net/yao/aosimul.html (outdated)
+http://www.maumae.net/yao/
 
 
 RELEASE NOTES:
 --------------
+
+version 4.7.2, 2010 oct12:
+- added smooth animate=1 for iMat recording/display
+- added ETA when taking iMat
+- added option to findfwhm() to save RAM requirements (help,findfwhm)
+- merged patch from Marcos van Dam:
+  * implemented virtual DMs for tomography
+  * implemented save of residual phase in go() (help,go)
 
 version 4.7.1, 2010sep16:
 - fixed nasty bug that was not switching noise off for background calib (SHWFS)
   Thanks Yann Clenet for noticing and pointing me to the right direction
 - make screen now can drop the imaginary part (no_ipart=1) to produce larger
   screens by saving some RAM.
+- Gotten rid of hdf5 call in yaodh (and thus of hdf5 dependency)
+- switched the default mode in test-all.i to non svipc
 
 Version 4.7.0, 2010aug14:
 

@@ -86,6 +86,7 @@ func svipc_wfs_init(phase,ns)
   // *wfs._fimage has necessarily been created in shwfs_init()
   shm_write,shmkey,swrite(format="wfs%d_fimage",ns),wfs(ns)._fimage;
   // phase exist as it has been passed as arg to sh_wfs()
+  // write,format="%s: ","phase in svipc_wfs_init";  info,phase;
   shm_write,shmkey,swrite(format="wfs%d_phase",ns),&phase;
   // ... and we create mesvec:
   mesvec = array(float,2*wfs(ns)._nsub);
@@ -176,6 +177,8 @@ func wfs_fork_listen(ns,nf)
   svipc_subok2 = (*wfs(ns)._fork_subs2)(,nf);
   yoffset      = (*wfs(ns)._yoffset)(nf);
   fimny2       = (*wfs(ns)._fimny2)(nf);
+
+  // if (phase!=[]) shm_unvar,phase;
   
   shm_var,shmkey,swrite(format="wfs%d_fimage",ns),ffimage;
   shm_var,shmkey,swrite(format="wfs%d_phase",ns),phase;
@@ -203,6 +206,8 @@ func wfs_fork_listen(ns,nf)
     // sync if needed:
     status = sync_wfs_from_master(ns,nf);
 
+    // write,format="%s ","in fork."; info,phase;
+    
     // do our stuff:
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
              *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,

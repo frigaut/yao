@@ -1595,12 +1595,24 @@ func encircled_energy(image,&ee50,xc=,yc=)
 
 //---------------------------------------------------------
 
-func findfwhm(image,psize,nreb=)
+func findfwhm(image,psize,nreb=,saveram=)
 /* DOCUMENT findfwhm(image,psize)
  * Determine the FWHM of an image. It simply rebins the image by
  * a factor of 4 and counts the number of pixels above the maximum
  * of the image divided by 2. Not the best accurate method but it's
  * robust
+ * image = image for which to compute FWHM
+ * psize = pixel size (in whatever units FWHM has to be computed, e.g. arcsec)
+ * nreb = rebin factor to compute FWHM (default 4). not used when
+ *        saveram is set
+ * saveram = in that case, we don't use the brutal rebin + number of
+ *           pixels above 1/2 max method. Instead, we iteratively determined
+ *           if the FWHM is above 8 pixels, and zoom on the peak if not.
+ *           when this condition is verified, we use the above rebin method.
+ *           This saves RAM when dealing with very large images and small cores.
+ * Modified 2010Oct05 to save RAM for ELT applications. Do a first pass
+ *   at lower rebin factor to avoid generating too large images. Isolate
+ *   a subimage for rebinning if necessary.
  * F.Rigaut, 2001/11/10.
  * SEE ALSO:
  */
@@ -1608,12 +1620,41 @@ func findfwhm(image,psize,nreb=)
   if (psize == []) psize=1;
   if (nreb==[]) nreb=4;
 
+  if (!saveram) {
   if (nreb==1) eq_nocopy,imreb,image;
   else imreb = fftrebin(image,nreb);
   
   fwhm  = sum(imreb >= (max(imreb)/2.))/nreb^2.;
   fwhm  = sqrt(4.*fwhm/pi)*psize;
+    return fwhm;
+  }
+  // saveram:
+  nreb = 1;
+  fwhm = compfwhm(image);
+  while (fwhm < 8.) {
+    nreb *= 2;
+    dim  = dimsof(image)(2);
+    hdim = dimsof(image)(2)/4;
+    // identify max
+    wmax = where2(image==max(image))(,1);
+    // compute sub image (1/2 the initial size):
+    i1 = clip(wmax(1)-hdim+1,1,);
+    i2 = clip(wmax(1)+hdim,,dim);
+    j1 = clip(wmax(2)-hdim+1,1,);
+    j2 = clip(wmax(2)+hdim,,dim);
+    image = image(i1:i2,j1:j2);
+    // rebin image:
+    imreb = fftrebin(image,nreb);
+    fwhm = compfwhm(imreb);
+  }
+  fwhm = fwhm*psize/nreb;
+  return fwhm;
+}
 
+func compfwhm(image)
+{
+  fwhm  = sum(image >= (max(image)/2.));
+  fwhm  = sqrt(4.*fwhm/pi);
   return fwhm;
 }
 
