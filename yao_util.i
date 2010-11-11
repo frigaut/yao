@@ -609,8 +609,7 @@ extern _nowtime;
 //---------------------------------------------------------
 func myxytitles(xtitle,ytitle,xyoff,font=,height=)
 {
-  get_style,landscape,systems,legends,clegends;
-  l = systems(plsys()).viewport;
+  l = viewport();
   xdim = l(2)-l(1);
   ydim = l(4)-l(3);
   if (is_void(xyoff)) {xyoff=[0.,0.];}
@@ -626,8 +625,7 @@ func myxytitles(xtitle,ytitle,xyoff,font=,height=)
 //---------------------------------------------------------
 func mypltitle(title,xyoff,font=,height=)
 {
-  get_style,landscape,systems,legends,clegends;
-  l = systems(plsys()).viewport;
+  l = viewport();
   xdim = l(2)-l(1);
   ydim = l(4)-l(3);
   if (is_void(xyoff)) {xyoff=[0.,0.];}

@@ -116,8 +116,10 @@ func fitsRead(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
   phdr= hdr;
 
   /* Some error checking */
-  if (!_fCheckPrimaryHeader(hdr))
-    exitInError,"Some standard fits keywords are missing in the primary header";
+  if (!_fCheckPrimaryHeader(hdr)) {
+    close,file;
+    error,"Some standard fits keywords are missing in the primary header";
+  }
   if ((extension >= 1) && (!fitsHdrValue(hdr,"EXTEND",default=1))) {
     write,"WARNING: This FITS file is not supposed to contain fits Extensions";
     write,"(Keyword EXTEND not present or set to 'F'). I will try anyway...";
@@ -136,8 +138,10 @@ func fitsRead(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
     address+= skip;
     /* Now read the next extension header: */
     hdr= _fReadHeader(file,address);
-    if (!_fCheckExtensionHeader(hdr,XTtype))
-      exitInError,"Some standard fits keywords are missing in the Extension header"+extn;
+    if (!_fCheckExtensionHeader(hdr,XTtype)) {
+      close,file;
+      error,"Some standard fits keywords are missing in the Extension header"+extn;
+    }
     ehdr= hdr;
     extn++;
   }
@@ -161,12 +165,17 @@ func fitsRead(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
   if (type == 32)  {x = long();}   /* 32 pixel values are signed 4-byte integers */
   if (type == -32) {x = float();}  /* -32 pixel values are 4-byte floating points */
   if (type == -64) {x = double();} /* -64 pixel values are 8-byte floating points */
-  if (is_void(x)) exitInError,"Unrecognized BITPIX value";
+  if (is_void(x)) {
+    close,file;
+    error,"Unrecognized BITPIX value";
+  }
   
   data = array(x,naxis);
   
-  if (_read(file,address,data) != numberof(data))
-    exitInError,"EOF encountered before all data were read";
+  if (_read(file,address,data) != numberof(data)) {
+    close,file;
+    error,"EOF encountered before all data were read";
+  }
 
   /* Scaling of data */
   bzero= fitsHdrValue(hdr,"BZERO",default=0.);
@@ -293,9 +302,11 @@ func _fCheckPrimaryHeader(hdr)
 {
   /* Is the header conform to FITS standard ?
      Some mandatory keywords have to be there */
-  return (strtrim(_fGetKeyword(hdr(1))) == "SIMPLE" && 
-          strtrim(_fGetKeyword(hdr(2))) == "BITPIX" && 
-          strtrim(_fGetKeyword(hdr(3))) == "NAXIS");
+  ok = ((strtrim(_fGetKeyword(hdr(1))) == "SIMPLE") && 
+        (strtrim(_fGetKeyword(hdr(2))) == "BITPIX") && 
+        (strtrim(_fGetKeyword(hdr(3))) == "NAXIS"));
+
+  return ok;
 }
 
 func _fCheckExtensionHeader(hdr,&XTtype)
@@ -330,7 +341,7 @@ func _fCheckExtensionHeader(hdr,&XTtype)
 
   if (XTtype == "BINTABLE") {
     /* fits binary table extension */
-    exitInError,"Binary table not yet handle by fitsRead";
+    error,"Binary table not yet handle by fitsRead";
     return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" && 
             strtrim(_fGetKeyword(hdr(2))) == "BITPIX" && 
             strtrim(_fGetKeyword(hdr(3))) == "NAXIS" &&
@@ -341,7 +352,7 @@ func _fCheckExtensionHeader(hdr,&XTtype)
             strtrim(_fGetKeyword(hdr(8))) == "TFIELDS");
   }
 
-  exitInError,"XTENSION type not recognized";
+  error,"XTENSION type not recognized";
 }
 
 func _fGetNaxis(hdr)
@@ -368,7 +379,7 @@ func _fBuildArray(hdr)
   if (type == 32)  {x = long();}   /* 32 pixel values are signed 4-byte integers */
   if (type == -32) {x = float();}  /* -32 pixel values are 4-byte floating points */
   if (type == -64) {x = double();} /* -64 pixel values are 8-byte floating points */
-  if (is_void(x)) exitInError,"Unrecognized BITPIX value";
+  if (is_void(x)) error,"Unrecognized BITPIX value";
   
   data = array(x,naxis);
   return data;
@@ -384,8 +395,10 @@ func _fReadHeader(file,&address)
   end_not_found = 1;
 
   do {
-    if (_read(file, address, buffer) != buffer_size)
-      exitInError, "cannot read header";
+    if (_read(file, address, buffer) != buffer_size) {
+      close,file;
+      error, "cannot read header";
+    }
 
     address  += buffer_size;
 
@@ -403,11 +416,6 @@ func _fReadHeader(file,&address)
   return hdr;
 }
 
-func exitInError(message)
-{
-  close,file;
-  error,message;
-}
 /*----------------------------------------------------------*/
 
 func fitsWrite(filename,data,header,exttype=,append=,rescale=)

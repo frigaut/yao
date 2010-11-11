@@ -832,6 +832,27 @@ the <em>N</em> ring inner radius (in fraction of pupil radius), e.g.</p>
   at 12:00 o'clock, I would use <code>wfs.angleoffset = &float([0,0,90.])</code>
 </div>
 </li></ul>
+
+<h4>Pyramid WFS</h4>
+
+<p>Briefly: The Pyramid WFS, in yao, is defined very similarly to the SH
+WFS. You have to define <code>wfs.shnxsub</code> (# of subapertures in pupil
+diameter), and the number of pixels in the pupil/phase plane per
+subaperture, <code>wfs.npixpersub</code>. For instance, if you want to simulate a
+pyramid WFS with 8x8 "subapertures" (pixels in pupil image), you can
+use: <code>wfs.shnxsub=8, wfs.npixpersub=8</code>, in which case <code>sim.pupildiam=64</code>.
+Currently, we can't have <code>sim.pupildiam != wfs.shnxsub *
+  wfs.npixpersub</code>.
+
+<p>Other parameters used by the pyramid WFS only are listed in the
+structure table below. They are commented and fairly self-explanatory.
+Note that it is important (and required) to set a field stop when
+  working with pyramid wfs in yao. The way it's implemented, the
+  execution speed depends on the field stop diameter, so don't be
+  surprised. Use a field stop large enough to avoid aliasing and
+  growth of waffle like modes. 
+
+
     
 <h4>Zernike WFS</h4>
 
@@ -1480,6 +1501,11 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">dispzoom          </td><td>float    </td><td>N/A        </td><td>1.0        </td><td>no  </td><td>Zoom factor for the display, useful in multi-WFS configuration (typically around 1) </td></tr>
   <tr><td class="varname">optthroughput     </td><td>float    </td><td>Unitless   </td><td>1.0        </td><td>no  </td><td>Optical throughput to WFS                                                           </td></tr>
   <tr><td class="varname">disjointpup       </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>If set, the WFS#n will be filtered by an array disjointpup(,,n) that has to be defined by the user. see user_pupil(). Allow for GMT-type topology </td></tr>
+  <tr><td colspan="6" class="subth">Pyramid WFS only keywords</td></tr>
+  <tr><td class="varname">pyr_mod_ampl      </td><td>float    </td><td>arcsec     </td><td>0.0        </td><td>yes </td><td>pyramid wfs modulation amplitude radius [arcsec]                                    </td></tr>
+  <tr><td class="varname">pyr_mod_npts      </td><td>long     </td><td>N/A        </td><td>1          </td><td>yes </td><td>total number of point along modulation circle [unitless]                            </td></tr>
+  <tr><td class="varname">pyr_padding       </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Pad the pupil image to reduce spatial aliasing [unitless]. A pad of 1 means adding wfs.npixpersub pixels on each side of the pupil image. Typical 0 to 4.   </td></tr>
+  <tr><td class="varname">pyr_mod_loc       </td><td>string   </td><td>N/A        </td><td>"after"    </td><td>yes </td><td>Location of modulation (before/after the field stop). Valid values are "before" or "after"  </td></tr>
   <tr><td colspan="6" class="subth">Curvature WFS only keywords</td></tr>
   <tr><td class="varname">l                 </td><td>float    </td><td>meter      </td><td>none       </td><td>yes </td><td>Extra focal distance in a F/60 beam                                                 </td></tr>
   <tr><td class="varname">nsubperring       </td><td>&long    </td><td>Unitless   </td><td>none       </td><td>yes </td><td># of subapertures per ring. See doc                                                 </td></tr>

@@ -91,75 +91,16 @@ class yao:
       self.py2yo('yaopy_quit')
 #      gtk.main_quit()
       
-   def __init__(self,path2glade):
+   def __init__(self,path2glade,dpi):
       self.path2glade = path2glade
       self.usercmd = 'STOP'
-      
-      # callbacks and glade UI
-      dic = {
-         'on_about_activate': self.on_about_activate,
-         'on_debug_toggled': self.on_debug_toggled,
-         'on_quit1_activate' : self.on_quit1_activate,
-         'on_show_wfss_and_dms_toggled' : self.on_show_wfss_and_dms_toggled,
-         'on_window1_map_event' : self.on_window1_map_event,
-         'on_edit_clicked' : self.on_edit_clicked,
-         'on_edit2_activate' : self.on_edit2_activate,
-         'on_create_phase_screens_activate': self.on_create_phase_screens_activate,
-         # MAIN
-         'on_aoread_clicked' : self.on_aoread_clicked,
-         'on_yaoparfile_activate': self.on_yaoparfile_activate,
-         'on_yaoparfile_changed': self.on_yaoparfile_activate,
-         'on_yaoparfile_select_clicked' : self.on_yaoparfile_select_clicked,
-         'on_aoinit_clicked' : self.on_aoinit_clicked,
-         'on_aoloop_clicked' : self.on_aoloop_clicked,
-         'on_go_clicked' : self.on_go_clicked,
-         'on_pause_clicked' : self.on_pause_clicked,
-         'on_step_clicked' : self.on_step_clicked,
-         'on_restart_clicked' : self.on_restart_clicked,
-         # DISPLAYS
-         'on_disp_pause_clicked' : self.on_disp_pause_clicked,
-         'on_disp_resume_clicked' : self.on_disp_resume_clicked,
-         'on_image_disp_inst_clicked' : self.on_image_disp_inst_clicked,
-         'on_image_disp_avg_clicked' : self.on_image_disp_avg_clicked,
-         'on_disp_rate_value_changed' : self.on_disp_rate_value_changed,
-         # GEN PAR
-         'on_loopgain_value_changed' : self.on_loopgain_value_changed,
-         'on_imlambda_value_changed' : self.on_imlambda_value_changed,
-         'on_seeing_value_changed' : self.on_seeing_value_changed,
-         # DM
-         'on_dmreset_clicked': self.on_dmreset_clicked,
-         'on_dmflatten_clicked': self.on_dmflatten_clicked,
-         'on_dmgain_value_changed' : self.on_dmgain_value_changed,
-         'on_xmisreg_value_changed' : self.on_xmisreg_value_changed,
-         'on_ymisreg_value_changed' : self.on_ymisreg_value_changed,
-         'on_sat_voltage_value_changed' : self.on_sat_voltage_value_changed,
-         'on_dm_select_toggled': self.on_dm_select_toggled,
-         # WFS
-         'on_subtract_background_toggled' : self.on_subtract_background_toggled,
-         'on_noise_toggled': self.on_noise_toggled,
-         'on_correct_up_tt_toggled' : self.on_correct_up_tt_toggled,
-         'on_efd_value_changed' : self.on_efd_value_changed,         
-         'on_gsmag_value_changed' : self.on_gsmag_value_changed,
-         'on_gsalt_value_changed' : self.on_gsalt_value_changed,
-         'on_gsdepth_value_changed' : self.on_gsdepth_value_changed,
-         'on_ron_value_changed': self.on_ron_value_changed,
-         'on_sh_threshold_value_changed' : self.on_sh_threshold_value_changed,
-         'on_sh_kernel_value_changed' : self.on_sh_kernel_value_changed,
-         'on_ninteg_cycles_value_changed' : self.on_ninteg_cycles_value_changed,
-         'on_wfs_select_toggled': self.on_wfs_select_toggled,
-         # EDITORS
-         'on_editor_save_activate' : self.on_editor_save_activate,
-         'on_editor_save_as_activate' : self.on_editor_save_as_activate,
-         'on_editor_close_activate' : self.on_editor_close_activate,
-         'on_editor2_save_activate' : self.on_editor2_save_activate,
-         'on_editor2_close_activate' : self.on_editor2_close_activate,
-         }
       
       self.glade = gtk.glade.XML(self.path2glade+'/yao.glade') 
       self.window = self.glade.get_widget('window1')
       if (self.window):
          self.window.connect('destroy', self.destroy)
-      self.glade.signal_autoconnect(dic)
+
+      self.glade.signal_autoconnect(self)
 
       self.editor = self.glade.get_widget('window2')
       if (self.editor):
@@ -196,6 +137,12 @@ class yao:
       self.yuserdir = "./"
       self.yaopardir = "/"
       self.pyk_debug = 0
+      
+      # set size of graphic areas:
+      dsx = int(660.*dpi/60)+4
+      dsy = int(532.*dpi/60)+25
+      self.glade.get_widget('drawingarea1').set_size_request(dsx,dsy)
+      # self.drawingarea_size_allocate(dpi)
       
       # run
       gtk.main()
@@ -563,6 +510,10 @@ class yao:
       if self.init:
          self.py2yo('set_wfs_efd %f' % wdg.get_value())
 
+   def on_pyr_mod_value_changed(self,wdg):
+      if self.init:
+         self.py2yo('set_wfs_pyr_mod %f' % wdg.get_value())
+
    def on_gsmag_value_changed(self,wdg):
       if self.init:
          self.py2yo('set_gs_mag %f' % wdg.get_value())
@@ -604,11 +555,12 @@ class yao:
 
    def wfs_panel_set_sensitivity(self,sens,wfstype):
       # sens = 0 or 1
-      # wfstype = 1 (sh) or 2 (curvature) (0=undefined)
+      # wfstype = 1 (sh), 2 (curvature) or 3 (pyramid) (0=undefined)
       self.glade.get_widget('subtract_background').set_sensitive(sens)
       self.glade.get_widget('noise').set_sensitive(sens)
       self.glade.get_widget('correct_up_tt').set_sensitive(sens)
       self.glade.get_widget('efd').set_sensitive(sens)
+      self.glade.get_widget('pyr_mod').set_sensitive(sens)
       self.glade.get_widget('gsmag').set_sensitive(sens)
       self.glade.get_widget('gsalt').set_sensitive(sens)
       self.glade.get_widget('gsdepth').set_sensitive(sens)
@@ -616,14 +568,16 @@ class yao:
       self.glade.get_widget('sh_threshold').set_sensitive(sens)
       self.glade.get_widget('sh_kernel').set_sensitive(sens)
       self.glade.get_widget('ninteg_cycles').set_sensitive(sens)
-      if (wfstype==1):
-         self.glade.get_widget('efd').set_sensitive(0)
-      if (wfstype==2):
+      if (wfstype!=1):
          self.glade.get_widget('sh_threshold').set_sensitive(0)
          self.glade.get_widget('sh_kernel').set_sensitive(0)
          self.glade.get_widget('gsalt').set_sensitive(0)
          self.glade.get_widget('gsdepth').set_sensitive(0)
          self.glade.get_widget('correct_up_tt').set_sensitive(0)
+      if (wfstype!=2):
+         self.glade.get_widget('efd').set_sensitive(0)
+      if (wfstype!=3):
+         self.glade.get_widget('pyr_mod').set_sensitive(0)
          
          
    #
@@ -772,9 +726,10 @@ class yao:
          self.window.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.LEFT_PTR))
          
 
-if len(sys.argv) != 2:
-   print 'Usage: yao.py path_to_glade'
+if len(sys.argv) != 3:
+   print 'Usage: yao.py path_to_glade dpi'
    raise SystemExit
 
 path2glade = str(sys.argv[1])
-top = yao(path2glade)
+dpi = int(sys.argv[2])
+top = yao(path2glade,dpi)

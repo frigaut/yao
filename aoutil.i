@@ -153,6 +153,12 @@ func create_yao_window(dpi)
     // ther's no GUI, re-open normal graphical window:
     window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),     \
       height=long(425*(dpi/50.)),wait=1;
+    if ( (xft!=[]) && (xft()) ) {
+      get_style, landscape, systems, legends, clegends;
+      systems.ticks.vert.textStyle.height(4)*=1.5;
+      systems.ticks.horiz.textStyle.height(4)*=1.5;
+      set_style, landscape, systems, legends, clegends;
+    }
   }
 }
 
@@ -707,7 +713,8 @@ func check_parameters(void)
     // Are we using a WFS we know?
     wfs_type = strtolower(wfs(ns).type);
     if ( (wfs_type != "curvature") && (wfs_type != "hartmann") &&
-         (wfs_type != "zernike")   && (wfs_type !="kl") ) {
+         (wfs_type != "zernike")   && (wfs_type !="kl") && 
+         (wfs_type != "pyramid") ) {
       // check if this is a user supplied function
       cmd = swrite(format="totype = typeof(%s)",wfs(ns).type);
       include,[cmd],1;

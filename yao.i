@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.7.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010oct12";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010nov09";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -596,7 +596,7 @@ func do_imat(disp=)
   ntot = sum(dm._nact);
   ncur=1;
 
-  if (disp) animate,1;
+  if (disp) { plsys,1; animate,1; }
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
   status = store_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
@@ -700,7 +700,8 @@ func do_imat(disp=)
     if (sim.debug >= 1) typeReturn;
   }
   
-  if (disp) animate,0;
+  if (disp) {plsys,1; animate,0; }
+  
   clean_progressbar;
 }
 
@@ -1851,7 +1852,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   for (i=1;i<=nwfs;i++) {
     wfs(i)._cyclecounter = 1;
-    if (wfs(i).type == "hartmann") {
+    if ( (wfs(i).type == "hartmann") || (wfs(i).type == "pyramid") ) {
       if (wfs(i).npixpersub) {
         npixpersub = wfs(i).npixpersub;
       } else {
@@ -1870,11 +1871,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       grow,cent,sim._size/2+1;
     } else if (wfs(i).type == "zernike") {
       grow,cent,sim._size/2+1;
-    } else if (wfs(i).type == "pyramid") {
-      grow,cent,sim._size/2+0.5;
+    // } else if (wfs(i).type == "pyramid") {
+      // grow,cent,sim._size/2+0.5;
     } else {
       write,"FIXME: user wfs function: assuming cent is at size/2+1";
-      if (cent(1)) grow,cent,cent(1);
+      if ( (cent!=[]) && cent(1)) grow,cent,cent(1);
       else grow,cent,sim._size/2+1;
     }
   }
@@ -1965,10 +1966,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     } else if (wfs(n).type == "pyramid") {
 
-      // init WFS (does not work for version 2)
-      error,"Not Upgraded to version 2";
-      v = pyramid_wfs(pupil,pupil*0.,disp=disp,init=1);
-      wfs(n).nsub = numberof(v)/2;
+      // init WFS
+      // error,"Not Upgraded to version 2";
+      v = pyramid_wfs(pupil,pupil*0.,n,disp=disp,init=1);
+      wfs(n)._nsub = numberof(v)/2;
       wfs(n)._nmes = 2*wfs(n)._nsub;
 
     } else if (wfs(n).type == "zernike") {
@@ -2144,6 +2145,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) {// delete the extrapolated influence functions
         remove, YAO_SAVEPATH+dm(n)._eiffile;        
       }
+      if (disp) { plsys,1; animate,1; }
       if (dm(n).type == "bimorph") {
         make_curvature_dm, n, disp=disp,cobs=tel.cobs;
       } else if (dm(n).type == "stackarray") {
@@ -2171,6 +2173,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         include,[cmd],1;
         user_dm, n;
       }
+      if (disp) { plsys,1; animate,0; }
 
       // the IF are in microns/volt
       if (sim.verbose>=1) {

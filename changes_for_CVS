@@ -46,3 +46,34 @@ version 4.7.3, 2010 oct12:
   brightest pixels instead of using a flux threshold) go to E.Gendron.
 - added some safety for the choice of shthreshold when using shmethod=3
   to avoid getting segfaults in yao_fast.
+
+version 4.8.0:
+
+- XFT related:
+  - increased size of axis labels fonts on plsys(4)
+  
+- newfits:
+  - fixed error handling. Now error in place, instead of calling error handling
+    function (exitInError). Allows much clearer debugging.
+    
+- Pyramid:
+  - merged pyramid_wfs() changes from marcos, upgraded my francois
+  - changes in yao main routines to make re-introduced obsolete "pyramid" wfs type 
+  - upgraded GUI to include pyramid modulation amplitude control
+  - added 4 new structure members to wfs structure
+
+- MISC:
+  - added "--dpi ##" command line call option (for GUI call). Example:
+    yao --dpi 75 sh6x6.par
+  - added default animate() to iMat acquisition display.
+  - cleanup of yao.py (dictionary autoconnect) + dpi stuff
+  - shortened get_style() calls to viewport() call
+  - gotten rid of get_processor_number() (use nprocs() function in svipc)
+  - added a bunch of extern wfs, dm, ... in functions called by python to set
+    values of parameters (how could it have worked before is a mystery).
+    
+- BUG FIXES:
+  - fixed a bug in which the graphic would get stuck (animate call was done
+  without ensuring a plsys,1)
+  
+  

@@ -155,13 +155,6 @@ if (pyk_debug==[]) pyk_debug=0;
 default_dpi=dpi=60;
 initdone=0;
 
-// spawned gtk interface
-python_exec = path2py+"/yao.py";
-pyk_cmd=[python_exec,swrite(format="%s",path2glade)];
-
-// span the python process, and hook to existing _tyk_proc (see pyk.i)
-_pyk_proc = spawn(pyk_cmd, _pyk_callback);
-
 func yaopy_quit(void)
 {
   pyk,"gtk.main_quit()";
@@ -303,6 +296,7 @@ func set_aoloop_flags(disp,savecb)
 
 func set_loop_gain(gain)
 {
+  extern loop;
   loop.gain=gain;
 }
 
@@ -316,6 +310,7 @@ func toggle_im_imav(imavg)
 
 func change_target_lambda(lambda)
 {
+  extern target;
   (*target.lambda)(0)=lambda;
   if (target._ntarget==1) {
     *target.dispzoom=(*target.lambda)(0)*1e-6/4.848e-6/tel.diam*sim.pupildiam/2;
@@ -325,11 +320,13 @@ func change_target_lambda(lambda)
 
 func change_zenith_angle(zen)
 {
-   gs.zenithangle=zen;
-   aoinit;
+  extern gs;
+  gs.zenithangle=zen;
+  aoinit;
 }
 
 func change_dr0(dr0) {
+  extern atm;
   atm.dr0at05mic=dr0;
   if (initdone) get_turb_phase_init;
 }
@@ -381,6 +378,7 @@ func set_okdm(dmnum,ok)
 func set_okwfs(wfsnum,ok)
 {
   extern okdm,okwfs;
+  extern wfs;
   okwfs(wfsnum)=ok;
 
   if (sum(okwfs)==0) {
@@ -389,6 +387,7 @@ func set_okwfs(wfsnum,ok)
     w1 = where(okwfs)(1);
     if (wfs(w1).type=="hartmann") pyk,"wfs_panel_set_sensitivity(1,1)"; \
     else if (wfs(w1).type=="curvature") pyk,"wfs_panel_set_sensitivity(1,2)";
+    else if (wfs(w1).type=="pyramid") pyk,"wfs_panel_set_sensitivity(1,3)";
     gui_update_wfs,w1;
   }
   //  usleep,50
@@ -398,6 +397,7 @@ func set_okwfs(wfsnum,ok)
 func dm_reset(void)
 {
   extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) dm(i)._command=&((*dm(i)._command)*0.f);
@@ -408,6 +408,7 @@ func dm_reset(void)
 func dm_flatten(void)
 {
   extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) dm(i)._command=&((*dm(i)._command)*0.f);
@@ -417,6 +418,7 @@ func dm_flatten(void)
 func dm_hyst(hystval)
 {
   extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) dm(i).hyst=hystval/100.;
@@ -426,6 +428,7 @@ func dm_hyst(hystval)
 func dm_gain(gainval)
 {
   extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) dm(i).gain=gainval;
@@ -434,7 +437,8 @@ func dm_gain(gainval)
 
 func dm_xmisreg(xmisreg)
 {
-  extern okdm,okwfs,dm;
+  extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) {
@@ -445,7 +449,8 @@ func dm_xmisreg(xmisreg)
 
 func dm_ymisreg(ymisreg)
 {
-  extern okdm,okwfs,dm;
+  extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) {
@@ -457,6 +462,7 @@ func dm_ymisreg(ymisreg)
 func dm_satvolt(satvolt)
 {
   extern okdm,okwfs;
+  extern dm;
   if (noneof(okdm)) return;
   for (i=1;i<=ndm;i++) {
     if (okdm(i)) {
@@ -468,6 +474,7 @@ func dm_satvolt(satvolt)
 func set_wfs_noise(nse)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   for (i=1;i<=nwfs;i++) {
     if (okwfs(i)) wfs(i).noise=nse;
@@ -477,6 +484,7 @@ func set_wfs_noise(nse)
 func set_gs_alt(gsalt)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   wfsvec = where(okwfs);
   wfs(wfsvec).gsalt=wfs(wfsvec).gsalt*0+gsalt;
@@ -493,6 +501,7 @@ func set_gs_alt(gsalt)
 func set_gs_depth(gsdepth)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   wfsvec = where(okwfs);
   wfs(wfsvec).gsdepth=wfs(wfsvec).gsdepth*0+gsdepth;
@@ -510,6 +519,7 @@ func set_gs_depth(gsdepth)
 func set_gs_mag(gsmag)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   for (i=1;i<=nwfs;i++) {
     if (okwfs(i)) {
@@ -529,6 +539,7 @@ func set_gs_mag(gsmag)
 func set_wfs_ron(ron)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   for (i=1;i<=nwfs;i++) if (okwfs(i)) wfs(i).ron=ron;
 }
@@ -536,6 +547,7 @@ func set_wfs_ron(ron)
 func wfs_subtract_background(state)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   wfsvec = where(okwfs);
   wfs(wfsvec)._bckgrdsub=state;
@@ -544,6 +556,7 @@ func wfs_subtract_background(state)
 func wfs_set_uptt(state)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   wfsvec = where(okwfs);
   wfs(wfsvec).correctUpTT=state;
@@ -552,6 +565,7 @@ func wfs_set_uptt(state)
 func set_wfs_kernel(value)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   wfsvec = where(okwfs);
   wfs(wfsvec).kernel=wfs(wfsvec).kernel*0+value;
@@ -567,6 +581,7 @@ func set_wfs_kernel(value)
 func set_wfs_threshold(threshold)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   for (i=1;i<=nwfs;i++) if (okwfs(i)) wfs(i).shthreshold=threshold;
 }
@@ -574,6 +589,7 @@ func set_wfs_threshold(threshold)
 func set_wfs_nintegcycles(nic)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   for (i=1;i<=nwfs;i++) if (okwfs(i)) wfs(i).nintegcycles=nic;
 }
@@ -581,11 +597,25 @@ func set_wfs_nintegcycles(nic)
 func set_wfs_efd(efd)
 {
   extern okdm,okwfs;
+  extern wfs;
   if (noneof(okwfs)) return;
   for (i=1;i<=nwfs;i++) {
     if (okwfs(i)) {
       wfs(i).l=efd;
       if (initdone) curv_wfs,,,i,init=1,disp=0,silent=1;
+    }
+  }
+}
+
+func set_wfs_pyr_mod(pyr_mod)
+{
+  extern okdm,okwfs;
+  extern wfs;
+  if (noneof(okwfs)) return;
+  for (i=1;i<=nwfs;i++) {
+    if (okwfs(i)) {
+      wfs(i).pyr_mod_ampl=pyr_mod;
+      // if (initdone) curv_wfs,,,i,init=1,disp=0,silent=1;
     }
   }
 }
@@ -596,6 +626,7 @@ func gui_update_wfs(num)
   pyk,swrite(format="y_set_checkbutton('noise',%d)",long(wfs(num).noise));
   pyk,swrite(format="y_set_checkbutton('correct_up_tt',%d)",long(wfs(num).correctUpTT));  
   pyk,swrite(format="y_parm_update('efd',%f)",float(wfs(num).l));
+  pyk,swrite(format="y_parm_update('pyr_mod',%f)",float(wfs(num).pyr_mod_ampl));
   pyk,swrite(format="y_parm_update('gsmag',%f)",float(wfs(num).gsmag));
   pyk,swrite(format="y_parm_update('gsalt',%f)",float(wfs(num).gsalt));
   pyk,swrite(format="y_parm_update('gsdepth',%f)",float(wfs(num).gsdepth));
@@ -649,6 +680,7 @@ func plot_mtf(i,init=)
 
 func toggle_userplot_mtf
 {
+  extern user_plot;
   if (user_plot!=[]) user_plot=[];
   else {
     user_plot=plot_mtf;
@@ -707,6 +739,7 @@ func plot_dphi(i,init=)
 
 func toggle_userplot_dphi
 {
+  extern user_plot;
   if (user_plot!=[]) user_plot=[];
   else {
     user_plot=plot_dphi;
@@ -716,6 +749,7 @@ func toggle_userplot_dphi
 
 func wrap_aoread(void)
 {
+  extern wfstype;
   stop;  // in case we are running another loop.
   aoread,yaopardir+"/"+yaoparfile;
   gui_update;
@@ -726,6 +760,7 @@ func wrap_aoread(void)
   wfstype=0;
   if (wfs(1).type=="curvature") wfstype = 1;
   if (wfs(1).type=="hartmann") wfstype = 2;
+  if (wfs(1).type=="pyramid") wfstype = 3;
   //  pyk,swrite(format="wfs_panel_set_sensitivity(1,%d)",wfstype);
   //  pyk,"dm_panel_set_sensitivity(1)";
 }
@@ -824,16 +859,14 @@ func pyk_warning(msg)
 }
 
 
-// below not needed anymore since Matthieu solved the communication bug
-//func pyk_flush(void)
-//{
-//  pyk,"yo2py_flush";
-//  after,1.,pyk_flush;
-//}
-
 arg     = get_argv();
 if (numberof(arg)>=4) {
-  yaoparfile = arg(4);
+  if (anyof((w=strmatch(arg,"--dpi")))) {
+    w = where(w)(0);
+    sread,arg(w+1),default_dpi;
+    dpi = default_dpi;
+  }
+  yaoparfile = arg(0);
   yaopardir = dirname(yaoparfile);
   if (yaopardir==".") yaopardir=get_cwd();
   yaoparfile = basename(yaoparfile);
@@ -852,3 +885,13 @@ if (numberof(arg)>=4) {
   if (tmp!=[]) yaopardir = dirname(tmp);
   else yaopardir=get_cwd();
  }
+
+// spawned gtk interface
+python_exec = path2py+"/yao.py";
+pyk_cmd=[python_exec,                                   \
+         swrite(format="%s",path2glade),                \
+         swrite(format="%d",long(default_dpi))];
+
+// span the python process, and hook to existing _tyk_proc (see pyk.i)
+_pyk_proc = spawn(pyk_cmd, _pyk_callback);
+

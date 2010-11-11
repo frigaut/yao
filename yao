@@ -1,2 +1,2 @@
 #!/bin/sh
-rlwrap yorick -i yaopy.i $1 || yorick -i yaopy.i $1
+rlwrap yorick -i yaopy.i $* || yorick -i yaopy.i $*

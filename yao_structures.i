@@ -137,9 +137,19 @@ struct wfs_struct
   float   fieldstopdiam;  // diameter of field stop in arcsec. Optional [1]. used only
                           // to compute sky contribution (with skymag).
 
+  // Pyramid WFS only keywords:
+  float   pyr_mod_ampl;   // pyramid wfs modulation amplitude radius [arcsec]
+  long    pyr_mod_npts;   // total number of point along modulation circle [unitless]
+  long    pyr_padding;    // Pad the pupil image to reduce spatial aliasing [unitless]
+                          // A pad of 1 means adding wfs.npixpersub pixels
+                          // on each side of the pupil image. Typical 0 to 4.
+  string  pyr_mod_loc;    // Location of modulation (before/after the field stop.
+                          // valid value are "before" or "after"
+  
   // Shack-Hartmann WFS only keywords:
   long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
   long    shnxsub;        // # of subaperture in telescope diameter. Required [none]
+                          // shnxsub also for pyramid.
   long    npixpersub;     // to force npixpersub and bypass constraint that
                           // pupildiam should be a multiple of this number
                           // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
