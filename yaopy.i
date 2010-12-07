@@ -152,7 +152,7 @@ if (!is_void(path2conf)) {
 yaopy=1; // used in yao.i to know if using pygtk GUI
 if (pyk_debug==[]) pyk_debug=0;
 //sleep=200;
-default_dpi=dpi=60;
+default_dpi=dpi=70;
 initdone=0;
 
 func yaopy_quit(void)
@@ -198,9 +198,10 @@ func yao_win_init(parent_id)
   extern yao_pyk_parent_id;
   // above: for further use if we need to reopen the graphic window
   yao_pyk_parent_id = parent_id;
-  
-  window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),
-    height=long(425*(dpi/50.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
+  window,0,style="yao.gs",dpi=dpi,width=long(635*(dpi/75.)),     \
+      height=long(650*(dpi/75.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
+  // window,0,style="yao.gs",dpi=dpi,width=long(550*(dpi/50.)),
+  // height=long(425*(dpi/50.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
 }
 
 func wrap_create_phase_screens(void)

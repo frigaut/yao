@@ -150,9 +150,9 @@ func create_yao_window(dpi)
     // there's a GUI, re-parent within GUI drawingarea:
     yao_win_init,yao_pyk_parent_id;
   } else {
-    // ther's no GUI, re-open normal graphical window:
-    window,0,style="aosimul3.gs",dpi=dpi,width=long(550*(dpi/50.)),     \
-      height=long(425*(dpi/50.)),wait=1;
+    // there's no GUI, re-open normal graphical window:width=635,height=650
+    window,0,style="yao.gs",dpi=dpi,width=long(635*(dpi/75.)),     \
+      height=long(650*(dpi/75.)),wait=1;
     if ( (xft!=[]) && (xft()) ) {
       get_style, landscape, systems, legends, clegends;
       systems.ticks.vert.textStyle.height(4)*=1.5;
@@ -572,7 +572,7 @@ func check_parameters(void)
       exit,swrite(format="dm(%d).nxact has not been set",nm);
     }
     if ( (dm(nm).type == "stackarray") && (dm(nm).pitch == 0) ) {
-      exit,swrite(format="dm(%d).picth has not been set",nm);
+      exit,swrite(format="dm(%d).pitch has not been set",nm);
     }
     if (dm(nm).type=="stackarray") {
       if ((dm(nm).coupling<0.04) || (dm(nm).coupling>0.8)) {
@@ -651,8 +651,11 @@ func check_parameters(void)
     gs.lgsreturnperwatt = 22.;
     write,format="gs.lgsreturnperwatt set to %f\n",gs.lgsreturnperwatt;
   }
-  if (anyof(wfs.gsalt == 0) && (gs.zeropoint == 0)) {
+  if (anyof((wfs.gsalt == 0)*(wfs.zeropoint == 0)) && (gs.zeropoint == 0)) {
     exit,"You have some NGS and gs.zeropoint has not been set";
+  }
+  if (anyof((wfs.gsalt != 0)*(wfs.zeropoint == 0)*(wfs.skymag != 0)) && (gs.zeropoint == 0)) {
+    exit,"You have some LGS with sky background and gs.zeropoint has not been set";
   }
   
   // LOOP STRUCTURE
@@ -680,6 +683,12 @@ func check_parameters(void)
   // NOW GOING INTO MORE ELABORATE CHECKINGS
   // WFSs:
   for (ns=1;ns<=nwfs;ns++) {
+    if (wfs(ns).zeropoint == 0){
+      wfs(ns)._zeropoint = gs.zeropoint;
+    } else {
+      wfs(ns)._zeropoint =  wfs(ns).zeropoint;
+    }
+    
     if (wfs(ns).lambda < 0.1) {
       write,format="WFS#%d: wfs.lambda < 0.1. That seems weird.\n",ns;
       write,"Remember: lambda should be in microns";

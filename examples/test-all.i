@@ -30,7 +30,7 @@ for (i=1;i<=numberof(f);i++) {
   disp = 10;
   if (!strmatch(f(i),"fast")) loop.niter = 500;
   else disp=0; // let's not display for the fast demo
-  aoinit,disp=1,dpi=70,clean=1;
+  aoinit,disp=1,clean=1;
   aoloop,disp=disp,controlscreen=10*(i==2);
   go,all=1;
   //  after_loop;  // to wrap up the analysis and print out results

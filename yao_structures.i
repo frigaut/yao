@@ -128,6 +128,8 @@ struct wfs_struct
                           // see user_pupil(). Allow for GMT-type topology.
   long    svipc;          // number of parallel process to use for this WFS.
                           // (0 or 1: don't parallelize)
+  float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
+  
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first subaperture of ring.
@@ -140,6 +142,7 @@ struct wfs_struct
   // Pyramid WFS only keywords:
   float   pyr_mod_ampl;   // pyramid wfs modulation amplitude radius [arcsec]
   long    pyr_mod_npts;   // total number of point along modulation circle [unitless]
+  pointer pyr_mod_pos;    // positions for modulation, overwrites ampl and npts [arcsec]
   long    pyr_padding;    // Pad the pupil image to reduce spatial aliasing [unitless]
                           // A pad of 1 means adding wfs.npixpersub pixels
                           // on each side of the pupil image. Typical 0 to 4.
@@ -246,6 +249,7 @@ struct wfs_struct
   int     _bckgrdinit;    // set to one to fill calibration array
   int     _bckgrdsub;     // set to one to subtract background (default)
   pointer _meashist;      // measurement history, useful for nintegcycles > 1
+  float   _zeropoint;     // zeropoint for the wavefront sensor. 
 };
 
 struct dm_struct

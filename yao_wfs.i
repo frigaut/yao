@@ -43,7 +43,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // from the guide star (computed here as used in wfs_check_pixel_size):
   if (wfs(ns).gsalt == 0) {
 
-    wfs(ns)._nphotons = gs.zeropoint*10^(-0.4*wfs(ns).gsmag)*
+    wfs(ns)._nphotons = wfs(ns)._zeropoint*10^(-0.4*wfs(ns).gsmag)*
       wfs(ns).optthroughput*                 // include throughput to WFS
       (tel.diam/wfs(ns).shnxsub)^2./telSurf* // for unobstructed subaperture
       loop.ittime;                           // per iteration
@@ -482,7 +482,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   subsize_m = subsize * tel.diam/sim.pupildiam;
 
 
-  wfs(ns)._skynphotons = gs.zeropoint*10^(-0.4*wfs(ns).skymag)* // #photons/tel/sec/arcsec^2
+  wfs(ns)._skynphotons = wfs(ns)._zeropoint*10^(-0.4*wfs(ns).skymag)* // #photons/tel/sec/arcsec^2
     subsize_m^2./telSurf*                    // -> per full subaperture
     loop.ittime*                             // -> per iteration
     wfs(ns).optthroughput*                   // -> include throughput to WFS
@@ -535,8 +535,12 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // first sync if needed (svipc)
   if (wfs(ns).svipc>1) status = sync_wfs_forks();
 
+  // remove the noise when calculating the origins
+  noiseOrig = wfs.noise;
+  wfs.noise *= 0;
   sh_wfs,pupsh,pupsh*0.0f,ns;
-
+  wfs.noise=noiseOrig;
+  
   wfs(ns)._bckgrdinit = 0;
   wfs(ns)._bckgrdsub  = 1; // now yes, enable it (by default)
 
@@ -921,7 +925,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
     // from star
     if (wfs(ns).gsalt == 0) {
 
-      wfs(ns)._nphotons = gs.zeropoint*10^(-0.4*wfs(ns).gsmag)*
+      wfs(ns)._nphotons = wfs(ns)._zeropoint*10^(-0.4*wfs(ns).gsmag)*
         wfs(ns).optthroughput*                 // include throughput to WFS
         loop.ittime;                           // per iteration time
 
@@ -934,7 +938,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
 
     }
     // from sky, over field stop
-    wfs(ns)._skynphotons = gs.zeropoint*10^(-0.4*wfs(ns).skymag)*
+    wfs(ns)._skynphotons = wfs(ns)._zeropoint*10^(-0.4*wfs(ns).skymag)*
       wfs(ns).optthroughput*                 // include throughput to WFS
       loop.ittime*pi/4*wfs(ns).fieldstopdiam^2.;
     if ( wfs(ns).skymag == 0) { wfs(ns)._skynphotons = 0.; } // if skymag not set
@@ -1007,36 +1011,31 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
    SEE ALSO:
  */
 /*
-  TO DO (at 4.8.0)
-  - implement kernel for imat acquisition
-  - implement background calibs
+  TO DO (at 4.8.1)
   - multi lambda?
   - parameter guidance for optimal speed/perf.
  */
 {
   extern wfs;
-  extern sumpup, wsubok;
+  extern wsubok;
   extern sky_frame;
   extern pyr_binfact, pyr_npix, pyr_focmask;
   local  padding, npixpersub, binfact, npix;
 
-  // we'll leave the following alone for now, as it prevents us to
-  // play freely with the mod ampl down to zero (e.g with the GUI)
-  // and come back with the previous mod npts.
-  // if (wfs(ns).pyr_mod_ampl==0) wfs(ns).pyr_mod_npts=1;
-  // But this is necessary:
+  // This is necessary to keep light centered
   if (wfs(ns).pyr_mod_npts==1) wfs(ns).pyr_mod_ampl=0.;
 
   // shortcuts definitions:
   padding    = wfs(ns).pyr_padding;
   npixpersub = wfs(ns).npixpersub;
   shnxsub    = wfs(ns).shnxsub;
-
+  nintegcycles = wfs(ns).nintegcycles;
+  if (init) nintegcycles = 1;
 
   // extract subarrays from input pupil & phase:
   npup  = sim.pupildiam + 2*padding*npixpersub;
   ii    = sim._size/2-sim.pupildiam/2+1-padding*npixpersub;
-  if (ii<1) error,"Padding to large";
+  if (ii<1) error,"Padding is too large";
   ii    = ii:ii+(shnxsub+2*padding)*npixpersub-1;
   pup   = pup(ii,ii);
   phase = phase(ii,ii);
@@ -1048,10 +1047,10 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   if (init) {
 
     x = double(sim.pupildiam)/shnxsub;
-    if (x!=long(x)) error,"sim.pupildiam not multiple of wfs.shnxsub";
+    if (x!=long(x)) error,swrite(format="sim.pupildiam not multiple of wfs(%i).shnxsub",ns);
 
     x = wfs(ns).pyr_mod_npts/4.;
-    if (x!=long(x)) error,"wfs.pyr_mod_npts not multiple of 4";    
+    if (x!=long(x)) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);    
 
     // compute size of small complex amp image based on field stop size
     // To save computing time, we will extract a subimage from
@@ -1066,6 +1065,8 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     // 5. The SIICA has to be big enough that it includes all the field mask
     fssize_radius_pixels = long(wfs(ns).fssize / psize / 2.);
 
+    if (fssize_radius_pixels == 0) error,swrite(format="Field stop size too small. Increase wfs(%i).fssize", ns);
+
     // npix is the minimum size of the SIICA
     npix = (shnxsub+2*padding);
 
@@ -1077,7 +1078,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     w = where(npix_ok>=fssize_radius_pixels);
     if (numberof(w)==0) {
       maxfs = npix_ok(0)*2*psize;
-      error,swrite(format="Field stop size too large (max=%.3f\")!",maxfs);
+      error,swrite(format="wfs(%i).fssize too large (max=%.3f\")!",ns,maxfs);
     }
     npix_ok = npix_ok(w(1));
 
@@ -1097,7 +1098,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
       field_stop_area = wfs(ns).fssize^2.;
 
-    } else error,"You *have* to defined a field stop";
+    } else error,swrite(format="wfs(%i).fstop must be round or square",ns);
 
     // let's save pyr_focmask whatever the method is, as we will
     // use it for photometry calculation:
@@ -1118,13 +1119,22 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     wfs(ns)._nmes = 2*numberof(wsubok);
     sky_frame = pupreb/sum(pupreb)/4.;
 
-    sumpup = sum(pup);
-
-    wfs(ns)._nphotons = gs.zeropoint*2.51189^(-wfs(ns).gsmag)*
+    wfs(ns)._nphotons = wfs(ns)._zeropoint*2.51189^(-wfs(ns).gsmag)*
       loop.ittime*wfs(ns).optthroughput;
-    wfs(ns)._skynphotons = gs.zeropoint*2.51189^(-wfs(ns).skymag)*
-      loop.ittime*wfs(ns).optthroughput*field_stop_area;
+    
+    if (wfs(ns).skymag == 0){
+      wfs(ns)._skynphotons = 0;
+    } else {
+      wfs(ns)._skynphotons = wfs(ns)._zeropoint*2.51189^(-wfs(ns).skymag)*loop.ittime*wfs(ns).optthroughput*field_stop_area;
+    }
 
+    // calculate a dark frame with sky and dark current
+    dark_frame = array(wfs(ns).darkcurrent*loop.ittime,dimsof(sky_frame));
+    wfs(ns)._bckgrdcalib = &(dark_frame+wfs(ns)._skynphotons*sky_frame);
+
+    // initialize the counter for nintegcycles
+    wfs(ns)._cyclecounter = 1;
+    
     if (sim.verbose) {
       write,format="%s\n","Pyramid WFS initialization";
       write,format="npup=%d,  pyr_npix = %d, shnxsub=%d, npixpersub=%d, binfact=%d, padding=%d\n",
@@ -1142,8 +1152,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
   // prepare shift by half a pixel so that the image is centered
   xy = indices(npup)-(npup+1)/2.;
-  coef = (odd(pyr_npix) ? 0.5:0.5);
-  phase_shift = roll( exp(1i*2*pi*(coef*xy(,,sum))/npup) );
+  phase_shift = roll( exp(1i*2*pi*(0.5*xy(,,sum))/npup) );
   // above, +0.5 because fft(,-1)
 
   // complex amplitude in image plane, properly shifted:
@@ -1156,9 +1165,6 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   // at the end:
   tmp = abs(complex_amplitude)^2.;
   phot_norm_factor = sum(tmp*pyr_focmask)/sum(tmp);
-
-  // now let's add the sky:
-  //  com
 
   // apply field stop if needed:
   if (pyr_mod_location=="after") complex_amplitude *= *wfs(ns)._submask;
@@ -1187,17 +1193,27 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     modim_yoff = [0,0,1,1]*pyr_npix;
   }
 
+  // find the modulation positions if not user defined
+  if (*wfs(ns).pyr_mod_pos == []){
+    cx = lround(mod_ampl_pixels*sin(indgen(wfs(ns).pyr_mod_npts)*2.*pi/wfs(ns).pyr_mod_npts));
+    cy = lround(mod_ampl_pixels*cos(indgen(wfs(ns).pyr_mod_npts)*2.*pi/wfs(ns).pyr_mod_npts));
+    mod_npts = wfs(ns).pyr_mod_npts;
+  } else {
+    if (init && sim.verbose) write,format="%s\n", "Using user-defined positions for the pyramid modulation";
+    // user defined positions
+    cx = lround((*wfs(ns).pyr_mod_pos)(:,1)/psize);
+    cy = lround((*wfs(ns).pyr_mod_pos)(:,2)/psize);
+    mod_npts = dimsof(cx)(2);
+  }
+  
   // loop on modulation positions:
-  for (k=1;k<=wfs(ns).pyr_mod_npts;k++){
-    // offsets
-    cx = mod_ampl_pixels*sin(k*2.*pi/wfs(ns).pyr_mod_npts);
-    cy = mod_ampl_pixels*cos(k*2.*pi/wfs(ns).pyr_mod_npts);
+  for (k=1;k<=mod_npts;k++){
 
     // loop on 4 quadrants:
     for (i=1;i<=4;i++) {
 
       // extract subimage from large image complex amplitude array:
-      ca = roll(complex_amplitude,[lround(cx)+xoffset(i),lround(cy)+yoffset(i)]);
+      ca = roll(complex_amplitude,[cx(k)+xoffset(i),cy(k)+yoffset(i)]);
 
       if (pyr_mod_location!="after") {
         small_comp_amp = ca(1:pyr_npix,1:pyr_npix)*(*wfs(ns)._submask)(,,i);
@@ -1229,13 +1245,11 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   xy2 = xy/(pyr_npix-1)*2/2;
   // sinc usual issue: sinc is defined both in yeti and yutils, but not
   // with the same def. yeti defines sinc(1.)=0., while yutils defines
-  // sinc(pi)=0. Make sure we use always the same (this has been causing
-  // issues in the past):
-  require,"yeti.i";
-  extern yeti_sinc;
-  yeti_sinc = sinc; // protect yeti sinc from evil yutils sinc.
-  if (abs(yeti_sinc(1.))>1e-10) error,"Wrong sinc function!";
-  sincar = roll(yeti_sinc(xy2(,,1))*yeti_sinc(xy2(,,2)));
+  // sinc(pi)=0. Use yutils definition.
+  if (abs(sinc(pi))>1e-10){
+    autoload, "util_fr.i", sinc;
+  }
+  sincar = roll(sinc(pi*xy2(,,1))*sinc(pi*xy2(,,2)));
   if (pyr_disp) { plsys,4; pli,sincar; limits; limits,square=1;}
 
   // perform the actual spatial filtering:
@@ -1257,22 +1271,40 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     reimaged_pupil = tmp;
     npix = pyr_npix/binfact;
   } else npix = pyr_npix;
-
+  
   // photometry and noise:
   totflux = sum(reimaged_pupil);
-  reimaged_pupil *= wfs(ns)._nphotons/totflux;
+  reimaged_pupil *= phot_norm_factor*wfs(ns)._nphotons/totflux;
+
+  if (nintegcycles > 1){
+    // reset the intensity measurement
+    if (wfs(ns)._cyclecounter == 1) wfs(ns)._meashist = &array(0.0f,dimsof(reimaged_pupil));
+
+    *wfs(ns)._meashist += reimaged_pupil;
+    
+    if (wfs(ns)._cyclecounter == nintegcycles){
+       wfs(ns)._cyclecounter = 1;
+       reimaged_pupil = *wfs(ns)._meashist;
+    } else {
+      wfs(ns)._cyclecounter += 1;
+      return array(float,wfs(ns)._nmes); // return the reference measurement, which is later subtracted
+    }
+  }
+  
   if (wfs(ns).noise) {
-    // poisson of star flux
+    // poisson distribution of star flux
     reimaged_pupil = poidev(reimaged_pupil);
     // add CCD RON
     reimaged_pupil += wfs(ns).ron*random_n(dimsof(reimaged_pupil));
     // add sky noise
-    reimaged_pupil += poidev(array(sky_frame,4)*wfs(ns)._skynphotons);
+    for (i=1;i<=4;i++) reimaged_pupil(,,i) += poidev(array(sky_frame)*wfs(ns)._skynphotons*nintegcycles);
     // add dark current
-    reimaged_pupil += poidev(array(wfs(ns).darkcurrent*loop.ittime,\
-                                   dimsof(reimaged_pupil)));
-  }
+    reimaged_pupil += poidev(array(wfs(ns).darkcurrent*loop.ittime*nintegcycles, dimsof(reimaged_pupil)));
 
+    // subtract the calibrated frame from each subimage
+    reimaged_pupil -= *wfs(ns)._bckgrdcalib*nintegcycles;
+  }
+  
   // Put the re-imaged pupil into a single array for display:
   tmp = array(0.,[2,2*npix+3,2*npix+3]);
   ii1 = 2:npix+1;
@@ -1284,17 +1316,16 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   wfs(ns)._fimage = &tmp; // save this to display
   if (pyr_disp) { plsys,4; pli,tmp; limits; limits,square=1;}
 
-
   // extract the illuminated pixels:
   pixels = reimaged_pupil(*,)(wsubok,);
-  if (wfs(ns).noise) pixels = poidev(pixels);
 
+  // threshold the pixels
+  pixels = max(pixels,wfs(ns).shthreshold);
+  
   // compute the final signal, using quadcell formula:
-  sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/pixels(,sum);
-  sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/pixels(,sum);
-
-  if (pyr_stop) error;
-
+  sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/(pixels(,sum)+1e-6);
+  sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/(pixels(,sum)+1e-6);
+  
   return _(sigx,sigy);
 }
 

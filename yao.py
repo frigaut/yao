@@ -139,8 +139,8 @@ class yao:
       self.pyk_debug = 0
       
       # set size of graphic areas:
-      dsx = int(660.*dpi/60)+4
-      dsy = int(532.*dpi/60)+25
+      dsx = int(635.*dpi/75)+4
+      dsy = int(650.*dpi/75)+25
       self.glade.get_widget('drawingarea1').set_size_request(dsx,dsy)
       # self.drawingarea_size_allocate(dpi)
       

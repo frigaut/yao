@@ -76,4 +76,13 @@ version 4.8.0:
   - fixed a bug in which the graphic would get stuck (animate call was done
   without ensuring a plsys,1)
   
+
+
+  version 4.8.1:
+
+  - changed layout of graphic window to add residual phase
+  - display of residual phase (Marcos)
+  - nintegcycle in pyramid wfs (Marcos)
+  - "extended" object in pyramid wfs (Marcos)
+  - a couple of bugfix (Marcos and I)
   

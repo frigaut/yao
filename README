@@ -20,7 +20,14 @@ http://www.maumae.net/yao/
 
 RELEASE NOTES:
 --------------
+version 4.8.1, 2010dec06:
+- changed layout of graphic window to add residual phase
+- display of residual phase (Marcos)
+- nintegcycle in pyramid wfs (Marcos)
+- "extended" object in pyramid wfs (Marcos)
+- a couple of bugfix (Marcos and I)
 
+  
 version 4.8.0, 2010nov09:
 - XFT related:
   * increased size of axis labels fonts on plsys(4)

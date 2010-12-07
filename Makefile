@@ -83,9 +83,9 @@ install::
 	cp -p yao.py $(DEST_Y_SITE)/python/
 	cp -p yao.glade $(DEST_Y_SITE)/glade/
 	cp -p besseljprimezeros200.fits $(DEST_Y_SITE)/data/
-	cp -p aosimul3.gs $(DEST_Y_SITE)/g/
+	cp -p yao.gs $(DEST_Y_SITE)/g/
 	cp -p letter.gs $(DEST_Y_SITE)/g/
-	cp -p aosimul3.gs $(DEST_Y_SITE)/gist/
+	cp -p yao.gs $(DEST_Y_SITE)/gist/
 	cp -p letter.gs $(DEST_Y_SITE)/gist/
 	cp -p yao $(DEST_Y_BINDIR)/
 	cp -pr examples $(DEST_Y_SITE)/share/yao/
@@ -97,9 +97,9 @@ install::
 
 uninstall::
 	-rm $(DEST_Y_BINDIR)/yao
-	-rm $(DEST_Y_SITE)/g/aosimul3.gs
+	-rm $(DEST_Y_SITE)/g/yao.gs
 	-rm $(DEST_Y_SITE)/g/letter.gs
-	-rm $(DEST_Y_SITE)/gist/aosimul3.gs
+	-rm $(DEST_Y_SITE)/gist/yao.gs
 	-rm $(DEST_Y_SITE)/gist/letter.gs
 	-rm $(DEST_Y_SITE)/python/yao.py
 	-rm $(DEST_Y_SITE)/glade/yao.glade

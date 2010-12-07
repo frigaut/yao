@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010nov09";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.1";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010dec06";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -675,7 +675,9 @@ func do_imat(disp=)
             }
           }
         }
-        mypltitle,"DM(s)",[0.,0.008],height=12;
+        // mypltitle,"DM(s)",[0.,0.008],height=12;
+        myxytitles,"","DM(s)",[0.010,0.],height=12;
+
         if ((dm(nm).type == "aniso") && (sim.debug >= 2)) hitReturn;
       } // end of display section
 
@@ -1799,7 +1801,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //=====================================
   check_parameters;
   if (!is_set(disp)) {disp = 0;}
-  if (!is_set(dpi)) {dpi = 60;}
+  if (!is_set(dpi)) {dpi = 70;}
   if (is_set(clean)) {forcemat=1;}
 
   default_dpi=dpi;
@@ -1871,12 +1873,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       grow,cent,sim._size/2+1;
     } else if (wfs(i).type == "zernike") {
       grow,cent,sim._size/2+1;
-    // } else if (wfs(i).type == "pyramid") {
-      // grow,cent,sim._size/2+0.5;
+    } else if (wfs(i).type == "pyramid") {
+      grow,cent,sim._size/2+1;
     } else {
-      write,"FIXME: user wfs function: assuming cent is at size/2+1";
-      if ( (cent!=[]) && cent(1)) grow,cent,cent(1);
-      else grow,cent,sim._size/2+1;
+      if (cent == []){        
+        grow,cent,sim._size/2+1;
+        write,format ="FIXME: user wfs function: assuming cent is at %.1f\n", float(sim._size/2+1);
+      } else {
+        grow,cent,cent(1);
+        write,format = "FIXME: user wfs function: assuming cent is at %.1f\n",float(cent(1));
+      }
     }
   }
   if (anyof(cent != cent(1))) {
@@ -1967,7 +1973,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else if (wfs(n).type == "pyramid") {
 
       // init WFS
-      // error,"Not Upgraded to version 2";
       v = pyramid_wfs(pupil,pupil*0.,n,disp=disp,init=1);
       wfs(n)._nsub = numberof(v)/2;
       wfs(n)._nmes = 2*wfs(n)._nsub;
@@ -3664,13 +3669,18 @@ func go(nshot,all=)
 
   time(5) += tac();
   
-  if (savephase){
-    // get the residual phase; initially for the first target
-    // display and save the residual wavefront
-    residual_phase=get_phase2d_from_dms(1,"target") +
-    get_phase2d_from_optics(1,"target") +
-    get_turb_phase(i,1,"target");
+  // get the residual phase; initially for the first target
+  // display and save the residual wavefront
+  residual_phase=get_phase2d_from_dms(1,"target") +
+                 get_phase2d_from_optics(1,"target") +
+                 get_turb_phase(i,1,"target");
 
+  residual_phase1d = residual_phase(where(pupil > 0));
+  residual_phase1d -= min(residual_phase1d);
+  
+  residual_phase(where(pupil > 0)) = residual_phase1d;
+
+  if (savephase){
     result=fitsWrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));
   } 
     
@@ -3747,8 +3757,8 @@ func go(nshot,all=)
       plg,wfs(j).gspos(2),wfs(j).gspos(1),marker='\2',
         type="none",marks=1,color="red";
     }
-    mypltitle,"Instantaneous PSFs",[0.,-0.005],height=12;
-    myxytitles,"","arcsec",[0.02,0.02],height=12;
+    mypltitle,"Instantaneous PSFs",[0.,-0.00],height=12;
+    myxytitles,"","arcsec",[0.01,0.01],height=12;
 
     // WFS spots
     if (!allof(wfs.shmethod ==1)) {
@@ -3757,7 +3767,7 @@ func go(nshot,all=)
         mypltitle,"WFSs (spatial mode)",[0.,-0.005],height=12;
       } else {
         disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2;
-        mypltitle,"WFSs",[0.,-0.005],height=12;
+        mypltitle,"WFSs",[0.,-0.00],height=12;
       }
     }
       
@@ -3779,17 +3789,23 @@ func go(nshot,all=)
         }
       }
     }
-    mypltitle,"DM(s)",[0.,0.008],height=12;
+    // mypltitle,"DM(s)",[0.,0.008],height=12;
+    myxytitles,"","DM(s)",[0.010,0.],height=12;
 
     // Strehl plots
     if (anyof(itv)) {
       plsys,4;
       plg,strehlsp,itv;
       plg,strehllp,itv,color="red";
-      myxytitles,"Iterations",swrite(format="Strehl @ %.2f mic",        \
-                                     (*target.lambda)(0)),[0.025,-0.01],height=12;
+      myxytitles,"",swrite(format="Strehl @ %.2f mic",        \
+                                     (*target.lambda)(0)),[0.010,-0.005],height=12;
       range,0;
     }
+    // Display residual wavefront
+    plsys,5;
+    pli, (pupil*residual_phase)(n1:n2,n1:n2);
+    mypltitle,"Residual wavefront on target#1",[0.,-0.0];
+    
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
   }
 
@@ -3872,6 +3888,10 @@ func go(nshot,all=)
   } else {
     if (yaopy) pyk,"aoloop_to_end()";
     gui_hide_statusbar1;
+    if (animFlag&&dispFlag) {
+      plsys,1;
+      animate,0;
+    }
     after_loop;
     //    yicon = Y_HOME+"icons/yicon48.png";
     //    system,swrite(format=                                         \
@@ -4009,16 +4029,10 @@ func after_loop(void)
   e50airy= encircled_energy(airy,ee50);
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
 
-  // number of corrected modes from strehl
-  dr0l   = atm.dr0at05mic/cos(gs.zenithangle*dtor)^0.6*(0.5/(*target.lambda))^1.2;
-  if (dr0l(0) > 0.) {
-    nmodes = (-log(clip(strehl(,0),0.,0.99))/0.2944/dr0l(0)^1.6666)^(-1./0.85);
-  } else {
-    nmodes = strehl(,0)*0.;
-  }
+
   psize  = (float(sim.pupildiam)/sim._size)*(*target.lambda)/tel.diam/4.848e-3;
 
-  write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]  #modes comp.%s\n","";
+  write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
     for (jt=1;jt<=target._ntarget;jt++) {
       fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
