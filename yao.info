@@ -1,6 +1,6 @@
 Package: yao
 Kind: plugin
-Version: 4.8.1
+Version: 4.8.2
 Revision: 1
 Description: Adaptive Optics simulation package
 License: BSD

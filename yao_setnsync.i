@@ -129,22 +129,8 @@ func sync_wfs_from_master(ns,nf)
   
   pupsh = shm_read(shmkey,"pupsh");
 
-  //  while (catch(-1)) {
-  //    // protects the following shm_read in case
-  //    // the read happens between the shm_free and shm_write
-  //    // of the parent (see sync_wfs_forks() ) above.
-  //    if (sim.debug>=1) write,"Catched error in shm_read(wfs_structs)";
-  //    usleep,100;
-  //  }
-
-  // also to protect. 
-  //  do {
   var = shm_read(shmkey,"wfs_structs");
-  //    test = ((structof(var)==int)&&(var(1)==-1));
-  //    if (test) write,"Catched error in shm_read(wfs_structs), var=-1";
-  //    pause,10;
-  //  } while (test);
-  
+
   restore,openb(var);
 
   prev_sync_counter = sync_counter;

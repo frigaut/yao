@@ -57,7 +57,7 @@ version 4.8.0:
     function (exitInError). Allows much clearer debugging.
     
 - Pyramid:
-  - merged pyramid_wfs() changes from marcos, upgraded my francois
+  - merged pyramid_wfs() changes from marcos, upgraded by francois
   - changes in yao main routines to make re-introduced obsolete "pyramid" wfs type 
   - upgraded GUI to include pyramid modulation amplitude control
   - added 4 new structure members to wfs structure
@@ -77,8 +77,7 @@ version 4.8.0:
   without ensuring a plsys,1)
   
 
-
-  version 4.8.1:
+version 4.8.1:
 
   - changed layout of graphic window to add residual phase
   - display of residual phase (Marcos)
@@ -86,3 +85,38 @@ version 4.8.0:
   - "extended" object in pyramid wfs (Marcos)
   - a couple of bugfix (Marcos and I)
   
+version 4.8.2:
+  - Added parallelization of WFS (i.e. one thread/WFS in a multi WFS system)
+  - Tried implementing FFTW parallelization, but the gains were really marginal
+    and often it would be more detrimental than good. Reverted, but left the
+    code commented in Makefile, yao_fast.i and yao_fast.c
+  - yao now looks for and includes yao.conf, if any (before was only in yao GUI)
+  - changed all calls to fitsRead and fitsWrite to new function names
+    yao_fitsread and yao_fitswrite. This way, I work around any conflict
+    with fits.i function checks. Renamed newfits.i to yao_newfits.i
+  - fixed a number of bugs in svipc implementation (mostly how it recovers from
+    a previous svipc run within the same session). test-all.i now runs good
+    with sim.svipc = 1, 5, with wfs.svipc>1, as well as sim.svipc=1 *and* wfs.svipc>1
+    within the same run.
+  - added items in check_parameters() to check for the svipc bad settings
+  - re-introduced sim.name in graphic and nudged some labels in graphics a bit
+  - introduced some changes to make the graphic look better when using
+    xftfonts. also resized controlscreen
+  - better handling of window closing/opening when using svipc
+  - push to get reference tip is now 0.005 instead of 0.05 (there's no noise)
+  - fixed a bug that animate would not be ON for display in close loop when
+    using svipc
+  - switched the Makefile to -Wall
+  - 2 new sim structure members: sim.svipc_wfs_nfork and sim.svipc_wfs_forknb
+  - fixed a bug in pyramid wfs, hopefully once and for all (bad sinc() function
+    used).
+  - added test3.par (same as glao.par)
+  - fix a bug in test5.par (phase screen referred in parfile may not have
+    existed)
+  - fixed issue with animate being ON and preventing further plot
+  - fixed bug in which background calib was not passed to wfs.svipc child (since
+    4.7.1)
+  - fixed nitegcycle for shwfs when no svipc
+  - written test routine (examples/test-fr.i) to check correctness of main
+    modes of svipc (wfs and sim).
+    

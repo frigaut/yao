@@ -200,8 +200,12 @@ func yao_win_init(parent_id)
   yao_pyk_parent_id = parent_id;
   window,0,style="yao.gs",dpi=dpi,width=long(635*(dpi/75.)),     \
       height=long(650*(dpi/75.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
-  // window,0,style="yao.gs",dpi=dpi,width=long(550*(dpi/50.)),
-  // height=long(425*(dpi/50.)),wait=1,parent=parent_id,xpos=-2,ypos=-2;
+  if ( (xft!=[]) && (xft()) ) {
+    get_style, landscape, systems, legends, clegends;
+    systems.ticks.vert.textStyle.height(4)*=1.5;
+    systems.ticks.horiz.textStyle.height(4)*=1.5;
+    set_style, landscape, systems, legends, clegends;
+  }
 }
 
 func wrap_create_phase_screens(void)

@@ -281,9 +281,9 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
     if ( (isthere) && (!clean) ) {
 
-      kall         = fitsRead(YAO_SAVEPATH+rayfname)*1e6;
-      rayleighflux = fitsRead(YAO_SAVEPATH+rayfname,hdu=1);
-      sodiumflux   = fitsRead(YAO_SAVEPATH+rayfname,hdu=2);
+      kall         = yao_fitsread(YAO_SAVEPATH+rayfname)*1e6;
+      rayleighflux = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=1);
+      sodiumflux   = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=2);
 
     } else {
 
@@ -301,9 +301,9 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
       }
 
-      fitsWrite,YAO_SAVEPATH+rayfname,kall;
-      fitsWrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
-      fitsWrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
+      yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
+      yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
+      yao_fitswrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
 
     }
 
@@ -436,7 +436,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   if (wfs(ns).fsname) {
 
     // read the amplitude image
-    tmp = fitsRead(YAO_SAVEPATH+wfs(ns).fsname);
+    tmp = yao_fitsread(YAO_SAVEPATH+wfs(ns).fsname);
 
     // check that dims are OK:
     if (anyof(dimsof(tmp)!=[2,2^sdimpow2,2^sdimpow2])) {
@@ -532,18 +532,21 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns)._bckgrdinit = 1;
 
   // call sh_wfs for calibration of the background
-  // first sync if needed (svipc)
-  if (wfs(ns).svipc>1) status = sync_wfs_forks();
 
   // remove the noise when calculating the origins
   noiseOrig = wfs.noise;
   wfs.noise *= 0;
+  
+  // first sync if needed (svipc)
+  if (wfs(ns).svipc>1) status = sync_wfs_forks();
   sh_wfs,pupsh,pupsh*0.0f,ns;
   wfs.noise=noiseOrig;
   
   wfs(ns)._bckgrdinit = 0;
   wfs(ns)._bckgrdsub  = 1; // now yes, enable it (by default)
 
+  // the following fixes a bug we have since 4.7.1:
+  wfs(ns)._bckgrdcalib = &(*wfs(ns)._fimage);
   // here we need to re-sync to restore bckgrd properties to forks:
   if (wfs(ns).svipc>1) status = sync_wfs_forks();
 
@@ -733,8 +736,6 @@ func sh_wfs(pupsh,phase,ns)
  */
 
 {
-  //  extern mesvec;
-
   if (is_void(ns)) {ns=1;} // default to wfs#1 for one WFS work.
 
   // bail out if bad type (otherwise error in C function call)
@@ -798,16 +799,14 @@ func sh_wfs(pupsh,phase,ns)
       if (!wfs(ns)._svipc_init_done)  {
         require,"yao_svipc.i";
         status = svipc_wfs_init(phase,ns);
-        // extern shmphase,ffimage;
         wfs(ns)._svipc_subok = &((*wfs(ns)._fork_subs)(,1));
-        if (shmphase!=[]) shm_unvar,shmphase;
       }
       shm_var,shmkey,swrite(format="wfs%d_phase",ns),shmphase;
       shm_var,shmkey,swrite(format="wfs%d_mesvec",ns),mesvec;
       shm_var,shmkey,swrite(format="wfs%d_fimage",ns),ffimage;
       shmphase(,) = phase;
-      ffimage(,)  = 0;
-      mesvec()    = 0;
+      if (wfs(ns)._cyclecounter==1) ffimage(,)  = 0;
+      mesvec()   = 0;
 
       yoffset = (*wfs(ns)._yoffset)(1);
       fimny   = (*wfs(ns)._fimny2)(1);
@@ -819,11 +818,11 @@ func sh_wfs(pupsh,phase,ns)
 
 
     } else {
-      mesvec = array(float,2*wfs(ns)._nsub);
+      mesvec     = array(float,2*wfs(ns)._nsub);
       wfs(ns)._svipc_subok = &array(1n,wfs(ns)._nsub4disp);
-      subok2 = array(1n,wfs(ns)._nsub4disp);
+      subok2     = array(1n,wfs(ns)._nsub4disp);
       eq_nocopy,ffimage,*wfs(ns)._fimage;
-      ffimage(,) = 0;
+      if (wfs(ns)._cyclecounter==1) ffimage(,) = 0;
       yoffset    = 0n;
       fimny      = wfs(ns)._fimny;
     }
@@ -846,6 +845,7 @@ func sh_wfs(pupsh,phase,ns)
                  int(wfs(ns).rayleighflag),
                  *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
                  wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
+                 
 
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
@@ -854,7 +854,7 @@ func sh_wfs(pupsh,phase,ns)
     }
 
     // spot image to slopes:
-
+    if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
     err = _shwfs_spots2slopes( ffimage,
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                   wfs(ns)._nsub4disp, wfs(ns).npixels,
@@ -864,9 +864,12 @@ func sh_wfs(pupsh,phase,ns)
                   *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
                   *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles,
                   mesvec);
-
+    } else mesvec *= 0;
+    
+    //write,format="%d %f ",wfs(ns)._cyclecounter,sum(*wfs(ns)._fimage),mesvec(ptp);
+    
     if ( wfs(ns).svipc>1 ) {
-    sem_take,semkey,20+4*(ns-1)+3,count=wfs(ns).svipc-1;
+      sem_take,semkey,20+4*(ns-1)+3,count=wfs(ns).svipc-1;
     }
 
     // new, cause of svipc to keep *all* forks results in this var:
@@ -890,8 +893,18 @@ func sh_wfs(pupsh,phase,ns)
 
   mesvec *= wfs(ns)._centroidgain;
 
+  mesvec2 = mesvec;
+
+  // this one was painful, lost hours on it:
+  // have to shm_unvar, obviously:
+  if ((wfs(ns).shmethod==2)&&(wfs(ns).svipc>1)) {
+    shm_unvar,shmphase;
+    shm_unvar,mesvec;
+    shm_unvar,ffimage;
+  }
+  
   // return measurement vector in arcsec (thanks to centroiw):
-  return mesvec;
+  return mesvec2;
 }
 
 
@@ -1012,7 +1025,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
  */
 /*
   TO DO (at 4.8.1)
-  - multi lambda?
+  - multi lambda -> found by Marcos to not be necessary
   - parameter guidance for optimal speed/perf.
  */
 {
@@ -1246,10 +1259,8 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   // sinc usual issue: sinc is defined both in yeti and yutils, but not
   // with the same def. yeti defines sinc(1.)=0., while yutils defines
   // sinc(pi)=0. Use yutils definition.
-  if (abs(sinc(pi))>1e-10){
-    autoload, "util_fr.i", sinc;
-  }
-  sincar = roll(sinc(pi*xy2(,,1))*sinc(pi*xy2(,,2)));
+  require,"util_fr.i";
+  sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
   if (pyr_disp) { plsys,4; pli,sincar; limits; limits,square=1;}
 
   // perform the actual spatial filtering:
@@ -1479,7 +1490,7 @@ func mult_wfs(iter,disp=)
   for (ns=1;ns<=nwfs;ns++) {
 
     offsets = wfs(ns).gspos;
-    phase  = get_phase2d_from_optics(ns,"wfs");
+    phase   = get_phase2d_from_optics(ns,"wfs");
     phase  += get_turb_phase(iter,ns,"wfs");
     // only look at DMs if not running in open loop
     if (loop.method != "open-loop") {
@@ -1538,7 +1549,7 @@ func mult_wfs(iter,disp=)
 
 //----------------------------------------------------
 
-func shwfs_tests(void, clean=, wfs_svipc=, debug=, verbose=, batch=)
+func shwfs_tests(name, clean=, wfs_svipc=, debug=, verbose=, batch=)
 /* DOCUMENT shwfs_tests(void,clean=,wfs_svipc=,debug=,verbose=,batch=)
 
    Use to check that sh_wfs looks allright (NGS and LGS). Test a variety
@@ -1559,7 +1570,8 @@ func shwfs_tests(void, clean=, wfs_svipc=, debug=, verbose=, batch=)
   thispdiam = 120; //180 //240
   pltitle_height=12;
   //===========================
-  aoread,"shwfs-tests.par";
+  if (name==[]) name="shwfs-tests.par";
+  aoread,name;
   sim.pupildiam = thispdiam;
   sim.debug     = (debug?debug:0);
   sim.verbose   = (verbose?verbose:0);
@@ -1571,47 +1583,47 @@ func shwfs_tests(void, clean=, wfs_svipc=, debug=, verbose=, batch=)
   window,0,wait=1,dpi=90,width=0,height=0;
 
   wfs(1).noise=0;
-  shwfs_tests_plots,"NGS with no sky, no noise",batch=batch;
+  shwfs_tests_plots,"NGS w/o sky, w/o noise",batch=batch;
 
   wfs(1).noise=1;
   wfs(1).ron=0;
-  shwfs_tests_plots,"NGS with no sky, w/ noise but no RON",batch=batch;
+  shwfs_tests_plots,"NGS w/o sky, w/ noise but no RON",batch=batch;
 
   wfs(1).ron=4;
-  shwfs_tests_plots,"NGS with no sky, w/ noise",batch=batch;
+  shwfs_tests_plots,"NGS w/o sky, w/ noise",batch=batch;
 
-  "ADDING SKY";
+  write,"ADDING SKY";
   wfs(1).skymag = 10;
   sim.debug = 0;
   aoinit;
 
   wfs(1).noise=0;
-  shwfs_tests_plots,"NGS with w/ sky, no noise",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/o noise",batch=batch;
 
   wfs(1).noise=1;
   wfs(1).ron=0;
-  shwfs_tests_plots,"NGS with w/ sky, w/ noise but no RON",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/ noise but no RON",batch=batch;
 
   wfs(1).ron=4;
-  shwfs_tests_plots,"NGS with w/ sky, w/ noise",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/ noise",batch=batch;
 
-  "TURNING OFF STAR";
-  wfs(1).gsmag = 12;
-  wfs(1).skymag = 10;
-  sim.debug = 0;
-  aoinit;
+  // "TURNING OFF STAR";
+  // wfs(1).gsmag = 12;
+  // wfs(1).skymag = 10;
+  // sim.debug = 0;
+  // aoinit;
+// 
+  // wfs(1).noise=0;
+  // shwfs_tests_plots,"NO NGS with w/ sky, no noise",batch=batch;
+// 
+  // wfs(1).noise=1;
+  // wfs(1).ron=0;
+  // shwfs_tests_plots,"NO NGS with w/ sky, w/ noise but no RON",batch=batch;
+// 
+  // wfs(1).ron=4;
+  // shwfs_tests_plots,"NO NGS with w/ sky, w/ noise",batch=batch;
 
-  wfs(1).noise=0;
-  shwfs_tests_plots,"NO NGS with w/ sky, no noise",batch=batch;
-
-  wfs(1).noise=1;
-  wfs(1).ron=0;
-  shwfs_tests_plots,"NO NGS with w/ sky, w/ noise but no RON",batch=batch;
-
-  wfs(1).ron=4;
-  shwfs_tests_plots,"NO NGS with w/ sky, w/ noise",batch=batch;
-
-  "W/ BIAS";
+  write,"W/ BIAS";
   wfs(1).gsmag = 8;
   wfs(1).skymag = 10;
   wfs(1).biasrmserror = 50.;
@@ -1619,16 +1631,16 @@ func shwfs_tests(void, clean=, wfs_svipc=, debug=, verbose=, batch=)
   aoinit;
 
   wfs(1).noise=0;
-  shwfs_tests_plots,"NGS with w/ sky, no noise, BIAS error",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/o noise, BIAS error",batch=batch;
 
   wfs(1).noise=1;
   wfs(1).ron=0;
-  shwfs_tests_plots,"NGS with w/ sky, w/ noise but no RON, BIAS error",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/ noise but no RON, BIAS error",batch=batch;
 
   wfs(1).ron=4;
-  shwfs_tests_plots,"NGS with w/ sky, w/ noise, BIAS error",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/ noise, BIAS error",batch=batch;
 
-  "W/ FLAT";
+  write,"W/ FLAT";
   wfs(1).gsmag = 8;
   wfs(1).skymag = 10;
   wfs(1).biasrmserror = 0.;
@@ -1637,14 +1649,14 @@ func shwfs_tests(void, clean=, wfs_svipc=, debug=, verbose=, batch=)
   aoinit;
 
   wfs(1).noise=0;
-  shwfs_tests_plots,"NGS with w/ sky, no noise, FLAT error",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/o noise, FLAT error",batch=batch;
 
   wfs(1).noise=1;
   wfs(1).ron=0;
-  shwfs_tests_plots,"NGS with w/ sky, w/ noise but no RON, FLAT error",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/ noise but no RON, FLAT error",batch=batch;
 
   wfs(1).ron=4;
-  shwfs_tests_plots,"NGS with w/ sky, w/ noise, FLAT error",batch=batch;
+  shwfs_tests_plots,"NGS w/ sky, w/ noise, FLAT error",batch=batch;
 
   //===========================
   aoread,"shwfs-tests.par";

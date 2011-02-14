@@ -70,19 +70,39 @@
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>
-
 #include <sys/time.h>
-
-
 #include "ydata.h"
-
+#include "yapi.h"
 
 
 #define FFTWOPTMODE FFTW_EXHAUSTIVE
+// use FFTW_PATIENT for thread optimization (see below):
+//#define FFTWOPTMODE FFTW_PATIENT
+
+// static int n_threads = 1;
 
 void _eclat_float(float *ar, int nx, int ny);
 void _poidev(float *xmv, long n);
 void _gaussdev(float *xmv, long n);
+
+// int Y__fftw_init_threads(void)
+// {
+  // return fftwf_init_threads();
+// }
+// 
+// 
+// void Y_fftw_set_n_threads(int nargs)
+// {
+  // n_threads = ygets_i(0);
+  // If you plan with FFTW_PATIENT, it will automatically
+  // disable threads for sizes that don't benefit from parallelization.
+  // fftwf_plan_with_nthreads(n_threads);
+// }
+// 
+// void Y_fftw_get_n_threads(int nargs)
+// {
+  // ypush_int(n_threads);
+// }
 
 void _import_wisdom(char *wisdom_file)
 {
@@ -191,6 +211,8 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
       
   /* Set the size of 2d FFT. */
   n = 1 << n2;
+
+  // fftwf_plan_with_nthreads(n_threads);
 
   /* Allocate memory for the input operands and check its availability. */
   in  = fftwf_malloc(sizeof(fftwf_complex) * n * n);
@@ -421,7 +443,7 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   float         *brayleigh;
   fftwf_plan    p,p1;
   float         tot, totrayleigh, krp, kip, sky;
-  float         corfact,totdark;
+  float         corfact;
   long          log2nr, log2nc, n, ns, nb;
   int           i,j,k,l,koff,integrate;
   int           vsc; // vsc = valid sub counter
@@ -430,6 +452,8 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   /*
     Global setup for FFTs:
   */
+
+  // fftwf_plan_with_nthreads((int)1);
 
   // Set the size of 2d FFT.
   log2nr = sdimpow2; 
@@ -714,13 +738,13 @@ int _shwfs_spots2slopes(
            
 {
   /* Declarations */
-  const         sizeThArray = binxy2*binxy2;
+  const         int sizeThArray = binxy2*binxy2;
 
   float         *bimage2;
   float         *fnoise;
   float         centx, centy, centi, tmpf, thback;
   float         val[sizeThArray];
-  float         minval, temp;
+  float         minval;
   long          nb2;
   int           i, j, k, l, koff, xyoff;
   int           nvalidsubs, vsc; // vsc = valid sub counter
@@ -1082,10 +1106,11 @@ int _cwfs (float *pupil,      // input pupil
   long          log2nr, log2nc, n, ns;
   int           i,k,sindstride,koff;
 
-
   /*
     Global setup for FFTs:
   */
+
+  // fftwf_plan_with_nthreads(n_threads);
 
   sindstride = 0;
   for ( i=0 ; i<nsubs ; i++ ) {

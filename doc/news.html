@@ -11,26 +11,38 @@
 <div id="right-column"><img src="images/kbkheaderright.jpg"></div>
 
 <div id="center">
-  
+
  <div id="banner">yao::news</div>
 
 <div id="links2">
   <a href="index.html">HOME</a> &nbsp; | &nbsp;
-  <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp; 
-  <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp; 
-  <a href="news.html">NEWS</a> 
+  <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp;
+  <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp;
+  <a href="news.html">NEWS</a>
   </div>
 
 
 
   <div id="container">
-    
-    
-    <a name="pyramid_back_in_yao"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">November 11, 2010</div> 
-    <div id="entrytitle">Pyramid WFS back in yao 4.8</div> 
-    <div id="entrybody"> 
+
+    <a name="yao_at_github"></a>
+    <div id="blogentry">
+    <div id="entrydate">February 11, 2011</div>
+    <div id="entrytitle">yao @ github</div>
+    <div id="entrybody">
+I have moved from svn to git. Yao is now at github (https://github.com/frigaut/yao). To check out (read only):
+<pre>
+git clone git@github.com:frigaut/yao.git yao
+</pre>
+    </div>
+    </div>
+
+
+    <a name="pyramid_back_in_yao"></a>
+    <div id="blogentry">
+    <div id="entrydate">November 11, 2010</div>
+    <div id="entrytitle">Pyramid WFS back in yao 4.8</div>
+    <div id="entrybody">
 
       In the early times (version < 2.0), pyramid WFS were once
       available in yao, but I did not follow up on the code and I had
@@ -39,16 +51,16 @@
       myself. The speed is reasonable, with approximately 70
       iterations/sec for a 8x8 system. Check it out with test5.par in
       the example directory. Grab it at the <a href="http://www.maumae.net/yorick/packages/src/">usual place</a>.
-      
-    </div> 
-    </div> 
 
-    
-    <a name="going_for_elt_systems"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">July 2, 2010</div> 
-    <div id="entrytitle">yao going after ELT-size systems</div> 
-    <div id="entrybody"> 
+    </div>
+    </div>
+
+
+    <a name="going_for_elt_systems"></a>
+    <div id="blogentry">
+    <div id="entrydate">July 2, 2010</div>
+    <div id="entrytitle">yao going after ELT-size systems</div>
+    <div id="entrybody">
 
       <p>The <b>new parallel features</b> (see next post), and especially the
       <b>new sparse reconstructor</b> options (see 2 posts below)
@@ -62,15 +74,15 @@
       <p>A 64x64 system runs at 23 iterations/s and a 200x200 SHWFS at
       1 iterations/s (note that the later starts to be
       in the realm of ELT extreme AO, at 15cm actuator pitch on a 30-m). </p>
-      
-    </div> 
-    </div> 
 
-    <a name="Parallel_yao_released_with_improvements"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">July 2, 2010</div> 
-    <div id="entrytitle">Parallel yao released with improvements!</div> 
-    <div id="entrybody"> 
+    </div>
+    </div>
+
+    <a name="Parallel_yao_released_with_improvements"></a>
+    <div id="blogentry">
+    <div id="entrydate">July 2, 2010</div>
+    <div id="entrytitle">Parallel yao released with improvements!</div>
+    <div id="entrybody">
 
       <p>More work on yao parallel:
         <ul>
@@ -118,7 +130,7 @@
         marginally. As far as the individual WFS parallelization is
         concerned, here are some hard numbers:
         <pre>8 Core Xeon (2 boards) @ 3.33GHz, running RHEL 5, 32 bits. yorick/yao built with -O2.
-16x16 SHWFS system, physical model, no noise. All times (avg &amp; median) in milliseconds for one frame.          
+16x16 SHWFS system, physical model, no noise. All times (avg &amp; median) in milliseconds for one frame.
 
 sh16x16_svipc:        1 threads, sh_wfs() avg=2.86, median=2.90
 sh16x16_svipc:        2 threads, sh_wfs() avg=1.87, median=1.89
@@ -174,7 +186,7 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
         they are a little more difficult to understand and would just
         introduce confusion.</p>
 
-      
+
       <p>The individual WFS parallel feature is controlled by the
         parameter wfs.svipc. The "global" DMs/WFSs abd PSF
         parallelization is controlled by sim.svipc (bit 0 controls
@@ -185,15 +197,15 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
       <b>Matthieu Bec</b>), through most of
       the normal channels. It runs on Linux (extensively tested) and
       OsX (somewhat tested).</p>
-      
-    </div> 
-    </div> 
 
-    <a name="new_user_contributions"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">July 2, 2010</div> 
-    <div id="entrytitle">New features contributed by users</div> 
-    <div id="entrybody"> 
+    </div>
+    </div>
+
+    <a name="new_user_contributions"></a>
+    <div id="blogentry">
+    <div id="entrydate">July 2, 2010</div>
+    <div id="entrytitle">New features contributed by users</div>
+    <div id="entrybody">
 
 
       <p><b>Marcos van Dam</b> (flatwavefronts.com), who is using yao
@@ -211,14 +223,14 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
       <p>Thanks Marcos and Aurea. The code was very clean, hence
       -relatively- easy to merge.</p>
 
-    </div> 
-    </div> 
+    </div>
+    </div>
 
-    <a name="performance_boost_with_parallelization"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">April 9, 2010</div> 
-    <div id="entrytitle">Performance Boost with Parallelization</div> 
-    <div id="entrybody"> 
+    <a name="performance_boost_with_parallelization"></a>
+    <div id="blogentry">
+    <div id="entrydate">April 9, 2010</div>
+    <div id="entrytitle">Performance Boost with Parallelization</div>
+    <div id="entrybody">
 
 
       <p>Following the development here at Gemini of a svipc plugin
@@ -236,8 +248,8 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
       in porting that to the main yao tree. I just need to get a few
       free hours... So stay tuned!</p>
 
-    </div> 
-    </div> 
+    </div>
+    </div>
 
     <div id="blogentry">
      <div id="entrydate">November 10, 2008</div>
@@ -276,7 +288,7 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
       </ul>
 
 <p><strong>Bug Fixes</strong>:
-  <ul>      
+  <ul>
     <li>"Desired" pixel size is wrong (SHWFS)
     <li>Bug with extrapolated counted several time (clean=1)
     <li>Solved zernike influence function for altitude DM
@@ -289,7 +301,7 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
     <li>Fixed a small bug in phase screen generation (max offseted (1,1) in power spectrum)
     <li>Fixed mess in actuator/subaperture order. now both go from bottom left to top right, in line (i.e. subap/act#2 is at right of subap/act#1)
     <li>Updated many help document section (yao.i, yao_wfs.i)</li>
-      
+
   </ul>
 
 <p>So, as you see, lots of new things. I apologize to those who knew well the yao code and for who this release is going to mean some work to find where the functions have gone, but I think the code re-organization was way overdue, and the results is cleaner. Many of these modifications were the results of a visit from Michael Hart (and some push from Marcos van Dam) to use yao for GMT simulations. As usual, I have benefited from many discussions, advices and code contribution from Damien Gratadour, Benoit Neichel, Yann Clenet and Eric Gendron. </p>
@@ -308,12 +320,12 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
 
      </div>
      </div>
-    
-    <a name="breaking_the_1000itpersec_barrier"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">September 29, 2009</div> 
-    <div id="entrytitle">Breaking the 1000 iterations/s barrier: a performance update</div> 
-    <div id="entrybody"> 
+
+    <a name="breaking_the_1000itpersec_barrier"></a>
+    <div id="blogentry">
+    <div id="entrydate">September 29, 2009</div>
+    <div id="entrytitle">Breaking the 1000 iterations/s barrier: a performance update</div>
+    <div id="entrybody">
 
 
     <p>Is the performance of today's computer still following Moore's law? If so, if
@@ -327,19 +339,19 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
     runs with 4 phase screens, and the display on, unless noted otherwise. Results
     are in iterations/second.</p>
 
-    <center> 
+    <center>
     <table border="0">
-          <tr class="toptitle"><td>Name   </td><td> case                                           </td><td>  64bits </td><td>  32bits  </td></tr> 
-    <tr class="trodd"><td><a href="ashfast-bench.par">shfast</a></td><td> SH 6x6 geometrical, 1DM+TT, NGS, 1 screen, no display </td><td>  1020   </td><td>  860     </td></tr> 
-    <tr><td>test1  </td><td> SH 12x12 physical 1DM+TT, LGS                  </td><td>  44     </td><td>  32      </td></tr> 
-    <tr class="trodd"><td>test2  </td><td> SH 12x12 geometrical, 1DM+TT, NGS              </td><td>  219    </td><td>  182     </td></tr> 
-    <tr><td>test3  </td><td> SH 6x6 physical 1DM+TT, NGS                    </td><td>  201    </td><td>  165     </td></tr> 
-    <tr class="trodd"><td>test4  </td><td> CWFS36, NGS                                    </td><td>  226    </td><td>  164     </td></tr> 
-    <tr><td>test4bis   </td><td> same, no display                               </td><td>  261    </td><td>  184     </td></tr> 
-    <tr class="trodd"><td>sh20   </td><td> SH 20x20 geometrical, 1DM+TT, NGS, 1 screen, no display                       </td><td>  284    </td><td>  N/A     </td></tr> 
-    <tr><td>sh20_2 </td><td> SH 20x20, physical, 1 screen, w/ display       </td><td>  59     </td><td>  N/A     </td></tr> 
-    </table> 
-    </center> 
+          <tr class="toptitle"><td>Name   </td><td> case                                           </td><td>  64bits </td><td>  32bits  </td></tr>
+    <tr class="trodd"><td><a href="ashfast-bench.par">shfast</a></td><td> SH 6x6 geometrical, 1DM+TT, NGS, 1 screen, no display </td><td>  1020   </td><td>  860     </td></tr>
+    <tr><td>test1  </td><td> SH 12x12 physical 1DM+TT, LGS                  </td><td>  44     </td><td>  32      </td></tr>
+    <tr class="trodd"><td>test2  </td><td> SH 12x12 geometrical, 1DM+TT, NGS              </td><td>  219    </td><td>  182     </td></tr>
+    <tr><td>test3  </td><td> SH 6x6 physical 1DM+TT, NGS                    </td><td>  201    </td><td>  165     </td></tr>
+    <tr class="trodd"><td>test4  </td><td> CWFS36, NGS                                    </td><td>  226    </td><td>  164     </td></tr>
+    <tr><td>test4bis   </td><td> same, no display                               </td><td>  261    </td><td>  184     </td></tr>
+    <tr class="trodd"><td>sh20   </td><td> SH 20x20 geometrical, 1DM+TT, NGS, 1 screen, no display                       </td><td>  284    </td><td>  N/A     </td></tr>
+    <tr><td>sh20_2 </td><td> SH 20x20, physical, 1 screen, w/ display       </td><td>  59     </td><td>  N/A     </td></tr>
+    </table>
+    </center>
 
     <p>Those are all, I believe, fairly impressive numbers. Because I acquired this
     macbook only recently, I was doing comparison between a 32bits and 64bits
@@ -349,20 +361,20 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
     That's a big gain.</p>
 
 
-    </div> 
-    </div> 
+    </div>
+    </div>
 
 
 
-    <a name="install_update"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">September 13, 2009</div> 
-    <div id="entrytitle">Install Update</div> 
-    <div id="entrybody"> 
+    <a name="install_update"></a>
+    <div id="blogentry">
+    <div id="entrydate">September 13, 2009</div>
+    <div id="entrytitle">Install Update</div>
+    <div id="entrybody">
     Obviously, I have been postponing for far too long updates on this
     site. Yao is not dead, no. I and many other people are still using it almost
     daily. But I just didn't have the time nor the inclination to update
-    this site. 
+    this site.
 
     <p>I got several requests recently to help install yao <b>on
     OsX</b> (I believe the yao packages have been built for 10.5, so I
@@ -373,22 +385,22 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
     worked. FFTW comes bundled with the yao package, so it is not
     necessary to install it.
 
-    <p><i>Note: in fact, the following should also work on linux. Just select 
-    	the appropriate OS in pkg_setup when asked for it.</i> 
+    <p><i>Note: in fact, the following should also work on linux. Just select
+    	the appropriate OS in pkg_setup when asked for it.</i>
 
-    <br> 
-    <ol> 
+    <br>
+    <ol>
     <li> Install the last yorick
 
-      <ul> 
+      <ul>
         <li> download yorick from http://sourceforge.net/projects/yorick/files/yorick/2.1.05/yorick-2.1.05-mac-intel.tgz/download
         <li> unpack and move yorick-2.1.05 directory to ~
         <li> add yorick path to your default path: add this line at the end of your ~/.profile
-    <pre>export PATH=$HOME/yorick-2.1.05/bin:$PATH</pre> 
-      </ul> 
+    <pre>export PATH=$HOME/yorick-2.1.05/bin:$PATH</pre>
+      </ul>
 
     <li> Install yao:
-    <br> 
+    <br>
     <code>pkg_mngr.i</code> is now bundled with yorick. So just do the
     following (for
     <code>pkg_setup</code>: all
@@ -401,7 +413,7 @@ time(5-6) =  1.23 ms  (Target PSFs estimation)
 > pkg_sync
 > pkg_list
 > pkg_install,"yao"
-> quit</pre> 
+> quit</pre>
 
     <li> Setup yao:
 
@@ -418,64 +430,64 @@ $ ls   ( you should have your screens)</pre>
 
     <li> Run yao
 
-    <pre>$ cd ~/yorick-2.1.05/share/yao/examples/</pre> 
+    <pre>$ cd ~/yorick-2.1.05/share/yao/examples/</pre>
     That's where some example yao parfile are. you can then put them wherever you want and transform/adapt them at will.
     <pre>$ yorick -i yao.i
 > aoread,"sh6x6.par"
 > aoinit,disp=1
 > aoloop,disp=1
 > go
-</pre> 
+</pre>
     watch it go :-)
 
 
-    </div> 
-    </div> 
+    </div>
+    </div>
 
-    <a name="binary_installer"></a> 
-    <div id="blogentry"> 
-    <div id="entrydate">4 December 2005</div> 
-    <div id="entrytitle">Version 3.6</div> 
-    <div id="entrybody"> 
+    <a name="binary_installer"></a>
+    <div id="blogentry">
+    <div id="entrydate">4 December 2005</div>
+    <div id="entrytitle">Version 3.6</div>
+    <div id="entrybody">
     Very, very long time I haven't posted here, or updated this site for that matter !
-    <p>I know many people have had problems installing yao with the newest yorick releases. Since the yorick Makefile system has been re-hauled in fact. Well, many things have changed. Now you can install yao *very* easily from the yorick prompt. Just download the brand <a href="http://www.maumae.net/yorick/contrib/pkg_mngr.i">new binary plugin installer</a> (require yorick > 1.6.02). To install the latest yao, just:</p> 
+    <p>I know many people have had problems installing yao with the newest yorick releases. Since the yorick Makefile system has been re-hauled in fact. Well, many things have changed. Now you can install yao *very* easily from the yorick prompt. Just download the brand <a href="http://www.maumae.net/yorick/contrib/pkg_mngr.i">new binary plugin installer</a> (require yorick > 1.6.02). To install the latest yao, just:</p>
     <pre>#include "pkg_mngr.i"
 pkg_list
 pkg_install,"yao"
-</pre> 
-    <p>beware that the install directive will install in yorick/contrib/yao, so if you have there an existing installation that you want to preserve, you should back it up before.</p> 
+</pre>
+    <p>beware that the install directive will install in yorick/contrib/yao, so if you have there an existing installation that you want to preserve, you should back it up before.</p>
 
-    <p>This yao version is kind of intermediary. I have not included all modifications from ralf. I have however made a fairly decent size change to aoloop:</p> 
+    <p>This yao version is kind of intermediary. I have not included all modifications from ralf. I have however made a fairly decent size change to aoloop:</p>
 
     Now aoloop is in 2 parts:
-    <pre>aoloop,parameters_as_before</pre> 
+    <pre>aoloop,parameters_as_before</pre>
     to "load" the thing.
     then type
     <pre>go</pre> or <pre>go,1</pre> to run a single iteration.
 
-    <p>While it's going, you now still have access to the prompt. You can type "stop" or "cont" to stop/resume the loop simulations.</p> 
+    <p>While it's going, you now still have access to the prompt. You can type "stop" or "cont" to stop/resume the loop simulations.</p>
     <p>If you write batches in which you run loops, you will have to write it like this:
     <pre>aoloop,bla-bla-bla
-for (j=1;j<=loop.niter;j++) go;</pre> 
+for (j=1;j<=loop.niter;j++) go;</pre>
 
     This is because a call to go goes only through one loop cycle, and then call "set_idler,go", which tells to the yorick interpreter "if you have nothing pending, run 'go'". This will work as intended when ran interactively, but when in a batch, the interpreter is not idle: it will execute directly the next line and will never go back to "go" if not forced to (hence the explicit loop).
 
-    </div> 
-    </div> 
-    
-    
-    
-    
-    
+    </div>
+    </div>
+
+
+
+
+
     <div id="blogentry">
     <div id="entrydate">18 October 2004</div>
     <div id="entrytitle">Version 3.5</div>
     <div id="entrybody">
     This new version include the 2 following additional features
     <ul>
-    <li>Ability to swap the phase screen during a simulation run. This comes on top of the 
-    "jump and reset" feature. In fact, it simply swaps (rotate) the screens every N resets 
-    (set this using loop.jumps2swapscreen, see the 
+    <li>Ability to swap the phase screen during a simulation run. This comes on top of the
+    "jump and reset" feature. In fact, it simply swaps (rotate) the screens every N resets
+    (set this using loop.jumps2swapscreen, see the
     <a href="data-structures.html">data-structures</a> page).</li>
     <li>At long last, I have figured out and implemented more realistic influence functions for
     stackarray (piezostack) deformable mirrors. One can set the coupling parameter of the
@@ -572,7 +584,7 @@ for (j=1;j<=loop.niter;j++) go;</pre>
     <div id="entrydate">30 April 2004</div>
     <div id="entrytitle">New features</div>
     <div id="entrybody">In the new version 3.2.1, I have implemented sky noise and dark current, both for the SHWFS and the curvature WFS. <p>
-    I have added some test parfiles in the examples directory (yao/examples). New users can test their distribution by running <code>#include "test-all.i"</code> in this directory. It's relatively fast, and test various configs (SHWFS method 1 and 2, with splitted subsystem, and a CWFS case). 
+    I have added some test parfiles in the examples directory (yao/examples). New users can test their distribution by running <code>#include "test-all.i"</code> in this directory. It's relatively fast, and test various configs (SHWFS method 1 and 2, with splitted subsystem, and a CWFS case).
     </div>
     </div>
 
@@ -595,25 +607,25 @@ for (j=1;j<=loop.niter;j++) go;</pre>
     </div>
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
   </div>
 </div>
 
 
 <div id="footer">
 <div id="footer-left"><img src="images/kbkfooterleft.jpg"></div>
-<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>  
+<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>
 <div id="footer-center"></div>
 </div>
 

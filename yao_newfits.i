@@ -1,5 +1,5 @@
 /*
- * NEWFITS.I
+ * YAO_NEWFITS.I
  *
  * $Id: newfits.i,v 1.3 2009/03/25 14:38:31 frigaut Exp $
  *
@@ -28,15 +28,15 @@
  * Fits Standard:
  * ftp://nssdcftp.gsfc.nasa.gov/standard/fits/fits_standard.pdf
  *
- * newfits.i,v 0.1 2002/09/27 rigaut
+ * yao_newfits.i,v 0.1 2002/09/27 rigaut
  *
  * Routines included:
- * fitsRead(name,&phdr,&ehdr,extension=,onlyheader=) Reads a fits file
+ * yao_fitsread(name,&phdr,&ehdr,extension=,onlyheader=) Reads a fits file
  * fitsHdrValue(hdr,keyword,&position,default=) Get a keyword value
  * fitsHdrComment(hdr) Return string vector with all comment lines
  * fitsHdrHistory(hdr)Return string vector with all history lines
  *
- * fitsWrite(name,data,header,exttype=,append=,rescale=) still in development
+ * yao_fitswrite(name,data,header,exttype=,append=,rescale=) still in development
  * fitsBuildCard(keyword,value,comment,type=,form=) built a Card line
  * fitsAddCard(hdr,keyword,value,comment,type=,form=,after=,before=,first=,last=)
  * fitsDeleteCard(hdr,keyword) delete an entry in a header
@@ -70,14 +70,14 @@
 require,"string.i";
 require,"util_fr.i"; // for is_set
 
-func fitsHead(name, &phdr, &ehdr, extension=, hdu=)
+func yao_fitshead(name, &phdr, &ehdr, extension=, hdu=)
 {
-  fitsRead,name,phdr,ehdr,extension=,hdu=,onlyheader=1;
+  yao_fitsread,name,phdr,ehdr,extension=,hdu=,onlyheader=1;
   return phdr;
 }
 
-func fitsRead(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
-/* DOCUMENT data = fitsRead(filename, PrimaryHDR, ExtensionHDR,
+func yao_fitsread(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
+/* DOCUMENT data = yao_fitsread(filename, PrimaryHDR, ExtensionHDR,
                                           extension=, onlyheader=)
      Returns the Primary Data Array or an Extension (one based)
      Data Array of the FITS file FILENAME.
@@ -93,13 +93,13 @@ func fitsRead(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
      routine fitsHdrValue.
   EXAMPLES:
   Read an image from the Primary Data Array:
-  im = fitsRead("hrwfs.1.fits")
+  im = yao_fitsread("hrwfs.1.fits")
   Read the Primary Header and Primary Data Array:
-  im = fitsRead("hrwfs.1.fits",hdr);
+  im = yao_fitsread("hrwfs.1.fits",hdr);
   Read only the Primary Header:
-  im = fitsRead("hrwfs.1.fits",hdr,onlyheader=1);
+  im = yao_fitsread("hrwfs.1.fits",hdr,onlyheader=1);
   Read the Data in extension#2, primary and extension(#1) header:
-  im = fitsRead("~/N20020926S0050.fits",hdr,ehdr,extension=1);
+  im = yao_fitsread("~/N20020926S0050.fits",hdr,ehdr,extension=1);
   SEE ALSO: fitsHdrValue.
 */
 {
@@ -193,14 +193,14 @@ func fitsHdrValue2(hdr,keyword,&position,default=)
    Returns "Not a Keyword" if keyword is not found and no default
    was given.
    Mandatory parameters:
-   hdr:         (input) header, as returned by fitsRead (string array)
+   hdr:         (input) header, as returned by yao_fitsread (string array)
    keyword:     (input) keyword name, string
    Optional parameters:
    position:    (output) position of keyword in header
    Optional keyword:
    default:     (input) default return value if keyword is not found
                 in the header.
-   SEE ALSO: fitsRead, _fGetKeyword, _fGetValue
+   SEE ALSO: yao_fitsread, _fGetKeyword, _fGetValue
    This was an attempt to find a faster procedure that the following
    function, but it's slightly slower (not by much though).
  */
@@ -219,14 +219,14 @@ func fitsHdrValue(hdr,keyword,&position,default=)
    Returns "Not a Keyword" if keyword is not found and no default
    was given.
    Mandatory parameters:
-   hdr:         (input) header, as returned by fitsRead (string array)
+   hdr:         (input) header, as returned by yao_fitsread (string array)
    keyword:     (input) keyword name, string
    Optional parameters:
    position:    (output) position of keyword in header
    Optional keyword:
    default:     (input) default return value if keyword is not found
                 in the header.
-   SEE ALSO: fitsRead, _fGetKeyword, _fGetValue
+   SEE ALSO: yao_fitsread, _fGetKeyword, _fGetValue
  */
 {
   key= strtrim(strtoupper(keyword));
@@ -341,7 +341,7 @@ func _fCheckExtensionHeader(hdr,&XTtype)
 
   if (XTtype == "BINTABLE") {
     /* fits binary table extension */
-    error,"Binary table not yet handle by fitsRead";
+    error,"Binary table not yet handle by yao_fitsread";
     return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" && 
             strtrim(_fGetKeyword(hdr(2))) == "BITPIX" && 
             strtrim(_fGetKeyword(hdr(3))) == "NAXIS" &&
@@ -418,12 +418,12 @@ func _fReadHeader(file,&address)
 
 /*----------------------------------------------------------*/
 
-func fitsWrite(filename,data,header,exttype=,append=,rescale=)
-/* DOCUMENT fitsWrite(filename,data,header,exttype=,append=,rescale=)
+func yao_fitswrite(filename,data,header,exttype=,append=,rescale=)
+/* DOCUMENT yao_fitswrite(filename,data,header,exttype=,append=,rescale=)
    Write a fits file. Primary HDU and possible append extensions.
    Current valid extension = only image.
    Usage:
-   fitsWrite,filename,data,header,exttype=,append=,rescale=
+   yao_fitswrite,filename,data,header,exttype=,append=,rescale=
      filename: input; filename as a string
      data: data. Can be void, scalar or multidimensionnal
      header: header. mandatory keywords are overwritten.
@@ -437,7 +437,7 @@ func fitsWrite(filename,data,header,exttype=,append=,rescale=)
   exttype= strtoupper(strtrim(exttype));
 
   if (exttype != "PRIMARY" && exttype != "IMAGE" && exttype != "BINTABLE")
-    error,"Not a valid Extension type. Type help,fitsWrite for valid type";
+    error,"Not a valid Extension type. Type help,yao_fitswrite for valid type";
 
   if (exttype != "PRIMARY") append=1;
 
@@ -644,7 +644,7 @@ func fitsAddCard(&hdr,keyword,value,comment,type=,form=,
   // at the end and return:
   // note: it is not a problem to append at the end, possibly
   // after the "END" keyword, as this will be cleaned up by
-  // when it's written up (fitsWrite).
+  // when it's written up (yao_fitswrite).
   if (pos == -1) return _(hdr,line);
   
   ncard = numberof(hdr);
@@ -688,7 +688,7 @@ func fitsAddComment(&hdr,comment,after=,before=,first=,last=)
   // at the end and return:
   // note: it is not a problem to append at the end, possibly
   // after the "END" keyword, as this will be cleaned up by
-  // when it's written up (fitsWrite).
+  // when it's written up (yao_fitswrite).
   if (pos == -1) { hdr = _(hdr,line);return hdr; }
   
   ncard = numberof(hdr);
@@ -732,7 +732,7 @@ func fitsAddHistory(&hdr,comment,after=,before=,first=,last=)
   // at the end and return:
   // note: it is not a problem to append at the end, possibly
   // after the "END" keyword, as this will be cleaned up by
-  // when it's written up (fitsWrite).
+  // when it's written up (yao_fitswrite).
   if (pos == -1) { hdr = _(hdr,line); return hdr; }
   
   ncard = numberof(hdr);
@@ -851,12 +851,12 @@ func _fEndCard(void)
 {return "END                                                                              ";}
 
 // lowercase equivalent:
-fitshead       = fitsHead;      
-fitsread       = fitsRead;     
+// fitshead       = yao_fitshead;      
+// fitsread       = yao_fitsread;     
+// fitswrite      = yao_fitswrite;     
 fitshdrvalue   = fitsHdrValue;  
 fitshdrcomment = fitsHdrComment;
 fitshdrhistory = fitsHdrHistory;
-fitswrite      = fitsWrite;     
 fitsdeletecard = fitsDeleteCard;
 fitsaddcard    = fitsAddCard;   
 fitsaddcomment = fitsAddComment;

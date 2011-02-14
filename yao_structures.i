@@ -67,6 +67,22 @@ struct sim_struct
                           // e.g. sim.svipc = 1 -> split WFS/DM 
                           // e.g. sim.svipc = 2 -> parallelize PSFs
                           // e.g. sim.svipc = 3 -> WFS/DM & PSFs
+  long    svipc_wfs_nfork;// nb of forks when splitting WFSs (one or more WFS per
+                          // fork). if not set, will be min([nwfs,nprocessors]);
+  pointer svipc_wfs_forknb;// sim.svipc_wfs_forknb is a vector, with nb of
+                          // elements = # of WFS, and which contains
+                          // the fork# for each WFS; e.g.:
+                          // sim.svipc_wfs_forknb = &([1,1,2,2,3]);
+                          // means run WFS 1 and 2 in WFS fork 1
+                          //       run WFS 3 and 4 in WFS fork 2
+                          //   and run WFS 5 in WFS fork 3.
+                          // as a special case, 0 means run in WFS
+                          // parent (the one from which all WFS
+                          // children were forked). To be implemented
+                          // at a later stage.  If this vector is not
+                          // specified, we will spread the WFS evenly
+                          // (as best as possible) within the N
+                          // (=sim.svipc_wfs_nfork) WFS forks.
   long    shmkey;         // shared memory key (there's a default).
                           // Change to run multiple simul in parallel.
   long    semkey;         // shared memory key (there's a default)

@@ -48,7 +48,7 @@ system= { legend= "System 0ght (4)",
       textStyle= { color= 254, font= 0x08, height= 0.016370,
         orient= 0, alignH= 0, alignV= 0, opaque= 0 }}}}
 system= { legend= "System 0ght (4)",
-  viewport= { 0.06, 0.40, 0.24, 0.41 }, 
+  viewport= { 0.06, 0.40, 0.25, 0.42 }, 
   ticks= {
 
     horiz= {
@@ -76,7 +76,7 @@ system= { legend= "System 0ght (4)",
     frame= 1,
     frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
 system= { legend= "System 0ght (4)",
-  viewport= { 0.06, 0.40, 0.45, 0.61 },  
+  viewport= { 0.06, 0.40, 0.455, 0.615 },  
   ticks= {
 
     horiz= {
@@ -90,7 +90,7 @@ system= { legend= "System 0ght (4)",
         orient= 0, alignH= 0, alignV= 0, opaque= 0 }}}}
         
 system= { legend= "System 0ght (4)",
-  viewport= { 0.44, 0.79, 0.24, 0.59 },
+  viewport= { 0.44, 0.79, 0.25, 0.60 },
   ticks= {
 
     horiz= {

@@ -761,17 +761,17 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
    mat_kl2dm(1:240,1:240) = *kl2dm(1);
    mat_kl2dm(241:564,241:564) = *kl2dm(2);
    mat_kl2dm(565:,565:) = *kl2dm(3);
-   fitsWrite, "mat_kl2dm_filt111.fits",mat_kl2dm;
+   yao_fitswrite, "mat_kl2dm_filt111.fits",mat_kl2dm;
    tab_ei_val = float(684);
    tab_ei_val = _(*ei_val(1),*ei_val(2),*ei_val(3));
-   fitsWrite, "tab_ei_val_filt111.fits",tab_ei_val;
+   yao_fitswrite, "tab_ei_val_filt111.fits",tab_ei_val;
  
      
    b = kl_basis_in_dm_space(1, 3,eigen,extrap="extrap_kl.mat");
    will return a 240x240 array
    plot, b(,1); //first mode = Astig (piston/TT have been filtered)
    to see the modes:
-   inf_fun = fitsRead("KLDMmodes_DM1_IF_nrmodes3.fits");
+   inf_fun = yao_fitsread("KLDMmodes_DM1_IF_nrmodes3.fits");
    if_nb   = dimsof(inf_fun)(4);//nb of IF
    dim = dimsof(inf_fun)(2);//size of the support
    dm_mode = b(+,)*(inf_fun(*,))(,+);
@@ -844,7 +844,7 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   //save influence functions for latter:
   if(n_rm_modes == []) n_rm_modes = 0;
   name=swrite(format="KLDMmodes_DM%d_IF_nrmodes%d.fits",nm,n_rm_modes(1));
-  fitsWrite,name,inf_fun;
+  yao_fitswrite,name,inf_fun;
   
   //-------------------------------------------------------
   //Step1 : Computing geometrique covariance matrix ...

@@ -83,7 +83,7 @@ dm(n).iffile	   = "";
 dm(n).alt          = 0.;
 dm(n).unitpervolt =  0.0005;
 dm(n).push4imat    = 10;
-dm(n).gain         = 0.5;
+dm(n).gain         = 0.3;
 
 //-------------------------------
 mat.condition      = &([15.,15.]);

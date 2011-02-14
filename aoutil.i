@@ -143,8 +143,8 @@ func create_yao_window(dpi)
   // dpi is in fact already stored in extern (sigh)
   if (!dpi) dpi=default_dpi;
   
-  winkill,0;
-  winkill,2;
+  if (window_exists(0)) winkill,0;
+  if (window_exists(2)) winkill,2;
 
   if (yao_pyk_parent_id) {
     // there's a GUI, re-parent within GUI drawingarea:
@@ -343,7 +343,7 @@ func graphic_config(subsystemnum,dmnum)
                        "# of active actuators= %d, # of extrapolated actuators=%d",
                        dm(i).alt,maxobjrad,dm(i)._nact,dm(i)._enact);
       plt,comment,0.06,0.22,tosys=0,justify="LT";
-      plt,sim.name,0.01,0.01,tosys=0;
+      plt,sim.name,0.01,0.227,tosys=0;
       limits; lim=limits(); limits,lim(1)*1.1,lim(2)*1.1,lim(3)*1.1,lim(4)*1.1;
       hcp;
       if (sim.debug >=1) typeReturn;
@@ -384,7 +384,7 @@ func graphic_config(subsystemnum,dmnum)
 
     myxytitles,"Beam outline [m]","Beam outline [m]",[0.02,0.02];
     mypltitle,swrite(format="Patches of guide star beams on DMs, Subsystem %d",nss);
-    plt,sim.name,0.01,0.01,tosys=0;
+    plt,sim.name,0.01,0.227,tosys=0;
     limits; lim=limits(); limits,lim(1)*1.1,lim(2)*1.1,lim(3)*1.1,lim(4)*1.1;
     hcp;
     if (sim.debug >=1) typeReturn;
@@ -413,7 +413,18 @@ func check_parameters(void)
   
   // SIM STRUCTURE
   if (sim.pupildiam == 0) {exit,"sim.pupildiam has not been set";}
-
+  if ( ((sim.svipc>>2)&1) && (!((sim.svipc>>0)&1)) ) {
+    write,"If you have (sim.svipc>>2)&1, you should have (sim.svipc>>0)&1";
+    write,"Setting sim.svipc first bit to 1"
+    sim.svipc++;
+    pause,2000;
+  }
+  if (sim.svipc_wfs_nfork>nwfs) {
+    write,"sim.svipc_wfs_nfork > nwfs, setting sim.svipc_wfs_nfork = nwfs"
+    sim.svipc_wfs_nfork = nwfs;
+    pause,2000;
+  }
+  
   // ATM STRUCTURE
   if ((*atm.screen) == []) {exit,"atm.screen has not been set";}
   if (typeof(*atm.screen) != "string") {exit,"*atm.screen is not a string";}
@@ -535,6 +546,16 @@ func check_parameters(void)
     if (wfs(ns).fracIllum == 0) {wfs(ns).fracIllum = 0.5;}
 
     if (wfs(ns).optthroughput == 0) {wfs(ns).optthroughput = 1.0;}
+
+    if (wfs(ns).svipc>1) {
+      if (wfs(ns).type!="hartmann") {
+        write,format="wfs(%d).svipc >1 only for SHWFS, will have no effect\n",ns;
+        wfs(ns).svipc = 0;
+      } else if (wfs(ns).shnxsub < 2) {
+        write,format="wfs(%d).svipc >1 but SH 1x1 sub. Disabling ||.\n",ns;
+        wfs(ns).svipc = 0;
+      }
+    }
     
     wfs.ron = float(wfs.ron);
   }
@@ -913,7 +934,7 @@ func modal_gain_optimization(disp=,update=)
    SEE ALSO:
  */
 {
-  cberr        = fitsRead("cberr.fits"); // CB of actuator error
+  cberr        = yao_fitsread("cberr.fits"); // CB of actuator error
   nGoodSamples = long(2^floor(log(ao.LoopNIter-ao.LoopStartSkip)/log(2)));
   cbmoderr     = atm(,+)*cberr(+,1-nGoodSamples:);// CB of mode coef errors
   modgains     = modalgain*ao.LoopGain; // overall mode gains
@@ -958,7 +979,7 @@ func modal_gain_optimization(disp=,update=)
   if (is_set(update))
   {
     modalgain = bestGains/ao.LoopGain;
-    fitsWrite,YAO_SAVEPATH+ao.LoopModalGainFile,modalgain;
+    yao_fitswrite,YAO_SAVEPATH+ao.LoopModalGainFile,modalgain;
     if (ao.verbose>=1) {write,format="Gains updated and saved in !",ao.LoopModalGainFile;}
   }
 }

@@ -8,7 +8,6 @@ sim.pupildiam      = 64;
 sim.debug          = 0;
 sim.verbose        = 1;
 
-YAO_SAVEPATH="~/.yorick/yao/"; // where to save the output to the simulations
 //-------------------------------
 nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
 wfs = array(wfss,nwfs);
@@ -74,7 +73,7 @@ r0 = 0.10;
 
 //-------------------------------
 atm.dr0at05mic     = tel.diam/r0;  // this is r0=0.2 at 500 nm
-atm.screen	   = &(Y_USER+"data/screengen1024.fits");
+atm.screen	   = &(Y_USER+"data/screen1.fits");
 atm.layerfrac      = &([1.0]);
 atm.layerspeed     = &([12.]);
 atm.layeralt	   = &([0.]);

@@ -45,7 +45,7 @@
  */
 
 
-//write,"Yao FFTW version";
+//require,"svipc.i";
 
 func calc_psf_fast(pupil,phase,scale=)
 /* DOCUMENT func calc_psf_fast(pupil,phase,scale=)
@@ -126,6 +126,10 @@ func init_fftw_wisdom(nlimit)
     _export_wisdom,wisdom_file;
   }
 }
+
+// extern _fftw_init_threads;
+// extern fftw_set_n_threads;
+// extern fftw_get_n_threads;
 
 extern _init_fftw_plans
 /* PROTOTYPE
@@ -227,4 +231,9 @@ extern _cwfs
    float ron, float darkcurrent, int noise, float array mesvec)
 */
 
-fftw_wisdom;
+// _fftw_init_threads;
+// fftw_wisdom;
+// if (fftw_n_threads) fftw_set_n_threads,fftw_n_threads; \
+// else fftw_set_n_threads,nprocs();
+
+

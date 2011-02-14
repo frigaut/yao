@@ -195,11 +195,24 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010dec06";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010dec17";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
+// find and include yao.conf now if any:
+Y_CONF   = get_env("Y_CONF");
+y_user   = streplace(Y_USER,strfind("~",Y_USER),get_env("HOME"))
+if (noneof(Y_CONF)) \
+  Y_CONF = "./:"+y_user+":"+pathform(_(y_user,Y_SITES,Y_SITE)+"conf/");
+  
+path2conf = find_in_path("yao.conf",takefirst=1,path=Y_CONF);
+if (!is_void(path2conf)) {
+  path2conf = dirname(path2conf)+"/";
+  write,format=" Found and included yao.conf in %s\n",path2conf;
+  require,path2conf+"yao.conf";
+ }
+ 
 // before we do anything else (to avoid forking a large process), 
 // let's try to determine what OS we are in:
 f = popen("uname",0); 
@@ -217,7 +230,7 @@ require,"yao_dm.i";
 require,"aoutil.i";
 require,"yao_gui.i";
 require,"utils.i";
-require,"newfits.i";
+require,"yao_newfits.i";
 require,"yao_util.i";
 require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
@@ -226,6 +239,9 @@ require,"yaodh.i";
 
 // compatibility with GUI (yaopy.i)
 func null (arg,..) { return 0; }
+
+
+
 
 // All below is designed to be overwritten by appropriate values 
 // in yaopy.i when using yao through the GUI
@@ -296,12 +312,15 @@ func control_screen(i,init=)
  */
 {
   local x0,y0,x,y;
-  y0 = 0.84;
-  x0 = 0.165;
+  y0 = 0.80;
+  x0 = 0.150;
   ygstep = 0.03;
   mygstep = 0.022;
   sygstep = 0.017;
-  csize = 10;
+  csize = 12;
+  if ( (xft!=[]) && (xft()==1) ) {
+    csfont = "Courier:antialias=0";
+  } else csfont="courier";
 
   /*  y0 = 0.86;
       x0 = 0.05;
@@ -311,26 +330,29 @@ func control_screen(i,init=)
       csize = 18;
   */
   
-  if (is_set(init)) {
+  if (is_set(init) || !window_exists(2)) {
     //    dheight = (nwfs+target._nlambda+1)*sygstep + 10*ygstep;
     //    dheight = long(dheight/0.77*570);
-    winkill,2;  // make sure
-    window,2,width=390,height=350,style="letter.gs",wait=1,dpi=70;
+    if (window_exists(2)) winkill,2;  // make sure
+    window,2,width=410,height=320,style="letter.gs",wait=1,dpi=70;
     //    window,2,width=570,height=dheight,style="letter.gs",wait=1,dpi=70;
     limits,0.,1.,0.,1.;
     progress_bar,0,pbid1,init=[x0,y0-ygstep,x0+0.25,y0-ygstep+0.015];
-    window,0;
-    return;
+    if (is_set(init)) {
+      window_select,0;
+      return;
+    }
   }
 
   window,2;
   fma;
   y = y0;
   if (!remainingTimestring) remainingTimestring="N/A";
-  plt,sim.name+"  /  Time left: "+remainingTimestring,x0,y,tosys=1,height=csize,justify="LA";
+  plt,sim.name+"  /  Time left: "+remainingTimestring,x0,y,tosys=1,\
+    height=csize,justify="LA";
   y -= ygstep;
   it = swrite(format="%d/%d iterations",i,loop.niter);
-  plt,it,x0+0.27,y,tosys=1,height=csize,justify="LA";
+  plt,it,x0+0.27,y,tosys=1,height=csize,justify="LA",font=csfont;
   y -= ygstep;
   progress_bar,i*100./loop.niter,pbid1;
   
@@ -342,7 +364,7 @@ func control_screen(i,init=)
       s = s+"CentG   ";
     }
   }
-  plt,s,x0,y,tosys=1,height=csize,justify="LA",font="courier";
+  plt,s,x0,y,tosys=1,height=csize,justify="LA",font=csfont;
   y -= mygstep;
   for (i=1;i<=nwfs;i++) {
     s = swrite(format="%3i     % 6.3f  % 6.3f  ",i,
@@ -362,7 +384,7 @@ func control_screen(i,init=)
         }
       }
     }
-    plt,s,x0,y,tosys=1,height=csize,justify="LA",font="courier";
+    plt,s,x0,y,tosys=1,height=csize,justify="LA",font=csfont;
     y -= sygstep;
   }
 
@@ -373,13 +395,13 @@ func control_screen(i,init=)
     s = swrite(format="TT Mirror: % 6.3f  % 6.3f",(*dm(wtt)._command)(1),
                (*dm(wtt)._command)(2));
     y -= sygstep;
-    plt,s,x0,y,tosys=1,height=csize,justify="LA",font="courier";
+    plt,s,x0,y,tosys=1,height=csize,justify="LA",font=csfont;
     y -= ygstep;
   }
 
   // print out Strehls:
   plt,"Strehl Ratio  Lambda     Avg     rms     Min     Max",x0,y,tosys=1,height=csize,
-    justify="LA",font="courier";
+    justify="LA",font=csfont;
   y -= sygstep;
   
   for (jl=1;jl<=target._nlambda;jl++) {
@@ -387,14 +409,14 @@ func control_screen(i,init=)
     s = swrite(format="Since Start   %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
                (*target.lambda)(jl),strehlle(avg),strehlle(rms),
                min(strehlle),max(strehlle));
-    plt,s,x0,y,tosys=1,height=csize,justify="LA",font="courier";
+    plt,s,x0,y,tosys=1,height=csize,justify="LA",font=csfont;
     y -= sygstep;
     if (jl == target._nlambda) {
       strehlse = im(max,max,)/sairy;
       s = swrite(format="Instantaneous %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
                  (*target.lambda)(jl),strehlse(avg),strehlse(rms),
                  min(strehlse),max(strehlse));
-      plt,s,x0,y,tosys=1,height=csize,justify="LA",font="courier";
+      plt,s,x0,y,tosys=1,height=csize,justify="LA",font=csfont;
       y -= sygstep;
     }
   }    
@@ -646,7 +668,7 @@ func do_imat(disp=)
       // WFS spots:
       if (is_set(disp)) {
         fma;
-        plt,sim.name,0.01,0.01,tosys=0;
+        plt,sim.name,0.01,0.227,tosys=0;
         if (!allof(wfs.shmethod ==1)) {
           if (wfs_display_mode=="spatial") {
             disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
@@ -976,7 +998,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
 
       // display using disp2d of integrated phases
       fma;
-      plt,sim.name,0.01,0.01,tosys=0;
+      plt,sim.name,0.01,0.227,tosys=0;
       disp2d,cubphase,subpos(1,),subpos(2,),1;
       mypltitle,swrite(format="Mode %d, Normalized eigenvalue = %f",
                      i,eigenvalues(i)/max(eigenvalues)),[0.,-0.005],height=12;
@@ -1140,7 +1162,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     }
 
     // read the first one, determine dimensions, stuff it:
-    tmp      = fitsRead((*atm.screen)(1));
+    tmp      = yao_fitsread((*atm.screen)(1));
     dimx     = dimsof(tmp)(2);
     dimy     = dimsof(tmp)(3);
     screendim = [dimx,dimy];
@@ -1156,7 +1178,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       if (sim.verbose>=1) {
         write,format="Reading phase screen \"%s\"\n",(*atm.screen)(i);
       }
-      pscreens(1:dimx,,i) = fitsRead((*atm.screen)(i));
+      pscreens(1:dimx,,i) = yao_fitsread((*atm.screen)(i));
     }
 
     // Extend the phase screen length for safe wrapping:
@@ -1198,7 +1220,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       if (sim.verbose) {
         write,format="Reading phase map for optics \"%s\"\n",opt(1).phasemaps;
       }
-      tmp = fitsRead(YAO_SAVEPATH+opt(1).phasemaps);
+      tmp = yao_fitsread(YAO_SAVEPATH+opt(1).phasemaps);
       optdims      = dimsof(tmp);
       optdimx      = optdims(2);
       optdimy      = optdims(3);
@@ -1214,7 +1236,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
         if (sim.verbose>=1) {
           write,format="Reading phase map for optics \"%s\"\n",opt(i).phasemaps;
         }
-        tmp = fitsRead(YAO_SAVEPATH+opt(i).phasemaps);
+        tmp = yao_fitsread(YAO_SAVEPATH+opt(i).phasemaps);
         if (anyof(dimsof(tmp) != optdims))
           error,"All optics phase maps should have the same dimensions";
         optphasemaps(,,i) = float(tmp);
@@ -1456,6 +1478,8 @@ func get_turb_phase(iter,nn,type)
   // here we have a branch to be able to process wfs and targets with the same
   // subroutine, this one.
   if (type == "wfs") {
+    // mod 2011jan19 w/ DG to get rid of screens above LGS
+    if (wfs(nn).gsalt>0) nscreens = long(sum(*atm.layeralt < wfs(nn).gsalt));
     // stuff xshifts with fractionnal offsets, add xposvec for each screen
     xshifts = wfsxposcub(,,nn)+xposvec(iter,)(-,);
     yshifts = wfsyposcub(,,nn)+yposvec(iter,)(-,);
@@ -1873,8 +1897,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       grow,cent,sim._size/2+1;
     } else if (wfs(i).type == "zernike") {
       grow,cent,sim._size/2+1;
-    } else if (wfs(i).type == "pyramid") {
-      grow,cent,sim._size/2+1;
     } else {
       if (cent == []){        
         grow,cent,sim._size/2+1;
@@ -1925,7 +1947,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //==================================
 
   if (is_set(disp) || (sim.debug>0)) {
-    if (!yaopy) { // set if using pygtk GUI, which prevents remapping a new window
+    if (!yaopy) {
+      // set if using pygtk GUI, which prevents remapping a new window
       status = create_yao_window();
     }
     if (wfs_display_mode=="spatial") {
@@ -2029,7 +2052,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   mem = wfs.filtertilt; wfs.filtertilt *= 0n;
 
   // step per pixel to have a x" tilt:
-  push = 0.05; // in arcsec
+  push = 0.005; // in arcsec
 
   // tip:
   mircube *= 0.0f;
@@ -2113,15 +2136,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose>=1) {
         write,format="  >> Reading file %s\n",dm(n).iffile;
       }
-      dm(n)._def = &(float(fitsRead(YAO_SAVEPATH+dm(n).iffile)));
+      dm(n)._def = &(float(yao_fitsread(YAO_SAVEPATH+dm(n).iffile)));
       dm(n)._nact = dimsof(*(dm(n)._def))(4);
       if ( dm(n).type == "stackarray" ) {
-        dm(n)._x = &(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=1));
-        dm(n)._y = &(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=2));
+        dm(n)._x = &(yao_fitsread(YAO_SAVEPATH+dm(n).iffile,hdu=1));
+        dm(n)._y = &(yao_fitsread(YAO_SAVEPATH+dm(n).iffile,hdu=2));
         if (dm(n).elt == 1) {
           dm(n)._eltdefsize = dimsof(*(dm(n)._def))(2);
-          dm(n)._i1 = &(int(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=3)));
-          dm(n)._j1 = &(int(fitsRead(YAO_SAVEPATH+dm(n).iffile,hdu=4)));
+          dm(n)._i1 = &(int(yao_fitsread(YAO_SAVEPATH+dm(n).iffile,hdu=3)));
+          dm(n)._j1 = &(int(yao_fitsread(YAO_SAVEPATH+dm(n).iffile,hdu=4)));
         }
       }
 
@@ -2129,14 +2152,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         if (sim.verbose>=1) {
           write,format="  >> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
         }
-        dm(n)._edef = &(float(fitsRead(YAO_SAVEPATH+dm(n)._eiffile)));
+        dm(n)._edef = &(float(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile)));
         dm(n)._enact = dimsof(*(dm(n)._edef))(4);
         if ( dm(n).type == "stackarray" ) {
-          dm(n)._ex = &(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=1));
-          dm(n)._ey = &(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=2));
+          dm(n)._ex = &(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile,hdu=1));
+          dm(n)._ey = &(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile,hdu=2));
           if (dm(n).elt == 1) {
-            dm(n)._ei1 = &(int(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=3)));
-            dm(n)._ej1 = &(int(fitsRead(YAO_SAVEPATH+dm(n)._eiffile,hdu=4)));
+            dm(n)._ei1 = &(int(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile,hdu=3)));
+            dm(n)._ej1 = &(int(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile,hdu=4)));
           }
         }
       }
@@ -2151,6 +2174,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         remove, YAO_SAVEPATH+dm(n)._eiffile;        
       }
       if (disp) { plsys,1; animate,1; }
+      
       if (dm(n).type == "bimorph") {
         make_curvature_dm, n, disp=disp,cobs=tel.cobs;
       } else if (dm(n).type == "stackarray") {
@@ -2184,14 +2208,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose>=1) {
         write,format="\n  >> Storing influence functions in %s...",dm(n).iffile;
       }
-      fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
+      yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
       if (sim.verbose>=1) write,"Done";
       if ( dm(n).type == "stackarray" ) {
-        fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
-        fitsWrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._y),exttype="IMAGE",append=1;
+        yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
+        yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._y),exttype="IMAGE",append=1;
         if (dm(n).elt == 1) {
-          fitsWrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._i1)),exttype="IMAGE",append=1;
-          fitsWrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._j1)),exttype="IMAGE",append=1;
+          yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._i1)),exttype="IMAGE",append=1;
+          yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._j1)),exttype="IMAGE",append=1;
         }
       }
     }
@@ -2231,7 +2255,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if (!fileExist(YAO_SAVEPATH+mat.file)){
       if (mat.method == "mmse-sparse" && fileExist(YAO_SAVEPATH + parprefix+"-mat.fits")){ // convert the full matrix into a sparse matrix
         write, "Saving " + parprefix + "-mat.fits" + " as a sparse matrix";
-        tmp = fitsRead(YAO_SAVEPATH+ parprefix + "-mat.fits");
+        tmp = yao_fitsread(YAO_SAVEPATH+ parprefix + "-mat.fits");
         iMat = tmp(,,1);
         iMatSP = sprco(float(iMat));
         save_rco,iMatSP,YAO_SAVEPATH+mat.file;
@@ -2240,7 +2264,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         write, "Saving " + parprefix + "-iMat.rco" + " as a full matrix";
         iMatSP = restore_rco(YAO_SAVEPATH + parprefix+"-iMat.rco");
         iMat = rcoinf(iMatSP);
-        fitsWrite, YAO_SAVEPATH + mat.file, [iMat,iMat];
+        yao_fitswrite, YAO_SAVEPATH + mat.file, [iMat,iMat];
         svd = 1; // need to generate a new reconstructor
       } else {
         need_new_iMat = 1;
@@ -2380,22 +2404,22 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
 
           // rewrite influence function file:
-          fitsWrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._def);
-          fitsWrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._x),exttype="IMAGE",append=1;
-          fitsWrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._y),exttype="IMAGE",append=1;
+          yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._def);
+          yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._x),exttype="IMAGE",append=1;
+          yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._y),exttype="IMAGE",append=1;
           if (dm(nm).elt == 1) {
-            fitsWrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._i1)),exttype="IMAGE",append=1;
-            fitsWrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;            
+            yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._i1)),exttype="IMAGE",append=1;
+            yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;            
           }
           dm(nm)._nact = (dimsof(*(dm(nm)._def)))(4);
 
           // write extrapolated actuator influence functions file:
-          fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._edef);
-          fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ex),exttype="IMAGE",append=1;
-          fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ey),exttype="IMAGE",append=1;
+          yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._edef);
+          yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ex),exttype="IMAGE",append=1;
+          yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ey),exttype="IMAGE",append=1;
           if (dm(nm).elt == 1) {
-            fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ei1)),exttype="IMAGE",append=1;
-            fitsWrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ej1)),exttype="IMAGE",append=1;            
+            yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ei1)),exttype="IMAGE",append=1;
+            yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ej1)),exttype="IMAGE",append=1;            
           }
           dm(nm)._enact = (dimsof(*(dm(nm)._edef)))(4);
 
@@ -2461,7 +2485,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (sim.verbose >= 1) {
         write,format="Reading valid to extrap. matrix %s\n",dm(nm).ecmatfile;
       }
-      dm(nm)._extrapcmat = fitsRead(YAO_SAVEPATH+dm(nm).ecmatfile);
+      dm(nm)._extrapcmat = yao_fitsread(YAO_SAVEPATH+dm(nm).ecmatfile);
 
     } else {
 
@@ -2514,7 +2538,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
 
       if (sim.verbose>=1) {write,format=" >> Reading file %s\n\n",loop.modalgainfile;}
-      modalgain = fitsRead(YAO_SAVEPATH+loop.modalgainfile);
+      modalgain = yao_fitsread(YAO_SAVEPATH+loop.modalgainfile);
 
     }
   
@@ -2541,32 +2565,32 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
     if (sim.verbose>=1) {write,format="  >> Reading file %s\n",mat.file;}
-    if (mat.method != "mmse-sparse"){    
+    if (mat.method != "mmse-sparse") {    
       // read out mat file and stuff iMat and cMat:
-      tmp = fitsRead(YAO_SAVEPATH+mat.file);
+      tmp = yao_fitsread(YAO_SAVEPATH+mat.file);
       iMat = tmp(,,1);
       cMat = transpose(tmp(,,2));
       tmp = [];
       if (anyof(dm.fitvirtualdm)){
         if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){          
-          dMat = fitsRead(YAO_SAVEPATH + parprefix + "-dMat.fits");
+          dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
         } else {
           svd = 1;
         }
         if (fileExist(YAO_SAVEPATH+parprefix+"-cMat.fits")){          
-          cMat = fitsRead(YAO_SAVEPATH + parprefix + "-cMat.fits");
+          cMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-cMat.fits");
         } else {
           svd = 1;
         }        
       }
     } else {
-      iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
+      iMatSP = GxSP = restore_rco(YAO_SAVEPATH+mat.file);
       if (fileExist(YAO_SAVEPATH+parprefix+"-AtAreg.ruo")){
         AtAregSP = restore_ruo(YAO_SAVEPATH+parprefix+"-AtAreg.ruo");
       } else {
         svd = 1;
       }
-      if (anyof(dm.fitvirtualdm)){
+      if (anyof(dm.fitvirtualdm)) {
         if (fileExist(YAO_SAVEPATH+parprefix+"-polcMat.rco")){
           polcMatSP = restore_rco(YAO_SAVEPATH+parprefix+"-polcMat.rco");
         } else {
@@ -2629,7 +2653,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // in the opposite case, plus if svd=1 (request re-do SVD):
   if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
-    if (mat.method == "svd"){
+    if (mat.method == "svd") {
       if (sim.verbose>=1) {
         write,">> Preparing SVD and computing command matrice";
       }
@@ -2652,7 +2676,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         cMat(wssdm,wsswfs) = cmat;
       }
 
-    } else if (mat.method == "mmse"){
+    } else if (mat.method == "mmse") {
 
       // create the regularization matrices for each DM      
       nAct = (dimsof(iMat))(3);
@@ -2722,7 +2746,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
 
         cMat = LUsolve(AtA+Cphi)(,+)*Gx(,+);
-        fitsWrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
+        yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
         
         realDMs = where(!dm.virtual); // DMs used to compensate wavefront
         estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront  
@@ -2764,7 +2788,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         Dterm = Ga(,+)*fMat(+,)-Gx;
         polcMat = Gx(+,)*Dterm(+,)-Cphi;
         dMat = LUsolve(AtA+Cphi)(,+)*polcMat(+,);
-        fitsWrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
+        yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
       } else {
         Cphi = array(float,[2,nAct,nAct]);
 
@@ -2779,7 +2803,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
       
     } else if (mat.method == "mmse-sparse"){
-
+      
       // create the regularization matrices for each DM
       nAct = iMatSP.r;
       nDMs = numberof(dm);
@@ -2830,7 +2854,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       }
       
-      if (anyof(dm.fitvirtualdm)){
+      if (anyof(dm.fitvirtualdm)) {
         estAct = []; // actuators used to estimate wavefront
         realAct = []; // real (non virtual) actuators used to compensate the wavefront
         actno = 0;
@@ -2881,10 +2905,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         nEstAct =sum(dm(where(!dm.fitvirtualdm))._nact);
         nEstDMs = numberof(where(!dm.fitvirtualdm));
         
-        for (nm=1;nm<=numberof(dm);nm++){
-          if (dm(nm).virtual){continue;} // no virtual DMs in the rows
+        for (nm=1;nm<=numberof(dm);nm++) {
+          if (dm(nm).virtual){ continue; } // no virtual DMs in the rows
           
-          if (dm(nm).fitvirtualdm){
+          if (dm(nm).fitvirtualdm) {
             dmfMat = rcotr(*dm(nm)._fMat);
             vdmidx = [];
             for (mm=1;mm<=nEstDMs;mm++){
@@ -2916,8 +2940,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                 rcobuild, fMatSP, row, mat.sparse_thresh;
               }
             }
-        }        
-      }
+          }        
+        }
 
         fMatSP = rcotr(fMatSP);
 
@@ -2937,8 +2961,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
       } else {
         GxSP = iMatSP;
-      AtA = rcoata(iMatSP);
-      AtAregSP = ruoadd(AtA,CphiSP);
+        AtA = rcoata(iMatSP);
+        AtAregSP = ruoadd(AtA,CphiSP);
       }
       
       save_rco,iMatSP,YAO_SAVEPATH+mat.file;
@@ -2959,9 +2983,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
       // save the results:
       if (noneof(dm.fitvirtualdm)){
-      fitsWrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
+      yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
       } else { // just save the iMat and force the recreation of cMat on reload
-        fitsWrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
+        yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
       }
     } 
   }
@@ -3110,7 +3134,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    nographinit   = not sure. this must be for the GUI
    anim          = set to 1 to use double buffering. Avoids flicker but
                    might confuse the user if not turned off in normal operation
-                   see animate() yorick function
+                   see animate() yorick function. ON by default.
    savephase     = set to save residual wavefront on first target as fits file 
    SEE ALSO: aoread, aoinit, go, restart
  */
@@ -3176,8 +3200,8 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   extern ditherCosLast, ditherSinLast, ditherMesCos, ditherMesSin;
   extern dispImImav;
   extern loopCounter, nshots;
-  extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag;
-  extern animFlag;
+  extern savecbFlag, dpiFlag, controlscreenFlag;
+  extern dispFlag, nographinitFlag, animFlag;
   extern aoloop_disp,aoloop_savecb;
   extern commb,errmb; // minibuffers
   extern default_dpi;
@@ -3213,16 +3237,16 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   
   // Some arrays initialization:
   looptime      = 0.;
-  mircube = array(float,[3,size,size,ndm]);
+  mircube       = array(float,[3,size,size,ndm]);
   command       = array(float,sum(dm._nact));
   wfsMesHistory = array(float,[2,sum(wfs._nmes),loop.framedelay+1]);
   cubphase      = array(float,[3,size,size,target._ntarget]);
-  im          = array(float,[3,size,size,target._ntarget]);
+  im            = array(float,[3,size,size,target._ntarget]);
   imav          = array(float,[4,size,size,target._ntarget,target._nlambda]);
   imtmp         = array(float,[2,size,size]);
   airy          = calc_psf_fast(pupil,pupil*0.);
   sairy         = max(airy);
-  fwhm = e50 = array(float,[2,target._ntarget,target._nlambda]);
+  fwhm   = e50  = array(float,[2,target._ntarget,target._nlambda]);
   pp            = array(complex,[2,size,size]);
   sphase        = array(float,[2,_n,_n]);
   bphase        = array(float,[2,size,size]);
@@ -3347,9 +3371,6 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   oldcontrolscreen = controlscreen;
   
   // Main loop:
-  if (animFlag&&dispFlag) {
-    plsys,1; animate,1;
-  }
 
   loopCounter=0;
   nshots = -1;
@@ -3369,6 +3390,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
     status = init_sync();
   }
 
+  if (animFlag && dispFlag) {
+    plsys,1; animate,1;
+  }
+  
   gui_message,"Initializing loop...done. \"go\" to start, \"pause\" to pause";
 }
 
@@ -3399,8 +3424,9 @@ func go(nshot,all=)
  */
 
 {
-  extern niterok, starttime, endtime, endtime_str, now, nshots;
-  extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag, nographinitFlag,savephaseFlag;
+  extern niterok, starttime, endtime, endtime_str, now2, nshots;
+  extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag;
+  extern nographinitFlag,savephaseFlag;
   extern cbmes, cbcom, cberr;
   extern iMatSP, AtAregSP
   extern commb,errmb; // minibuffers (last 10 iterations)
@@ -3424,7 +3450,7 @@ func go(nshot,all=)
 
   if (loopCounter==0) {
     // initialize timers
-    tic,2; starttime = _nowtime(2); 
+    tic,2; starttime = _nowtime(2);
   }
   
   go_start:  now = tac(2);
@@ -3440,6 +3466,7 @@ func go(nshot,all=)
   if (loopCounter>loop.niter) {
     exit,"Can't continue: loopCounter > loop.niter !";
   }
+  
   i=loopCounter;
   tic; time(1) = tac();
 
@@ -3483,7 +3510,6 @@ func go(nshot,all=)
   if (anyof([sim.svipc>>0,sim.svipc>>2]&1)) { // parallel computing.
     svipc_wfsmes = topwfs_svipc();
   } else WfsMes = mult_wfs(i,disp=disp);
-
   time(2) +=  tac();
 
   ok  = statsokvec(i);
@@ -3669,27 +3695,28 @@ func go(nshot,all=)
 
   time(5) += tac();
   
-  // get the residual phase; initially for the first target
-  // display and save the residual wavefront
-  residual_phase=get_phase2d_from_dms(1,"target") +
-                 get_phase2d_from_optics(1,"target") +
-                 get_turb_phase(i,1,"target");
-
-  residual_phase1d = residual_phase(where(pupil > 0));
-  residual_phase1d -= min(residual_phase1d);
-  
-  residual_phase(where(pupil > 0)) = residual_phase1d;
-
-  if (savephase){
-    result=fitsWrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));
-  } 
-    
   ok = ok*((i % loop.stats_every) == 0); // accumulate stats only every 4 iter.
   
   okdisp = ( is_set(disp) && (((i-1) % disp) == 0) );
   if (nshots>0) okdisp=is_set(disp);
   okcscreen = ( is_set(controlscreen) && (((i-1) % controlscreen) == 0) );
   if (is_set(controlscreen) && (i == loop.niter)) okcscreen=1;  // display at last iteration
+
+  if (savephase||okdisp) {
+    // get the residual phase; initially for the first target
+    // display and save the residual wavefront
+    residual_phase=get_phase2d_from_dms(1,"target") +
+                   get_phase2d_from_optics(1,"target") +
+                   get_turb_phase(i,1,"target");
+
+    residual_phase1d = residual_phase(where(pupil > 0));
+    residual_phase1d -= min(residual_phase1d);
+    residual_phase(where(pupil > 0)) = residual_phase1d;
+
+    result=yao_fitswrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));
+  } 
+    
+
 
   // Computes the instantaneous PSF:
   if (ok) {
@@ -3702,6 +3729,10 @@ func go(nshot,all=)
         // results are ready.
         im   = shm_read(shmkey,"imsp");
         imav = shm_read(shmkey,"imlp");
+        niterok += 1;
+        grow,itv,i;
+        grow,strehlsp,im(max,max,1)/sairy;
+        grow,strehllp,imav(max,max,1,0)/sairy/(niterok+1e-5);
       }
       extern psf_child_started;
       // give the go for next batch:
@@ -3726,11 +3757,11 @@ func go(nshot,all=)
         // Accumulate statistics:
         imav(,,,jl) = imav(,,,jl) + im;
       }
+      niterok += 1;
+      grow,itv,i;
+      grow,strehlsp,im(max,max,1)/sairy;
+      grow,strehllp,imav(max,max,1,0)/sairy/(niterok+1e-5);
     }
-    niterok += 1;
-    grow,itv,i;
-    grow,strehlsp,im(max,max,1)/sairy;
-    grow,strehllp,imav(max,max,1,0)/sairy/(niterok+1e-5);
   }
 
   time(6) += tac();
@@ -3745,9 +3776,9 @@ func go(nshot,all=)
   }
     
   if (okdisp) {
-    fma;
+    if (!animFlag) fma;
     // PSF Images
-    plt,sim.name,0.01,0.01,tosys=0;
+    plt,sim.name,0.01,0.227,tosys=0;
     if (dispImImav) {
       disp2d,imav,*target.xposition,*target.yposition,1,power=0.5;
     } else {
@@ -3758,7 +3789,7 @@ func go(nshot,all=)
         type="none",marks=1,color="red";
     }
     mypltitle,"Instantaneous PSFs",[0.,-0.00],height=12;
-    myxytitles,"","arcsec",[0.01,0.01],height=12;
+    myxytitles,"","arcsec",[0.005,0.01],height=12;
 
     // WFS spots
     if (!allof(wfs.shmethod ==1)) {
@@ -3790,7 +3821,7 @@ func go(nshot,all=)
       }
     }
     // mypltitle,"DM(s)",[0.,0.008],height=12;
-    myxytitles,"","DM(s)",[0.010,0.],height=12;
+    myxytitles,"","DM(s)",[0.005,0.],height=12;
 
     // Strehl plots
     if (anyof(itv)) {
@@ -3798,7 +3829,7 @@ func go(nshot,all=)
       plg,strehlsp,itv;
       plg,strehllp,itv,color="red";
       myxytitles,"",swrite(format="Strehl @ %.2f mic",        \
-                                     (*target.lambda)(0)),[0.010,-0.005],height=12;
+                                     (*target.lambda)(0)),[0.005,-0.005],height=12;
       range,0;
     }
     // Display residual wavefront
@@ -3807,6 +3838,7 @@ func go(nshot,all=)
     mypltitle,"Residual wavefront on target#1",[0.,-0.0];
     
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
+    if (animFlag && (nshots!=0) && (loopCounter<loop.niter) ) fma;
   }
 
   if (okcscreen) { control_screen,i; }
@@ -3822,7 +3854,7 @@ func go(nshot,all=)
 
   glt      = 0.02;
   if (i==1) {glt=1.;}
-    
+
   looptime = (tac(2)-now)*glt + looptime*(1.-glt);
   remainingTime = float(loop.niter-i)*looptime;
   remainingTimestring = secToHMS(remainingTime);
@@ -3873,7 +3905,7 @@ func go(nshot,all=)
   time(8) += tac();
 
   if (nshots==0) {
-    if (animFlag&&dispFlag) {
+    if (animFlag && dispFlag) {
       plsys,1;
       animate,0;
     }
@@ -3888,10 +3920,11 @@ func go(nshot,all=)
   } else {
     if (yaopy) pyk,"aoloop_to_end()";
     gui_hide_statusbar1;
-    if (animFlag&&dispFlag) {
+    if (animFlag && dispFlag) {
       plsys,1;
       animate,0;
     }
+    if ((sim.svipc>>0)&1) sem_take,semkey,1;
     after_loop;
     //    yicon = Y_HOME+"icons/yicon48.png";
     //    system,swrite(format=                                         \
@@ -4017,9 +4050,9 @@ func after_loop(void)
   
   // Save the circular buffers:
   if (is_set(savecb)) {
-    fitsWrite,YAO_SAVEPATH+"cbmes.fits",cbmes;
-    fitsWrite,YAO_SAVEPATH+"cbcom.fits",cbcom;
-    fitsWrite,YAO_SAVEPATH+"cberr.fits",cberr;
+    yao_fitswrite,YAO_SAVEPATH+"cbmes.fits",cbmes;
+    yao_fitswrite,YAO_SAVEPATH+"cbcom.fits",cbcom;
+    yao_fitswrite,YAO_SAVEPATH+"cberr.fits",cberr;
     write,"cbmes, cbcom and cberr are saved.";
     write,"You can run modal_gain_optimization() to optimize and update the gains";
   }
@@ -4084,7 +4117,7 @@ func after_loop(void)
   write,f,print(loop);
   close,f;
   
-  fitsWrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav;
+  yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav;
 
   // saved graphics
   window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
@@ -4111,7 +4144,7 @@ func after_loop(void)
     myxytitles,"Iterations","Strehl";
     hcp;
   }
-  plt,sim.name,0.01,0.01,tosys=0;
+  plt,sim.name,0.01,0.227,tosys=0;
   hcp_finish;
   
   gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...DONE",YAO_SAVEPATH+parprefix);

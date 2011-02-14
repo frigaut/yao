@@ -20,7 +20,7 @@
  dh_sin_coeff      		- disk harmonic func sin wave coefficient
  dh_var           	 	- disk harmonic variance
  load_dh_bjprime_zero_tab	- load init file
- prepdiskharmonic		- prepares the frame with pupil 
+ prepdiskharmonic		- prepares the frame with pupil
 
 
  Original in MatLab: Norman Mark Milton (August 25, 2005)
@@ -30,8 +30,8 @@
 
   require,"bessel.i";
   // require,"hdf5.i";
-  
-/* how to use it: 
+
+/* how to use it:
    Example:
 
    prepdiskharmonic,128,100;
@@ -50,14 +50,14 @@ func prepdiskharmonic(size,diameter,xc,yc)
 /* DOCUMENT prepdiskharmonic(size,diameter,xc,yc)
  * Call this function to set up the geometry for subsequent calls
  * to the diskharmonic functions. This is excatly the same function
- * as prepzernike; I just included it here with another name for 
+ * as prepzernike; I just included it here with another name for
  * completeness of this disk harmonics file.
  * size : size of the 2d array on which future "diskharmonic" will be returned
  * diameter : diameter of the pupil in pixel in the array
  * xc, yc (optional) : Coordinates (in pixels of the center of the pupil)
  * Example:
  * > prepdiskharmonic,128,100
- * SEE ALSO: 
+ * SEE ALSO:
  */
 {
   extern zdim,zr,ztheta,zmask,zrmod,zmaskmod;
@@ -79,7 +79,7 @@ func prepdiskharmonic(size,diameter,xc,yc)
 
 //============================================================================
 
-func dh_alt_elem(order) 
+func dh_alt_elem(order)
 {
 /* DOCUMENT:
    dh_alt_elem: disk harmonic elements (alternate order)
@@ -91,9 +91,9 @@ func dh_alt_elem(order)
       error,"dh_alt_elem: invalid order number";
   } else {
       n = (2 * order^2) + order + 1;
-  } 
+  }
   return n;
-  }   
+  }
 
 //======================================================================================
 
@@ -105,7 +105,7 @@ func dh_norm(dhn,dhm)
    dhm - Bessel order number
    returns: normalization constant for disk harmonic func
 */
-  
+
   if (dhn < 0) error,"dh_norm: invalid zero number";
   if ((dhn == 0) && (dhm != 0)) error,"dh_norm: invalid Bessel number for order zero";
   if (dhn == 0){
@@ -121,7 +121,7 @@ func dh_norm(dhn,dhm)
 
 //========================================================================================
 
-func dh_dh(dhn,dhm,r,theta) 
+func dh_dh(dhn,dhm,r,theta)
 {
 /* DOCUMENT:
    dh_dh: disk harmonic func evaluation
@@ -141,7 +141,7 @@ func dh_dh(dhn,dhm,r,theta)
 
 //========================================================================================
 
-func dh_bjprime_zero(dhn,dhm) 
+func dh_bjprime_zero(dhn,dhm)
 {
 /* DOCUMENT:
    dh_bjprime_zero: disk harmonic BesselJ' zero
@@ -151,7 +151,7 @@ func dh_bjprime_zero(dhn,dhm)
           func (first kind)
 */
   extern dh_bjprime_zero_tab;
-  
+
   if (dhn < 0) error,"dh_bjprime_zero: invalid zero number";
   mabs = abs(dhm);
   if (dhn == 0) {
@@ -174,7 +174,7 @@ func dh_bjprime_zero(dhn,dhm)
 
 //=====================================================================================
 
-func dh_dhfast(dhm,l,a,r,theta) 
+func dh_dhfast(dhm,l,a,r,theta)
 {
 /* DOCUMENT:
  dh_dhfast: disk harmonic func evaluation (fast)
@@ -192,14 +192,14 @@ func dh_dhfast(dhm,l,a,r,theta)
    d    = a*bessj(mabs,k*r);
    if (dhm > 0) {
     d = sqrt(2)*d*sin(mabs*theta);
-   } else if (dhm < 0) d = sqrt(2)*d*cos(mabs*theta); // matrix elem-by-elem 
-                                                             // multiplication 
-   return d;							     
+   } else if (dhm < 0) d = sqrt(2)*d*cos(mabs*theta); // matrix elem-by-elem
+                                                             // multiplication
+   return d;
 }
 
 //========================================================================================
 
-func dh_alt_index(o,n,m) 
+func dh_alt_index(o,n,m)
 {
 /*
    dh_alt_index: disk harmonic func index (alternate order)
@@ -228,18 +228,18 @@ func dh_alt_index(o,n,m)
           }
        }
     }
-   return i; 
+   return i;
 }
 
 //========================================================================================
 
-func dh_alt_num(o,i) 
+func dh_alt_num(o,i)
 {
 /* DOCUMENT:
   dh_alt_num: disk harmonic func numbers (alternate order)
- 
+
   i - disk harmonic func index number
- 
+
   returns: [n,m] func numbers disk harmonic basis func with
            index i with maximum order o
 */
@@ -259,12 +259,12 @@ func dh_alt_num(o,i)
                       m = floor((m - 1)/2) + 1;
                   }
    }
-   return [n,m];  
+   return [n,m];
 }
 
 //========================================================================================
 
-func dh_cos_coeff(dhm, dhnb, dhmb, k) 
+func dh_cos_coeff(dhm, dhnb, dhmb, k)
 {
 /* DOCUMENT:
    dh_cos_coeff: disk harmonic func cos wave coefficient
@@ -277,11 +277,11 @@ func dh_cos_coeff(dhm, dhnb, dhmb, k)
    returns: value of disk harmonic coefficient for cos wave
 */
    if (dhm == dhmb) {
-       if ((dhm <= 0) & (dhm%2 == 0)) {   
+       if ((dhm <= 0) & (dhm%2 == 0)) {
            c = 2*cos(abs(dhm)*pi/2);
        } else {
            c = 0;
-       } 
+       }
        if (c != 0) {
            abnm = dh_norm(dhnb,dhm);
            kbnm = 2*pi*dh_bjprime_zero(dhnb,dhm);
@@ -298,7 +298,7 @@ func dh_cos_coeff(dhm, dhnb, dhmb, k)
 
 //========================================================================================
 
-func load_dh_bjprime_zero_tab(void) 
+func load_dh_bjprime_zero_tab(void)
 {
 /* DOCUMENT:
    dh_init: Initialize disk harmonic global variables
@@ -307,7 +307,7 @@ extern dh_bjprime_zero_tab;
 // require,"hdf5.i";
 
 // dh_bjprime_zero_tab  = h5read("besseljprimezeros200.h5","/data");
-dh_bjprime_zero_tab  = fits_read(Y_SITE+"data/besseljprimezeros200.fits");
+dh_bjprime_zero_tab  = yao_fitsread(Y_SITE+"data/besseljprimezeros200.fits");
 
 //clear besseljprimezeros200;
 return;
@@ -315,7 +315,7 @@ return;
 
 //=====================================================================================
 
-func dh_dhindex(n,k) 
+func dh_dhindex(n,k)
 {
 /* DOCUMENT:
    dh_dhindex: disk harmonic radial and azimuthal index
@@ -334,7 +334,7 @@ func dh_dhindex(n,k)
 %     error('dh_dhindex: invalid mode number');
 % end
 */
-    
+
    dhm = n - (2 * k);
    if (dhm == 0) {
        dhn = floor(n/2);
@@ -342,22 +342,22 @@ func dh_dhindex(n,k)
              dhn = k + 1;
            } else {
              dhn = n - k + 1;
-	   }  
-   return int([dhn,dhm]);  	   
+	   }
+   return int([dhn,dhm]);
 }
 
 //======================================================================================
 
-func dh_flip_x_coeff(n,m,nb,mb) 
+func dh_flip_x_coeff(n,m,nb,mb)
 {
 /*
   dh_flip_x_coeff: disk harmonic func reflect (about y-axis) coefficient
- 
+
   n   - disk harmonic order number
   m   - disk harmonic azimuthal order number
   nb  - disk harmonic order  number (basis)
   mb  - disk harmonic azimuthal order number (basis)
- 
+
   returns: value of disk harmonic coefficient with reflection (about y-axis)
 */
   c = dh_flip_y_coeff(n,m,nb,mb)*dh_rotate_coeff(n,m,nb,mb,pi);
@@ -366,16 +366,16 @@ func dh_flip_x_coeff(n,m,nb,mb)
 
 //======================================================================================
 
-func dh_flip_y_coeff(n,m,nb,mb) 
+func dh_flip_y_coeff(n,m,nb,mb)
 {
 /*
   dh_flip_y_coeff: disk harmonic func reflect (about x-axis) coefficient
- 
+
   n   - disk harmonic order number
   m   - disk harmonic azimuthal order number
   nb  - disk harmonic order  number (basis)
   mb  - disk harmonic azimuthal order number (basis)
- 
+
   returns: value of disk harmonic coefficient with reflection (about x-axis)
 */
   if (n == nb) {
@@ -390,7 +390,7 @@ func dh_flip_y_coeff(n,m,nb,mb)
 
 //=======================================================================================
 
-func dh_rotate_coeff(dhn,dhm,dhnb,dhmb,theta) 
+func dh_rotate_coeff(dhn,dhm,dhnb,dhmb,theta)
 {
 /* DOCUMENT:
   dh_rotate_coeff: disk harmonic func rotated coefficient
@@ -435,17 +435,17 @@ func dh_rotate_coeff(dhn,dhm,dhnb,dhmb,theta)
 }
 //=============================================================================
 
-func dh_scale_coeff(dhn,dhm,dhnb,dhmb,scale) 
+func dh_scale_coeff(dhn,dhm,dhnb,dhmb,scale)
 {
 /* DOCUMENT:
   dh_scale_coeff: disk harmonic func rescaled coefficient
- 
+
   dhn   - Zero number
   dhm   - Bessel order number
   dhnb  - Zero number (basis)
   dhmb  - Bessel order number (basis)
   scale - radial coordinate scale factor
- 
+
   returns: value of disk harmonic coefficient with radial rescaling
 */
   if (dhm == dhmb) {
@@ -460,18 +460,18 @@ func dh_scale_coeff(dhn,dhm,dhnb,dhmb,scale)
 
 //=================================================================================
 
-func dh_shift_coeff(dhn,dhm,dhnb,dhmb,r0,theta0) 
+func dh_shift_coeff(dhn,dhm,dhnb,dhmb,r0,theta0)
 {
 /*
   dh_shift_coeff: disk harmonic func shifted coefficient
- 
+
   dhn    - Zero number
   dhm    - Bessel order number
   dhnb   - Zero number (basis)
   dhmb   - Bessel order number (basis)
   r0     - radial coordinate of shift (unit circle)
   theta0 - azimuthal coordinate of shift (rad)
- 
+
   returns: value of disk harmonic coefficient with origin shift
 */
 // dhnb = n, dhmb = m, dhn = n', dhm = m' where s + m' = m  or  s = m - m'
@@ -484,27 +484,27 @@ func dh_shift_coeff(dhn,dhm,dhnb,dhmb,r0,theta0)
     if (dhmb == 0) d = dh_shift_term(mbabs,dhn,dhm,dhnb,dhmb,r0,theta0,0);
     if (dhmb < 0) d = sqrt(2) * dh_shift_term(mbabs,dhn,dhm,dhnb,dhmb,r0,theta0,-1);
     if (dhmb > 0) d = sqrt(2) * dh_shift_term(mbabs,dhn,dhm,dhnb,dhmb,r0,theta0,1);
-  } 
+  }
   if (dhm < 0) {
     if (dhmb == 0) d = sqrt(2)*((-1)^mabs)* dh_shift_term(mabs,dhn,dhm,dhnb,dhmb,r0,theta0,-1);
     if (dhmb < 0) {
         d1 = dh_shift_term(sminus,dhn,dhm,dhnb,dhmb,r0,theta0,-1);
         d2 = dh_shift_term(splus,dhn,dhm,dhnb,dhmb,r0,theta0,-1);
         d  = d1 + (((-1)^mabs)*d2);
-    } 
+    }
     if (dhmb > 0) {
         d1 = dh_shift_term(sminus,dhn,dhm,dhnb,dhmb,r0,theta0,1);
         d2 = dh_shift_term(splus,dhn,dhm,dhnb,dhmb,r0,theta0,1);
         d  = d1 + (((-1)^mabs)*d2);
     }
-  } 
+  }
   if (dhm > 0) {
     if (dhmb == 0) d = sqrt(2)*((-1)^mabs)* dh_shift_term(mabs,dhn,dhm,dhnb,dhmb,r0,theta0,1);
     if (dhmb < 0) {
         d1 = dh_shift_term(sminus,dhn,dhm,dhnb,dhmb,r0,theta0,1);
         d2 = dh_shift_term(splus,dhn,dhm,dhnb,dhmb,r0,theta0,1);
         d  = - d1 + (((-1)^mabs) * d2);
-    } 
+    }
     if (dhmb > 0) {
         d1 = dh_shift_term(sminus,dhn,dhm,dhnb,dhmb,r0,theta0,-1);
         d2 = dh_shift_term(splus,dhn,dhm,dhnb,dhmb,r0,theta0,-1);
@@ -516,7 +516,7 @@ func dh_shift_coeff(dhn,dhm,dhnb,dhmb,r0,theta0)
 
 //=========================================================================================
 
-func dh_shift_term(s,dhn,dhm,dhnb,dhmb,r0,theta0,trig) 
+func dh_shift_term(s,dhn,dhm,dhnb,dhmb,r0,theta0,trig)
 {
    anm   = dh_norm(dhn,dhm);
    abnm  = dh_norm(dhnb,dhmb);
@@ -564,7 +564,7 @@ func dh_sin_coeff(dhm,dhnb,dhmb,k)
 func bess_integral(m,f1,f2)
 {
 /* DOCUMENT:
-   calculates the Bessel integral over unit circle 
+   calculates the Bessel integral over unit circle
 */
   if (f1==f2) {
      c = 0.5*(bessj(m,f1)^2-bessj(m-1,f1)*bessj(m+1,f1))
@@ -575,11 +575,11 @@ func bess_integral(m,f1,f2)
 }
 //==============================================================================================
 
-func dh_var(dhn,dhm,D,r0,oscale,vonKarman) 
+func dh_var(dhn,dhm,D,r0,oscale,vonKarman)
 {
 /* DOCUMENT:
   dh_var: disk harmonic variance
- 
+
   dhm       - bessel order number
   dhn       - bessel zero number
   D         - aperture diameter (m)
@@ -593,16 +593,16 @@ func dh_var(dhn,dhm,D,r0,oscale,vonKarman)
 
 if (dhn < 0) error,"dh_var: invalid zero number";
 
-/* 
+/*
 % dh_alpha = 0.023 / (2.0^(5.0 / 3.0));
 % dh_alpha = 0.023 / (2.0^(3.0 / 2.0));
 % dh_alpha = 0.023 / pi;
- 
+
 % dh_alpha = 0.023 / (pi^4);
 % dh_alpha = 2.8 * 10^(-4);
 */
   dh_alpha = 2.6*10^(-4);
- 
+
   lnm      = dh_bjprime_zero(dhn,dhm);
   anm      = dh_norm(dhn,dhm);
 
@@ -622,16 +622,16 @@ func dh_dhfast(dhm,l,a,r,theta)
 {
 /* DOCUMEMNT:
   dh_dhfast: disk harmonic function evaluation (fast)
- 
+
   dhm   - Bessel order number
   l     - disk harmonic spatial frequency
   a     - disk harmonic normalization constant
   r     - radial coordinate
   theta - azimuthal angle coordinate
- 
+
   returns: value of disk harmonic function at specified point
            (real part)
- 
+
 */
   mabs = abs(dhm);
   k    = 2*pi*l;
@@ -644,7 +644,7 @@ func dh_dhfast(dhm,l,a,r,theta)
 
 func dh_bjprime_zero(dhn,dhm)
 {
-/* DOCUMENT: 
+/* DOCUMENT:
   dh_bjprime_zero: disk harmonic BesselJ' zero
 
   dhn - Zero number

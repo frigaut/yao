@@ -1,13 +1,32 @@
-//======================================
-// SVIPC functions for parallelization
-//======================================
-
+/*
+ * SVIPC functions for parallelization
+ *
+ * principle and main actors:
+ * if (sim.svipc>>0)&1 (1):
+ *                   main process:
+ *                        |  svipc_start_forks()
+ *           ----------------------------
+ *           |                          |
+ *         main              1 x topwfs_listen()
+ *                           -> loop on mult_wfs()
+ *
+ * if (sim.svipc>>0)&1 and (sim.svipc>>2)&1 (1+4):
+ *                   main process:
+ *                         |  svipc_start_forks()
+ *           ---------------------------------------------
+ *           |           |                               |
+ *         main     1 x topwfs_listen()           nwfs x wfs_listen(ns);
+ *                  -> loop on svipc_mult_wfs()   -> loop on svipc_single_wfs()
+ *
+ */
+ 
 require,"svipc.i";
 require,"yao_setnsync.i";
 
 nshm    = 50;
-nsem    = 50;
+nsem    = 80;
 
+sem4wfs = 50+2*indgen(20);
 
 func init_keys(void)
 {
@@ -41,7 +60,8 @@ func svipc_init(void)
   // 1             ready from WFS child
   // 3             psf: trigger child PSFs calculation
   // 4             psf: notify parent PSFs ready
-  // 20+ reserved for WFSs ||
+  // 20-50 reserved for WFSs ||
+  // 50-80 reserved for WFS children
 }
 
 
@@ -64,8 +84,11 @@ func svipc_wfs_init(phase,ns)
   if (wfs(ns).svipc<=1) return;
   
   // Bail out if init has already been done for this WFS
-  if (wfs(ns)._svipc_init_done) return;
-
+  if (wfs(ns)._svipc_init_done) {
+    write,format="%s\n","WFS svipc init already done. Bailing out.";
+    return;
+  }
+  
   // Make sure shm has been initialized
   if (!shm_init_done) status = svipc_init();
 
@@ -145,7 +168,7 @@ func svipc_wfs_init(phase,ns)
   }
 
   // restore windows if needed:
-  if (wl!=[]) status = create_yao_window();
+  if (anyof(wl==0)) status = create_yao_window();
   return 0;
 }
 
@@ -177,12 +200,9 @@ func wfs_fork_listen(ns,nf)
   yoffset      = (*wfs(ns)._yoffset)(nf);
   fimny2       = (*wfs(ns)._fimny2)(nf);
 
-  // if (phase!=[]) shm_unvar,phase;
-  
   shm_var,shmkey,swrite(format="wfs%d_fimage",ns),ffimage;
   shm_var,shmkey,swrite(format="wfs%d_phase",ns),phase;
   shm_var,shmkey,swrite(format="wfs%d_mesvec",ns),mesvec;
-  
   
   // then listen and execute ad libitum
   do {
@@ -197,7 +217,6 @@ func wfs_fork_listen(ns,nf)
     if (shm_read(shmkey,"quit_wfs_forks?")(1)) {
       if (sim.verbose>0) {
         write,format="WFS#%d, fork#%d quitting\n> ",ns,nf;
-        //        maybe_prompt;
       }
       yorick_quit;
     }
@@ -205,9 +224,7 @@ func wfs_fork_listen(ns,nf)
     // sync if needed:
     status = sync_wfs_from_master(ns,nf);
 
-    // write,format="%s ","in fork."; info,phase;
-    
-    // do our stuff: 
+    // do our stuff:
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
              *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
              *wfs(ns)._jstart, int(subsize), int(subsize), 
@@ -294,13 +311,14 @@ func svipc_wfs_profile(void)
 
 func svipc_start_forks(void)
 {
-  extern iMat,cMat,dm,atm,wfs;
+  extern iMat,cMat,dm,atm,wfs,sim;
   extern fork_done;
   extern svipc_procname;
   extern all_svipc_procname;
   // sim.svipc bits (also see structure definition in yao_structure.i)
   //   bit 0 (1): parallelize WFS/DM
   //   bit 1 (2): parallelize PSFs
+  //   bit 2 (4): parallelize WFSs (1 fork per WFS)
 
   if (fork_done) {
     write,"forks() already done, ignoring";
@@ -313,12 +331,26 @@ func svipc_start_forks(void)
   //   w0_dpi = window_geometry(0);
   // }
   if (wl!=[]) for (i=1;i<=numberof(wl);i++) winkill,wl(i);
-
+  
   all_svipc_procname = [];
+
+  // we need to defined stuff about forks here, *before* we fork the
+  // main WFS child !
+  // how many WFS children processes?
+  // if not specified in sim.svipc_wfs_nfork, set a value:
+  if (!sim.svipc_wfs_nfork) sim.svipc_wfs_nfork = min([nwfs,nprocs()]);
+  
+  // sim.svipc_wfs_forknb: if not set by user, set a value:
+  if (*sim.svipc_wfs_forknb==[]) {
+    tmp = 1+long((indgen(nwfs)-1.) / nwfs * sim.svipc_wfs_nfork);
+    sim.svipc_wfs_forknb = &tmp;
+  }
+
+
   
   // WFS CHILD
   // spawn just one process, the one taking care of wfsmes.
-  // it could possibly spawn itself other process later (e.g.
+  // It could possibly spawn other process later (e.g.
   // for each of the WFS).
   if ((sim.svipc>>0)&1) {
     
@@ -337,29 +369,54 @@ func svipc_start_forks(void)
       // start listening
       //set_idler,topwfs_listen;
       status = topwfs_listen();
-      exit;
+      return;
     }
   }
 
   // PSFs child
   if ((sim.svipc>>1)&1) {
+    extern psf_child_started;
+    psf_child_started = 0;
     svipc_procname = "PSFs";
     grow,all_svipc_procname,svipc_procname;
     if (fork()==0) { // child
       write,format="PSFs child fork()ed with PID %d\n",getpid();
       // get rid of what we don't need
-      //
+      iMat = cMat = [];
+     //
       // start listening
       // set_idler,psf_listen;
       status = psf_listen();
-      exit;
+      return;
     }
   }
+
+  // WFSs children
+  if ((sim.svipc>>2)&1) {
+        
+    // sim.svipc_wfs_nfork -= 1; // the main WFS thread will take its share.
+    
+    for (nf=1;nf<=sim.svipc_wfs_nfork;nf++) {
+      svipc_procname = swrite(format="WFSs fork %d",nf);
+      grow,all_svipc_procname,svipc_procname;
+      if (fork()==0) { //child
+        write,format="WFS fork %d PID %d\n",nf,getpid();
+        // get rid of what we don't need
+        iMat = cMat = [];
+        for (i=1;i<=ndm;i++) dm(i)._def = &[];
+        // start listening
+        ns = where(*sim.svipc_wfs_forknb==nf);
+        status = wfs_listen(nf,ns);
+        // wfs_listen() will loop and not exit.
+      }
+    }
+  }
+  
     
   fork_done = 1;
   
   // restore windows if needed:
-  if (wl!=[]) status = create_yao_window();
+  if (anyof(wl==0)) status = create_yao_window();
   return 0;
 }
 
@@ -368,35 +425,50 @@ yorick_quit = quit;
 
 func quit
 {
-  shm_write,shmkey,"quit?",&([1]);
-  shm_write,shmkey,"quit_wfs_forks?",&([1]);
-// nforks = sum(clip(wfs.svipc-1,0,));
-  for (i=0;i<=nsem;i++) sem_give,semkey,i,count=100;
-  usleep,50;
-  status = svipc_clean();
+  if (catch(-1)) {
+    write,format="%s\n","Caught problem with closing svipc, exit forced.";
+    yorick_quit;
+  }
+
+  if (shm_init_done) {
+    shm_write,shmkey,"quit?",&([1]);
+    shm_write,shmkey,"quit_wfs_forks?",&([1]);
+    // nforks = sum(clip(wfs.svipc-1,0,));
+    for (i=0;i<=nsem;i++) sem_give,semkey,i,count=100;
+    usleep,50;
+    status = svipc_clean();
+  }
   yorick_quit;
 }
 
 func quit_forks(void)
 {
   extern wfs,shm_init_done,fork_done;
+  extern prev_sync_counter;
+  extern sync_init_done;
+
+  if (shm_init_done==0) return;
   
   if ( (sim!=[]) && (sim.svipc) ) {
     // a previous yao run initialized this and
     // started forks. we can close them.
     shm_write,shmkey,"quit?",&([1]);
-    for (i=1;i<=19;i++) sem_give,semkey,i,count=100;
+    for (i=0;i<=19;i++) sem_give,semkey,i,count=100;
+    for (i=51;i<=70;i++) sem_give,semkey,i,count=100;
     clean = 1;
   }
   
   if ( (wfs!=[]) && anyof(wfs.svipc>1) ) {
     shm_write,shmkey,"quit_wfs_forks?",&([1]);
-    for (i=20;i<=nsem;i++) sem_give,semkey,i,count=100;
+    for (i=20;i<=50;i++) sem_give,semkey,i,count=100;
     wfs._svipc_init_done = 0;
+    prev_sync_counter = [];
+    sync_init_done = 0;
     clean = 1;
   }
+  
   if (clean) {
-    usleep,500;
+    usleep,50;
     status = svipc_clean();
     shm_init_done = 0;
     fork_done = 0;
@@ -408,7 +480,6 @@ func quit_wfs_forks(void)
   extern wfs;
   extern prev_sync_counter;
   extern sync_init_done;
-  //  extern nforks_per_wfs;
 
   if (!shm_init_done) return;
   
@@ -423,9 +494,8 @@ func quit_wfs_forks(void)
   
   wfs._svipc_init_done = 0;
   prev_sync_counter = [];
-  //  nforks_per_wfs = [];
   usleep,200;
-  //  sync_init_done=[];
+  sync_init_done = 0;
 }
 
 
@@ -463,9 +533,13 @@ func topwfs_svipc(void)
      - sem_give sem_wfs_done
    */
 
+  extern topwfs_svipc_first_time;
   // Block until slave done (skip for first iter)
+  // if (topwfs_svipc_first_time) {
   if (loopCounter>1) {
-    if (smdebug) write,"topwfs_svipc: waiting for child to be done";
+    if (smdebug) {
+      write,format="TOPWFS_SVIPC (it%d): waiting for child to be done\n",loopCounter;
+    }
     sem_take,semkey,1;
     if (smdebug) write,"Child done, proceeding";
     // get data from shm
@@ -482,6 +556,8 @@ func topwfs_svipc(void)
   // give start signal to slave:
   if (smdebug) write,"topwfs_svipc: Giving trigger to Child";
   sem_give,semkey,0;
+
+  topwfs_svipc_first_time=1;
 
   return svipc_mes;
 }
@@ -597,40 +673,53 @@ func topwfs_listen(void)
 
 
 
-func wfs_listen(void)
+func wfs_listen(nf,nsv)
 // for WFSs children
 {
   extern mircube;
-  // wait for trigger from master
-  if (smdebug) write,"wfs_listen: waiting for trigger from master";
-  sem_take,semkey,sem4wfs(svipc_ns);
-  if (smdebug) write,"wfs_listen: got trigger";
 
-  // check if we have to quit:
-  if (shm_read(shmkey,"quit?")(1)) {
-    write,format="%s child quitting\n",svipc_procname;
-    //    shm_free,shmkey,swrite(format="dm%d_shape",svipc_nm);
-    yorick_quit;
-    //    return;
-  }
-  
-  // anything to sync?
-  status = sync_child();
-  
-  // do something
-  loopCounter = shm_read(shmkey,"loop_counter")(1);
-  mircube = shm_read(shmkey,"mircube");
-  if (smdebug) write,"doing wfsing of a single WFS";
+  do {
+    // wait for trigger from master
+    if (smdebug) {
+      write,format="WFS fork #%d listen: waiting for trigger from master\n",nf;
+    }
+    
+    sem_take,semkey,sem4wfs(nf);
+    if (smdebug) write,format="WFS fork #%d listen: got trigger\n",nf;
 
-  mes = svipc_single_wfs(loopCounter,svipc_ns);
-  shm_write,shmkey,swrite(format="wfs%d_mes",svipc_ns),&mes;
-  shm_write,shmkey,swrite(format="wfs%d_image",svipc_ns),wfs(svipc_ns)._fimage;
+    // check if we have to quit:
+    if (shm_read(shmkey,"quit?")(1)) {
+      write,format="%s child quitting\n",svipc_procname;
+      yorick_quit;
+    }
   
-  if (smdebug) write,"wfs_listen: Giving trigger back to master";
-  sem_give,semkey,sem4wfs(svipc_ns)+1;
+    // anything to sync?
+    status = sync_child();
+    
+    // do something
+    loopCounter = shm_read(shmkey,"loop_counter")(1);
+    mircube = shm_read(shmkey,"mircube");
+    if (smdebug) {
+      write,format="%s","doing wfsing of WFS ";
+      for (i=1;i<=numberof(nsv)-1;i++) write,format="%d, ",nsv(i);
+      write,format="%d\n",nsv(0);
+    }
 
-  if (smdebug) write,"calling oneself";
-  set_idler,wfs_listen;
+    for (i=1;i<=numberof(nsv);i++) {
+      ns = nsv(i);
+      mes = svipc_single_wfs(loopCounter,ns);
+      shm_write,shmkey,swrite(format="wfs%d_mes",ns),&mes;
+      shm_write,shmkey,swrite(format="wfs%d_image",ns),wfs(ns)._fimage;
+    }
+    
+    if (smdebug) {
+      write,format="wfs_listen, fork#%d: Giving trigger back to master\n",nf;
+    }
+    sem_give,semkey,sem4wfs(nf)+1;
+  
+    if (smdebug) write,"looping";
+    
+  } while (1);
 }
 
 
@@ -648,9 +737,17 @@ func svipc_single_wfs(iter,ns)
   }
 
   // get the measurements:
-  if (wfs(ns).type == "hartmann" ) {smes = ShWfs(ipupil,phase,ns);}
-  if (wfs(ns).type == "zernike")   {smes = ZernikeWfs(ipupil,phase,ns);}
-  if (wfs(ns).type == "kl")        {smes = KLWfs(ipupil,phase,ns);}
+  if (wfs(ns).type == "curvature")       smes = CurvWfs(pupil,phase,ns); 
+  else if (wfs(ns).type == "hartmann" )  smes = ShWfs(ipupil,phase,ns); 
+  else if (wfs(ns).type == "pyramid")    smes = pyramid_wfs(pupil,phase,ns); 
+  else if (wfs(ns).type == "zernike")    smes = ZernikeWfs(ipupil,phase,ns); 
+  else if (wfs(ns).type == "kl")         smes = KLWfs(ipupil,phase,ns); 
+  else {
+    // assign user_wfs to requested function/type:
+    cmd = swrite(format="user_wfs = %s",wfs(ns).type);
+    include,[cmd],1;
+    smes = user_wfs(ipupil,phase,ns);
+  }
 
   // subtract the reference vector for this sensor:
   if (wfs(ns)._cyclecounter == 1) {
@@ -673,32 +770,32 @@ func svipc_single_wfs(iter,ns)
 
 
 
-// func svipc_mult_wfs(iter,disp=)
-// /* DOCUMENT func svipc_mult_wfs(iter,disp=)
-//    svipc version of mult_wfs
-//  */
-// {
-//   mes = [];
-
-//   // parallelize main WFSs
-//   for (ns=1;ns<=nwfs;ns++) {
-//     // no data to send to slave (it will lookup mircube,
-//     // which is the only data needed, with iter)
-//     // send trigger
-//     sem_give,semkey,sem4wfs(ns);
-//   }
-
-//   // wait for the children to be done:
-//   for (ns=1;ns<=nwfs;ns++) sem_take,semkey,sem4wfs(ns)+1;
-
-//   // all semaphores have been released, collect the pieces:
-//   for (ns=1;ns<=nwfs;ns++) {
-//     smes = shm_read(shmkey,swrite(format="wfs%d_mes",ns));
-//     grow,mes,smes;
-//   }
+func svipc_mult_wfs(iter,disp=)
+/* DOCUMENT func svipc_mult_wfs(iter,disp=)
+   svipc version of mult_wfs
+ */
+{
+  mes = [];
   
-//   return mes;
-// }
+  // parallelize main WFSs
+  for (nf=1;nf<=sim.svipc_wfs_nfork;nf++) {
+    // no data to send to slave (it will lookup mircube,
+    // which is the only data needed, with iter)
+    // send trigger
+    sem_give,semkey,sem4wfs(nf);
+  }
+
+  // wait for the children to be done:
+  for (nf=1;nf<=sim.svipc_wfs_nfork;nf++) sem_take,semkey,sem4wfs(nf)+1;
+
+  // all semaphores have been released, collect the pieces:
+  for (ns=1;ns<=nwfs;ns++) {
+    smes = shm_read(shmkey,swrite(format="wfs%d_mes",ns));
+    grow,mes,smes;
+  }
+  
+  return mes;
+}
 
 
 func cv2sv(charv)
@@ -730,20 +827,20 @@ func sv2cv(stringv)
 // original_shm_read = shm_read;
 // func shm_read(key,id,subscribe=)
 // {
-//   write,format="shm_read( %s )\n",id;
-//   return original_shm_read(key,id,subscribe=subscribe);
+  // write,format="shm_read( %s )\n",id;
+  // return original_shm_read(key,id,subscribe=subscribe);
 // }
 
 // original_shm_write = shm_write;
 // func shm_write(key,id,a,publish=)
 // {
-//   write,format="shm_write, %s\n",id;
-//   original_shm_write,key,id,a,publish=publish;
+  // write,format="shm_write, %s\n",id;
+  // original_shm_write,key,id,a,publish=publish;
 // }
 
 // original_shm_free = shm_free;
 // func shm_free(key,id)
 // {
-//   write,format="shm_free, %s\n",id;
-//   original_shm_free,key,id;
+  // write,format="shm_free, %s\n",id;
+  // original_shm_free,key,id;
 // }
