@@ -1,0 +1,65 @@
+body {
+  counter-reset: section;
+}
+
+#container
+{
+  counter-reset: figure;
+}
+
+
+img.scaled {
+  counter-increment: figure;
+}
+
+div.figure p:before {
+  content: "Figure " counter(figure) ": ";
+  display: inline;
+}  
+
+h1 {
+  counter-increment: section;
+}
+
+h2
+{
+  counter-reset: subsection;
+  clear:both;
+}
+
+h2:before {
+  content: counter(section) ". ";
+  counter-increment: section;
+  display: inline;
+}
+
+h3 {
+  counter-reset: subsubsection;
+  clear:both;
+}
+
+h3:before {
+  content: counter(section) "." counter(subsection) " ";
+  counter-increment: subsection;
+  display: inline;
+}
+
+h4 {
+  counter-reset: subsubsubsection;
+  clear:both;
+}
+
+h4:before {
+  content: counter(section) "." counter(subsection) "." counter(subsubsection) " ";
+  counter-increment: subsubsection;
+  display: inline;
+}
+
+
+h5:before {
+  content: counter(section) "." counter(subsection) "." counter(subsubsection) "." counter(subsubsubsection) " ";
+  counter-increment: subsubsubsection;
+  display: inline;
+}
+
+

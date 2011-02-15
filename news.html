@@ -1,0 +1,633 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>yao::news</title>
+<script type="text/javascript" src="scripts.js">void=null;</script>
+<link rel="stylesheet" href="styles.css" type="text/css">
+</head>
+<body>
+
+<div id="left-column"><img src="images/kbkheaderleft.jpg"></div>
+<div id="right-column"><img src="images/kbkheaderright.jpg"></div>
+
+<div id="center">
+
+ <div id="banner">yao::news</div>
+
+<div id="links2">
+  <a href="index.html">HOME</a> &nbsp; | &nbsp;
+  <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp;
+  <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp;
+  <a href="news.html">NEWS</a>
+  </div>
+
+
+
+  <div id="container">
+
+    <a name="yao_at_github"></a>
+    <div id="blogentry">
+    <div id="entrydate">February 11, 2011</div>
+    <div id="entrytitle">yao @ github</div>
+    <div id="entrybody">
+I have moved from svn to git. Yao is now at github (https://github.com/frigaut/yao). To check out (read only):
+<pre>
+git clone git@github.com:frigaut/yao.git yao
+</pre>
+    </div>
+    </div>
+
+
+    <a name="pyramid_back_in_yao"></a>
+    <div id="blogentry">
+    <div id="entrydate">November 11, 2010</div>
+    <div id="entrytitle">Pyramid WFS back in yao 4.8</div>
+    <div id="entrybody">
+
+      In the early times (version < 2.0), pyramid WFS were once
+      available in yao, but I did not follow up on the code and I had
+      to remove the feature. They are now back in yao 4.8.0, thanks to another
+      contribution from Marcos van Dam, with some tweaking from
+      myself. The speed is reasonable, with approximately 70
+      iterations/sec for a 8x8 system. Check it out with test5.par in
+      the example directory. Grab it at the <a href="http://www.maumae.net/yorick/packages/src/">usual place</a>.
+
+    </div>
+    </div>
+
+
+    <a name="going_for_elt_systems"></a>
+    <div id="blogentry">
+    <div id="entrydate">July 2, 2010</div>
+    <div id="entrytitle">yao going after ELT-size systems</div>
+    <div id="entrybody">
+
+      <p>The <b>new parallel features</b> (see next post), and especially the
+      <b>new sparse reconstructor</b> options (see 2 posts below)
+      makes running very large systems much more tractable than
+      before. A <b>100x100 Shack-Hartmann system</b> (on a 400 pixels pupil)
+      runs at <b>8 iterations/seconds</b> on an 8 core Xeon-based machine @
+      3.33GHz! So one can get statiscally meaningful results in a few
+      mn. It's not too greedy in RAM either (in modern machine
+      standard) at 120MB for the main process (our machine has 8GB of
+      RAM).</p>
+      <p>A 64x64 system runs at 23 iterations/s and a 200x200 SHWFS at
+      1 iterations/s (note that the later starts to be
+      in the realm of ELT extreme AO, at 15cm actuator pitch on a 30-m). </p>
+
+    </div>
+    </div>
+
+    <a name="Parallel_yao_released_with_improvements"></a>
+    <div id="blogentry">
+    <div id="entrydate">July 2, 2010</div>
+    <div id="entrytitle">Parallel yao released with improvements!</div>
+    <div id="entrybody">
+
+      <p>More work on yao parallel:
+        <ul>
+          <li>I have merged some of the -useful- parallel features
+          implemented in our Gemini local yao_mcao to the yao
+          trunk. Namely,
+            <ul>
+              <li>The DM/WFS parallelization (meaning, taking
+          advantage of the fact that real systems have at least one
+          frame delay (remember that even if the command is applied
+          immediately after the measurements are received, there is
+          still one frame delay due to the zero order hold). The one
+          frame delay means the WFSing at iteration N is not needed to
+          compute the command at iteration N, thus can be computed in
+          parallel.</li>
+              <li>The PSF calculations, which is a no brainer.</li>
+            </ul>
+          <li> I have implemented the parallelization of individual
+          SHWFS. Meaning, an individual SHWFS can now run in parallel
+          on an arbitrary number of "threads" (in fact, forks). This
+          works only for Shack-Hartmann WFS. The good thing is that
+          this is implemented fairly deep into the code, so any call
+          to sh_wfs() will benefit from this, which means the iMat
+          acquisition is accelerated too.</li>
+        </ul>
+        <em>Depending on your system, i.e. WFS order, number of WFSs/DMs,
+        whether you use dm.elt or not, sparse reconstructor or not,
+        and more importantly, on the machine you run yao on, using the
+        parallel features can make you gain anywhere between 20% and
+        200% in execution speed</em>. If you want to use it, you will most
+        probably have to experiment a bit to see what option should be
+        set. Guidelines are given in the manual. The bottom line is
+        that you should not use more forks (processes) than you have
+        CPUs, otherwise swapping processes in/out of L2 cache
+        introduce an overhead which cancels the paralleization
+        advantage. With my core2duo laptop, I can typically gain 30 to
+        50%. With an 8 cores Xeon-based machine we have at work, I
+        gain typically close to a factor of 2 (can be more or
+        less). This does not seem particularly impressive, but one has
+        to consider that a yao loop is made of many different
+        individual operations: WFS, cMat product to retrieve the
+        error, DM shape computation from the DM commands and the
+        influence functions, PSF calculation, etc... So a gain in one
+        of this items is only going to benefit the whole thing
+        marginally. As far as the individual WFS parallelization is
+        concerned, here are some hard numbers:
+        <pre>8 Core Xeon (2 boards) @ 3.33GHz, running RHEL 5, 32 bits. yorick/yao built with -O2.
+16x16 SHWFS system, physical model, no noise. All times (avg &amp; median) in milliseconds for one frame.
+
+sh16x16_svipc:        1 threads, sh_wfs() avg=2.86, median=2.90
+sh16x16_svipc:        2 threads, sh_wfs() avg=1.87, median=1.89
+sh16x16_svipc:        4 threads, sh_wfs() avg=1.37, median=1.37
+sh16x16_svipc:        8 threads, sh_wfs() avg=1.14, median=1.15
+sh16x16_svipc:       16 threads, sh_wfs() avg=2.33, median=2.30</pre>
+        You can see that the speed increases up to 8 forks (max gain =
+        2.5x). Adding more forks makes the thing slower. The gain does
+        not reach larger value just because (1) there are overheads
+        associated to the use of shared memory/semaphores and (2)
+        there is also a global overhead in the sh_wfs()
+        function. What's parallelize is the core of sh_wfs() (FFTs,
+        noise application and slopes calculations from spots), but any
+        overhead within the sh_wfs() function itself, before calling
+        the FFT/slopes calculation routine is not going to gain from
+        the parallelization. </p>
+      <p>The gain brought by the other, more general parallel features
+      (DM/WFS &amp; PSFs) is nicely illustrated by the following
+      examples. This was run on the same machine (8 cores Xeon), with
+      curvature.par (36 subapertures curvature system ran on a 120
+      pixels pupil). Look at the following results (I have omitted the
+      timing results for items that are not of concerned here and were
+      negligible):</p>
+<pre>sim.svipc=0 (no parallelization)
+time(1-2) =  9.89 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.04 ms  (DM shape computation)
+time(5-6) =  5.84 ms  (Target PSFs estimation)
+59.18 iterations/second in average
+
+
+sim.svipc=1 (WFS/DM parallelized)
+time(1-2) =  4.11 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  0.94 ms  (DM shape computation)
+time(5-6) =  5.78 ms  (Target PSFs estimation)
+91.43 iterations/second in average
+
+sim.svipc=2 (PSFs parallelized)
+time(1-2) = 10.69 ms  (WF sensing)
+time(3-4) =  0.01 ms  (cMat multiplication)
+time(4-5) =  1.05 ms  (DM shape computation)
+time(5-6) =  1.23 ms  (Target PSFs estimation)
+76.41 iterations/second in average</pre>
+
+      <p>That's a typical example. The "no parallel" case is dominated by
+        WFSing (10ms) and PSF (6ms) calculations. When parallelizing the WFS
+        (sim.svipc=1), the WFSing time goes down to 4ms. Indeed, now 6ms of it
+        can be done in parallel with other tasks: here, the PSF calculation
+        that takes 6ms. With sim.svipc=2 (only the PSF are parallelized), the
+        PSF calculation time goes to basically to 0 while the WFSing stays at
+        10ms. It all makes sense. I haven't put the sim.svipc=3 results as
+        they are a little more difficult to understand and would just
+        introduce confusion.</p>
+
+
+      <p>The individual WFS parallel feature is controlled by the
+        parameter wfs.svipc. The "global" DMs/WFSs abd PSF
+        parallelization is controlled by sim.svipc (bit 0 controls
+        DM/WFS and bit 1 controls PSFs, thus sim.svipc=3 means both are
+        turned on).</p>
+      <p>Of course, if you want to use yao parallel facilities, you
+      will need to install the yorick-svipc plugin (contributed by
+      <b>Matthieu Bec</b>), through most of
+      the normal channels. It runs on Linux (extensively tested) and
+      OsX (somewhat tested).</p>
+
+    </div>
+    </div>
+
+    <a name="new_user_contributions"></a>
+    <div id="blogentry">
+    <div id="entrydate">July 2, 2010</div>
+    <div id="entrytitle">New features contributed by users</div>
+    <div id="entrybody">
+
+
+      <p><b>Marcos van Dam</b> (flatwavefronts.com), who is using yao
+      to simulate the GMT AO system, has contributed a patch that add
+      MMSE control matrices, with a couple of regularization (identity
+      or laplacian) and a sparse option. The sparse makes it blazingly
+      fast (both the inversion and the reconstruction show more than
+      an order of magnitude speed gain).</p>
+      <p><b>Aurea Garcia-Rissmann</b> (UofA), adapting code
+      developed <b>Mark Milton</b> (at the time at UofA), contributed
+      a new modal basis for the DMs: the disk harmonics. These
+      represent well the kind of deformation produced by deformable
+      secondaries, for instance. They are much better behaved than the
+      Zernike at the edge.</p>
+      <p>Thanks Marcos and Aurea. The code was very clean, hence
+      -relatively- easy to merge.</p>
+
+    </div>
+    </div>
+
+    <a name="performance_boost_with_parallelization"></a>
+    <div id="blogentry">
+    <div id="entrydate">April 9, 2010</div>
+    <div id="entrytitle">Performance Boost with Parallelization</div>
+    <div id="entrybody">
+
+
+      <p>Following the development here at Gemini of a svipc plugin
+        (by <b>Matthieu Bec</b>),
+        providing shared memory capabilities for yorick, I have been
+        working on parallelizing yao. The results so far are
+        encouraging. For instance, I get a 4x performance boost on
+        simulation of our MCAO system here, from 12 it/s to 47 it/s on
+        an 8 core Xeon machine. This will of course work better for
+        systems with multiple WFS and/or DMs, but will probably also
+        bring some improvements for simpler systems.</p>
+      <p>Right now, I have implemented this in our version of yao
+      that we forked to accomodate our special MCAO needs. But the
+      functions are rather generic and I do not foresee major hurdles
+      in porting that to the main yao tree. I just need to get a few
+      free hours... So stay tuned!</p>
+
+    </div>
+    </div>
+
+    <div id="blogentry">
+     <div id="entrydate">November 10, 2008</div>
+     <div id="entrytitle">Lots of changes in 4.5.0: new features and bug fixes</div>
+     <div id="entrybody">
+       <p>I have come to develop yao once more. Version 4.5.0 brings a lot of new features, bug fixes and code re-organization. Here is the changelog:</p>
+      <strong>Upgrades</strong>:
+      <ul>
+        <li>Added Karhuenen-Loeve DM</li>
+        <li>Added Tip-Tilt vibration spectrum</li>
+        <li>Now accept any odd/even combination # of subapertures/pixels per subapertures in focal plane (SHWFS)</li>
+        <li>Added proper handling of overlap between spots in focal plane (SHWFS)</li>
+        <li>Added a new graphical configuration function to display SHWFS config</li>
+        <li>Implemented field stops (SHWFS)</li>
+        <li>Implemented leaky integrator and up to 10th order filter</li>
+        <li>Implemented non contiguous/arbitrary pupil</li>
+        <li>Added different pupil for WFS and imager</li>
+        <li>Implemented segmented pupil</li>
+        <li>Implemented segmented DM</li>
+        <li>Added a number of user functions, that are called if they are defined (user_pupil, user_loop_err, user_loop_command)</li>
+        <li>Added the possibility for the user to define his/her own WFS and DM</li>
+        <li> Cleanup the code somewhat:
+          <ul>
+            <li> Created yao_wfs.i and relocated all wfs related functions</li>
+            <li> Created yao_dm.i and relocated all dm related functions</li>
+            <li> Created yao_structures.i and relocated all struct definitions</li>
+            <li> Changed all function names from old style (with capitals,  e.g. checkParameters) to new style (no capital, but underscores, e.g. check_parameters). To keep the API compatibility with existing user code, I have copied the function names into the old names (see API compatibility section at the end of yao.i).</li>
+            <li> Beside that, there shouldn't be any API change (in the sense that it should be compatible with old API, I have added a couple of keywords here and there). <strong>Most importantly, 4.5 should still be completely compatible with your old parfiles</strong>. However, it is <strong>not</strong> compatible with binary configurations saved with previous versions (the *imat.fits and other fits files). This means that you will have to remember to re-run aoinit with option clean=1 to re-create these binary config files.</li>
+            <li> One worthy API change is the addition of the keyword all= to the go function (see doc), that you should now use in scripts/batches.</li>
+          </ul>
+        </li>
+        <li>Slow down imat display (use sleep=value in ms)</li>
+        <li>Added flip of DM and new stackarray influence functional forms</li>
+        <li>Added transversal shift (misregistration) of WFS (SHWFS)</li>
+        <li>Added transversal shift (misregistration) of DM (already existed, but this is for large integer offsets)</li>
+      </ul>
+
+<p><strong>Bug Fixes</strong>:
+  <ul>
+    <li>"Desired" pixel size is wrong (SHWFS)
+    <li>Bug with extrapolated counted several time (clean=1)
+    <li>Solved zernike influence function for altitude DM
+    <li>Merged many new things from yao_mcao
+    <li>Can now use dm.elt with aniso modes
+    <li>Skymag not set to zero when doing imat
+    <li>Fixed bug in which user would be stuck at prompt when doing interactive SVD
+    <li>DispImImav reverse behavior from expected
+    <li>Setting npixpersub is not taken into account system wide
+    <li>Fixed a small bug in phase screen generation (max offseted (1,1) in power spectrum)
+    <li>Fixed mess in actuator/subaperture order. now both go from bottom left to top right, in line (i.e. subap/act#2 is at right of subap/act#1)
+    <li>Updated many help document section (yao.i, yao_wfs.i)</li>
+
+  </ul>
+
+<p>So, as you see, lots of new things. I apologize to those who knew well the yao code and for who this release is going to mean some work to find where the functions have gone, but I think the code re-organization was way overdue, and the results is cleaner. Many of these modifications were the results of a visit from Michael Hart (and some push from Marcos van Dam) to use yao for GMT simulations. As usual, I have benefited from many discussions, advices and code contribution from Damien Gratadour, Benoit Neichel, Yann Clenet and Eric Gendron. </p>
+
+<p>Things I have missed in this release but that I firmly intend to implement in the next version:</p>
+<ul>
+  <li>Smarter reconstructors: MMSE (MVR, MAP), may be POLC (contribution Benoit Neichel).</li>
+  <li>More advanced centroiding algorithm: weighted, ... (contribution Yann Clenet).</li>
+  <li>Cleaner display routines, separately callable.</li>
+  <li>Hexagonal stackarray geometry.</li>
+  <li>Hexagonal curvature WFS and DM geometry.</li>
+  <li>Phase screen generation on the fly (contribution Damien Gratadour and Eric Gendron).</li>
+  <li>Off-axis projectors for Rayleigh background (contribution Damien Gratadour).</li>
+  <li>Your code here :-)</li>
+</ul>
+
+     </div>
+     </div>
+
+    <a name="breaking_the_1000itpersec_barrier"></a>
+    <div id="blogentry">
+    <div id="entrydate">September 29, 2009</div>
+    <div id="entrytitle">Breaking the 1000 iterations/s barrier: a performance update</div>
+    <div id="entrybody">
+
+
+    <p>Is the performance of today's computer still following Moore's law? If so, if
+    I take my numbers of the section performance,
+    that date back to 2004, we should get for the fastest case (sh6m2-bench.par)
+    170*2^5 = 5540 it/sec. That is not the case, but I re-run recently some tests
+    on typical cases and I am happy to announce that the <em><strong>threshold of
+    1000 iterations/second has been passed</strong></em>. Here are some
+    performance numbers, obtained on a MacBook Pro 17" (running Snow Leopard, aka
+    10.6.1, 2.66GHz, 4GB RAM, 64bits yorick and plugins). All simulations were
+    runs with 4 phase screens, and the display on, unless noted otherwise. Results
+    are in iterations/second.</p>
+
+    <center>
+    <table border="0">
+          <tr class="toptitle"><td>Name   </td><td> case                                           </td><td>  64bits </td><td>  32bits  </td></tr>
+    <tr class="trodd"><td><a href="ashfast-bench.par">shfast</a></td><td> SH 6x6 geometrical, 1DM+TT, NGS, 1 screen, no display </td><td>  1020   </td><td>  860     </td></tr>
+    <tr><td>test1  </td><td> SH 12x12 physical 1DM+TT, LGS                  </td><td>  44     </td><td>  32      </td></tr>
+    <tr class="trodd"><td>test2  </td><td> SH 12x12 geometrical, 1DM+TT, NGS              </td><td>  219    </td><td>  182     </td></tr>
+    <tr><td>test3  </td><td> SH 6x6 physical 1DM+TT, NGS                    </td><td>  201    </td><td>  165     </td></tr>
+    <tr class="trodd"><td>test4  </td><td> CWFS36, NGS                                    </td><td>  226    </td><td>  164     </td></tr>
+    <tr><td>test4bis   </td><td> same, no display                               </td><td>  261    </td><td>  184     </td></tr>
+    <tr class="trodd"><td>sh20   </td><td> SH 20x20 geometrical, 1DM+TT, NGS, 1 screen, no display                       </td><td>  284    </td><td>  N/A     </td></tr>
+    <tr><td>sh20_2 </td><td> SH 20x20, physical, 1 screen, w/ display       </td><td>  59     </td><td>  N/A     </td></tr>
+    </table>
+    </center>
+
+    <p>Those are all, I believe, fairly impressive numbers. Because I acquired this
+    macbook only recently, I was doing comparison between a 32bits and 64bits
+    yorick. Hence the last column of the table. Building/running in 64bits
+    actually makes a fairly big difference on Snow Leopard. In average, the 64 bit
+    version is 25% faster than the 32 bits one (up to 42% faster in some cases).
+    That's a big gain.</p>
+
+
+    </div>
+    </div>
+
+
+
+    <a name="install_update"></a>
+    <div id="blogentry">
+    <div id="entrydate">September 13, 2009</div>
+    <div id="entrytitle">Install Update</div>
+    <div id="entrybody">
+    Obviously, I have been postponing for far too long updates on this
+    site. Yao is not dead, no. I and many other people are still using it almost
+    daily. But I just didn't have the time nor the inclination to update
+    this site.
+
+    <p>I got several requests recently to help install yao <b>on
+    OsX</b> (I believe the yao packages have been built for 10.5, so I
+    don't think the following would work for Tiger 10.4).
+    So, I wrote up some fairly detailled instructions. Here is the drill.
+    Note that I do not believe that there is any pre-requisite (beside X11
+    of course). I tested that on a fresh test account in my mac and it
+    worked. FFTW comes bundled with the yao package, so it is not
+    necessary to install it.
+
+    <p><i>Note: in fact, the following should also work on linux. Just select
+    	the appropriate OS in pkg_setup when asked for it.</i>
+
+    <br>
+    <ol>
+    <li> Install the last yorick
+
+      <ul>
+        <li> download yorick from http://sourceforge.net/projects/yorick/files/yorick/2.1.05/yorick-2.1.05-mac-intel.tgz/download
+        <li> unpack and move yorick-2.1.05 directory to ~
+        <li> add yorick path to your default path: add this line at the end of your ~/.profile
+    <pre>export PATH=$HOME/yorick-2.1.05/bin:$PATH</pre>
+      </ul>
+
+    <li> Install yao:
+    <br>
+    <code>pkg_mngr.i</code> is now bundled with yorick. So just do the
+    following (for
+    <code>pkg_setup</code>: all
+    defaults are good, so carriage return everywhere, except you will have to
+    select the OS: darwin-i686 on modern apple machines)
+
+    <pre>$ yorick
+#include "pkg_mnr.i"
+> pkg_setup
+> pkg_sync
+> pkg_list
+> pkg_install,"yao"
+> quit</pre>
+
+    <li> Setup yao:
+
+    First you'll have to create phase screens (once forever unless you want new ones):
+
+    <pre>$ cd ~
+$ mkdir -p .yorick/data
+$ cd .yorick/data
+$ yorick -i turbulence.i
+> require,"yao.i"
+> CreatePhaseScreens,2048,256,prefix="screen"
+> quit
+$ ls   ( you should have your screens)</pre>
+
+    <li> Run yao
+
+    <pre>$ cd ~/yorick-2.1.05/share/yao/examples/</pre>
+    That's where some example yao parfile are. you can then put them wherever you want and transform/adapt them at will.
+    <pre>$ yorick -i yao.i
+> aoread,"sh6x6.par"
+> aoinit,disp=1
+> aoloop,disp=1
+> go
+</pre>
+    watch it go :-)
+
+
+    </div>
+    </div>
+
+    <a name="binary_installer"></a>
+    <div id="blogentry">
+    <div id="entrydate">4 December 2005</div>
+    <div id="entrytitle">Version 3.6</div>
+    <div id="entrybody">
+    Very, very long time I haven't posted here, or updated this site for that matter !
+    <p>I know many people have had problems installing yao with the newest yorick releases. Since the yorick Makefile system has been re-hauled in fact. Well, many things have changed. Now you can install yao *very* easily from the yorick prompt. Just download the brand <a href="http://www.maumae.net/yorick/contrib/pkg_mngr.i">new binary plugin installer</a> (require yorick > 1.6.02). To install the latest yao, just:</p>
+    <pre>#include "pkg_mngr.i"
+pkg_list
+pkg_install,"yao"
+</pre>
+    <p>beware that the install directive will install in yorick/contrib/yao, so if you have there an existing installation that you want to preserve, you should back it up before.</p>
+
+    <p>This yao version is kind of intermediary. I have not included all modifications from ralf. I have however made a fairly decent size change to aoloop:</p>
+
+    Now aoloop is in 2 parts:
+    <pre>aoloop,parameters_as_before</pre>
+    to "load" the thing.
+    then type
+    <pre>go</pre> or <pre>go,1</pre> to run a single iteration.
+
+    <p>While it's going, you now still have access to the prompt. You can type "stop" or "cont" to stop/resume the loop simulations.</p>
+    <p>If you write batches in which you run loops, you will have to write it like this:
+    <pre>aoloop,bla-bla-bla
+for (j=1;j<=loop.niter;j++) go;</pre>
+
+    This is because a call to go goes only through one loop cycle, and then call "set_idler,go", which tells to the yorick interpreter "if you have nothing pending, run 'go'". This will work as intended when ran interactively, but when in a batch, the interpreter is not idle: it will execute directly the next line and will never go back to "go" if not forced to (hence the explicit loop).
+
+    </div>
+    </div>
+
+
+
+
+
+    <div id="blogentry">
+    <div id="entrydate">18 October 2004</div>
+    <div id="entrytitle">Version 3.5</div>
+    <div id="entrybody">
+    This new version include the 2 following additional features
+    <ul>
+    <li>Ability to swap the phase screen during a simulation run. This comes on top of the
+    "jump and reset" feature. In fact, it simply swaps (rotate) the screens every N resets
+    (set this using loop.jumps2swapscreen, see the
+    <a href="data-structures.html">data-structures</a> page).</li>
+    <li>At long last, I have figured out and implemented more realistic influence functions for
+    stackarray (piezostack) deformable mirrors. One can set the coupling parameter of the
+    influence functions. Acceptable values are from 4 to 30%.</li>
+    </ul>
+    </div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">2 August 2004</div>
+    <div id="entrytitle">Version 3.3.2</div>
+    <div id="entrybody">
+    Released today version 3.3.2, that include fixes to a few bugs
+    <ul>
+    <li>	a division by zero was causing a SIGFPE for odd number of subaperture shack hartmann systems in the angle/elongation calculations in shwfs_init (bug noted by Miska)
+    <li> Added a check of indices overflow when determining the Y interpolation points in get_turb_phase_init (also suggested by Miska)
+    </ul>
+    </div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">28 July 2004</div>
+    <div id="entrytitle">YAO SSMP</div>
+    <div id="entrybody">
+    Ralf has been developing further his SSMP (Sparse Matrix Package) and a yao implementation. It looks very promising (quite faster for large systems!). Keep tuned.
+    <p><i>Note added August 2: Indeed Ralf has been very active. He is in the final phases of testing and has been revamping major parts of yao to be compatible with the new reconstructor choices. Reconstructors will very soon include MAP, MAP+PCG, on top of the existing SVD/least square.
+    Note that this will also include a sparse implementation, so it's fast !
+    </i>
+    </div>
+    </div>
+
+
+    <div id="blogentry">
+    <div id="entrydate">28 July 2004</div>
+    <div id="entrytitle">Rayleigh and photometry revamp</div>
+    <div id="entrybody">
+    I've just been working on implementing the Rayleigh fratricide effect in yao.
+    This is an important feature in systems using multiple LGS beams with CW lasers. A WFS looking at a star may intersect the rayleigh plume from another star and thus see an increased background. This effect is particularly important to model for MCAO as CW laser is a possibility. First, I wanted to branch yao, and do a quick and dirty implementation of the Rayleigh, not planning to release it. I reconsidered after seeing that it was not going to take that much more work to actually make it user-friendly, so here we are with version 3.3. I also went ahead and implemented a clean zenith dependance. Now there is a parameter (gs.zenithangle) that sets the zenith angle (see below). Beware that the definition of photometry has slightly changed: now the zero point is for the number of photons at the entrance pupil, not anymore detected by the WFS. An way to enter the optical throughput on a WFS basis is provided (see below).
+
+    <p><br>
+    <center>
+    <img src="Rayleigh+5starsOffaxis.png">
+    <br><i>Figure: A generated field of 120"x120" as viewed by a subaperture [1.5,1.0] m off-axis, showing the 5 laser guide stars in the MCAO configuration and their associated Rayleigh backscatter (Linear ITT).</i>
+    </center>
+    <br><br>
+
+
+    <p>Below is the excerpt of the README file relevant to this release:
+    <ul>
+    <li> semi major changes in this version. Watch out, as some parameters meaning has changed (I know this is silly, but it's more logical now).
+    <li>Implemented zenith dependance. Now one can change one parameter (gs.zenithangle) and everything change as needed (r0, lgs altitude
+    and thickness of Na layer, atm layer altitude, LGS brightness)
+    <li> Imlemented Rayleigh fratricide effect for multiple LGS systems!
+    This was quite an endeavour. I had to modify the _shwfs routine
+    to include several new lines and parameters relative to Rayleigh
+    and calibration (a side effect is that we can now do and use calibration frame in this routine). To enable Rayleigh calculations set wfs.rayleighflag to 1 (it will *not* be calculated for NGS WFS as it is assumed that you can easily block the light from the laser wavelength).
+    <li> The way to specify the photometry has also changed. Now, if you deal with a LGS, you specify a power and a return per watt, not anymore a magnitude (magnitude are still ok for a NGS). Also, everything -in term of zeropoints- is now specified at the entrance of the telescope: gs.zeropoint is now the number of photons for a zero mag star per sec per pupil at M1 (it used to be detected by the WFS). gs.lgsreturnperwatt is also in photons at M1. Instead, I have added a wfs.optthroughput parameter to specify the optical throughput of each WFS. Please set it, as it defaults to 1.
+    <li> In summary, the following keywords were added in the parfile:
+    <ul>
+    <li> gs.lgsreturnperwatt
+    <li> gs.zenithangle
+    <li> wfs.laserpower
+    <li> wfs.rayleighflag
+    <li> wfs.optthroughput
+    </ul>
+    </ul>
+    </div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">07 June 2004</div>
+    <div id="entrytitle">CVS and bug fixes</div>
+    <div id="entrybody">
+    YAO is now under CVS. I have had Craig set up an account for me in the main Gemini CVS server (thanks Craig). This is purely for development though (only Ralf and myself have an account) and the main download is still from these pages.
+    <p>We are now at version 3.2.3, which fixes a few bugs:
+    <ul>
+    <li>"~/Yorick/fftw_wisdom.dat" can now be created properly under linux.
+    <li>I am now using convol instead of convVE for the creation of the influence functions when dm.elt=1, so this should work under linux too.
+    </ul>
+    </div>
+    </div>
+
+
+    <div id="blogentry">
+    <div id="entrydate">23 May 2004</div>
+    <div id="entrytitle">Update</div>
+    <div id="entrybody">
+    I have been presenting <b>yao</b> at the PSF reconstruction meeting in Victoria and several people have downloaded it.
+    <p>Ralf submitted many bug reports/comments. Miska pointed out a bug in create_phase_screens, linked to SIGFPE being triggered by a division by zero. I did not see the problem on my G4 (I should have seen it on the G5 but did not bother going thru the phase screen creation phase there). I have patched the problem in <code>turbulence.i</code> and put the new release on the web pages.
+    </div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">30 April 2004</div>
+    <div id="entrytitle">New features</div>
+    <div id="entrybody">In the new version 3.2.1, I have implemented sky noise and dark current, both for the SHWFS and the curvature WFS. <p>
+    I have added some test parfiles in the examples directory (yao/examples). New users can test their distribution by running <code>#include "test-all.i"</code> in this directory. It's relatively fast, and test various configs (SHWFS method 1 and 2, with splitted subsystem, and a CWFS case).
+    </div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">6 April 2004</div>
+    <div id="entrytitle">Update of the web site, cont'd</div>
+    <div id="entrybody">I have now updated almost all the pages, consistent with the new structure of yao-3.0. In particular, I have updated all the install instructions, the data structures and the main page. Still to complete is the "Example and scripts" and the screenshots pages. In parallel, I am still working at completing the new package structure. Everything (include files and compiled C routines) now resides in <code>Y_SITE/contrib/yao/</code>.</div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">4 April 2004</div>
+    <div id="entrytitle">Update of the web site</div>
+    <div id="entrybody">I have updated the web site, adding new <a href="performance.html">performance results</a>, and the weblog/news (this very page).</div>
+    </div>
+
+    <div id="blogentry">
+    <div id="entrydate">2004</div>
+    <div id="entrytitle">Porting to FFTW!</div>
+    <div id="entrybody">Done ! I have relatively painleslly ported the fast (VE) C routines to using FFTW. It is almost as fast as the apple veclib (but not quite so, so I am keeping both). This means that YAO now runs on Linux! I have installed it on heze (2.8GHz Dual Athlon) and it gives nice results, although lono (Dual 2GHz G5) with the veclib FFTs is still faster (more details in <a href="performance.html">performance</a> page).</div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+</div>
+
+
+<div id="footer">
+<div id="footer-left"><img src="images/kbkfooterleft.jpg"></div>
+<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>
+<div id="footer-center"></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,392 @@
+body {
+    background: #FFFFFF; 
+    /*background: #333366; */
+    color:#202020; 
+    font-size:10pt;
+    margin:30px 80px 30px 80px;
+    padding:0px 0px 0px 0px;
+    font-family : Verdana, sans-serif;
+    line-height: 140%;
+    background-image: url("images/kbkbgcolor.jpg");
+}
+
+#left-column
+{
+    float: left;
+    width: 45px;
+    margin: 0;
+    padding: 0;
+}
+
+#right-column
+{
+    float: right;
+    width: 45px;
+    margin: 0;
+    padding: 0;
+}
+
+#center
+{
+    background:white;
+    margin: 0 9 0 9;
+    border-left:   2px solid #bbbbbb;
+    border-right:   2px solid #bbbbbb;
+
+}
+
+
+#banner
+{
+    width:100%;
+    height: 100px;
+    margin:0 0 0 0;
+    padding:36 0 0 0;
+    background-image: url("images/kbkheadercenter.jpg");
+    background-repeat:repeat-x;
+    font: 25pt Courier, "Courier New", monospace; 
+    color:white;
+}
+
+
+#container
+{
+    width:92%;
+    margin:-36 4% 0 4%;
+    padding:35 0 0 0;
+    background:#ffffff;
+}
+
+
+#footer
+{
+    margin-top: -18;
+}
+
+#footer-left
+{
+    float: left;
+    width: 45px;
+    margin: 0;
+    padding: 0;
+}
+
+#footer-right
+{
+    float: right;
+    width: 45px;
+    margin: 0;
+    padding: 0;
+}
+
+#footer-center
+{
+    width:100%;
+    height: 100px;
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+    background-image: url("images/kbkfootercenter.jpg");
+    background-repeat:repeat-x;
+}
+
+div.figure {
+    float: right;
+    margin: 10px;
+    padding: 10px;
+}
+
+div.figure p {
+    text-align: center;
+    font-style: italic;
+    font-size: smaller;
+    text-indent: 0;
+}
+
+img.scaled {
+    width: 100%;
+    border: 0px;
+}
+
+
+h1 {
+    font: 25pt Courier, "Courier New", monospace; 
+    color:black; 
+    /*  background:#94A615;*/
+    background:#3937A6;
+    margin:0px -37px 0px -42px;
+    padding:10px 10px 15px 10px;
+    border-top:   2px solid #dddddd;
+    border-bottom:   2px solid #dddddd;
+    border:   2px solid #dddddd;
+/*text-shadow: #333 2px 2px 2px;*/
+}
+
+h2
+{
+    color:#404040;
+    font-size: 180%;
+    padding: 30px 0 5 0;
+    border-bottom: solid 1px #a0a0a0;
+}
+
+
+h3 {
+    margin-top:20px;
+    color:#606060;
+    font-size: 150%;
+    padding: 15px 0 0 0;
+    border-bottom: solid 1px #e0e0e0;
+}
+
+
+h4 {
+    margin:12px 0 0 0;
+    padding:5px 0 0 0;
+    color:#202020;
+    font-size: 120%;
+}
+
+
+h5 {
+    margin:12px 0 0 0;
+    padding:0px 0 0 0;
+    color:#707070;
+    font-size: 100%;
+}
+
+
+pre 
+{
+    font: 9pt/13pt Monaco, Courier, "Courier New", monospace; 
+    background: #f0f0f0;
+    background: #f0f0f0;
+    /*background: #333366;*/
+    color: #202020;
+    padding:10px 10px 10px 10px;
+    border: 1px #d0d0d0 solid;
+}
+
+table {
+    /*  font: 9pt/13pt Monaco, Courier, "Courier New", monospace; */
+    margin:10px 10px 10px 10px;
+    font-size:100%;
+/*    border: 1px #404040 solid; */
+}
+
+table.fixed {
+    font: 9pt/13pt Monaco, Courier, "Courier New", monospace; 
+}
+
+table.toc a {
+    font-weight:bold;
+    color:#3030A0;
+    text-decoration:none;
+}
+
+
+td {
+    padding: 3px 10px 3px 3px; 
+    text-align: left;
+    vertical-align: top;
+/*    border: 1px #404040 solid; */
+}
+
+td.varname {
+    padding: 1px 10px 1px 3px; 
+    text-align: left;
+    vertical-align: top;
+    font-weight:bold;
+    font-family : Verdana, sans-serif;
+/*    border: 1px #404040 solid; */
+}
+
+th {
+    font-family : Verdana, sans-serif;
+    font-weight: bold;
+    font-size:130%;
+    padding: 40px 10px 0px 2px; 
+    margin: 0 0 0 0;
+    text-align: left;
+    color:#3030A0;
+    /*  color:white;*/
+    border-bottom: 1px #404040 solid;
+}
+
+.subth {
+    font-family : Verdana, sans-serif;
+    font-weight: bold;
+    padding: 10px 0px 0px 0px; 
+    margin: 0 0 0 0;
+    text-align: left;
+    color:#8080B0;
+    /*  color:white;*/
+    border-bottom: 1px #f0f0f0 solid;
+}
+
+
+.trodd {
+    background: #e0e0e0;
+}
+
+.toptitle {
+    /*  font: 10pt/13pt Monaco, Courier, "Courier New", monospace; */
+    color:#FF9900;
+    color:#8AA627;
+    color:black;
+    font-weight:bold;
+}
+
+code {  
+    color:#50801D;
+    color:#303060;
+    font: 9pt/13pt Monaco, Courier, "Courier New", monospace; 
+}
+
+.imglink {
+    margin: 10 0 10 10; 
+    border: 0px;
+}
+
+#fname {color:#FF9900; font-weight: bold;}
+
+pre a {
+    color:#50801D; 
+    font: 9pt/13pt Monaco, Courier, "Courier New", monospace; 
+}
+
+body a {
+/*  color:#4781B4; */   
+/*text-shadow: #000 2px 2px 2px;*/
+}
+
+body a:link {
+/*  color:#3937A6; */
+/*text-shadow: #000 2px 2px 2px;*/
+}
+
+ul,ol {
+    margin: 3px 0px 5px 32px; 
+    padding: 0px 0px 0px 0px;
+}
+
+ul li {
+    margin: 1px 0px 2px 0px; 
+    padding: 0px 0px 0px 0px;
+}
+
+ol li {
+    margin: 1px 0px 2px 0px; 
+    padding: 0px 0px 0px 0px;
+}
+
+.spaced li {margin: 6px 0px 0px 5px;}
+
+.packed li  {margin: 1px 0px 0px 1px;}
+
+.linkpacked li  {margin: 0px 0px 0px 0px;}
+
+p {
+    margin: 6px 0px 4px 0px; 
+    padding: 0px 0px 0px 0px;
+} 
+
+
+#links2 
+{
+    float:right;
+    margin:-30px 10px 5px 10px;
+    padding: 0px 8px 15px 14px;
+    background: #ffffff;
+    font-size: 120%;
+    font-weight: bold; 
+}
+
+#links2 a{
+    color:#3937A6;
+    color:#FF8000;
+    color:#8AA627;
+    text-decoration: none;
+}
+
+
+.highlight {
+    /*  color:#3937A6;
+        color:#3937A6;*/
+    font-weight: bold;
+/*text-shadow: #000 2px 2px 2px;*/
+}  
+
+#toc {
+    width:17em;
+    float:right;
+    margin: -10px 0 0 0;
+    padding: 0px 0 20 50;
+    background: #FFFFFF;
+}
+
+#toc ul {
+    list-style-type: none;
+    margin-left: 5px;
+}
+
+#toc a {
+    text-decoration: none;
+}
+
+.tocsec {
+    font-size: 110%;
+    padding-left:0px;
+}
+
+.tocsubsec {
+    font-size: 100%;
+    padding-left:20px;
+}
+
+.new {
+    background:#3937A6;
+    /*background:#8AA627;*/
+    color:white;
+    padding: 0px 3 1 3;
+    font-size: 80%;
+/*font-weight: bold;*/
+/*text-shadow: #000 2px 2px 2px;*/
+}
+.lowlight {color:#999999;}
+
+div.cloak {
+    visibility : hidden; 
+    display : none; 
+    color: white;
+}
+
+#blogentry { 
+    padding: 30px 5px 5px 5px;
+}
+
+#entrytitle {
+    margin: -20px 0px 0px 0px;
+    font-size:130%;
+    color: #99DD55;
+    color:#FF9900;
+    color:#8AA627;
+    color:#6A9610;
+    color:#3937A6;
+    font-weight: bold;
+}
+
+#entrybody {
+    padding: 7px 0px 5px 0px;
+    border-top: 1px #606060 solid;
+}
+#entrydate {
+    font-size:10pt;
+    color: #303030;
+    text-align: right;
+    font-weight: bold;
+}
+
+blockquote {
+    border:   1px solid #bbbbbb;
+    padding: 10px 20px 10px 20px;
+}

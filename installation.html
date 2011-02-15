@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>yao::installation</title>
+<script type="text/javascript" src="scripts.js">void=null;</script>
+<link rel="stylesheet" href="styles.css" type="text/css">
+</head>
+<body>
+
+
+  <div id="left-column"><img src="images/kbkheaderleft.jpg"></div>
+  <div id="right-column"><img src="images/kbkheaderright.jpg"></div>
+
+  <div id="center">
+
+   <div id="banner">yao::installation</div>
+
+  <div id="links2">
+    <a href="index.html">HOME</a> &nbsp; | &nbsp;
+    <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp; 
+    <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp; 
+<!--     <a href="screenshots.html">SCREENSHOTS</a> &nbsp;  | &nbsp;  -->
+    <a href="news.html">NEWS</a> 
+
+    </div>
+
+  <div id="container">
+<h2>Installation overview</h2>
+
+<p>These instructions have been updated on 12 October 2009.</p>
+<p>Basically there are three install methods (pick one):
+<ol>
+<li> <font class="highlight">From source</font>. You'll get the latest version of everything. Not too many dependencies to yao, so it's not too challenging. You will need a C compiler, <strong>or</strong>
+<li> using <font class="highlight">yorick's pkg_mngr</font>. <strong>or</strong> 
+  <li> on several Linux distributions (Ubuntu, Archlinux, Fedora), using the <font class="highlight">distribution package manager</font> (apt-get/synaptic, pacman,yum)
+</ol>
+
+Yorick/yao generally install without problem on any recent flavor of Linux or  osx. As usual, it will work better if your OS is up to date and not too old. Note that yorick, as it is written in ANSI-C, should basically compile on any xorg-enabled platform with a gcc compiler. The same goes for FFTW, and yao (except the optional gtk interface, which requires gtk libraries and, mostly, a whole gnome environment).
+
+<h2>Option 1: From Source</h2>
+
+<p>Installation from source presupposes a basic familiarity with the command line
+environment. In the following, I give instructions that should be
+enough to get you out of troubles. The process is essentially the same whatever OS you're on:</p>
+
+<ol>
+  <li>Install <b>yorick</b> (<a href="installation_details.html#install_yorick">howto</a>)</li>
+  <li>Install the plugins <b>yorick-yutils</b>&ge;1.3, <b>yorick-imutil</b>&ge;0.5
+  (<a href="installation_details.html#install_plugins">howto</a>), <b>yorick-soy</b>&ge;1.2
+  if you plan to use the sparse matrices techniques and <b>yorick-svipc</b>&ge;0.9
+  if you wish to use the parallel features</li>
+  <li>Install <b>FFTW</b> (<a href="installation_details.html#install_fftw">howto</a>)</li>
+  <li>Finally, install <b>yao</b> (<a href="installation_details.html#install_yao">howto</a>)</li>
+</ol>
+
+<p>Detailled instructions are <a href="installation_details.html">here</a>. Once you are done, proceed to the <a href="#test_yao">test</a> section.</p>
+
+<h2>Option 2: Using yorick's pkg_mngr</h2>
+
+<p>This method does not install yorick; only yao and its dependent plugins and libraries (refer to method 1 or 3 if you need to install yorick).</p> 
+<p>Using <code>pkg_mngr</code> should be very simple. One thing though: the pkg_mngr binary packages are not always up to date; they are released for a number of binary platforms (osx and linux: ppc, i386/x86 and amd64/x86-64), but because I'm the sole maintainer and there are so many platforms, I am often short of time or machine availability to update all plugins (in particular, I do not have access to PPC anymore). Nevertheless, it should generally work. The bonus of this approach is that it also include static libraries for the dependent packages (e.g. FFTW), so the install is much streamlined. Yorick's pkg_mngr is safe: it will only install things in your yorick tree. There's also a "remove" option so you will always be able to come back if anything goes wrong.</p>
+
+<p>The instructions are simple:</p>
+<pre>
+$ yorick
+> #include "pkg_mngr.i"
+> pkg_setup
+</pre>
+<p>Except for the OS field, all the default should be ok, so just type return everywhere. When prompted about your OS:</p>
+<pre>
+  What is your OS-machine type?
+    (1) darwin-i386
+    (2) darwin-ppc
+    (3) linux-x86
+    (4) linux-ppc
+    (5) linux-amd64
+    (6) darwin10-x86_64
+  PKG_OS (enter a number):
+</pre>
+Just type the corresponding number (note that darwin = OsX).Then:
+<pre>
+> pkg_sync
+> pkg_list
+> pkg_install,"yao"
+</pre>
+This will fetch and install yao and its plugins dependencies (yutils and imutil). You will have to quit yorick and restart for it to find yao. Proceed to the <a href="#test_yao">test</a> section.
+
+
+<h2>Option 3: Using your Linux package manager</h2>
+
+<p>For the easiest way to install yao, the winner is debian (and debian derivatives, e.g.
+Ubuntu): 
+<pre>sudo apt-get install yao</pre> 
+and then <code>yao</code> to
+run it (with the gtk GUI). Easy, but you won't get the very last version. For instance, I just release 4.5.0 and I am fairly sure it won't make it in Debian/Ubuntu before a few months.
+I have also built packages for Fedora and Mandriva,
+but I am afraid I haven't updated it lately (if you want to try it, the
+instructions are <a
+href="http://yorick.sourceforge.net/phpBB2/viewtopic.php?t=184">here</a>.
+These are the repos for yorick, but also include the plugins, and yao in
+particular). For archlinux (these ones are fresh as of october09), look <a href="http://yorick.sourceforge.net/phpBB2/viewtopic.php?t=243">here</a>.</p>
+
+<h2>Test it</h2>
+
+<p>However you have installed <code>yao</code>, it should have created an "examples" directory with many example parameter files (use the command <code>find_examples_path()</code> within yao to print the path to the example directory).</p>
+<p>To test yao:
+<pre>cd yao_examples_directory  (see above)
+yorick -i test-all.i
+</pre>
+There is also some tests functions for the SHWFS
+(<code>shwfs_tests()</code> for general sh_wfs testing
+and <code>svipc_shwfs_tests</code> for testing the wfs.svipc features
+(parallel extension). Use help,function for the usage of these 2 functions.
+ </div>
+</div>
+
+
+<div id="footer">
+<div id="footer-left"><img src="images/kbkfooterleft.jpg"></div>
+<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>  
+<div id="footer-center"></div>
+</div>
+
+</body>
+</html>
