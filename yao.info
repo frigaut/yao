@@ -1,6 +1,6 @@
 Package: yao
 Kind: plugin
-Version: 4.8.2
+Version: 4.8.3
 Revision: 1
 Description: Adaptive Optics simulation package
 License: BSD
@@ -8,7 +8,7 @@ Maintainer: Francois Rigaut <frigaut@users.sourceforge.net>
 OS:
 Depends: yorick(>=2.2.0), yutils(>=1.0), imutil(>=0.5)
 Source: http://www.maumae.net/yorick/packages/%o/tarballs/yao-%v-%o.tgz
-Source-MD5: 
+Source-MD5:
 Source-Directory: contrib/yao
 DocFiles: README TODO VERSION NEWS LEGAL doc/README:README.doc doc/FILE_FORMATS doc/*.doc doc/*.pdf doc/*.ps doc/*.tex
 Homepage: http://www.maumae.net/yorick/doc/plugins.php
@@ -18,8 +18,8 @@ Can simulation versatile configs (classical, LGS, GLAO, MCAO)
 with Shack-Hartmann or curvature sensors. Fast.
 <<
 DescUsage: <<
-See yao/examples for a test suite. 
-type 
+See yao/examples for a test suite.
+type
 yorick -i test-all.i
 in a terminal to run it.
 <<

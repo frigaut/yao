@@ -51,14 +51,14 @@ version 4.8.0:
 
 - XFT related:
   - increased size of axis labels fonts on plsys(4)
-  
+
 - newfits:
   - fixed error handling. Now error in place, instead of calling error handling
     function (exitInError). Allows much clearer debugging.
-    
+
 - Pyramid:
   - merged pyramid_wfs() changes from marcos, upgraded by francois
-  - changes in yao main routines to make re-introduced obsolete "pyramid" wfs type 
+  - changes in yao main routines to make re-introduced obsolete "pyramid" wfs type
   - upgraded GUI to include pyramid modulation amplitude control
   - added 4 new structure members to wfs structure
 
@@ -71,11 +71,11 @@ version 4.8.0:
   - gotten rid of get_processor_number() (use nprocs() function in svipc)
   - added a bunch of extern wfs, dm, ... in functions called by python to set
     values of parameters (how could it have worked before is a mystery).
-    
+
 - BUG FIXES:
   - fixed a bug in which the graphic would get stuck (animate call was done
   without ensuring a plsys,1)
-  
+
 
 version 4.8.1:
 
@@ -84,7 +84,7 @@ version 4.8.1:
   - nintegcycle in pyramid wfs (Marcos)
   - "extended" object in pyramid wfs (Marcos)
   - a couple of bugfix (Marcos and I)
-  
+
 version 4.8.2:
   - Added parallelization of WFS (i.e. one thread/WFS in a multi WFS system)
   - Tried implementing FFTW parallelization, but the gains were really marginal
@@ -119,4 +119,11 @@ version 4.8.2:
   - fixed nitegcycle for shwfs when no svipc
   - written test routine (examples/test-fr.i) to check correctness of main
     modes of svipc (wfs and sim).
-    
+
+version 4.8.3, 2011feb11:
+  - move all calls to fitsread and fitswrite to new
+    yao_fitsread and yao_fitswrite
+  - changed graphic style to display residual phase
+  - implemented forks over WFSs (sim.svipc)
+  - some changes to be compatible with xft
+  - changes to test sim.svipc

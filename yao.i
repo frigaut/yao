@@ -111,7 +111,7 @@
  *    init_fftw_wisdom)
  *  - produced man page (doc/yao.1)
  *
- * version 4.0: 2007jun03: 
+ * version 4.0: 2007jun03:
  *  - Added all GTK GUI. No further modifs in yao,
  *    hence yao can still be used safely without a gui (scripts,
  *    scripts).
@@ -119,15 +119,15 @@
  *    more yao_fftw subdirectory
  *  - This is now meant to be installed in i0, so the path to the yao
  *    required functions has been changed from yao/file.i to file.i
- * 
+ *
  * version 3.81, 2007jun02: added gui_message
- * 
+ *
  * version 3.80, 2007apr19: now 64 bits safe !
- * 
+ *
  * version 3.75, 2007feb22: added angle offset for curvature wfs and dms
- * 
+ *
  * 2006mar01: corrected bug. reset put command to 0,
- * while it needed to zero dm._command 
+ * while it needed to zero dm._command
  *
  * Old CVS Log: aosimul.i
  * Revision 1.26  2004/10/19 00:18:04  frigaut
@@ -195,7 +195,7 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.2";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.3";
 aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010dec17";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
@@ -205,18 +205,18 @@ Y_CONF   = get_env("Y_CONF");
 y_user   = streplace(Y_USER,strfind("~",Y_USER),get_env("HOME"))
 if (noneof(Y_CONF)) \
   Y_CONF = "./:"+y_user+":"+pathform(_(y_user,Y_SITES,Y_SITE)+"conf/");
-  
+
 path2conf = find_in_path("yao.conf",takefirst=1,path=Y_CONF);
 if (!is_void(path2conf)) {
   path2conf = dirname(path2conf)+"/";
   write,format=" Found and included yao.conf in %s\n",path2conf;
   require,path2conf+"yao.conf";
  }
- 
-// before we do anything else (to avoid forking a large process), 
+
+// before we do anything else (to avoid forking a large process),
 // let's try to determine what OS we are in:
-f = popen("uname",0); 
-rep = ""; read,f,format="%s",rep; 
+f = popen("uname",0);
+rep = ""; read,f,format="%s",rep;
 close,f;
 rep = strcase(0,rep);
 if ( (rep=="darwin") || (rep=="linux") ) os_env = rep; else os_env="unknown";
@@ -243,10 +243,10 @@ func null (arg,..) { return 0; }
 
 
 
-// All below is designed to be overwritten by appropriate values 
+// All below is designed to be overwritten by appropriate values
 // in yaopy.i when using yao through the GUI
 pyk_error = pyk_info = pyk_warning = null;
-gui_message = gui_message1 = gui_progressbar_frac = gui_progressbar_text = null;  
+gui_message = gui_message1 = gui_progressbar_frac = gui_progressbar_text = null;
 clean_progressbar = gui_show_statusbar1 = gui_hide_statusbar1 = pyk_flush = null;
 YAO_SAVEPATH = get_cwd();
 
@@ -265,7 +265,7 @@ func comp_dm_shape(nm,command,extrap=)
 */
 {
   if (typeof(*command)!="float") error,"command is not float";
-  
+
   n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = int(n2-n1+1);
   sphase = array(float,[2,nxy,nxy]);
 
@@ -277,7 +277,7 @@ func comp_dm_shape(nm,command,extrap=)
     } else { // use standard
       _dmsum, dm(nm)._def, nxy, nxy, dm(nm)._nact, command, &sphase;
     }
-    
+
   } else { // extrapolated actuators
 
     if (dm(nm).elt == 1) { //use fast dm shape computation
@@ -286,20 +286,20 @@ func comp_dm_shape(nm,command,extrap=)
     } else { // use standard
       _dmsum, dm(nm)._edef, nxy, nxy, dm(nm)._enact, command, &sphase;
     }
-    
+
   }
-  
+
   // temporary method for shifting DMs/influence functions
   // one can not anymore use the straight (*dm._def)(,,sum),
   // but instead should always use comp_dm_shape.
   if (dm(nm)._puppixoffset!=[]) {
     sphase = roll(sphase,dm(nm)._puppixoffset);
   }
-  
+
   if (dm(nm).disjointpup) { // we have to filter by disjointpup(,,nm)
     sphase *= disjointpup(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2,nm);
   }
-  
+
   return sphase;
 }
 //----------------------------------------------------
@@ -329,7 +329,7 @@ func control_screen(i,init=)
       sygstep = 0.025;
       csize = 18;
   */
-  
+
   if (is_set(init) || !window_exists(2)) {
     //    dheight = (nwfs+target._nlambda+1)*sygstep + 10*ygstep;
     //    dheight = long(dheight/0.77*570);
@@ -355,7 +355,7 @@ func control_screen(i,init=)
   plt,it,x0+0.27,y,tosys=1,height=csize,justify="LA",font=csfont;
   y -= ygstep;
   progress_bar,i*100./loop.niter,pbid1;
-  
+
   //  s = "WFS     rms     Tip     Tilt    ";
   s = "WFS        Tip    Tilt   ";
   if (anyof(wfs.correctUpTT)) {
@@ -403,7 +403,7 @@ func control_screen(i,init=)
   plt,"Strehl Ratio  Lambda     Avg     rms     Min     Max",x0,y,tosys=1,height=csize,
     justify="LA",font=csfont;
   y -= sygstep;
-  
+
   for (jl=1;jl<=target._nlambda;jl++) {
     strehlle = imav(max,max,,jl)/sairy/(niterok+1e-5);
     s = swrite(format="Since Start   %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
@@ -419,8 +419,8 @@ func control_screen(i,init=)
       plt,s,x0,y,tosys=1,height=csize,justify="LA",font=csfont;
       y -= sygstep;
     }
-  }    
-      
+  }
+
 
   window_select,0;
 }
@@ -437,7 +437,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
 {
   as2rd = dtor/3600.;
   cobs  = 0;
-  
+
   // position of GS/WFS in arcsec:
   w =  where(wfs._gsalt > 0);
   //  xwfs = [0,-30.0,30.0,30.0,-30.0];
@@ -445,7 +445,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   xwfs = wfs(w).gspos(1,);
   ywfs = wfs(w).gspos(2,);
   nbeams = numberof(xwfs);
-  
+
   if (!is_set(zenith)) {zenith = 0.;}
   zenith = zenith*dtor;
 
@@ -513,7 +513,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       if (sim.debug > 3) {
         write,format="range = %f, alpha = %f, beta = %f\n",r,alpha,beta;
       }
-      
+
       // generate gaussian:
       fwhm = beamdiameter/r/as2rd; // in arcsec
       // blur due to finite range of this layer of rayleigh scatering
@@ -555,7 +555,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       if (sim.debug > 3) {
         write,format="range = %f, alpha = %f, beta = %f\n",r,alpha,beta;
       }
-      
+
       // generate gaussian:
       fwhm = beamdiameter/r/as2rd; // in arcsec
       // here I'll have to take the defocus of range r into account
@@ -574,7 +574,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
     }
   }
   return [imrayl,imstar];
-}  
+}
 
 
 //----------------------------------------------------
@@ -583,26 +583,26 @@ func do_imat(disp=)
    Measure the interaction matrix.
    Each actuator are actuated in a row, a measurement vector is taken
    and placed into the iMat. The reference (for phase=0) is subtracted.
-   
+
    disp       = set to display stuff as it goes.
-   
+
    This routine uses:
    - dm._nact, _n1, _n2, _def (extern)
    - mircube (extern)
-   
+
    This routine calls:
    - mult_wfs_int_mat
-   
+
    This routine sets:
    - iMat (extern)
    SEE ALSO: prep_svd, build_cmat
    */
 {
   extern wfs;
-  
+
   gui_progressbar_frac,0.;
   gui_progressbar_text,"Doing interaction matrix";
-  
+
   if (mat.method == "mmse-sparse"){
     extern MR, MN;
     MR = mat.sparse_MR;
@@ -628,7 +628,7 @@ func do_imat(disp=)
 
   // for imat ETA:
   tic; ndone=0;
-  
+
   // Loop on each mirror:
   for (nm=1;nm<=ndm;nm++) {
     n1 = dm(nm)._n1;
@@ -638,9 +638,9 @@ func do_imat(disp=)
     subsys = dm(nm).subsystem;
     // Loop on each actuator:
     command = array(float,dm(nm)._nact);
-    
+
     for (i=1;i<=dm(nm)._nact;i++) {
-      
+
       ncur++;
       gui_progressbar_frac,float(ncur)/ntot;
       gui_progressbar_text,\
@@ -663,7 +663,7 @@ func do_imat(disp=)
         rcobuild, iMatSP, mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat, mat.sparse_thresh;
       }
 
-      
+
       // display, if requested:
       // WFS spots:
       if (is_set(disp)) {
@@ -713,7 +713,7 @@ func do_imat(disp=)
   // restore original values to WFS structure:
   status = restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
                                       skyfluxpersub_orig, bias_orig, flat_orig);
-  
+
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
 
@@ -723,9 +723,9 @@ func do_imat(disp=)
     mypltitle,"Interaction Matrix",[0.,-0.005],height=12;
     if (sim.debug >= 1) typeReturn;
   }
-  
+
   if (disp) {plsys,1; animate,0; }
-  
+
   clean_progressbar;
 }
 
@@ -734,12 +734,12 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
                               &skyfluxpersub_orig, &bias_orig, &flat_orig)
 {
   extern wfs;
-  
+
   noise_orig = cycle_orig = kconv_orig = array(0n,nwfs);
   skyfluxpersub_orig = bias_orig = flat_orig = array(pointer,nwfs);
 
   for (ns=1;ns<=nwfs;ns++) {
-    
+
     // Impose noise = rmsbias = rmsflat = 0 for interaction matrix measurements
     noise_orig(ns) = wfs(ns).noise;
     wfs(ns).noise = 0n;
@@ -751,14 +751,14 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
       skyfluxpersub_orig(ns) = &(*wfs(ns)._skyfluxpersub);
       *wfs(ns)._skyfluxpersub *= 0;
     }
-    
+
     if (wfs(ns).type == "hartmann" ) {
       kconv_orig(ns) = wfs(ns)._kernelconv;
       wfs(ns)._kernelconv = 1n;
 
       bias_orig(ns)  = &(*wfs(ns)._bias);
       *wfs(ns)._bias = *wfs(ns)._bias*0.0f;
-      
+
       flat_orig(ns)  = &(*wfs(ns)._flat);
       *wfs(ns)._flat = *wfs(ns)._flat*0.0f+1.0f;
     }
@@ -770,14 +770,14 @@ func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
 {
   extern wfs;
   for (ns=1;ns<=nwfs;ns++) {
-    
+
     wfs(ns).noise = noise_orig(ns);
-    
+
     wfs(ns).nintegcycles = cycle_orig(ns);
-    
+
     if (*wfs(ns)._skyfluxpersub!=[])                    \
       wfs(ns)._skyfluxpersub = skyfluxpersub_orig(ns);
-    
+
     if (wfs(ns).type == "hartmann" ) {
       wfs(ns)._kernelconv = kconv_orig(ns);
       wfs(ns)._bias = bias_orig(ns);
@@ -808,7 +808,7 @@ func prep_svd(imat,subsystem,svd=,disp=)
 
   Note: The Mode-to-Actuator (modToAct) matrix has to be used as follow:
   modes-coef    = actToMod(,+) * command-coef(+)
-  
+
   SEE ALSO: do_imat, build_cmat
 */
 {
@@ -824,7 +824,7 @@ func prep_svd(imat,subsystem,svd=,disp=)
     write,format="Smallests 2 normalized eigenvalues = %f",
       eigenvalues(-1)/max(eigenvalues),eigenvalues(0)/max(eigenvalues);
   }
-  
+
   if (sim.verbose>=2) {
     write,"Normalized eigenvalues:";
     write,eigenvalues/max(eigenvalues);
@@ -842,8 +842,8 @@ func prep_svd(imat,subsystem,svd=,disp=)
       }
     } while (change == 1);
     if (!yaopy) typeReturn;
-  } 
-  
+  }
+
   modToAct    = transpose(vt);
   //  actToMod    = LUsolve(modToAct);
   mesToMod    = transpose(u);  // used to be called ut
@@ -876,9 +876,9 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
 /* DOCUMENT build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
    Build the command matrix from V,UT, the eigenvalues and the modal gains
    F.Rigaut, June 17,2002
-   
+
    condition = Filter eigenvalues ev (and modes) for max(ev)/ev > condition
-   modalgain = vector of system mode gains to pre-multiply the contolr matrix 
+   modalgain = vector of system mode gains to pre-multiply the contolr matrix
                with. rarely used as these modes are not generally natural
                w.r.t. the turbulence.
    all = if not set, one (1) mode is forced to be discarded (useful if regular
@@ -895,10 +895,10 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
    - eigenvalues (extern)
    - modToAct (extern)
    - mesToMod (extern)
-     
+
    This routine calls:
    - Nothing
-     
+
    This routine sets:
    - NModesControlled (extern)
 
@@ -908,20 +908,20 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
    SEE ALSO: do_imat, prep_svd
 */
 {
-  extern NModesControlled;  
+  extern NModesControlled;
 
   neigen = numberof(eigenvalues);
-  
+
   mev   = array(float,neigen,neigen);
 
   mask = ((eigenvalues/max(eigenvalues)) > (1./condition));
-  
+
   if (is_set(nomodalgain)) {
     ev = eigenvalues;
   } else {
     ev = eigenvalues/modalgain;
   }
-  
+
   // Including the mode gains and eigenvalues here:
   for (i=1;i<=neigen;i++) {
     if (mask(i) == 1) {mev(i,i)=1./ev(i);}
@@ -945,7 +945,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
   // BEGINNING OF DISPLAY, NOTHING IMPORTANT
   // UNTIL "END OF DISPLAY"
   //=========================================
-  
+
   if ((sim.debug>=1) && (disp >= 1) ) {
 
     n1 = (sim._size-sim.pupildiam)/2-2;
@@ -955,7 +955,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
     cubphase = array(float,[3,nxy,nxy,numberof(sswfs)]);
     subpos = wfs(sswfs).gspos;
     disp2d,cubphase,subpos(1,),subpos(2,),1,zoom=0.9,init=1;
-    
+
     // find out to where is DM N in this subsystem "modToAct" matrix:
     ssdm = where(dm.subsystem == subsystem);
     //    indexDm = array(long,[2,2,numberof(ssdm)]);
@@ -967,7 +967,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
         index = index+dm(nm)._nact;
       }
     }
-    
+
     write,"Displaying filtered modes, type 'q' to exit display";
     // loop on modes
     mircube *= 0.0f;
@@ -1039,7 +1039,7 @@ func swap_screens(void)
    SEE ALSO:
 */
 {
-  extern pscreens; 
+  extern pscreens;
   weight = currentScreenNorm;
   // avoid division per zero
   // it's legitimate to have one screen == 0
@@ -1052,7 +1052,7 @@ func swap_screens(void)
 
   // re-apply normalization:
   weight = currentScreenNorm;
-  pscreens = pscreens*weight(-,-,);   
+  pscreens = pscreens*weight(-,-,);
 }
 //----------------------------------------------------
 
@@ -1077,28 +1077,28 @@ func get_turb_phase_init(skipReadPhaseScreens=)
                   // and therefore we can not wrap.
     wfsxposcub,   // contains the position of the ray at which a given X pixel
                   // intersects the Nth phase screen, for each WFS GS.
-                  // dimension [dimX outphase, nscreens, #GS] 
+                  // dimension [dimX outphase, nscreens, #GS]
     wfsyposcub,   // Same for Y
     gsxposcub,    // contains the position of the ray at which a given X pixel
                   // intersects the Nth phase screen, for each star at which the perf
-                  // is evaluated dimension [dimX outphase, nscreens, #Star] 
+                  // is evaluated dimension [dimX outphase, nscreens, #Star]
     gsyposcub,    // Same for Y
     dmwfsxposcub, // contains the position of the ray at which a given X pixel
                   // intersects the Nth mirror, for each WFS GS.
-                  // dimension [dimX outphase, ndm, #GS] 
+                  // dimension [dimX outphase, ndm, #GS]
     dmwfsyposcub, // Same for Y
     dmgsxposcub,  // contains the position of the ray at which a given X pixel
                   // intersects the Nth mirror, for each star at which the perf
-                  // is evaluated dimension [dimX outphase, ndm, #Star] 
+                  // is evaluated dimension [dimX outphase, ndm, #Star]
     dmgsyposcub,  // Same for Y
 
     optwfsxposcub,// contains the position of the ray at which a given X pixel
                   // intersects the Nth optics, for each WFS GS.
-                  // dimension [dimX outphase, noptics, #GS] 
+                  // dimension [dimX outphase, noptics, #GS]
     optwfsyposcub,// Same for Y
     optgsxposcub, // contains the position of the ray at which a given X pixel
                   // intersects the Nth optics, for each star at which the perf
-                  // is evaluated dimension [dimX outphase, noptics, #Star] 
+                  // is evaluated dimension [dimX outphase, noptics, #Star]
     optgsyposcub, // Same for Y
 
     xmargins,     // value of xposvec so that no pixel indice < 1 or > dimx(screen)
@@ -1130,7 +1130,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
   //=======================================================
   // READS AND NORMALIZE THE PHASE SCREENS
-  // the phase screens now (v2.4) are normalized in microns 
+  // the phase screens now (v2.4) are normalized in microns
   //=======================================================
 
   if (!is_set(skipReadPhaseScreens)) {
@@ -1156,7 +1156,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       inversely, we have:
       r0(i) = r0tot / f(i)^(3./5)
       =====================================================*/
-      
+
     if (sim.verbose>=1) {
       write,format="Reading phase screen \"%s\"\n",(*atm.screen)(1);
     }
@@ -1185,7 +1185,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     pscreens(dimx+1:,,) = pscreens(1:2*sim._size,,);
     // Can't do in Y as the phase screens are not periodic (they have been cutted)
     //  pscreens(,dimy+1:,) = pscreens(,1:sim._size,);
-    
+
     // apply weights to each phase screens (normalize):
     // the screens are expressed in microns
     pscreens = pscreens*weight(-,-,);
@@ -1231,7 +1231,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       optphasemaps = array(float,[3,optdimx,optdimy,noptics]);
       // Stuff it
       optphasemaps(,,1) = float(tmp);
-  
+
       for (i=2;i<=noptics;i++) {
         if (sim.verbose>=1) {
           write,format="Reading phase map for optics \"%s\"\n",opt(i).phasemaps;
@@ -1245,7 +1245,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       // (sim._cent-sim._size/2.) =  0. or 0.5
     }
   }
-  
+
   //====================================
   // PREPARE GEOMETRY FOR INTERPOLATION
   //====================================
@@ -1279,14 +1279,14 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
     // loop on WFS
     for (n=1;n<=nwfs;n++) {
-    
+
       // loop on screen
       for (ns=1;ns<=nscreens;ns++) {
-      
+
         // offsets of the center of beam on screen NS
         xoff = (wfs(n).gspos)(1)*4.848e-6*(*atm._layeralt)(ns)/psize;
         yoff = (wfs(n).gspos)(2)*4.848e-6*(*atm._layeralt)(ns)/psize;
-      
+
         // if we are dealing with LGS, there is a geometric
         // factor on the beam size
         if (wfs(n)._gsalt != 0) {
@@ -1294,19 +1294,19 @@ func get_turb_phase_init(skipReadPhaseScreens=)
         } else {
           fact = 1.;
         }
-      
+
         // Compute and stuff the array
         wfsxposcub(,ns,n) = xref*fact + xoff;
         wfsyposcub(,ns,n) = yref*fact + yoff;
       }
-    
+
       // loop on DMs
       for (ns=1;ns<=ndm;ns++) {
-      
+
         // offsets of the center of beam on DM NS
         xoff = (wfs(n).gspos)(1)*4.848e-6*(dm.alt)(ns)/psize;
         yoff = (wfs(n).gspos)(2)*4.848e-6*(dm.alt)(ns)/psize;
-      
+
         // if we are dealing with LGS, there is a geometric
         // factor on the beam size
         if (wfs(n)._gsalt != 0) {
@@ -1314,7 +1314,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
         } else {
           fact = 1.;
         }
-      
+
         // Compute and stuff the array
         dmwfsxposcub(,ns,n) = xref*fact + xoff;
         dmwfsyposcub(,ns,n) = yref*fact + yoff;
@@ -1322,11 +1322,11 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
       // loop on optics
       for (ns=1;ns<=noptics;ns++) {
-      
+
         // offsets of the center of beam on optics #NS
         xoff = (wfs(n).gspos)(1)*4.848e-6*opt(ns).alt/psize;
         yoff = (wfs(n).gspos)(2)*4.848e-6*opt(ns).alt/psize;
-      
+
         // if we are dealing with LGS, there is a geometric
         // factor on the beam size
         if (wfs(n)._gsalt != 0) {
@@ -1334,7 +1334,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
         } else {
           fact = 1.;
         }
-      
+
         // Compute and stuff the array
         optwfsxposcub(,ns,n) = xref*fact + xoff;
         optwfsyposcub(,ns,n) = yref*fact + yoff;
@@ -1349,18 +1349,18 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     dmwfsyposcub = float(dmwfsyposcub);
     optwfsxposcub = float(optwfsxposcub);
     optwfsyposcub = float(optwfsyposcub);
-  
-  
+
+
     //=============================================================
     // PRE-COMPUTATION OF THE INTERSECT POSITION FOR EACH PERF STAR
     //=============================================================
 
     // loop on target
     for (n=1;n<=target._ntarget;n++) {
-    
+
       // loop on screen
       for (ns=1;ns<=nscreens;ns++) {
-      
+
         // offsets of the center of beam on screen NS
         xoff = (*target.xposition)(n)*4.848e-6*(*atm._layeralt)(ns)/psize;
         yoff = (*target.yposition)(n)*4.848e-6*(*atm._layeralt)(ns)/psize;
@@ -1373,7 +1373,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
       // loop on DMs
       for (ns=1;ns<=ndm;ns++) {
-      
+
         // offsets of the center of beam on DM NS
         xoff = (*target.xposition)(n)*4.848e-6*(dm.alt)(ns)/psize;
         yoff = (*target.yposition)(n)*4.848e-6*(dm.alt)(ns)/psize;
@@ -1383,10 +1383,10 @@ func get_turb_phase_init(skipReadPhaseScreens=)
         dmgsxposcub(,ns,n) = xref + xoff;
         dmgsyposcub(,ns,n) = yref + yoff;
       }
-    
+
       // loop on optics
       for (ns=1;ns<=noptics;ns++) {
-      
+
         // offsets of the center of beam on DM NS
         xoff = (*target.xposition)(n)*4.848e-6*opt(ns).alt/psize;
         yoff = (*target.yposition)(n)*4.848e-6*opt(ns).alt/psize;
@@ -1396,7 +1396,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
         optgsxposcub(,ns,n) = xref + xoff;
         optgsyposcub(,ns,n) = yref + yoff;
       }
-    
+
     }
     // type conversion:
     gsxposcub = float(gsxposcub);
@@ -1423,7 +1423,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     for (ns=1;ns<=nscreens;ns++) {
       // we know that xposvec is now purely positive (lines above),
       // so that it is enough to insure that it will never go above upper limit:
-      // If pixel position of beam center (xposvec) is larger than the 
+      // If pixel position of beam center (xposvec) is larger than the
       // initial dimension of the screen + the xmargin necessary so that
       // off-axis beams don't hit negative indices, then it is
       // time to wrap by subtracting the original screen Xdim to
@@ -1432,7 +1432,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       // don't do for Y as we're not allowed to move along Y
       // (screen not periodic)
     }
-  
+
     // type conversion:
     xposvec = float(xposvec);
     yposvec = float(yposvec);
@@ -1449,7 +1449,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
     // check that y index does not overflow:
     get_turb_phase_initCheckOverflow;
-  
+
     inithistory = 1;
     return 1;
 }
@@ -1458,13 +1458,13 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 func get_turb_phase(iter,nn,type)
 /* DOCUMENT get_turb_phase(iter,n,type)
    Returns the interpolated, integrated phase along the turbulent phase
-   screen data cube to the loop function for iteration number "iter". 
+   screen data cube to the loop function for iteration number "iter".
    You have to call get_turb_phase_init to initialize prior using.
    SEE ALSO: aoinit, aoloop, get_turb_phase_init.
 */
 {
   if (!inithistory) {error,"get_turb_phase has not been initialized !";}
-  
+
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
@@ -1491,16 +1491,16 @@ func get_turb_phase(iter,nn,type)
 
   ishifts = int(xshifts);  xshifts = xshifts - ishifts;
   jshifts = int(yshifts);  yshifts = yshifts - jshifts;
- 
+
   err = _get2dPhase(&pscreens,psnx,psny,nscreens,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
 
   if (err != 0) {error,"Error in get_turb_phase";}
-  
+
   bphase(_n1:_n2,_n1:_n2) = sphase;
-  
+
   return bphase;
 }
 
@@ -1509,7 +1509,7 @@ func get_phase2d_from_dms(nn,type)
 /* DOCUMENT get_phase2d_from_dms(nn, type)
    Similar than get_turb_phase excepts it works on the mirror shape
    data cube. Returns the integrated phase along one given direction.
-   
+
    nn = yao object # of type as below
    type = "wfs" or "target".
    so get_phase2d_from_dms(2,"wfs") will return the phase integrated along
@@ -1520,13 +1520,13 @@ func get_phase2d_from_dms(nn,type)
    second plan = second mirror shape
    etc...
    should be of size sim._size * sim._size
-   SEE ALSO: 
+   SEE ALSO:
 */
 {
-  
+
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
-  
+
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
   // there are a few things to do to get ready
@@ -1555,9 +1555,9 @@ func get_phase2d_from_dms(nn,type)
                     &jshifts,&yshifts);
 
   if (err != 0) {error,"Error in get_phase2d_from_dms";}
-  
+
   bphase(_n1:_n2,_n1:_n2) = sphase;
-  
+
   return bphase;
 }
 
@@ -1568,14 +1568,14 @@ func get_phase2d_from_optics(nn,type)
    in the opt structure. See get_phase2d_from_dms.
    nn = wfs or GS #
    type = "wfs" or "target"
-   SEE ALSO: 
+   SEE ALSO:
 */
 {
   if (opt==[]) return 0.0f;
-  
+
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
-  
+
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
   // there are a few things to do to get ready
@@ -1604,9 +1604,9 @@ func get_phase2d_from_optics(nn,type)
                     &jshifts,&yshifts);
 
   //  if (err != 0) {error,"Error in get_phase2d_from_optics";}
-  
+
   bphase(_n1:_n2,_n1:_n2) = sphase;
-  
+
   return bphase;
 }
 
@@ -1614,7 +1614,7 @@ func get_phase2d_from_optics(nn,type)
 func correct_uplink_tt(phase, ns)
 /* DOCUMENT correct_uplink_tt(phase, ns)
    Apply tiptilt phase correction to a phase term, given
-   wfs._upttcommand determined previously. 
+   wfs._upttcommand determined previously.
    SEE ALSO:
 */
 {
@@ -1713,7 +1713,7 @@ func aoread(parfile)
 
   // if we are re-reading and had forks, get rid of them:
   if ((wfs!=[])&&(anyof(wfs.svipc>1))) status=quit_wfs_forks();
-  
+
   if (strmatch(parfile,".par")) {
     tmp = strpart(parfile,strword(parfile,"/",50));
     tmp = tmp(where(tmp));
@@ -1727,7 +1727,7 @@ func aoread(parfile)
   oparfile = parfile;
 
   // flush any prior assignments to ao members
-  atm=opt=sim=wfs=dm=mat=tel=target=gs=loop=cwfs=[];  
+  atm=opt=sim=wfs=dm=mat=tel=target=gs=loop=cwfs=[];
 
   // INIT STRUCTURES:
   atm  = atm_struct();
@@ -1741,7 +1741,7 @@ func aoread(parfile)
   gs   = gs_struct();
   loop = loop_struct();
   paramfile = parfile;
-  
+
   if (!fileExist(parfile)) {
     exit,swrite(format="Can not find parameter file %s !",parfile);}
 
@@ -1771,11 +1771,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
    svd          = set to enter SVD threshold condition by hand
    dpi          = dpi of graphic window
    keepdmconfig = when forcemat=1, the default behavior is to agregate the
-                  previously determined active and extrapolated actuators 
-                  and do the new interacton matrix with all of them. The 
-                  selection of valid/extrapolated is then reset (and 
+                  previously determined active and extrapolated actuators
+                  and do the new interacton matrix with all of them. The
+                  selection of valid/extrapolated is then reset (and
                   re-executed when the interaction matrix is done).
-                  Setting keepdmconfig=1 impose that the valid/extrapolated 
+                  Setting keepdmconfig=1 impose that the valid/extrapolated
                   setting remains as it was.
    SEE ALSO: aoread, aoloop
 */
@@ -1799,7 +1799,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
 
   if (mat.method == "mmse-sparse"){
-    
+
     require,"soy.i";
     extern MR,MN;
     MR = mat.sparse_MR;
@@ -1815,11 +1815,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+
                        "forcemat=%d,svd=%d,keepdmconfig=%d\n",
                        disp,clean,forcemat,svd,keepdmconfig;
-  
+
   sphase = bphase = mircube = [];
 
   hcp_file,YAO_SAVEPATH+parprefix+"init.ps",ps=1;
-  
+
   //=====================================
   // PARAMETER CHECKS. SETS SOME DEFAULTS
   //=====================================
@@ -1849,7 +1849,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   write,f,format="=============================\n%s\n",sim.name;
   close,f;
 
-  
+
   //===================================================================
   // INIT SVIPC IF NEEDED:
   //===================================================================
@@ -1857,7 +1857,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     require,"yao_svipc.i";
     status = svipc_init();
   }
-  
+
 
   //===================================================================
   // INITIALIZE SOME STUFF FOR OFF ZENITH CONFIGURATIONS:
@@ -1898,7 +1898,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else if (wfs(i).type == "zernike") {
       grow,cent,sim._size/2+1;
     } else {
-      if (cent == []){        
+      if (cent == []){
         grow,cent,sim._size/2+1;
         write,format ="FIXME: user wfs function: assuming cent is at %.1f\n", float(sim._size/2+1);
       } else {
@@ -1924,10 +1924,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                           cobs=tel.cobs));
 
   if (user_pupil) user_pupil;
-  
+
   pupil = float(pupil);
   ipupil = float(ipupil);
-  
+
   //==================================
   // DEFINE INDICES FOR SUBARRAY WORK:
   //==================================
@@ -1937,7 +1937,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   _p2       = long(floor(sim._cent+_p/2.));
   _p        = _p2-_p1+1;
 
-  
+
   _n        = _p+4;
   _n1       = _p1-2;
   _n2       = _p2+2;
@@ -2003,7 +2003,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else if (wfs(n).type == "zernike") {
       zernike_wfs,ipupil,ipupil*0.,n,init=1;
 
-    } else { 
+    } else {
       // assign user_wfs to requested function/type:
       cmd = swrite(format="user_wfs = %s",wfs(n).type);
       include,[cmd],1;
@@ -2019,7 +2019,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   fact = 4.848 * (tel.diam/sim.pupildiam);
   tip1arcsec = float(xy(,,1)*fact);
   tilt1arcsec = float(xy(,,2)*fact);
-  
+
   //===============================
   // GET WFS REFERENCE MEASUREMENTS
   //===============================
@@ -2060,7 +2060,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // we've changed some wfs value. sync svipc if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
-  
+
   mes = mult_wfs_int_mat(disp=disp)/push;  // mes in arcsec
 
   wfs._tiprefv = split_wfs_vector(mes);
@@ -2077,7 +2077,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // we've changed some wfs value. sync svipc if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
-  
+
   mes = mult_wfs_int_mat(disp=disp)/push;  // mes in arcsec
 
   wfs._tiltrefv = split_wfs_vector(mes);
@@ -2092,10 +2092,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // restore original values to WFS structure:
   status = restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
                                       skyfluxpersub_orig, bias_orig, flat_orig);
-  
+
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
-  
+
   //==================================
   // INITIALIZE DM INFLUENCE FUNCTIONS
   //==================================
@@ -2106,7 +2106,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   for (n=1;n<=ndm;n++) {
     if ( (dm(n).disjointpup) && (disjointpup==[]) ) \
     error,swrite(format="dm(%d).disjointpup set but disjointpup does not exist\n",n);
-    
+
     if (dm(n).pupoffset!=[]) \
        dm(n)._puppixoffset = long(dm(n).pupoffset/tel.diam*sim.pupildiam);
 
@@ -2114,7 +2114,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     // Set _n1 and _n2, the limit indices
     if (dm(n).type == "stackarray") {
       // find out the support dimension for the given mirror.
-      extent = dm(n).pitch*(dm(n).nxact+2.); // + 1.5 pitch each side      
+      extent = dm(n).pitch*(dm(n).nxact+2.); // + 1.5 pitch each side
       dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
       dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
     } else {  // we are dealing with a curvature mirror, TT, zernike,diskharmonic or aniso:
@@ -2128,10 +2128,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
       dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
     }
-    
+
     // compute influence functions:
     // If file exist, read it out:
-    if ( (fileExist(YAO_SAVEPATH+dm(n).iffile)) && (!is_set(clean)) ) { 
+    if ( (fileExist(YAO_SAVEPATH+dm(n).iffile)) && (!is_set(clean)) ) {
 
       if (sim.verbose>=1) {
         write,format="  >> Reading file %s\n",dm(n).iffile;
@@ -2148,7 +2148,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       }
 
-      if ( (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) && (!is_set(clean)) ) { 
+      if ( (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) && (!is_set(clean)) ) {
         if (sim.verbose>=1) {
           write,format="  >> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
         }
@@ -2163,7 +2163,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
         }
       }
-      
+
     } else { // else compute the influence functions:
 
       if (sim.verbose>=1) {
@@ -2171,10 +2171,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       if (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) {// delete the extrapolated influence functions
-        remove, YAO_SAVEPATH+dm(n)._eiffile;        
+        remove, YAO_SAVEPATH+dm(n)._eiffile;
       }
       if (disp) { plsys,1; animate,1; }
-      
+
       if (dm(n).type == "bimorph") {
         make_curvature_dm, n, disp=disp,cobs=tel.cobs;
       } else if (dm(n).type == "stackarray") {
@@ -2195,7 +2195,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         make_segmented_dm, n, disp=disp;
       } else if (dm(n).type == "aniso") {
         make_aniso_dm, n, disp=disp;
-      } else { 
+      } else {
         // we're dealing with a user defined DM function:
         // assign user_wfs to requested function/type:
         cmd = swrite(format="user_dm = %s",dm(n).type);
@@ -2248,7 +2248,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //=========================================
 
   // determine whether a new interaction matrix is needed
-    
+
   need_new_iMat = (forcemat || anyof(!fileExist(YAO_SAVEPATH+dm.iffile)));
 
   if (need_new_iMat == 0){
@@ -2290,7 +2290,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       }
     }
-    
+
     if (sim.verbose >= 1) {write,"\n> DOING INTERACTION MATRIX";}
     gui_message,"Doing interaction matrix";
     if (mat.method != "mmse-sparse"){
@@ -2302,13 +2302,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else {
       iMatSP = rco();
     }
-    
+
     // measure interaction matrix:
-    estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront     
+    estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront
     if ( sum(dm(estDMs)._nact) > sum(wfs._nmes) ) {
       write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",sum(dm._nact),sum(wfs._nmes);
       if (mat.method == "svd"){
-        write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD"; 
+        write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD";
         typeReturn;
       }
     }
@@ -2332,7 +2332,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (mat.method == "mmse-sparse"){
         AtA = rcoata(iMatSP);
         resp = sqrt((*AtA.xd)(1:AtA.r)); // take the diagonal
-        actuators_to_remove = []; 
+        actuators_to_remove = [];
       } else {
         resp = sqrt((iMat^2.)(sum,));
         //resp = (abs(iMat))(max,); // marcos commented this. problem?
@@ -2383,7 +2383,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             dm(nm)._i1 = &(int(dmi1(ok)));
             dm(nm)._j1 = &(int(dmj1(ok)));
           }
-          
+
           if (numberof(nok) == 0) continue; //yes, it should be here.
 
           dm(nm)._ex = &(dmx(nok));
@@ -2409,7 +2409,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,*(dm(nm)._y),exttype="IMAGE",append=1;
           if (dm(nm).elt == 1) {
             yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._i1)),exttype="IMAGE",append=1;
-            yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;            
+            yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;
           }
           dm(nm)._nact = (dimsof(*(dm(nm)._def)))(4);
 
@@ -2419,7 +2419,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ey),exttype="IMAGE",append=1;
           if (dm(nm).elt == 1) {
             yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ei1)),exttype="IMAGE",append=1;
-            yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ej1)),exttype="IMAGE",append=1;            
+            yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,long(*(dm(nm)._ej1)),exttype="IMAGE",append=1;
           }
           dm(nm)._enact = (dimsof(*(dm(nm)._edef)))(4);
 
@@ -2434,7 +2434,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           } else {
             iMat(,indexDm(1,nm)-1+nok) *=0.;
           }
-          
+
         }
       }
       if (mat.method == "mmse-sparse"){
@@ -2504,8 +2504,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       dm(nm)._extrapcmat = &(transpose(disact));
     }
   }
-    
-  
+
+
   /* STILL TO BE IMPLEMENTED IN V1.2
      I'll keep it for later.
      // INITIALIZE NON-COMMON PATH REFERENCE MEASUREMENTS:
@@ -2525,14 +2525,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
      if (ao.verbose>=1) {write,"No WFS reference used\n";}
      }
      }
-  */ 
+  */
 
   // INITIALIZE MODAL GAINS:
 
   if (mat.method == "svd"){
     if (sim.verbose>=1) {write,"\n> INITIALIZING MODAL GAINS";}
     gui_message,"Initializing modal gains";
-    
+
     modalgain = [];
 
     if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
@@ -2541,9 +2541,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       modalgain = yao_fitsread(YAO_SAVEPATH+loop.modalgainfile);
 
     }
-  
+
     if (numberof(modalgain) != sum(dm._nact)) {
-      
+
       if (sim.verbose>=1) {
         write,format="I did not find %s or it did not have the right\n ",
           loop.modalgainfile;
@@ -2551,7 +2551,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           sum(dm._nact);
         write,"  a modal gain vector with ones in it.\n";
       }
-      
+
       modalgain = array(1.,sum(dm._nact));
 
     }
@@ -2565,23 +2565,23 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
     if (sim.verbose>=1) {write,format="  >> Reading file %s\n",mat.file;}
-    if (mat.method != "mmse-sparse") {    
+    if (mat.method != "mmse-sparse") {
       // read out mat file and stuff iMat and cMat:
       tmp = yao_fitsread(YAO_SAVEPATH+mat.file);
       iMat = tmp(,,1);
       cMat = transpose(tmp(,,2));
       tmp = [];
       if (anyof(dm.fitvirtualdm)){
-        if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){          
+        if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
           dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
         } else {
           svd = 1;
         }
-        if (fileExist(YAO_SAVEPATH+parprefix+"-cMat.fits")){          
+        if (fileExist(YAO_SAVEPATH+parprefix+"-cMat.fits")){
           cMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-cMat.fits");
         } else {
           svd = 1;
-        }        
+        }
       }
     } else {
       iMatSP = GxSP = restore_rco(YAO_SAVEPATH+mat.file);
@@ -2601,23 +2601,23 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         } else {
           svd = 1;  // need to recreate reconstructors
         }
-      } 
+      }
     }
   }
 
   // create the fitting matrices for tomography
   for (nm=1;nm<=numberof(dm);nm++){
     if (dm(nm).fitvirtualdm){
-      
+
       virtualDMs = *dm(nm).fitvirtualdm;
       nVirtualDMs = numberof(virtualDMs);
 
       if (dm(nm).type == "stackarray"){
         xloct = *dm(nm)._x; // location of the tomography actuators
         yloct = *dm(nm)._y;
-      
+
         xlocv = ylocv = []; // location of the virtual actuators
-    
+
         for (c1=1;c1<=nVirtualDMs;c1++){
           grow, xlocv, *dm(virtualDMs(c1))._x;
           grow, ylocv, *dm(virtualDMs(c1))._y;
@@ -2625,9 +2625,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       } else if (dm(nm).type == "zernike"){
         xloct = indgen(dm(nm).minzer:dm(nm).nzer);
         yloct = indgen(dm(nm).minzer:dm(nm).nzer);
-        
+
         xlocv = ylocv = []; // location of the virtual actuators
-        
+
         for (c1=1;c1<=nVirtualDMs;c1++){
           grow, xlocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
           grow, ylocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
@@ -2646,7 +2646,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
           rcobuild, temp, float(v1), mat.sparse_thresh;
         }
-        dm(nm)._fMat = &rcotr(temp);        
+        dm(nm)._fMat = &rcotr(temp);
       }
     }
   }
@@ -2662,12 +2662,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       for (ns=1;ns<=nwfs;ns++) {grow,sswfs,array(wfs(ns).subsystem,wfs(ns)._nmes);}
       for (nm=1;nm<=ndm;nm++)  {grow,ssdm,array(dm(nm).subsystem,dm(nm)._nact);}
       for (ss=1;ss<=max(dm.subsystem);ss++) {
-        
+
         wsswfs = where(sswfs == ss);
         wssdm  = where(ssdm  == ss);
         imat = iMat(wsswfs,wssdm);
         mg = modalgain(wssdm);
-        
+
         prep_svd,imat,ss,svd=svd,disp=disp;
 
         tmpdisp = noneof(dm(where(dm.subsystem == ss)).type == "aniso");
@@ -2678,7 +2678,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     } else if (mat.method == "mmse") {
 
-      // create the regularization matrices for each DM      
+      // create the regularization matrices for each DM
       nAct = (dimsof(iMat))(3);
       nDMs = numberof(dm);
 
@@ -2695,14 +2695,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
               xii = xpos(ii);
               yii = ypos(ii);
-              
+
               dx = xpos - xii;
               dy = ypos - yii;
-              
+
               dist2= dx^2+dy^2;
 
               L(ii,ii) = -1.;
-              L(ii,where(dist2 == pitch2)) = 0.25;              
+              L(ii,where(dist2 == pitch2)) = 0.25;
             }
             dm(nm)._regmatrix = &(L(+,)*L(+,));
           } else { // identity matrix
@@ -2712,31 +2712,31 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           dm(nm)._regmatrix = dm(nm).regmatrix;
         }
       }
-      
+
       if (anyof(dm.fitvirtualdm)){
         estAct = []; // actuators used to estimate wavefront
         realAct = []; // real (non virtual) actuators used to compensate the wavefront
         actno = 0;
-        
+
         for (nm=1;nm<=ndm;nm++){
           if (!dm(nm).fitvirtualdm){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           if (!dm(nm).virtual){
             grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
-          }  
+          }
           actno += dm(nm)._nact;
         }
-      
-        Ga = iMat(:,realAct); 
+
+        Ga = iMat(:,realAct);
         Gx = iMat(:,estAct);
         AtA = Gx(+,)*Gx(+,);
-        
+
         nEstAct = numberof(estAct);
         nRealAct = numberof(realAct);
 
         Cphi = array(float,[2,nEstAct,nEstAct]);
-        
+
         mc = 0;
         for (nm=1;nm<=nDMs;nm++){
           if (!dm(nm).fitvirtualdm){
@@ -2747,10 +2747,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         cMat = LUsolve(AtA+Cphi)(,+)*Gx(,+);
         yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
-        
+
         realDMs = where(!dm.virtual); // DMs used to compensate wavefront
-        estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront  
-        
+        estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront
+
         nActReal = sum(dm(realDMs)._nact);
         nActEst = sum(dm(estDMs)._nact);
 
@@ -2767,7 +2767,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           if (!dm(nm).virtual){
             idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
             startIdx +=  dm(nm)._nact;
-            
+
             if (!dm(nm).fitvirtualdm){
               // real (ordinary) DM
               vidx = indgen(indexDm(1,nm):indexDm(2,nm));
@@ -2777,10 +2777,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               vidx = [];
               virtualDMs = *dm(nm).fitvirtualdm;
               for (c1=1;c1<= numberof(virtualDMs);c1++){
-                grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1))); 
+                grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1)));
               }
-      
-              fMat(idx,vidx) =  *dm(nm)._fMat;      
+
+              fMat(idx,vidx) =  *dm(nm)._fMat;
             }
           }
         }
@@ -2801,31 +2801,31 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi)(,+)*iMat(,+);
       }
-      
+
     } else if (mat.method == "mmse-sparse"){
-      
+
       // create the regularization matrices for each DM
       nAct = iMatSP.r;
       nDMs = numberof(dm);
 
       CphiSP = [];
-      
+
       for (nm=1;nm<=nDMs;nm++) {
         if (*dm(nm).regmatrix == []) {
           if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
             xpos = *dm(nm)._x;
             ypos = *dm(nm)._y;
             pitch2 = dm(nm).pitch^2;
-            
+
             laplacian_mat = rco();
-  
+
             for (ii=1;ii<=dm(nm)._nact;ii++) {
               xii = xpos(ii);
               yii = ypos(ii);
-              
+
               dx = xpos - xii;
               dy = ypos - yii;
-              
+
               dist2= dx^2+dy^2;
 
               lvec = array(float,dm(nm)._nact);
@@ -2841,31 +2841,31 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         } else {
           dm(nm)._regmatrix = dm(nm).regmatrix;
         }
-        
+
         regmatrix = *dm(nm)._regmatrix;
         ruox, regmatrix, dm(nm).regparam; // multiply the matrix by a constant
 
         if (!dm(nm).fitvirtualdm){
-        if (CphiSP == []) {        
+        if (CphiSP == []) {
           CphiSP = regmatrix;
           } else {
           spcon, CphiSP,regmatrix, diag=1, ruo=1;
           }
         }
       }
-      
+
       if (anyof(dm.fitvirtualdm)) {
         estAct = []; // actuators used to estimate wavefront
         realAct = []; // real (non virtual) actuators used to compensate the wavefront
         actno = 0;
-        
+
         for (nm=1;nm<=ndm;nm++){
           if (!dm(nm).fitvirtualdm){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           if (!dm(nm).virtual){
             grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
-          }  
+          }
           actno += dm(nm)._nact;
         }
 
@@ -2875,23 +2875,23 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         GaSP.ix = &(*iMatSP.ix);
         GaSP.jx = &(*iMatSP.jx);
         GaSP.xn = &(*iMatSP.xn);
-        
-        GxSP = iMatSP; 
+
+        GxSP = iMatSP;
         GxSP.ix = &(*iMatSP.ix);
         GxSP.jx = &(*iMatSP.jx);
         GxSP.xn = &(*iMatSP.xn);
-        
+
         for (a1=iMatSP.r;a1>=1;a1--){
           if (noneof(estAct == a1)){
             rcodr, GxSP, a1;
-          } 
+          }
           if (noneof(realAct == a1)){
             rcodr, GaSP, a1;
           }
         }
-        
+
         save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
-        
+
         // create a global fitting matrix
 
         fMatSP = [];
@@ -2901,13 +2901,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         for (nm=2;nm<=ndm;nm++) {
           indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
         }
-        
+
         nEstAct =sum(dm(where(!dm.fitvirtualdm))._nact);
         nEstDMs = numberof(where(!dm.fitvirtualdm));
-        
+
         for (nm=1;nm<=numberof(dm);nm++) {
           if (dm(nm).virtual){ continue; } // no virtual DMs in the rows
-          
+
           if (dm(nm).fitvirtualdm) {
             dmfMat = rcotr(*dm(nm)._fMat);
             vdmidx = [];
@@ -2922,25 +2922,25 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               vec = array(float,nEstAct);
               vec(c1) = 1.;
               row(vdmidx) = rcoxv(dmfMat, vec); // extract row c1
-              
+
               if (fMatSP == []){
                 fMatSP = sprco(row);
-              } else {        
+              } else {
                 rcobuild, fMatSP, row, mat.sparse_thresh;
               }
             }
-    
+
           } else { // an ordinary DM
             for (c1=1;c1<=dm(nm)._nact;c1++){
               row = array(float,[2,nEstAct,1]);
               row(indexDm(1,nm)+c1-1)=1;
               if (fMatSP == []){
                 fMatSP = sprco(row);
-              } else {        
+              } else {
                 rcobuild, fMatSP, row, mat.sparse_thresh;
               }
             }
-          }        
+          }
         }
 
         fMatSP = rcotr(fMatSP);
@@ -2949,13 +2949,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         AtAregSP = ruoadd(AtA,CphiSP);
 
         t1 = rcoatb(fMatSP,rcotr(GaSP));
-        
-        (*GxSP.xn) *= -1;  
+
+        (*GxSP.xn) *= -1;
         DtermSP = rcoadd(t1,GxSP);
-        (*GxSP.xn) *= -1;  
-  
+        (*GxSP.xn) *= -1;
+
         t2 =  rcotr(rcoatb(GxSP,DtermSP));
-        CphiSPrco = ruo2rco(CphiSP); 
+        CphiSPrco = ruo2rco(CphiSP);
         *CphiSPrco.xn *= -1;
         polcMatSP = rcotr(rcoadd(t2,CphiSPrco));
         save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
@@ -2964,11 +2964,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         AtA = rcoata(iMatSP);
         AtAregSP = ruoadd(AtA,CphiSP);
       }
-      
+
       save_rco,iMatSP,YAO_SAVEPATH+mat.file;
       save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
     }
-    
+
     if (mat.method != "mmse-sparse") {
 
       // More debug display
@@ -2987,7 +2987,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       } else { // just save the iMat and force the recreation of cMat on reload
         yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
       }
-    } 
+    }
   }
 
   //===================================================================
@@ -3057,17 +3057,17 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (noneof(nmhigh == tmp)) { error,"Invalid selection"; }
       nmhigh = tmp;
     }
-    
+
     project_aniso_dm,nmaniso(1),nmlow(1),nmhigh(1),disp=0;
   }
-  
+
   //==========================
   // OUTPUT GRAPHIC FOR CONFIG
   //==========================
 
   if ((disp == 1)&&(!yaopy)) graphic_config;
   hcp_finish;
-  
+
   //===================================
   // PRINT OUT SUMMARY FOR WFSs AND DMs
   //===================================
@@ -3089,7 +3089,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     write,format="D/r0 (500nm) = %.1f; %d iterations\n",atm.dr0at05mic/
       cos(gs.zenithangle*dtor)^0.6,loop.niter;
   }
-  
+
   // same in result file:
   f = open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,"";
@@ -3110,22 +3110,22 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   close,f;
 
 
-  // basic initialization in case of svipc use: 
+  // basic initialization in case of svipc use:
   if (sim.svipc) require,"yao_svipc.i";
 
-  
+
   gui_message,"aoinit done: click on aoloop";
   yicon = Y_HOME+"icons/yicon48.png";
   //  system,swrite(format=                                             \
   //      "growlnotify yao --image '%s' -m '%s: aoinit done'",yicon,parprefix);
-  
+
 }
 
 //---------------------------------------------------------------
 func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
 /* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    Prepare all arrays for the execution of the loop (function go()).
-   
+
    disp          = set to display stuff as the loop goes
    savecb        = set to save "circular buffers"
    dpi           = dpi of graphic window
@@ -3135,7 +3135,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    anim          = set to 1 to use double buffering. Avoids flicker but
                    might confuse the user if not turned off in normal operation
                    see animate() yorick function. ON by default.
-   savephase     = set to save residual wavefront on first target as fits file 
+   savephase     = set to save residual wavefront on first target as fits file
    SEE ALSO: aoread, aoinit, go, restart
  */
 {
@@ -3143,12 +3143,12 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    The parameters are entered in a parameter file, called for instance
    "sh12.par". The sequence for running an AO simulation is -to date-
    as follow:
-     
+
    > aoread,"sh12.par"
    > aoinit,disp=1,forcemat=1  (or forcemat=0 if IF and matrices already
    computed)
    > psf = aoloop(disp=1)      (this routine)
-     
+
    This simulates the ao loop. After the initialization, the loop
    steps include:
    - get the turbulent phase from get_turb_phase()
@@ -3206,11 +3206,11 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   extern commb,errmb; // minibuffers
   extern default_dpi;
   extern savephaseFlag;
-  
+
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
   if (anim==[]) anim=1; // let's make it the default
-  
+
   dispFlag = disp;
   savecbFlag = savecb;
   dpiFlag = dpi;
@@ -3218,7 +3218,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   nographinitFlag = nographinit;
   animFlag = anim;
   savephaseFlag = savephase;
-  
+
   gui_message,"Initializing loop";
 
 
@@ -3231,10 +3231,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   if (is_set(controlscreen) && !is_set(nographinit)) {
     control_screen,0,init=1;
   }
-  
+
   size    = sim._size;
 
-  
+
   // Some arrays initialization:
   looptime      = 0.;
   mircube       = array(float,[3,size,size,ndm]);
@@ -3261,12 +3261,12 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   niterok       = 0;
   remainingTimestring = "";
   njumpsinceswap = 0; // number of jumps since last screen swap
-  
+
   // minibuffers for up to 10th order filters (control laws):
   // determine number of actuators and commands
   nComm = 0;
   nAct = 0;
-  
+
   for (nm=1;nm<=ndm;nm++){
     if (dm(nm).virtual == 0) nComm += dm(nm)._nact;
     if (*dm(nm).fitvirtualdm == []) nAct += dm(nm)._nact;
@@ -3274,7 +3274,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
 
   commb          = array(float,[2,nComm,10]);
   errmb          = array(float,[2,nAct,10]);
-  
+
   if (is_set(savecb)) {
     cbmes         = array(float,[2,sum(wfs._nmes),loop.niter]);
     cbcom         = array(float,[2,sum(nComm),loop.niter]);
@@ -3302,10 +3302,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
       curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
     }
   }
-  
+
   // reset cyclecounters
   wfs._cyclecounter = wfs._cyclecounter*0 +1;
-  
+
   indexDm       = array(long,2,ndm);
   indexDm(,1)   = [1,dm(1)._nact];
   for (nm=2;nm<=ndm;nm++) {
@@ -3340,7 +3340,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   ditherCosLast = ditherSinLast = 0.0;
   ditherMesCos = ditherMesSin = ditherMes = array(0.,nwfs);
   //}
-  
+
   // verbose
   if (sim.verbose>=1) {
     write,format="\n> Starting loop with %i iterations\n",loop.niter;
@@ -3354,14 +3354,14 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
                           tel.diam*sim.pupildiam/sim._size/2*sim._size];
       // last 2 terms to accomodate internal dispzoom scaling
     }
-    disp2d,im,*target.xposition,*target.yposition,1, 
+    disp2d,im,*target.xposition,*target.yposition,1,
       zoom=*target.dispzoom,init=1;
       if (wfs_display_mode=="spatial") {
         disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
            zoom=wfs.dispzoom,init=1;
       } else {
         disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,\
-           init=1; 
+           init=1;
       }
   }
 
@@ -3369,12 +3369,12 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
 
   olddisp = disp;
   oldcontrolscreen = controlscreen;
-  
+
   // Main loop:
 
   loopCounter=0;
   nshots = -1;
-  
+
   if (sim.svipc) {
     status = svipc_init();
 
@@ -3384,7 +3384,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
     shm_write,shmkey,"raylflux_per_wfs",&raylflux_per_wfs;
     shm_var,shmkey,"raylflux_per_wfs",raylflux_per_wfs;
     */
-    
+
     status = svipc_start_forks();
 
     status = init_sync();
@@ -3393,7 +3393,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   if (animFlag && dispFlag) {
     plsys,1; animate,1;
   }
-  
+
   gui_message,"Initializing loop...done. \"go\" to start, \"pause\" to pause";
 }
 
@@ -3415,8 +3415,8 @@ func go(nshot,all=)
    reset           // flatten the DMs
    stop            // pause the loop
    cont            // continues the loop
-  
-   nshot = # of iterations to go through. if not set, will go until 
+
+   nshot = # of iterations to go through. if not set, will go until
            loop.niter (total # of iterations) has been done
    all   = do all remaining iteration without returning to the yorick prompt.
      This is useful in scripts to avoid messy side effects of set_idler.
@@ -3433,7 +3433,7 @@ func go(nshot,all=)
   extern im,imav;
 
   gui_show_statusbar1;
-  
+
   if (nshot!=[]) {
     if (animFlag&&dispFlag) {
       plsys,1;
@@ -3452,7 +3452,7 @@ func go(nshot,all=)
     // initialize timers
     tic,2; starttime = _nowtime(2);
   }
-  
+
   go_start:  now = tac(2);
 
   loopCounter++;
@@ -3460,17 +3460,17 @@ func go(nshot,all=)
 
   gui_progressbar_frac,float(loopCounter)/loop.niter;
   gui_progressbar_text,swrite(format="%d out of %d iterations",loopCounter,loop.niter);
-  
+
   comvec=[];
-  
+
   if (loopCounter>loop.niter) {
     exit,"Can't continue: loopCounter > loop.niter !";
   }
-  
+
   i=loopCounter;
   tic; time(1) = tac();
 
-    
+
   prevOK  = ok;
 
   //==========================
@@ -3478,7 +3478,7 @@ func go(nshot,all=)
   // act on wfs._upttcommand
   // sense on wfs._tt
   if (anyof(wfs.centGainOpt)) {
-    wdither = where((wfs.correctUpTT == 1) & (wfs.centGainOpt ==1) & 
+    wdither = where((wfs.correctUpTT == 1) & (wfs.centGainOpt ==1) &
               (wfs.filtertilt == 1));
     if (numberof(wdither) != 0) { nditherarray = array(1.,numberof(wdither)); }
     ditherCosCurr = ditherAmp*cos(2*pi*i/ditherPeriod);
@@ -3504,8 +3504,8 @@ func go(nshot,all=)
   }
   // END OF DITHERING PART
   //===========================
-    
-  // get the turbulent phase:   
+
+  // get the turbulent phase:
   // Do the wavefront sensing:
   if (anyof([sim.svipc>>0,sim.svipc>>2]&1)) { // parallel computing.
     svipc_wfsmes = topwfs_svipc();
@@ -3513,7 +3513,7 @@ func go(nshot,all=)
   time(2) +=  tac();
 
   ok  = statsokvec(i);
-    
+
   if ((prevOK-ok)==1) { // After a jump
     njumpsinceswap++;
     if (njumpsinceswap==loop.jumps2swapscreen) {
@@ -3528,32 +3528,32 @@ func go(nshot,all=)
   // one frame delay of integrator, 2 -> integrator + one frame
   // computation, etc...
   wfsMesHistory  = roll(wfsMesHistory,[0,-1]);
-  
+
   if (anyof([sim.svipc>>0,sim.svipc>>2]&1)) { // parallel computing.
     wfsMesHistory(,loop.framedelay) = svipc_wfsmes;
   } else {
     wfsMesHistory(,loop.framedelay+1) = WfsMes;
   }
-  
+
   usedMes        = float(wfsMesHistory(,1));
 
   time(3) += tac();
-    
+
   // RECONSTRUCTION:
   // computes the actuator error vector from the measurements:
-  if (mat.method == "mmse-sparse") {      
-    if (i == 1){      
+  if (mat.method == "mmse-sparse") {
+    if (i == 1){
       MR = mat.sparse_MR;
       MN = mat.sparse_MN;
     }
-    
+
     if (sum(usedMes != 0) == 0){ // sparse CG method does not work if all zeros
       err = array(float,AtAregSP.r);
     } else {
       if ((loop.method == "pseudo open-loop") && (i > 1) && (polcMatSP != [])){
         Ats=float(rcoxv(GxSP,usedMes)-rcoxv(polcMatSP,estdmcommand));
       } else {
-        Ats=rcoxv(GxSP,usedMes); 
+        Ats=rcoxv(GxSP,usedMes);
       }
       err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=1.e-3));
     }
@@ -3573,7 +3573,7 @@ func go(nshot,all=)
     err(waniso) = 0.;
     //      dm(wdmaniso)._command = invcomaniso(+,)*
   }
-    
+
   time(4) += tac();
 
   // Computes the mirror shape using influence functions:
@@ -3596,7 +3596,7 @@ func go(nshot,all=)
     *dm(nm)._command *= (1-loop.leak(1));
     // integrator
     *dm(nm)._command -= loop.gain * dm(nm).gain * dmerr;
-    
+
     // higher order (up to 9!):
     maxorder = clip(numberof(*loop.gainho)+1,,10);
     for (order=2;order<=maxorder;order++) {
@@ -3622,14 +3622,14 @@ func go(nshot,all=)
       } else {
         *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
       }
-    }    
-    
+    }
+
     if (dm(nm).filtertilt){ // filter piston, tip and tilt
       if (dm(nm).type == "stackarray"){
         // todo: have a variable to store xv and yv to avoid recomputing
         xv = *dm(nm)._x - avg(*dm(nm)._x);
         xv = xv / sqrt(sum(xv*xv));
-        
+
         yv = *dm(nm)._y - avg(*dm(nm)._y);
         yv = yv / sqrt(sum(yv*yv));
 
@@ -3639,7 +3639,7 @@ func go(nshot,all=)
       }
 
       if (dm(nm).type == "zernike"){
-        if (dm(nm).minzer <= 3){          
+        if (dm(nm).minzer <= 3){
           (*dm(nm)._command)(1:4-dm(nm).minzer) = 0;
         }
       }
@@ -3651,9 +3651,9 @@ func go(nshot,all=)
         grow, estdmcommand, *dm(idx)._command;
       }
     }
-    
+
     if (dm(nm).hyst > 0.) {*dm(nm)._command = hysteresis(*dm(nm)._command,nm);}
-      
+
     if (dm(nm).maxvolt != 0) {
       dm(nm)._command=&(float(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt)));
     }
@@ -3694,9 +3694,9 @@ func go(nshot,all=)
   }
 
   time(5) += tac();
-  
+
   ok = ok*((i % loop.stats_every) == 0); // accumulate stats only every 4 iter.
-  
+
   okdisp = ( is_set(disp) && (((i-1) % disp) == 0) );
   if (nshots>0) okdisp=is_set(disp);
   okcscreen = ( is_set(controlscreen) && (((i-1) % controlscreen) == 0) );
@@ -3714,8 +3714,8 @@ func go(nshot,all=)
     residual_phase(where(pupil > 0)) = residual_phase1d;
 
     result=yao_fitswrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));
-  } 
-    
+  }
+
 
 
   // Computes the instantaneous PSF:
@@ -3753,7 +3753,7 @@ func go(nshot,all=)
         // compute image cube from phase cube
         status = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
                                 target._ntarget,float(2*pi/(*target.lambda)(jl)));
-        
+
         // Accumulate statistics:
         imav(,,,jl) = imav(,,,jl) + im;
       }
@@ -3774,7 +3774,7 @@ func go(nshot,all=)
       if (wfs(ns)._cyclecounter == 1) {*wfs(ns)._dispimage = *wfs(ns)._fimage;}
     }
   }
-    
+
   if (okdisp) {
     if (!animFlag) fma;
     // PSF Images
@@ -3801,7 +3801,7 @@ func go(nshot,all=)
         mypltitle,"WFSs",[0.,-0.00],height=12;
       }
     }
-      
+
     // mirror surface
     plsys,3;
     limits,square=1;
@@ -3836,7 +3836,7 @@ func go(nshot,all=)
     plsys,5;
     pli, (pupil*residual_phase)(n1:n2,n1:n2);
     mypltitle,"Residual wavefront on target#1",[0.,-0.0];
-    
+
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
     if (animFlag && (nshots!=0) && (loopCounter<loop.niter) ) fma;
   }
@@ -3957,8 +3957,8 @@ func reset(void,nmv=)
 }
 
 
-func stop(void) 
-/* DOCUMENT stop(void) 
+func stop(void)
+/* DOCUMENT stop(void)
    Pause the loop
    SEE ALSO: cont, go, restart
  */
@@ -4035,19 +4035,19 @@ func after_loop(void)
   if (sim.verbose>0) \
     write,format="Saving results in %s.res (ps,imav.fits)...\n",\
       YAO_SAVEPATH+parprefix;
-  
+
   time2 = (time - roll(time,1))/loopCounter;
   timeComments = ["WF sensing","Reset and measurement history handling","cMat multiplication",\
                   "DM shape computation","Target PSFs estimation","Displays",\
                   "Circular buffers, end-of-loop printouts"];
   for (i=2;i<=8;i++) {
     write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time2(i)*1e3,timeComments(i-1);}
-  
+
   write,format="Finished on %s\n",endtime_str;
   tottime = (endtime - starttime);
   iter_per_sec = loopCounter/tottime;
   write,format="%f iterations/second in average\n",iter_per_sec;
-  
+
   // Save the circular buffers:
   if (is_set(savecb)) {
     yao_fitswrite,YAO_SAVEPATH+"cbmes.fits",cbmes;
@@ -4056,7 +4056,7 @@ func after_loop(void)
     write,"cbmes, cbcom and cberr are saved.";
     write,"You can run modal_gain_optimization() to optimize and update the gains";
   }
-  
+
   // End of loop calculations (fwhm, EE, Strehl):
   fairy  = findfwhm(airy,saveram=1);
   e50airy= encircled_energy(airy,ee50);
@@ -4082,7 +4082,7 @@ func after_loop(void)
     write,format="Field rms                         %6.1f   %.3f     %6.1f\n",
       fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
   }
-  
+
   // Some logging of the results in file parprefix+".res":
   f = open(YAO_SAVEPATH+parprefix+".res","a+");
   write,f,format=
@@ -4116,7 +4116,7 @@ func after_loop(void)
   write,f,print(gs);
   write,f,print(loop);
   close,f;
-  
+
   yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav;
 
   // saved graphics
@@ -4146,9 +4146,9 @@ func after_loop(void)
   }
   plt,sim.name,0.01,0.227,tosys=0;
   hcp_finish;
-  
+
   gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...DONE",YAO_SAVEPATH+parprefix);
-  
+
   if (curw != -1) {window,curw;}
   //  if (is_set(disp)) {window,style="boxed.gs";}
   return imav;
