@@ -2,21 +2,27 @@
 YAO package
 ===========
 
-Initial release F.Rigaut, June 2002.
-Notes updated somewhat on 2007dec12
+Copyright (c) Francois Rigaut (frigaut) 2002-2011.
+Initial release June 2002.
 
 Developpers:
 ------------
-Francois Rigaut		frigaut@gemini.edu
-Ralf Flicker		(+ July 2009)
+Francois Rigaut         frigaut@gemini.edu | frigaut@gmail.com
+Ralf Flicker            + July 2009
 Damien Gratadour        damien.gratadour@obspm.fr
 Marcos van Dam          marcos@flatwavefronts.com
 Aurea Garcia-Rissmann   agrissmann@gmail.com
 
+Synopsis:
+---------
+Yao is a Monte-Carlo simulation tool for Adaptive optics (AO) systems, written
+as a yorick plugin. It uses a number of custom developed functions to simulate
+wavefront sensors (WFS), deformable mirrors (DM) and many other aspects of an
+AO loop. The core functions are written in C, hence are very fast.
+
 Help pages:
 -----------
-http://www.maumae.net/yao/
-
+http://frigaut.github.com/yao/index.html
 
 RELEASE NOTES:
 --------------
@@ -270,22 +276,22 @@ v3.6 2005dec01
       and "cont" to resume it.
     - simple principle demo of tyk control
 
-v3.4.0	2004sep10
-	- Makefiles completely reworked. Install more easy. See README
-	  in distribution directory (yao_veclib or yao_fftw) for more info.
-	- added a printout of the yao versoin used in yao_fast.i's
-	- modified to include yao and yao_fast.i at parse
-	- This is the first version compatible with plugins.
-	- modified tic and tac to accomodate multiple counters
-	- now the "Time Left" functionality works again.
+v3.4.0  2004sep10
+  - Makefiles completely reworked. Install more easy. See README
+    in distribution directory (yao_veclib or yao_fftw) for more info.
+  - added a printout of the yao versoin used in yao_fast.i's
+  - modified to include yao and yao_fast.i at parse
+  - This is the first version compatible with plugins.
+  - modified tic and tac to accomodate multiple counters
+  - now the "Time Left" functionality works again.
 
 v3.3.2  2004aug02
-	- fixed a few bugs:
-	- a division by zero was causing a SIGFPE for odd number of subaperture
-	  shack hartmann systems in the angle/elongation calculations in shwfs_init
-	  (bug noted by Miska)
-	- Added a check of indices overflow when determining the Y interpolation
-	  points in get_turb_phase_init
+  - fixed a few bugs:
+  - a division by zero was causing a SIGFPE for odd number of subaperture
+    shack hartmann systems in the angle/elongation calculations in shwfs_init
+    (bug noted by Miska)
+  - Added a check of indices overflow when determining the Y interpolation
+    points in get_turb_phase_init
 
 v3.3    2004July28
          - semi major changes in this version. Watch out, as some parameters
@@ -305,7 +311,7 @@ v3.3    2004July28
          - The way to specify the photometry has also changed. Now, if you
            deal with a LGS, you specify a power and a return per watt, not
            anymore a magnitude (magnitude are still ok for a NGS).
-	   Also, everything -in term of zeropoints- is now specified at the
+     Also, everything -in term of zeropoints- is now specified at the
            entrance of the telescope: gs.zeropoint is now the number of
            photons for a zero mag star per sec per pupil at M1 (it used to
            be detected by the WFS). gs.lgsreturnperwatt is also in photons
