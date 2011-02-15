@@ -11,36 +11,41 @@
 <div id="right-column"><img src="images/kbkheaderright.jpg"></div>
 
 <div id="center">
-  
+
  <div id="banner">yao::home</div>
 
 <div id="links2">
   <a href="index.html">HOME</a> &nbsp; | &nbsp;
-  <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp; 
-  <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp; 
+  <a href="https://github.com/frigaut/yao">GITHUB</a> &nbsp; |  &nbsp;
+  <a href="installation.html">INSTALL</a> &nbsp; |  &nbsp;
+  <a href="manual.html">MANUAL</a> &nbsp;  | &nbsp;
 <!--   <a href="screenshots.html">SCREENSHOTS</a> &nbsp;  | &nbsp;  -->
-  <a href="news.html">NEWS</a> 
+  <a href="news.html">NEWS</a>
   </div>
 
 
 
   <div id="container">
    <h2>Introduction</h2>
-   
+
    These pages present information about <b>yao</b>, a Monte-Carlo simulation tool for Adaptive optics (AO) systems.
    <b>Yao</b> is open source released under the GPLv3. You are welcome
    to use it, expand it and even distribute it, but please link back
    to this page, as I am releasing updates semi-regularly. The last
-   version of yao (big release, lots of new stuff) to date (July 2010)
-   is <b>4.6.0</b>. Looks <a href="news.html">here</a> for the
+   version of yao to date (February 2011)
+   is <b>4.8.3</b>. Looks <a href="news.html">here</a> for the
    latest news.<a name="features" id="features"></a></p>
- 
+
+   <p>Note that I switched to git on Feb11, 2011. You can now
+   checkout yorick using:
+   <pre>git clone git@github.com:frigaut/yao.git yao</pre>
+
    <h2>Main features</h2>
 
    <a href="images/yao_mcao_gui.png"><img src="images/yao_mcao_gui.png" width="35%"  class="imglink" style="float:right;" /></a>
    <b>Yao</b> is a Monte-Carlo AO simulation tool. It uses a number of custom developed functions to simulate wavefront sensors (WFS), deformable mirrors (DM) and many other aspects of an AO loop.
-   
-   
+
+
    <h3>Highlights</h3>
    <ul class="spaced">
 
@@ -49,20 +54,20 @@
      <li>
        <font class="highlight">Shack-Hartmann</font>,
        <font class="highlight">Curvature</font> and
-       <font class="highlight">Modal</font> (Zernike) 
+       <font class="highlight">Modal</font> (Zernike)
        <font class="highlight">WFS</font>,
        ON or OFF axis, are supported. It is also possible
        to <font class="highlight">add your own
        WFS</font> <font class="new">NEW 4.5</font>.
      </li>
      <li>
-       <font class="highlight">Stackarray</font> (piezostack), 
-       <font class="highlight">curvature</font> (bimorph), 
-       <font class="highlight">segmented</font> <font class="new">NEW 4.5</font>, (experimental), 
+       <font class="highlight">Stackarray</font> (piezostack),
+       <font class="highlight">curvature</font> (bimorph),
+       <font class="highlight">segmented</font> <font class="new">NEW 4.5</font>, (experimental),
        <font class="highlight">modal</font> (zernike,
        disk-marmonic <font class="new">NEW 4.6</font> or
-       KL) and 
-       <font class="highlight">Tip-Tilt deformable mirrors</font> 
+       KL) and
+       <font class="highlight">Tip-Tilt deformable mirrors</font>
        are supported. The altitude of conjugation is adjustable. It is
        also possible  to <font class="highlight">add your own
        DM</font> <font class="new">NEW 4.5</font>.
@@ -167,7 +172,7 @@
      <li>Command matrices are up to now computed as least-square estimates. Implementation of minimum-variance or MAP should come shortly.
      </li>
    </ul><a name="start" id="start"></a>
- 
+
    <h2>Where to start?</h2>
    Browse this site. Have a look at the <a href="manual.html">manual</a>. If you like what you see, go to the <a href="installation.html">Installation</a> page and follow the instructions.
    <p>Once the package is installed, follow the manual instruction, and use the examples parameter files to create your own parfile to model your system.</p>
@@ -177,7 +182,7 @@
 
 <div id="footer">
 <div id="footer-left"><img src="images/kbkfooterleft.jpg"></div>
-<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>  
+<div id="footer-right"><img src="images/kbkfooterright.jpg"></div>
 <div id="footer-center"></div>
 </div>
 
