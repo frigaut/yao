@@ -1,12 +1,12 @@
-===========
+
 YAO package
 ===========
 
 Initial release F.Rigaut, June 2002.
 Notes updated somewhat on 2007dec12
 
-Developpers:
-------------
+Developers:
+-----------
 Francois Rigaut		frigaut@gemini.edu
 Ralf Flicker		(+ July 2009)
 Damien Gratadour        damien.gratadour@obspm.fr
@@ -15,7 +15,7 @@ Aurea Garcia-Rissmann   agrissmann@gmail.com
 
 Help pages:
 -----------
-http://www.maumae.net/yao/
+[http://www.maumae.net/yao/](http://www.maumae.net/yao/)
 
 
 RELEASE NOTES:
