@@ -1537,11 +1537,11 @@ func get_phase2d_from_dms(nn,type)
   // here we have a branch to be able to process wfs and targets with the same
   // subroutine, this one.
   if (type == "wfs") {
-    // stuff xshifts with fractionnal offsets, add xposvec for each screen
+    // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmwfsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
     yshifts = dmwfsyposcub(,,nn)+(sim._cent+dm.misreg(2,)-1)(-,);
   } else if ( type == "target") {
-    // stuff xshifts with fractionnal offsets, add xposvec for each screen
+    // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmgsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
     yshifts = dmgsyposcub(,,nn)+(sim._cent+dm.misreg(2,)-1)(-,);
   }
@@ -1586,11 +1586,11 @@ func get_phase2d_from_optics(nn,type)
   // here we have a branch to be able to process wfs and targets with the same
   // subroutine, this one.
   if (type == "wfs") {
-    // stuff xshifts with fractionnal offsets, add xposvec for each screen
+    // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = optwfsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,);
     yshifts = optwfsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,);
   } else if ( type == "target") {
-    // stuff xshifts with fractionnal offsets, add xposvec for each screen
+    // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = optgsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,);
     yshifts = optgsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,);
   }
@@ -2582,13 +2582,28 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         } else {
           svd = 1;
         }
+        for (nm=1;nm<=numberof(dm);nm++){
+          if (dm(nm).fitvirtualdm){
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");                                                             
+            if (fileExist(filename)){
+              dm(nm)._fMat = &yao_fitsread(filename);
+            } else {
+              svd = 1;
+            }
+          }
+        }        
       }
     } else {
-      iMatSP = GxSP = restore_rco(YAO_SAVEPATH+mat.file);
+      iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
       if (fileExist(YAO_SAVEPATH+parprefix+"-AtAreg.ruo")){
         AtAregSP = restore_ruo(YAO_SAVEPATH+parprefix+"-AtAreg.ruo");
       } else {
         svd = 1;
+      }
+      if (fileExist(YAO_SAVEPATH+parprefix+"-GxSP.rco")){
+        GxSP = restore_rco(YAO_SAVEPATH+parprefix+"-GxSP.rco");
+      } else {
+        svd = 1;  // need to recreate reconstructors
       }
       if (anyof(dm.fitvirtualdm)) {
         if (fileExist(YAO_SAVEPATH+parprefix+"-polcMat.rco")){
@@ -2596,16 +2611,84 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         } else {
           svd = 1;  // need to recreate reconstructors
         }
-        if (fileExist(YAO_SAVEPATH+parprefix+"-GxSP.rco")){
-          GxSP = restore_rco(YAO_SAVEPATH+parprefix+"-GxSP.rco");
+        for (nm=1;nm<=numberof(dm);nm++){
+          if (dm(nm).fitvirtualdm){
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");                                                             
+            if (fileExist(filename)){
+              dm(nm)._fMat = &restore_rco(filename);
         } else {
           svd = 1;  // need to recreate reconstructors
         }
+          }
+        }
+        
+      } 
+    }
+  }
+
+  if (svd || forcemat){
+    // create the regularization matrices
+    nDMs = numberof(dm);      
+    for (nm=1;nm<=nDMs;nm++){
+      if (*dm(nm).regmatrix != []){
+        dm(nm)._regmatrix = dm(nm).regmatrix;
+      } else if (mat.method == "mmse"){
+        if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
+          xpos = *dm(nm)._x;
+          ypos = *dm(nm)._y;
+          pitch2 = dm(nm).pitch^2;
+          
+          L = array(float,dm(nm)._nact, dm(nm)._nact);
+          
+          for (ii=1;ii<=dm(nm)._nact;ii++){
+            
+            xii = xpos(ii);
+            yii = ypos(ii);
+            
+            dx = xpos - xii;
+            dy = ypos - yii;
+            
+            dist2= dx^2+dy^2;
+            
+            L(ii,ii) = -1.;
+            L(ii,where(dist2 == pitch2)) = 0.25;              
+          }
+          dm(nm)._regmatrix = &(L(+,)*L(+,));
+        } else { // identity matrix
+          dm(nm)._regmatrix = &unit(dm(nm)._nact);
+        }
+      } else if (mat.method == "mmse-sparse") {        
+        if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
+          xpos = *dm(nm)._x;
+          ypos = *dm(nm)._y;
+          pitch2 = dm(nm).pitch^2;
+          
+          laplacian_mat = rco();
+          
+          for (ii=1;ii<=dm(nm)._nact;ii++) {
+            xii = xpos(ii);
+            yii = ypos(ii);
+            
+            dx = xpos - xii;
+            dy = ypos - yii;
+            
+            dist2= dx^2+dy^2;
+            
+            lvec = array(float,dm(nm)._nact);
+            lvec(ii) = -1.;
+            lvec(where(dist2 == pitch2)) = 0.25;
+            
+            rcobuild,laplacian_mat,lvec,mat.sparse_thresh;
+          }
+          dm(nm)._regmatrix = &rcoata(laplacian_mat);
+        } else { // identity matrix
+          dm(nm)._regmatrix = &spunit(dm(nm)._nact);
       }
     }
   }
 
   // create the fitting matrices for tomography
+    if (mat.fit_simple == 1){
   for (nm=1;nm<=numberof(dm);nm++){
     if (dm(nm).fitvirtualdm){
 
@@ -2650,12 +2733,119 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
   }
+    } else { // mat.fit_simple = 0
+      
+      // define a grid on which to sample the phase
+      dims = (dimsof(pupil))(2);
+      idx =  indgen(int(ceil(mat.fit_subsamp/2.)):dims:mat.fit_subsamp);
+      
+      pupil_sub = pupil(idx,idx);
+      wpupil_sub = where(pupil_sub);
+      npix = numberof(wpupil_sub);
+
+      for (nm=1;nm<=numberof(dm);nm++){
+        if (dm(nm).fitvirtualdm){
+      
+          virtualDMs = *dm(nm).fitvirtualdm;
+          nVirtualDMs = numberof(virtualDMs);
+      
+          // calculate the matrix that shows how the tomographic DM affects the phase
+          n1 = dm(nm)._n1;
+          n2 = dm(nm)._n2;
+
+          if (mat.method == "mmse"){
+            tomoMat =  array(float,[2,npix,dm(nm)._nact]);
+          } else {
+            tomoMatSP = rco();
+          }
+        
+          command = array(float,dm(nm)._nact);
+          for (i=1;i<=dm(nm)._nact;i++) {
+            if (sim.verbose) {
+              write,format="\rFitting DM# %d, actuator %d/%d",nm,i,dm(nm)._nact;
+            }
+            mircube  *= 0.0f;
+            command *= 0.0f;
+            command(i) = float(1.);
+            mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
+            phase = get_phase2d_from_dms(mat.fit_target,"target");
+            phase = phase(idx,idx);
+            active_phase =  phase(wpupil_sub);
+            if (mat.method == "mmse"){
+              tomoMat(:,i) = active_phase;
+            } else {
+              rcobuild, tomoMatSP, float(active_phase), mat.sparse_thresh;
+            }          
+          }
+          
+          // calculate the matrix that shows how the virtual DMs affect the phase
+          if (mat.method == "mmse"){
+            virtMat = array(float,[2,npix,sum(dm(virtualDMs)._nact)]);
+          } else {
+            regmatrix = *dm(nm)._regmatrix;
+            ruox, regmatrix, dm(nm).regparam;
+            tomoFit = ruoadd(rcoata(transpose(tomoMatSP)),regmatrix);
+            regmatrix = [];
+            dm_fMatSP = rco();
+          }
+          row = 0;
+          zeros_act = array(float,dm(nm)._nact);
+          
+          for (k=1;k<=nVirtualDMs;k++) {
+            nv = virtualDMs(k);
+            
+            n1 = dm(nv)._n1;
+            n2 = dm(nv)._n2;
+            
+            command = array(float,dm(nv)._nact);
+            
+            for (i=1;i<=dm(nv)._nact;i++) {
+              if (sim.verbose) {
+                write,format="\rFitting DM# %d, actuator %d/%d",nv,i,dm(nv)._nact;
+              }
+              row += 1;
+              mircube  *= 0.0f;
+              command *= 0.0f;
+              command(i) = 1.;
+              mircube(n1:n2,n1:n2,nv) = comp_dm_shape(nv,&command);
+              phase = get_phase2d_from_dms(mat.fit_target,"target");
+              phase = phase(idx,idx);
+              active_phase =  phase(wpupil_sub);
+              if (mat.method == "mmse"){
+                virtMat(:,row) = active_phase;
+              } else {
+                temp = rcoxv(tomoMatSP,active_phase);
+                if (sum(temp != 0) == 0){ // sparse CG method does not work if all zeros
+                  temp = zeros_act;
+                } else {
+                  temp =  ruopcg(tomoFit,temp,zeros_act,tol=mat.sparse_pcgtol);
+                }
+                rcobuild, dm_fMatSP, temp, mat.fit_minval; 
+              }
+            }
+          }
+          
+          if (mat.method == "mmse"){
+            dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
+            yao_fitswrite,filename,*dm(nm)._fMat;
+          } else { 
+            tomoMatSP = tomoFit = virtMatSP = [];
+            dm(nm)._fMat = &rcotr(dm_fMatSP);
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");
+            save_rco, *dm(nm)._fMat, filename;
+            dm_fMatSP = [];
+          }
+        }
+      }    
+    }
+  }
 
   // in the opposite case, plus if svd=1 (request re-do SVD):
   if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
     if (mat.method == "svd") {
       if (sim.verbose>=1) {
-        write,">> Preparing SVD and computing command matrice";
+        write,">> Preparing SVD and computing command matrices";
       }
       // do the SVD and build the command matrix:
       sswfs = ssdm = [];
@@ -2677,42 +2867,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
     } else if (mat.method == "mmse") {
-
-      // create the regularization matrices for each DM
-      nAct = (dimsof(iMat))(3);
-      nDMs = numberof(dm);
-
-      for (nm=1;nm<=nDMs;nm++){
-        if (*dm(nm).regmatrix == []){
-          if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
-            xpos = *dm(nm)._x;
-            ypos = *dm(nm)._y;
-            pitch2 = dm(nm).pitch^2;
-
-            L = array(float,dm(nm)._nact, dm(nm)._nact);
-
-            for (ii=1;ii<=dm(nm)._nact;ii++){
-
-              xii = xpos(ii);
-              yii = ypos(ii);
-
-              dx = xpos - xii;
-              dy = ypos - yii;
-
-              dist2= dx^2+dy^2;
-
-              L(ii,ii) = -1.;
-              L(ii,where(dist2 == pitch2)) = 0.25;
-            }
-            dm(nm)._regmatrix = &(L(+,)*L(+,));
-          } else { // identity matrix
-            dm(nm)._regmatrix = &unit(dm(nm)._nact);
-          }
-        } else {
-          dm(nm)._regmatrix = dm(nm).regmatrix;
-        }
-      }
-
       if (anyof(dm.fitvirtualdm)){
         estAct = []; // actuators used to estimate wavefront
         realAct = []; // real (non virtual) actuators used to compensate the wavefront
@@ -2790,6 +2944,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         dMat = LUsolve(AtA+Cphi)(,+)*polcMat(+,);
         yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
       } else {
+        nAct = (dimsof(iMat))(3);
         Cphi = array(float,[2,nAct,nAct]);
 
       mc = 0; // matrix counter
@@ -2811,37 +2966,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       CphiSP = [];
 
       for (nm=1;nm<=nDMs;nm++) {
-        if (*dm(nm).regmatrix == []) {
-          if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
-            xpos = *dm(nm)._x;
-            ypos = *dm(nm)._y;
-            pitch2 = dm(nm).pitch^2;
-
-            laplacian_mat = rco();
-
-            for (ii=1;ii<=dm(nm)._nact;ii++) {
-              xii = xpos(ii);
-              yii = ypos(ii);
-
-              dx = xpos - xii;
-              dy = ypos - yii;
-
-              dist2= dx^2+dy^2;
-
-              lvec = array(float,dm(nm)._nact);
-              lvec(ii) = -1.;
-              lvec(where(dist2 == pitch2)) = 0.25;
-
-              rcobuild,laplacian_mat,lvec,mat.sparse_thresh;
-            }
-            dm(nm)._regmatrix = &rcoata(laplacian_mat);
-          } else { // identity matrix
-            dm(nm)._regmatrix = &spunit(dm(nm)._nact);
-          }
-        } else {
-          dm(nm)._regmatrix = dm(nm).regmatrix;
-        }
-
         regmatrix = *dm(nm)._regmatrix;
         ruox, regmatrix, dm(nm).regparam; // multiply the matrix by a constant
 
@@ -2944,28 +3068,36 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
 
         fMatSP = rcotr(fMatSP);
+        t1 = rcoatb(fMatSP,rcotr(GaSP));
+        fMatSP = GaSP = [];
 
         AtA = rcoata(GxSP);
         AtAregSP = ruoadd(AtA,CphiSP);
 
-        t1 = rcoatb(fMatSP,rcotr(GaSP));
+        AtA = [];
 
         (*GxSP.xn) *= -1;
         DtermSP = rcoadd(t1,GxSP);
+        t1 = [];
         (*GxSP.xn) *= -1;
 
         t2 =  rcotr(rcoatb(GxSP,DtermSP));
+        DtermSP = [];
         CphiSPrco = ruo2rco(CphiSP);
+        CphiSP = [];
         *CphiSPrco.xn *= -1;
         polcMatSP = rcotr(rcoadd(t2,CphiSPrco));
+        t2 = CphiSPrco = [];
         save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
       } else {
         GxSP = iMatSP;
         AtA = rcoata(iMatSP);
         AtAregSP = ruoadd(AtA,CphiSP);
+        AtA = CphiSP =  [];
       }
 
       save_rco,iMatSP,YAO_SAVEPATH+mat.file;
+      iMatSP = []; 
       save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
     }
 
@@ -3555,7 +3687,7 @@ func go(nshot,all=)
       } else {
         Ats=rcoxv(GxSP,usedMes);
       }
-      err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=1.e-3));
+      err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
     }
   } else {
     err = cMat(,+) * usedMes(+);
@@ -3713,7 +3845,7 @@ func go(nshot,all=)
     residual_phase1d -= min(residual_phase1d);
     residual_phase(where(pupil > 0)) = residual_phase1d;
 
-    result=yao_fitswrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));
+    if (savephase){result=yao_fitswrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));}
   }
 
 
@@ -3826,8 +3958,8 @@ func go(nshot,all=)
     // Strehl plots
     if (anyof(itv)) {
       plsys,4;
-      plg,strehlsp,itv;
-      plg,strehllp,itv,color="red";
+      plg,strehlsp,itv,marks=0;
+      plg,strehllp,itv,marks=0,color="red";
       myxytitles,"",swrite(format="Strehl @ %.2f mic",        \
                                      (*target.lambda)(0)),[0.005,-0.005],height=12;
       range,0;
@@ -3838,7 +3970,7 @@ func go(nshot,all=)
     mypltitle,"Residual wavefront on target#1",[0.,-0.0];
 
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
-    if (animFlag && (nshots!=0) && (loopCounter<loop.niter) ) fma;
+    if (animFlag && (nshots!=0) && (loopCounter<loop.niter-disp) ) fma;
   }
 
   if (okcscreen) { control_screen,i; }
@@ -4046,7 +4178,7 @@ func after_loop(void)
   write,format="Finished on %s\n",endtime_str;
   tottime = (endtime - starttime);
   iter_per_sec = loopCounter/tottime;
-  write,format="%f iterations/second in average\n",iter_per_sec;
+  write,format="%f iterations/second on average\n",iter_per_sec;
 
   // Save the circular buffers:
   if (is_set(savecb)) {
@@ -4117,7 +4249,13 @@ func after_loop(void)
   write,f,print(loop);
   close,f;
 
-  yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav;
+  // create a header
+  header = fitsBuildCard("WAVELENGTH", *target.lambda , "microns");
+  grow, header, fitsBuildCard("PIXSIZE", psize , "milliarcsec");
+  grow, header, fitsBuildCard("XPOSITION", *target.xposition , "arcsec");
+  grow, header, fitsBuildCard("YPOSITION", *target.yposition , "arcsec");
+
+  yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav, header;
 
   // saved graphics
   window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
