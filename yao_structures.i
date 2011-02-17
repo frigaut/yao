@@ -379,7 +379,14 @@ struct mat_struct
   long    sparse_MR;      // maximum number of rows for sparse method
   long    sparse_MN;      // maximum number of elements for sparse method
   float   sparse_thresh;  // threshold for non-zero sparse elements
+  float   sparse_pcgtol;  // tolerance for reconstruction, default = 1e-3
   string  file;           // iMat and cMat filename. Leave it alone.
+  // fitting parameters for tomographic reconstruction
+  long  fit_simple;            // 0 or 1, default = 0. Simple optimizes on the optical axis and only works if the tomographic DM is the same as the corresponding virtual DMs, but is faster.
+  // the following parameters only apply to "mmse" fitting
+  long    fit_subsamp;    // subsampling the phase for fitting matrix (set to larger than 1 for speed), default = 1
+  long    fit_target;     // which target to optimize fitting for, default = 1
+  float   fit_minval;     // minimum value for sparse fitting matrix, default = 1e-2   
 };
 
 struct tel_struct
