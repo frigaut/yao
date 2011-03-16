@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2010dec17";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.5";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2011mar16";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1897,6 +1897,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       grow,cent,sim._size/2+1;
     } else if (wfs(i).type == "zernike") {
       grow,cent,sim._size/2+1;
+    } else if (wfs(i).type == "dh") {
+      // for dh we dont mind, as they can be produced for
+      // any cent.
     } else {
       if (cent == []){
         grow,cent,sim._size/2+1;
@@ -1907,19 +1910,20 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
   }
-  if (anyof(cent != cent(1))) {
+  if (nallof(wfs.type=="dh") && anyof(cent != cent(1))) {
     write,"Wrong mix of hartmann/curvature or subaperture odd/even !";
     write,"I can't handle that as some of your selected sensor require";
     write,"the pupil to be centered on a pixel and others in between 2 pixels";
     write,"Sorry :-(";
     exit;
   }
+  if (allof(wfs.type=="dh")) cent=sim._size/2+0.5;
   sim._cent = cent(1);
 
   // Initialize pupil array:
 
   pupil  = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
-                            real=0,cobs=tel.cobs)); // changed from real=1 by Marcos.
+                            real=sim.pupilapod,cobs=tel.cobs)); // changed from real=1 by Marcos.
   ipupil = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                           cobs=tel.cobs));
 
@@ -2002,6 +2006,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     } else if (wfs(n).type == "zernike") {
       zernike_wfs,ipupil,ipupil*0.,n,init=1;
+
+    } else if (wfs(n).type == "dh") {
+      dh_wfs,ipupil,ipupil*0.,n,init=1;
 
     } else {
       // assign user_wfs to requested function/type:
@@ -2117,7 +2124,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       extent = dm(n).pitch*(dm(n).nxact+2.); // + 1.5 pitch each side
       dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
       dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
-    } else {  // we are dealing with a curvature mirror, TT, zernike,diskharmonic or aniso:
+    } else {  // we are dealing with a curvature mirror, TT, zernike,dh or aniso:
       dm(n)._n1 = 1;
       dm(n)._n2 = sim._size;
     }
@@ -2185,8 +2192,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       } else if (dm(n).type == "zernike") {
         make_zernike_dm, n, disp=disp;
-      } else if (dm(n).type == "diskharmonic") {
-        make_diskharmonic_dm, n, disp=disp;
+      } else if (dm(n).type == "dh") {
+        make_dh_dm, n, disp=disp;
       } else if (dm(n).type == "kl") {
         make_kl_dm, n, disp=disp;
       } else if (dm(n).type == "tiptilt") {
@@ -2584,14 +2591,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
         for (nm=1;nm<=numberof(dm);nm++){
           if (dm(nm).fitvirtualdm){
-            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");                                                             
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
             if (fileExist(filename)){
               dm(nm)._fMat = &yao_fitsread(filename);
             } else {
               svd = 1;
             }
           }
-        }        
+        }
       }
     } else {
       iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
@@ -2613,7 +2620,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
         for (nm=1;nm<=numberof(dm);nm++){
           if (dm(nm).fitvirtualdm){
-            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");                                                             
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");
             if (fileExist(filename)){
               dm(nm)._fMat = &restore_rco(filename);
         } else {
@@ -2621,14 +2628,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
           }
         }
-        
-      } 
+
+      }
     }
   }
 
   if (svd || forcemat){
     // create the regularization matrices
-    nDMs = numberof(dm);      
+    nDMs = numberof(dm);
     for (nm=1;nm<=nDMs;nm++){
       if (*dm(nm).regmatrix != []){
         dm(nm)._regmatrix = dm(nm).regmatrix;
@@ -2637,47 +2644,47 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           xpos = *dm(nm)._x;
           ypos = *dm(nm)._y;
           pitch2 = dm(nm).pitch^2;
-          
+
           L = array(float,dm(nm)._nact, dm(nm)._nact);
-          
+
           for (ii=1;ii<=dm(nm)._nact;ii++){
-            
+
             xii = xpos(ii);
             yii = ypos(ii);
-            
+
             dx = xpos - xii;
             dy = ypos - yii;
-            
+
             dist2= dx^2+dy^2;
-            
+
             L(ii,ii) = -1.;
-            L(ii,where(dist2 == pitch2)) = 0.25;              
+            L(ii,where(dist2 == pitch2)) = 0.25;
           }
           dm(nm)._regmatrix = &(L(+,)*L(+,));
         } else { // identity matrix
           dm(nm)._regmatrix = &unit(dm(nm)._nact);
         }
-      } else if (mat.method == "mmse-sparse") {        
+      } else if (mat.method == "mmse-sparse") {
         if ((dm(nm).type == "stackarray") && (dm(nm).regtype == "laplacian")){
           xpos = *dm(nm)._x;
           ypos = *dm(nm)._y;
           pitch2 = dm(nm).pitch^2;
-          
+
           laplacian_mat = rco();
-          
+
           for (ii=1;ii<=dm(nm)._nact;ii++) {
             xii = xpos(ii);
             yii = ypos(ii);
-            
+
             dx = xpos - xii;
             dy = ypos - yii;
-            
+
             dist2= dx^2+dy^2;
-            
+
             lvec = array(float,dm(nm)._nact);
             lvec(ii) = -1.;
             lvec(where(dist2 == pitch2)) = 0.25;
-            
+
             rcobuild,laplacian_mat,lvec,mat.sparse_thresh;
           }
           dm(nm)._regmatrix = &rcoata(laplacian_mat);
@@ -2734,21 +2741,21 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
   }
     } else { // mat.fit_simple = 0
-      
+
       // define a grid on which to sample the phase
       dims = (dimsof(pupil))(2);
       idx =  indgen(int(ceil(mat.fit_subsamp/2.)):dims:mat.fit_subsamp);
-      
+
       pupil_sub = pupil(idx,idx);
       wpupil_sub = where(pupil_sub);
       npix = numberof(wpupil_sub);
 
       for (nm=1;nm<=numberof(dm);nm++){
         if (dm(nm).fitvirtualdm){
-      
+
           virtualDMs = *dm(nm).fitvirtualdm;
           nVirtualDMs = numberof(virtualDMs);
-      
+
           // calculate the matrix that shows how the tomographic DM affects the phase
           n1 = dm(nm)._n1;
           n2 = dm(nm)._n2;
@@ -2758,7 +2765,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           } else {
             tomoMatSP = rco();
           }
-        
+
           command = array(float,dm(nm)._nact);
           for (i=1;i<=dm(nm)._nact;i++) {
             if (sim.verbose) {
@@ -2775,9 +2782,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               tomoMat(:,i) = active_phase;
             } else {
               rcobuild, tomoMatSP, float(active_phase), mat.sparse_thresh;
-            }          
+            }
           }
-          
+
           // calculate the matrix that shows how the virtual DMs affect the phase
           if (mat.method == "mmse"){
             virtMat = array(float,[2,npix,sum(dm(virtualDMs)._nact)]);
@@ -2790,15 +2797,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
           row = 0;
           zeros_act = array(float,dm(nm)._nact);
-          
+
           for (k=1;k<=nVirtualDMs;k++) {
             nv = virtualDMs(k);
-            
+
             n1 = dm(nv)._n1;
             n2 = dm(nv)._n2;
-            
+
             command = array(float,dm(nv)._nact);
-            
+
             for (i=1;i<=dm(nv)._nact;i++) {
               if (sim.verbose) {
                 write,format="\rFitting DM# %d, actuator %d/%d",nv,i,dm(nv)._nact;
@@ -2820,16 +2827,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                 } else {
                   temp =  ruopcg(tomoFit,temp,zeros_act,tol=mat.sparse_pcgtol);
                 }
-                rcobuild, dm_fMatSP, temp, mat.fit_minval; 
+                rcobuild, dm_fMatSP, temp, mat.fit_minval;
               }
             }
           }
-          
+
           if (mat.method == "mmse"){
             dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
             yao_fitswrite,filename,*dm(nm)._fMat;
-          } else { 
+          } else {
             tomoMatSP = tomoFit = virtMatSP = [];
             dm(nm)._fMat = &rcotr(dm_fMatSP);
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");
@@ -2837,7 +2844,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             dm_fMatSP = [];
           }
         }
-      }    
+      }
     }
   }
 
@@ -3097,7 +3104,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       save_rco,iMatSP,YAO_SAVEPATH+mat.file;
-      iMatSP = []; 
+      iMatSP = [];
       save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
     }
 
@@ -3138,7 +3145,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     // finds which DM is at altitude 0
     w0 = where(dm.alt == 0);
     nmlow = where( (dm(w0).type == "stackarray") | (dm(w0).type == "bimorph") |
-                   (dm(w0).type == "zernike") | (dm(w0).type == "diskharmonic")  );
+                   (dm(w0).type == "zernike") | (dm(w0).type == "dh")  );
     if (numberof(nmlow) == 0) {
       pyk_error,"I can not find a DM at altitude 0 to produce the lower "+
         "part of the anisoplanatism modes !";
@@ -3165,7 +3172,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     // finds which DM is at altitude specified by dm(nmaniso).alt
     wn0 = where(dm.alt == dm(nmaniso).alt);
     nmhigh = where( (dm(wn0).type == "stackarray") | (dm(wn0).type == "bimorph") |
-                    (dm(wn0).type == "zernike") | (dm(wn0).type == "diskharmonic")  );
+                    (dm(wn0).type == "zernike") | (dm(wn0).type == "dh")  );
     if (numberof(nmhigh) == 0) {
       pyk_error,"I can not find a DM at the requested altitude to produce the higher "+
         "part of the anisoplanatism modes !";
@@ -3425,6 +3432,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   for (ns=1;ns<=nwfs;ns++) {
     // define _dispimage
     if (wfs(ns).type=="zernike") continue;
+    if (wfs(ns).type=="dh") continue;
     wfs(ns)._dispimage = &(*wfs(ns)._fimage*0.0f);
     if (wfs(ns).type == "hartmann") {
       if (wfs(ns).disjointpup) {
@@ -3796,7 +3804,9 @@ func go(nshot,all=)
 
     grow,comvec,*dm(nm)._command;
 
-      mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
+    mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
+    if ( (nm==1) && (add_dm0_shape!=[]) ) mircube(,,1) += add_dm0_shape;
+
     // extrapolated actuators:
     if ((dm(nm)._enact != 0) && (dm(nm).noextrap == 0)) {
       ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
@@ -4332,7 +4342,7 @@ MakePztIF             = make_pzt_dm;
 MakeEltPztIF          = make_pzt_dm_elt;
 MakeKLIF              = make_kl_dm;
 MakeZernikeIF         = make_zernike_dm;
-MakeDiskHarmonicIF    = make_diskharmonic_dm;
+MakeDhIF              = make_dh_dm;
 MakeBimorphIF         = make_curvature_dm;
 MakeTipTiltIF         = make_tiptilt_dm;
 projectAnisoIF        = project_aniso_dm;

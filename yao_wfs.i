@@ -536,12 +536,12 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // remove the noise when calculating the origins
   noiseOrig = wfs.noise;
   wfs.noise *= 0;
-  
+
   // first sync if needed (svipc)
   if (wfs(ns).svipc>1) status = sync_wfs_forks();
   sh_wfs,pupsh,pupsh*0.0f,ns;
   wfs.noise=noiseOrig;
-  
+
   wfs(ns)._bckgrdinit = 0;
   wfs(ns)._bckgrdsub  = 1; // now yes, enable it (by default)
 
@@ -845,7 +845,7 @@ func sh_wfs(pupsh,phase,ns)
                  int(wfs(ns).rayleighflag),
                  *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
                  wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
-                 
+
 
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
@@ -865,9 +865,9 @@ func sh_wfs(pupsh,phase,ns)
                   *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles,
                   mesvec);
     } else mesvec *= 0;
-    
+
     //write,format="%d %f ",wfs(ns)._cyclecounter,sum(*wfs(ns)._fimage),mesvec(ptp);
-    
+
     if ( wfs(ns).svipc>1 ) {
       sem_take,semkey,20+4*(ns-1)+3,count=wfs(ns).svipc-1;
     }
@@ -902,7 +902,7 @@ func sh_wfs(pupsh,phase,ns)
     shm_unvar,mesvec;
     shm_unvar,ffimage;
   }
-  
+
   // return measurement vector in arcsec (thanks to centroiw):
   return mesvec2;
 }
@@ -1063,7 +1063,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     if (x!=long(x)) error,swrite(format="sim.pupildiam not multiple of wfs(%i).shnxsub",ns);
 
     x = wfs(ns).pyr_mod_npts/4.;
-    if (x!=long(x)) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);    
+    if (x!=long(x)) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);
 
     // compute size of small complex amp image based on field stop size
     // To save computing time, we will extract a subimage from
@@ -1134,7 +1134,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
     wfs(ns)._nphotons = wfs(ns)._zeropoint*2.51189^(-wfs(ns).gsmag)*
       loop.ittime*wfs(ns).optthroughput;
-    
+
     if (wfs(ns).skymag == 0){
       wfs(ns)._skynphotons = 0;
     } else {
@@ -1147,7 +1147,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
     // initialize the counter for nintegcycles
     wfs(ns)._cyclecounter = 1;
-    
+
     if (sim.verbose) {
       write,format="%s\n","Pyramid WFS initialization";
       write,format="npup=%d,  pyr_npix = %d, shnxsub=%d, npixpersub=%d, binfact=%d, padding=%d\n",
@@ -1218,7 +1218,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     cy = lround((*wfs(ns).pyr_mod_pos)(:,2)/psize);
     mod_npts = dimsof(cx)(2);
   }
-  
+
   // loop on modulation positions:
   for (k=1;k<=mod_npts;k++){
 
@@ -1282,7 +1282,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     reimaged_pupil = tmp;
     npix = pyr_npix/binfact;
   } else npix = pyr_npix;
-  
+
   // photometry and noise:
   totflux = sum(reimaged_pupil);
   reimaged_pupil *= phot_norm_factor*wfs(ns)._nphotons/totflux;
@@ -1292,7 +1292,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     if (wfs(ns)._cyclecounter == 1) wfs(ns)._meashist = &array(0.0f,dimsof(reimaged_pupil));
 
     *wfs(ns)._meashist += reimaged_pupil;
-    
+
     if (wfs(ns)._cyclecounter == nintegcycles){
        wfs(ns)._cyclecounter = 1;
        reimaged_pupil = *wfs(ns)._meashist;
@@ -1301,7 +1301,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
       return array(float,wfs(ns)._nmes); // return the reference measurement, which is later subtracted
     }
   }
-  
+
   if (wfs(ns).noise) {
     // poisson distribution of star flux
     reimaged_pupil = poidev(reimaged_pupil);
@@ -1315,7 +1315,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     // subtract the calibrated frame from each subimage
     reimaged_pupil -= *wfs(ns)._bckgrdcalib*nintegcycles;
   }
-  
+
   // Put the re-imaged pupil into a single array for display:
   tmp = array(0.,[2,2*npix+3,2*npix+3]);
   ii1 = 2:npix+1;
@@ -1332,11 +1332,11 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
   // threshold the pixels
   pixels = max(pixels,wfs(ns).shthreshold);
-  
+
   // compute the final signal, using quadcell formula:
   sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/(pixels(,sum)+1e-6);
   sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/(pixels(,sum)+1e-6);
-  
+
   return _(sigx,sigy);
 }
 
@@ -1384,6 +1384,59 @@ func zernike_wfs(pupsh,phase,ns,init=)
 
   // returns microns rms (checked 2008apr10) ??? see above comment
 
+  return mes;
+}
+
+
+//----------------------------------------------------
+func dh_wfs(pupsh,phase,ns,init=)
+{
+  // the phase at the input (call from multwfs) is in microns.
+  // return coefficients of dh in nm (rms) << no, see below
+  extern wfs;
+
+  if (init) {
+    require,"yaodh.i";
+    pupd  = sim.pupildiam;
+    size  = sim._size;
+    ndh  = wfs(ns).ndh(1);
+    wfs(ns)._nmes  = wfs(ns).ndh;
+    cent  = sim._cent;
+
+    // use definition for previous wfs is identical:
+    // all other parameters to define DHs here are global for this run,
+    // so we just need to check wfs.ndh
+    if (ns>1) wdhok = where(wfs(1:ns-1).ndh==wfs(ns).ndh)
+    if (numberof(wdhok)) {
+      wfs(ns)._pha2dhc  = wfs(wdhok(1))._pha2dhc;
+      wfs(ns)._wpha2dhc = wfs(wdhok(1))._wpha2dhc;
+      wfs(ns)._n12      = wfs(wdhok(1))._n12;
+      if (sim.verbose>=1) write,format="Disk Harmonic wfs initialized (copied from wfs%d)\n",wdhok(1);
+    } else {
+      def = float(make_diskharmonic(size,pupd,ndh,xc=cent,yc=cent));
+
+      wfs_wdh = where(ipupil);
+      wfs(ns)._wpha2dhc = &wfs_wdh;
+
+      def = def(*,)(wfs_wdh,);
+      wfs_dh = LUsolve(def(+,)*def(+,))(+,)*def(,+);
+      wfs(ns)._pha2dhc = &wfs_dh;
+
+      tmp = where(pupsh(avg,));
+      zn12 = minmax(tmp);
+      wfs(ns)._n12 = zn12;
+      if (sim.verbose>=1) write,"Disk Harmonic wfs initialized";
+    }
+    return;
+  }
+
+  zn12 = wfs(ns)._n12;
+  wfs(ns)._fimage = wfs(ns)._dispimage = &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
+  mes = (*wfs(ns)._pha2dhc)(,+)*phase(*)(*wfs(ns)._wpha2dhc)(+);
+
+  if (wfs(ns).ndhfiltered) mes(1:wfs(ns).ndhfiltered) *=0; // shouldn't it be ndhf + 1?
+
+  // returns microns rms (checked 2008apr10)
   return mes;
 }
 
@@ -1437,6 +1490,8 @@ func mult_wfs_int_mat(disp=,subsys=)
       smes = pyramid_wfs(pupil,phase,ns);
     } else if (wfs(ns).type == "zernike") {
       smes = zernike_wfs(ipupil,phase,ns);
+    } else if (wfs(ns).type == "dh") {
+      smes = dh_wfs(ipupil,phase,ns);
     } else {
       // assign user_wfs to requested function/type:
       cmd = swrite(format="user_wfs = %s",wfs(ns).type);
@@ -1514,6 +1569,8 @@ func mult_wfs(iter,disp=)
       smes = pyramid_wfs(pupil,phase,ns);
     } else if (wfs(ns).type == "zernike") {
       smes = zernike_wfs(ipupil,phase,ns);
+    } else if (wfs(ns).type == "dh") {
+      smes = dh_wfs(ipupil,phase,ns);
     } else {
       // assign user_wfs to requested function/type:
       cmd = swrite(format="user_wfs = %s",wfs(ns).type);
@@ -1612,14 +1669,14 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, verbose=, batch=)
   // wfs(1).skymag = 10;
   // sim.debug = 0;
   // aoinit;
-// 
+//
   // wfs(1).noise=0;
   // shwfs_tests_plots,"NO NGS with w/ sky, no noise",batch=batch;
-// 
+//
   // wfs(1).noise=1;
   // wfs(1).ron=0;
   // shwfs_tests_plots,"NO NGS with w/ sky, w/ noise but no RON",batch=batch;
-// 
+//
   // wfs(1).ron=4;
   // shwfs_tests_plots,"NO NGS with w/ sky, w/ noise",batch=batch;
 
@@ -1745,7 +1802,7 @@ func shwfs_tests_plots(name,batch=)
 func pyramid_wfs_checks(nchecks)
 {
   if (!nchecks) nchecks=10;
-  
+
   if (findfiles("test5.par")==[]) {
     error,"no test5.par in cwd. pls cd where test5.par is";
   }
