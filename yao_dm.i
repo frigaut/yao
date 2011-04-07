@@ -293,7 +293,7 @@ func make_kl_dm(nm,&def,disp=)
   psize = tel.diam/sim.pupildiam;
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
   patchDiam = long(ceil((sim.pupildiam+2*max(gsdist)*
-                         4.848e-6*(dm(nm).alt)/psize)/2)*2);
+                         4.848e-6*abs(dm(nm).alt)/psize)/2)*2);
 
   //  prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
 
@@ -362,7 +362,7 @@ func make_zernike_dm(nm,&def,disp=)
   // below: bug discovered 2009mar24: << REDO mcao matrices
   // was using linear distance (abs(wfs.gspos), not working), not XY !!!
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
-  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*(dm(nm).alt)/psize;
+  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
 
@@ -404,7 +404,7 @@ func make_dh_dm(nm,&def,disp=)
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
-  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*(dm(nm).alt)/psize;
+  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
   def = float(make_diskharmonic(dim,patchDiam,ndh,xc=cent-dm(nm)._n1+1,yc=cent-dm(nm)._n1+1));
 
@@ -438,7 +438,7 @@ func make_tiptilt_dm(nm,&def,disp=)
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
   patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
-    4.848e-6*(dm(nm).alt)/psize;
+    4.848e-6*abs(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
 
@@ -488,7 +488,7 @@ func make_curvature_dm(nm,&def,disp=,cobs=)
   psize = tel.diam/sim.pupildiam;  // pixel in meter
 
   patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
-    4.848e-6*(dm(nm).alt)/psize;
+    4.848e-6*abs(dm(nm).alt)/psize;
 
   SupportRadius = 2.2;
   CompDim = dim*2;
@@ -624,7 +624,7 @@ func make_aniso_dm(nm,&def,disp=)
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
   patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
-    4.848e-6*(dm(nm).alt)/psize;
+    4.848e-6*abs(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
 
