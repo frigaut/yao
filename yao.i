@@ -1830,6 +1830,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   default_dpi=dpi;
 
+  if (anyof(wfs.nintegcycles != 1) && (loop.method == "open-loop")) {
+    exit, ">> nintegcycles > 1 not implemented for open-loop, exiting";
+    }
+  
   // Sets other parameters:
   sim._size = int(2^ceil(log(sim.pupildiam)/log(2)+1));
   size      = sim._size;
@@ -2601,6 +2605,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       }
     } else {
+      dMat = [];
       iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
       if (fileExist(YAO_SAVEPATH+parprefix+"-AtAreg.ruo")){
         AtAregSP = restore_ruo(YAO_SAVEPATH+parprefix+"-AtAreg.ruo");
