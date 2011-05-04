@@ -43,6 +43,37 @@
 
 */
 
+func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=)
+/* DOCUMENT:
+ * make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=)
+ * shortcut to prepdiskharmonic. return data cube.
+ */
+{
+  prepdiskharmonic,size,diameter,xc,yc;
+  load_dh_bjprime_zero_tab;
+  max_order = zernumero(ndhmodes)(1)+1;
+  ndh=0;
+  //ntmodes = sum(indgen(max_order+1));
+
+  for (i=0;i<=max_order;i++) {
+    for (k=0;k<=i;k++) {
+      ndh = ndh+1;
+      if (ndh == 1) {
+        dh_tab = array(float,size,size,1);
+      } else {
+        grow,dh_tab,array(float,size,size,1);
+      }
+      p = dh_dhindex(i,k);
+      dh_tab(,,ndh) = dh_dh(p(1),p(2),zr,ztheta);
+      if (disp == 1) {fma; pli,dh_tab(,,ndh);}
+    }
+  }
+
+  return dh_tab(,,1:ndhmodes);
+
+}
+
+
 //===========================================================================
 
 func prepdiskharmonic(size,diameter,xc,yc)

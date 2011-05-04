@@ -24,7 +24,7 @@
    dm(1).type is a scalar
    *wfs(1).nsubperring is a vector.
    (*wfs(1).nsubperring)(1) is the first element of this vector.
-   
+
    The variables with a "_" in frnt of them are internal variables. they are set
    and used while the program is running. You can still access them, and possibly
    modify them to reach a particular purpose.
@@ -32,7 +32,7 @@
    The following generic structures are instanced into structures of the same
    name, without the "_struct" appended, when the parameter file is read. For
    instance, "atm" will be the structure containing the atmospheric parameters
-   as defined in the generic type atm_struct below. 
+   as defined in the generic type atm_struct below.
 
 
    SYNTAX OF THE COMMENTS BELOW:
@@ -57,6 +57,8 @@ struct sim_struct
 {
   string  name;           // A name for this simulation run. Optional [none]
   long    pupildiam;      // Pupil diameter in pixels. Required [none]
+  long    pupilapod;      // whether to use an apodized pupil (rolled off @ edges) for
+                          // some image calculations. Optional [0]
   long    debug;          // set the debug level (0:no debug, 1:some, 2: most). Optional [0]
   long    verbose;        // set the verbose level (0:none, 1: some, 2: most). Optional [0]
   long    svipc;          // set to the number of process for parallelization
@@ -64,7 +66,7 @@ struct sim_struct
                           // bits    effect
                           // 0(1)    WFS/DM global split (2 process)
                           // 1(2)    PSFs calculation parallelization
-                          // e.g. sim.svipc = 1 -> split WFS/DM 
+                          // e.g. sim.svipc = 1 -> split WFS/DM
                           // e.g. sim.svipc = 2 -> parallelize PSFs
                           // e.g. sim.svipc = 3 -> WFS/DM & PSFs
   long    svipc_wfs_nfork;// nb of forks when splitting WFSs (one or more WFS per
@@ -115,7 +117,7 @@ struct opt_struct
 
 struct wfs_struct
 {
-  string  type;           // valid type are "curvature", "hartmann", 
+  string  type;           // valid type are "curvature", "hartmann", "dh",
                           // "pyramid", "zernike" or "user_function" where user_function
                           // is the name of a function defined by the user (see doc).
                           // Required [none]
@@ -130,7 +132,7 @@ struct wfs_struct
   float   gsdepth;        // This WFS GS depth in meter (e.g. Na layer thickness).
                           // Specified at zenith. Optional [0]
   float   laserpower;     // this wfs laser power (Na laser only), in Watts projected on sky.
-                          // Required when using lasers. Exclusive with gsmag; i.e. 
+                          // Required when using lasers. Exclusive with gsmag; i.e.
                           // define one OR the other.
   float   gsmag;          // This WFS guide star magnitude. Optional [0]. For LGSs, see above.
   float   skymag;         // This WFS sky mag. Optional [no sky]
@@ -145,7 +147,7 @@ struct wfs_struct
   long    svipc;          // number of parallel process to use for this WFS.
                           // (0 or 1: don't parallelize)
   float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
-  
+
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first subaperture of ring.
@@ -164,7 +166,7 @@ struct wfs_struct
                           // on each side of the pupil image. Typical 0 to 4.
   string  pyr_mod_loc;    // Location of modulation (before/after the field stop.
                           // valid value are "before" or "after"
-  
+
   // Shack-Hartmann WFS only keywords:
   long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
   long    shnxsub;        // # of subaperture in telescope diameter. Required [none]
@@ -174,7 +176,7 @@ struct wfs_struct
                           // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
   float   pixsize;        // Subaperture pixel size in arcsec. Required [none]
   int     npixels;        // Final # of pixels in subaperture. Required [none]
-  float   pupoffset(2);   // offset of the whole wfs subs w.r.t telescope aperture [meter] 
+  float   pupoffset(2);   // offset of the whole wfs subs w.r.t telescope aperture [meter]
                           // allow misregistration w.r.t tel pupil and funky configurations
   long    shthmethod;     // 1: yao default, 2: podium, 3: brightest pixels. Required [1]
   float   shthreshold;    // Threshold in computation of subaperture signal, >=0. Optional [0]
@@ -191,11 +193,15 @@ struct wfs_struct
   int     nintegcycles;   // # of cycles/iterations over which to integrate. Optional [1]
   float   fracIllum;      // fraction illuminated to be valid. Optional [0.5]
   float   LLTxy(2);       // 2 element vector with (x,y) of laser projector [m]
-  long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and 
+  long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and
                           // filtertilt must be set). Optional [0]
   int     rayleighflag;   // set to one to take rayleigh into account
                           // zernike wfs only
   int     nzer;           // # of zernike sensed
+
+  // DH wfs only
+  int     ndh;            // # of dh sensed
+  int     ndhfiltered;    // # of dh filtered. 2 would filter tip and tilt.
 
   // Internal keywords:
   int     _initkernels;   // put in wfs struct for svipc sync 2010jun25
@@ -265,18 +271,21 @@ struct wfs_struct
   int     _bckgrdinit;    // set to one to fill calibration array
   int     _bckgrdsub;     // set to one to subtract background (default)
   pointer _meashist;      // measurement history, useful for nintegcycles > 1
-  float   _zeropoint;     // zeropoint for the wavefront sensor. 
+  float   _zeropoint;     // zeropoint for the wavefront sensor.
+  pointer _pha2dhc;       // projection matrix phase to DH coefs for this wfs
+  pointer _wpha2dhc;      // valid phase points indices
+  int     _n12(2);        //
 };
 
 struct dm_struct
 {
   string  type;           // valid types are "bimorph", "stackarray" "tiptilt",
-                          // "diskharmonic", "zernike", "kl", "segmented", "aniso" or 
-                          // "user_function", where user_function is the name of 
+                          // "dh", "zernike", "kl", "segmented", "aniso" or
+                          // "user_function", where user_function is the name of
                           // a function provided by the user. Required [none]
   long    subsystem;      // Subsystem this DM belongs to. Optional [1]
   long    virtual;        // virtual DMs for tomography, don't correct wavefront
-  pointer fitvirtualdm;   // which tomographic virtual DMs are used to drive this DM  
+  pointer fitvirtualdm;   // which tomographic virtual DMs are used to drive this DM
   string  iffile;         // Influence function file name. Leave it alone.
   long    pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
   float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
@@ -322,9 +331,9 @@ struct dm_struct
   // Zernike-only keywords:
   long    nzer;           // Number of modes, including piston. Required [none]
   long    minzer;         // lowest order zernike, default=1 (piston)
-  
+
   // Disk-Harmonic only keywords
-  long    max_order;     // maximum order included in the dm modal IF (min_order is always 0)
+  long    ndh;            // number of DH modes
 
   // KL-only keywords:
   long    nkl;            // Number of modes, including piston. Required [none]
@@ -338,7 +347,7 @@ struct dm_struct
 
   // MMSE and sparse MMSE matrix reconstructor parameters:
   float   regparam;       // regularization parameter
-  string  regtype;        // regulatization matrix generation method. 
+  string  regtype;        // regulatization matrix generation method.
   pointer regmatrix;      // matrix used in the regularization
   // Internal keywords:
   long    _puppixoffset(2);
@@ -347,10 +356,10 @@ struct dm_struct
   pointer _def;           // Internal: Pointer to IF data
   pointer _x;             // Internal: x position of actuator in pixels
   pointer _y;             // Internal: x position of actuator in pixels
-  pointer _i1;            // 
-  pointer _j1;            // 
-  pointer _ei1;           // 
-  pointer _ej1;           // 
+  pointer _i1;            //
+  pointer _j1;            //
+  pointer _ei1;           //
+  pointer _ej1;           //
   string  _eiffile;       // Influence function file name for extrap. actuators
   pointer _edef;          // Internal: Pointer to IF data for extrap. actuators
   pointer _ex;            // Internal: x position of extrap. actuator in pixels
@@ -374,7 +383,7 @@ struct dm_struct
 
 struct mat_struct
 {
-  string  method;         // reconstruction method: "svd" (default), "mmse", "mmse-sparse" 
+  string  method;         // reconstruction method: "svd" (default), "mmse", "mmse-sparse"
   pointer condition;      // float vecorptr. Condition numbers for SVD, per subsystem. Required [none]
   long    sparse_MR;      // maximum number of rows for sparse method
   long    sparse_MN;      // maximum number of elements for sparse method
@@ -386,7 +395,7 @@ struct mat_struct
   // the following parameters only apply to "mmse" fitting
   long    fit_subsamp;    // subsampling the phase for fitting matrix (set to larger than 1 for speed), default = 1
   long    fit_target;     // which target to optimize fitting for, default = 1
-  float   fit_minval;     // minimum value for sparse fitting matrix, default = 1e-2   
+  float   fit_minval;     // minimum value for sparse fitting matrix, default = 1e-2
 };
 
 struct tel_struct
@@ -457,5 +466,5 @@ struct loop_struct
                            // will be swapped (rotation, 2->1, 3->2... 1->last
   string  modalgainfile;   // Name of file with mode gains. Optional.
   //float   dithering;     // TT dithering for centroid gain (volts).
-  string  method;          // "closed-loop", "open-loop", "pseudo open-loop" 
+  string  method;          // "closed-loop", "open-loop", "pseudo open-loop"
 };

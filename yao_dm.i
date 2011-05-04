@@ -13,13 +13,13 @@ func make_pzt_dm(nm,&def,disp=)
   // (see coupling3.i)
   a=[4.49469,7.25509,-32.1948,17.9493];
   p1 = a(1)+a(2)*coupling+a(3)*coupling^2+a(4)*coupling^3;
-  
+
   a = [2.49456,-0.65952,8.78886,-6.23701];
   p2 = a(1)+a(2)*coupling+a(3)*coupling^2+a(4)*coupling^3;
 
   a = [1.16136,2.97422,-13.2381,20.4395];
   irc = a(1)+a(2)*coupling+a(3)*coupling^2+a(4)*coupling^3;
-  
+
   if (sim.debug>=2) write,format="p1=%f  p2=%f  ir=%f\n",p1,p2,irc;
 
   dim   = dm(nm)._n2-dm(nm)._n1+1;
@@ -40,7 +40,7 @@ func make_pzt_dm(nm,&def,disp=)
     c  = 3.74; p1 = 3.805; p2 = 2.451; ir = pitch*1.4; //good, coupling=17%
   */
   ir = irc*pitch;
-    
+
   bord  = 0;
   cub   = array(float,nxact+bord*2,nxact+bord*2,4);
 
@@ -52,7 +52,7 @@ func make_pzt_dm(nm,&def,disp=)
 
   // fill cub (X coord  and Y coord):
   cub(,,1) = xy(,,1); cub(,,2) = xy(,,2);
-  
+
   if (dm(nm).xflip) cub(,,1) = cub(::-1,,1);
   if (dm(nm).yflip) cub(,,2) = cub(,::-1,1);
 
@@ -66,7 +66,7 @@ func make_pzt_dm(nm,&def,disp=)
   inbigcirc= where(dis < rad);
   // 1 if valid actuator, 0 if not:
   // selection is done after interaction matrix is done
-  cub(,,3) = 1; 
+  cub(,,3) = 1;
 
   // 1 if valid guard ring actuator, 0 if not:
   //cub(,,4) = (dis >= (pupr+extent*pitch)) & (dis < (pupr+(1.+extent)*pitch));
@@ -85,9 +85,9 @@ func make_pzt_dm(nm,&def,disp=)
   cub      = cub(inbigcirc,);
 
   cubval   = cub(where(cub(,3)),);
-  
+
   nvalid   = int(sum(cubval(,3)));
-  
+
   xy    = indices(size);
 //  x     = xy(,,2); y = xy(,,1);
   x     = xy(,,1); y = xy(,,2);
@@ -124,7 +124,7 @@ func make_pzt_dm(nm,&def,disp=)
                      (1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
         def(,,i)   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
     }
-    
+
     if ((disp == 1) && (sim.debug == 2)) {fma; pli,def(,,i);}
   }
   if (sim.verbose)  write,"";
@@ -136,7 +136,7 @@ func make_pzt_dm(nm,&def,disp=)
   // look for extrapolation actuator stuff in v1.0.8 if needed
 
   fact = dm(nm).unitpervolt/max(def);
-  
+
   def = float(def*fact);
   dm(nm)._nact = (dimsof(def))(4);
   dm(nm)._def = &def;
@@ -145,7 +145,7 @@ func make_pzt_dm(nm,&def,disp=)
     piston=def(,,sum)*ipupil(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2);
     tv,piston;
   }
-  
+
   if (dm(nm)._puppixoffset!=[]) {
     // ok, so for now we'll do the following:
     // influence functions are actually shifted in comp_dm_shape,
@@ -156,7 +156,7 @@ func make_pzt_dm(nm,&def,disp=)
     *dm(nm)._x += dm(nm)._puppixoffset(1)
     *dm(nm)._y += dm(nm)._puppixoffset(2)
   }
-    
+
   clean_progressbar;
   return def;
 }
@@ -176,13 +176,13 @@ func make_pzt_dm_elt(nm,&def,disp=)
   // (see coupling3.i)
   a=[4.49469,7.25509,-32.1948,17.9493];
   p1 = a(1)+a(2)*coupling+a(3)*coupling^2+a(4)*coupling^3;
-  
+
   a = [2.49456,-0.65952,8.78886,-6.23701];
   p2 = a(1)+a(2)*coupling+a(3)*coupling^2+a(4)*coupling^3;
 
   a = [1.16136,2.97422,-13.2381,20.4395];
   irc = a(1)+a(2)*coupling+a(3)*coupling^2+a(4)*coupling^3;
-  
+
   if (sim.debug>=2) write,format="p1=%f  p2=%f  ir=%f\n",p1,p2,irc;
 
   dim   = dm(nm)._n2-dm(nm)._n1+1;
@@ -217,7 +217,7 @@ func make_pzt_dm_elt(nm,&def,disp=)
   for (i=1;i<=3;i++) {cdef=convol2d(cdef,k);cdef(w)=def(w);}
   def = cdef;
   */
-  
+
   // compute location (x,y and i,j) of each actuator:
   cub   = array(float,nxact,nxact,2);
   // make X and Y indices array:
@@ -293,7 +293,7 @@ func make_kl_dm(nm,&def,disp=)
   psize = tel.diam/sim.pupildiam;
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
   patchDiam = long(ceil((sim.pupildiam+2*max(gsdist)*
-                         4.848e-6*(dm(nm).alt)/psize)/2)*2);
+                         4.848e-6*abs(dm(nm).alt)/psize)/2)*2);
 
   //  prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
 
@@ -315,7 +315,7 @@ func make_kl_dm(nm,&def,disp=)
 
   // order them in a similar order as zernike:
   kl = order_kls(kl,patchDiam,upto=20);
-  
+
   def = array(float,dim,dim,nkl-nkllow+1);
 
   n1 = dim/2-patchDiam/2+1;
@@ -362,10 +362,10 @@ func make_zernike_dm(nm,&def,disp=)
   // below: bug discovered 2009mar24: << REDO mcao matrices
   // was using linear distance (abs(wfs.gspos), not working), not XY !!!
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
-  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*(dm(nm).alt)/psize;
+  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
-  
+
   def = array(float,dim,dim,nzer-minzer+1);
 
   for (i=1;i<=(nzer-minzer+1);i++) {
@@ -379,7 +379,7 @@ func make_zernike_dm(nm,&def,disp=)
   z2 = zernike_ext(2);
   current = z2(dim/2,dim/2)-z2(dim/2-1,dim/2);
   fact = (dm(nm).unitpervolt*tel.diam/sim.pupildiam)*4.848/current;
-  
+
   def = float(def*fact);
   dm(nm)._nact = (dimsof(def))(4);
   dm(nm)._def = &def;
@@ -389,58 +389,34 @@ func make_zernike_dm(nm,&def,disp=)
 }
 
 //----------------------------------------------------
-func make_diskharmonic_dm(nm,&def,disp=)
+func make_dh_dm(nm,&def,disp=)
 
   /* DOCUMENT function make_diskharm_dm,dm_structure
      adapted on 2010jun from the modal zernike dm function above.
    */
 {
 
-  extern zr,ztheta;
-  
   gui_progressbar_frac,0.;
   gui_progressbar_text,"Computing Influence Functions for modal DM : disk harmonics";
   dim   = dm(nm)._n2-dm(nm)._n1+1;
   cobs  = tel.cobs;
-  max_order = dm(nm).max_order; // create this variable in dm structure
+  ndh   = dm(nm).ndh; // create this variable in dm structure
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
-  // below: bug discovered 2009mar24: << REDO mcao matrices
-  // was using linear distance (abs(wfs.gspos), not working), not XY !!!
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
-  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*(dm(nm).alt)/psize;
+  patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
-  // the function below prepares the zr and ztheta necessary for evaluating 
-  // the dh, exactly as in the zernike mode.
-  prepdiskharmonic,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
-  
-  ntmodes = sum(indgen(max_order+1));
-  load_dh_bjprime_zero_tab;
-  ndh=0;
-  
-  for (i=0;i<=max_order;i++) {
-    for (k=0;k<=i;k++) {
-      ndh = ndh+1;
-      if (ndh == 1) { 
-        def = array(float,dim,dim,1); 
-      } else {
-        grow,def,array(float,dim,dim,1);
-      }
-      p = dh_dhindex(i,k);
-      def(,,ndh) = dh_dh(p(1),p(2),zr,ztheta);
-      if (disp == 1) {fma; pli,def(,,ndh);}
-    }
-    gui_progressbar_frac,float(ndh)/float(ntmodes);
-  }
-  if (sim.verbose>=1) {write,format="Number of DH modes :%d\n",ntmodes;}
+  def = float(make_diskharmonic(dim,patchDiam,ndh,xc=cent-dm(nm)._n1+1,yc=cent-dm(nm)._n1+1));
+
+  if (sim.verbose>=1) {write,format="Number of DH modes :%d\n",ndh;}
 
   // I am not sure if the normalization factor is correct for DH, but I am leaving it! (aurea)
   // normalization factor: one unit of tilt gives 1 arcsec:
-  current = def(dim/2,dim/2,3)-def(dim/2-1,dim/2,3);
-  fact = (dm(nm).unitpervolt*tel.diam/sim.pupildiam)*4.848/current;
-  
-  def = float(def*fact);
+  // current = def(dim/2,dim/2,3)-def(dim/2-1,dim/2,3);
+  // fact = (dm(nm).unitpervolt*tel.diam/sim.pupildiam)*4.848/current;
+  fact = dm(nm).unitpervolt;
 
+  def = float(def*fact);
   dm(nm)._nact = (dimsof(def))(4);  // This is equal to ndh
   dm(nm)._def = &def;
 
@@ -462,10 +438,10 @@ func make_tiptilt_dm(nm,&def,disp=)
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
   patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
-    4.848e-6*(dm(nm).alt)/psize;
+    4.848e-6*abs(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
-  
+
   def = array(float,dim,dim,nzer);
 
   for (i=1;i<=nzer;i++) {
@@ -504,7 +480,7 @@ func make_curvature_dm(nm,&def,disp=,cobs=)
 
   gui_progressbar_frac,0.;
   gui_progressbar_text,"Computing Influence Functions";
-  
+
   dimdef   = dm(nm)._n2-dm(nm)._n1+1;
 
   dim = sim._size;
@@ -512,7 +488,7 @@ func make_curvature_dm(nm,&def,disp=,cobs=)
   psize = tel.diam/sim.pupildiam;  // pixel in meter
 
   patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
-    4.848e-6*(dm(nm).alt)/psize;
+    4.848e-6*abs(dm(nm).alt)/psize;
 
   SupportRadius = 2.2;
   CompDim = dim*2;
@@ -525,13 +501,13 @@ func make_curvature_dm(nm,&def,disp=,cobs=)
   SurfOneAct = pi/sum(NActPerRing); // Surface of one actuator
   RInRing = array(float,NRing);     // Internal Radius
   ROutRing = array(float,NRing);    // External Radius
-  if (is_set(cobs)) {RInRing(1) = cobs;} 
+  if (is_set(cobs)) {RInRing(1) = cobs;}
   // loop on ring number
   for (i=1;i<=NRing;i++) {
     ROutRing(i) = sqrt(NActPerRing(i)*SurfOneAct/pi+RInRing(i)^2.);
     if (i != NRing) RInRing(i+1) = ROutRing(i);
   }
-  if (is_set(cobs)) {RInRing(1) = 0.;} 
+  if (is_set(cobs)) {RInRing(1) = 0.;}
   ROutRing(NRing) = 1.6;
   //  RInRing(NRing)  = 1.05;
   // now we got to determine the inner and outer radius and angle for
@@ -547,7 +523,7 @@ func make_curvature_dm(nm,&def,disp=,cobs=)
   if ((*dm(nm).rint)!=[]) RInRing=*dm(nm).rint;
   if ((*dm(nm).rout)!=[]) ROutRing=*dm(nm).rout;
   if (dm(nm).supportRadius) SupportRadius=dm(nm).supportRadius;
-  
+
   // loop to determine radiuses and angle:
   for (i=1;i<=NRing;i++) {
     dtheta = 2*pi/NActPerRing(i)
@@ -556,7 +532,7 @@ func make_curvature_dm(nm,&def,disp=,cobs=)
       t2 = t1+dtheta;
       grow,ActThetaIn,t1 ;
       grow,ActThetaOut,t2 ;
-      grow,ActRadiusIn,RInRing(i) ; 
+      grow,ActRadiusIn,RInRing(i) ;
       grow,ActRadiusOut,ROutRing(i) ;
     }
   }
@@ -648,10 +624,10 @@ func make_aniso_dm(nm,&def,disp=)
   cent  = sim._cent;
   psize = tel.diam/sim.pupildiam;
   patchDiam = sim.pupildiam+2*max(abs(wfs.gspos))*
-    4.848e-6*(dm(nm).alt)/psize;
+    4.848e-6*abs(dm(nm).alt)/psize;
 
   prepzernike,dim,patchDiam,sim._cent-dm(nm)._n1+1,sim._cent-dm(nm)._n1+1;
-  
+
   def = array(float,dim,dim,3);
 
   for (i=1;i<=3;i++) {
@@ -692,14 +668,14 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
  */
 {
   extern alow,ahigh,comaniso;
-  
+
   // we address here the zero altitude layer. The pupil is well defined.
   // cut a ipupil of the appropriate size:
   puplow = ipupil(dm(nmlow)._n1:dm(nmlow)._n2,dm(nmlow)._n1:dm(nmlow)._n2);
   w = where(puplow);
   // this transform def into a #spatial_point x nact array and retains only
   // the spatial point inside the pupil
-  if (dm(nmlow).elt == 1) { 
+  if (dm(nmlow).elt == 1) {
     n1 = dm(nmlow)._n1;
     n2 = dm(nmlow)._n2;
     sizedef=n2-n1+1;
@@ -731,14 +707,14 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   // compute the product act * mode:
   anisoproj = def(+,)*defa(+,);
 
-  // command vector (matrices, 3 modes) to apply to DM to get a given mode 
+  // command vector (matrices, 3 modes) to apply to DM to get a given mode
   alow = defcovi(+,)*anisoproj(+,);
 
   // display:
   if (disp) {
     for (i=1;i<=3;i++) {
       if (dm(nmlow).elt == 1) {
-        tv,tabdef(,,+)*alow(+,i)*puplow; 
+        tv,tabdef(,,+)*alow(+,i)*puplow;
         }
       else tv,(*dm(nmlow)._def)(,,+)*alow(+,i)*puplow;
       hitReturn;
@@ -750,8 +726,8 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   // So we define here the pupil as the area which is controllable by the actuators.
   // that should be perfectly acceptable as the is the only area which will be seen
   // by any beam.
-  
-  if (dm(nmhigh).elt == 1) { 
+
+  if (dm(nmhigh).elt == 1) {
     n1 = dm(nmhigh)._n1;
     n2 = dm(nmhigh)._n2;
     sizedef=n2-n1+1;
@@ -775,7 +751,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
     w = where(puphigh);
     def = (*dm(nmhigh)._def)(*,)(w,);
   }
-  
+
   defcov = def(+,)*def(+,);
   defcovi = LUsolve(defcov);
 
@@ -792,7 +768,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   if (disp || (sim.debug == 2)) {
     for (i=1;i<=3;i++) {
       if (dm(nmhigh).elt == 1) {
-        tv,tabdef(,,+)*ahigh(+,i)*puphigh; 
+        tv,tabdef(,,+)*ahigh(+,i)*puphigh;
         }
       else tv,(*dm(nmhigh)._def)(,,+)*ahigh(+,i)*puphigh;
       hitReturn;
@@ -814,7 +790,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
 
 //--------------------------------------------------------------------------
 
-func hysteresis(v,n,first=) 
+func hysteresis(v,n,first=)
 {
 
   // utilisation :
@@ -870,7 +846,7 @@ func hysteresis(v,n,first=)
   dm(n)._chv = &(chv);
   dm(n)._dir = &(dir);
   dm(n)._delta = &(delta);
-  
+
   return pos;
 }
 
@@ -886,11 +862,11 @@ func make_segmented_dm(nm,&def,disp=)
   // keep only the one within the area of interest:
   if (dm(nm).fradius) f_rad = dm(nm).fradius;
   else f_rad = dm(nm).pitch*(dm(nm).nxseg)/2.;
-  
+
   map  = filt_seg_hexa_grid(map,x,y,f_rad,cent=cent);
   // repack/renumber
   map = renum_int_array(map);
-  
+
   // number of segments
   nseg = max(map);
   // 3 degrees of freedom per segment (piston, tip and tilt)
@@ -916,10 +892,10 @@ func make_segmented_dm(nm,&def,disp=)
     def(,,k++) = tmp;
     if (disp) tv,def(,,k-1);
   }
-  
+
   dm(nm)._nact = nact;
   dm(nm)._def = &def;
-  
+
   return map;
 }
 
@@ -927,7 +903,7 @@ func make_segmented_dm(nm,&def,disp=)
 func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
 /* DOCUMENT func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
    pitch = Segment center to segment center pitch [pixels]
-   nxseg = Number of segment in long axis (X) diameter 
+   nxseg = Number of segment in long axis (X) diameter
            nxseg must be integer, odd or even
    dim   = Size of final maps (optional, default to (nxseg+2)*pitch)
    rotby = Angle in degrees to rotate maps by (optional)
@@ -945,7 +921,7 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
   if (!dim) dim = (long((nxseg+2)*pitch+1)/2)*2;
   if (odd(dim)) write,"Warning: make_segments_hexa(): dim is odd";
   if (!cent) cent=dim/2;
-  
+
   // compute coordinates of segment centers
   // we need to oversize as Y dimension is compressed
   // (ypitch = xpitch / (sqrt(3)/2.)
@@ -960,7 +936,7 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
   xy(,,1) += odd(abs(xy(,,2)))*0.5;
   // adjust for the case nxseg = even (then no segment at exact center)
   xy += even(nxseg)*0.5;
-  
+
   // scale X and Y by proper distances:
   x = xy(,,1)*pitch;
   y = xy(,,2)*pitch*sqrt(3.)/2.;
@@ -977,14 +953,14 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
     plmargin;
     hitReturn;
   }
-  
+
   // rotate, if needed:
   if (rotby) {
     xy2 = mrot(rotby)(+,)*[x,y](,+);
     x = xy2(1,);
     y = xy2(2,);
   }
-  
+
   // get rid of segments that will be completely, for sure,
   // outside of a circular aperture?
   //d = sqrt(x^2.+y^2.);
@@ -993,7 +969,7 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
   //x = x(w);
   //y = y(w);
   nseg = numberof(x);
-  
+
   if (debug) {
     fma;
     plp,y,x,symbol=4,size=0.3;
@@ -1015,12 +991,12 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
   maxram = 256; // in MB
   maxdim = long(sqrt(maxram*1e6/(nseg*4)));
   if (debug) write,format="Max dim = %d\n",maxdim;
-  
+
   if (maxdim>=dim) {
     cube = array(0.0f,[3,dim,dim,nseg]);
     for (i=1;i<=nseg;i++) {
       cube(,,i) = float(dist(dim,xc=x(i),yc=y(i)));
-    }    
+    }
     map = cube(,,mnx);
   } else {
     sdim = dim;
@@ -1042,7 +1018,7 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
     }
     map = map(1:dim,1:dim);
   }
-  
+
   if (debug) write,(t2=tac())-t1;
 
   return map;
@@ -1054,7 +1030,7 @@ func filt_seg_hexa_grid(map,&x,&y,filter_radius,cent=)
 /* DOCUMENT
    func filt_seg_hexa_grid(map,x,y,filter_radius)
    Filter segments that are outside of area of interest
-   
+
    map = map of segments (pixel value = segment number it
      belongs to). Generally built by make_seg_hexa_grid()
    x and y = coordinates of segment centers (in pixel, w.r.t
