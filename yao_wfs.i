@@ -546,7 +546,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns)._bckgrdsub  = 1; // now yes, enable it (by default)
 
   // the following fixes a bug we have since 4.7.1:
-  wfs(ns)._bckgrdcalib = &(*wfs(ns)._fimage);
+  // wfs(ns)._bckgrdcalib = &(*wfs(ns)._fimage);
   // here we need to re-sync to restore bckgrd properties to forks:
   if (wfs(ns).svipc>1) status = sync_wfs_forks();
 
