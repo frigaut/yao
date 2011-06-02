@@ -378,59 +378,59 @@ void _fftVE2(fftwf_complex *in,
    at pre-defined positions.
 */
 int _shwfs_phase2spots(float *pupil,        // input pupil
-                       float *phase,    // input phase
-                       float phasescale,        // phase scaling factor
-                       float *phaseoffset,      // input phase offset
-                       int       dimx,          // X dim of phase. Used as stride for extraction
+                       float *phase,        // input phase
+                       float phasescale,    // phase scaling factor
+                       float *phaseoffset,  // input phase offset
+                       int   dimx,          // X dim of phase. Used as stride for extraction
            
-                       int       *istart,       // vector of i starts of each subaperture
-                       int       *jstart,       // vector of j starts of each subaperture
-                       int       nx,            // subaperture i size
-                       int       ny,            // subaperture j size
-                       int       nsubs,         // # of subapertures
+                       int   *istart,       // vector of i starts of each subaperture
+                       int   *jstart,       // vector of j starts of each subaperture
+                       int   nx,            // subaperture i size
+                       int   ny,            // subaperture j size
+                       int   nsubs,         // # of subapertures
            
-                       int       sdimpow2,      // dimension of small array for FFTs, in power of 2
+                       int   sdimpow2,      // dimension of small array for FFTs, in power of 2
            
-                       long      domask,        // go through amplitude mask loop (0/1).
-                       float *submask,  // subaperture mask. Corresponds/applied to simage.
+                       long  domask,        // go through amplitude mask loop (0/1).
+                       float *submask,      // subaperture mask. Corresponds/applied to simage.
            
-                       float *kernel,   // to convolve the (s)image with. dim 2^sdimpow2
-                       // compute dynamically at each call, i.e. can change 
-                       float *kernels,  // to convolve the (s)image with, one per subaperture
-                       // dimension: 2^sdimpow2 * 2 * nsubs. FFTs precomputed
-                       // at init call.
-                       float *kerfftr,  // real part of kernels FFT. dim: same as kernels
-                       float *kerffti,  // imaginary part of kernels FFT. same dim as kerfftr
-                       int       initkernels,   // init kernels: pre-compute FFTs
-                       int       kernconv,      // convolve with kernel?
+                       float *kernel,       // to convolve the (s)image with. dim 2^sdimpow2
+                                            // compute dynamically at each call, i.e. can change 
+                       float *kernels,      // to convolve the (s)image with, one per subaperture
+                                            // dimension: 2^sdimpow2 * 2 * nsubs. FFTs precomputed
+                                            // at init call.
+                       float *kerfftr,      // real part of kernels FFT. dim: same as kernels
+                       float *kerffti,      // imaginary part of kernels FFT. same dim as kerfftr
+                       int   initkernels,   // init kernels: pre-compute FFTs
+                       int   kernconv,      // convolve with kernel?
            
-                       int       *binindices,   // int 2d array containing the indices of the binned 
-                       // subaperture image, i.e. to which pixel in the binned
-                       // image should one pixel in the FFT'd image be added.
-                       int       binxy,         // side size of binned subaperture image,
-                       // (simage rebinnned)
-                       int       rebinfactor,   // rebin factor from small to big pixels
+                       int   *binindices,   // int 2d array containing the indices of the binned 
+                                            // subaperture image, i.e. to which pixel in the binned
+                                            // image should one pixel in the FFT'd image be added.
+                       int   binxy,         // side size of binned subaperture image,
+                                            // (simage rebinnned)
+                       int   rebinfactor,   // rebin factor from small to big pixels
            
-                       float *fimage,   // final image with spots
-                       int       *svipc_subok,  // to skip (0) subap for svipc partial spot comput.
-                       int       *imistart,     // vector of i starts of each image
-                       int       *imjstart,     // vector of j starts of each image
-                       int       fimnx,         // final image X dimension
-                       int       fimny,         // final image Y dimension
+                       float *fimage,       // final image with spots
+                       int   *svipc_subok,  // to skip (0) subap for svipc partial spot comput.
+                       int   *imistart,     // vector of i starts of each image
+                       int   *imjstart,     // vector of j starts of each image
+                       int   fimnx,         // final image X dimension
+                       int   fimny,         // final image Y dimension
            
-                       float *flux,             // vector of flux (input), dim nsubs
+                       float *flux,         // vector of flux (input), dim nsubs
                        float *rayleighflux, // vector of flux for rayleigh (input), dim nsubs
-                       float *skyflux,  // vector of flux for sky (input), dim nsubs
-                       float darkcurrent,       // dark current, e-/pix/frame
+                       float *skyflux,      // vector of flux for sky (input), dim nsubs
+                       float darkcurrent,   // dark current, e-/pix/frame
            
-                       int       rayleighflag,  // enable rayleigh processing
-                       float *rayleigh, // rayleigh background, ns*ns*nsubs
-                       // here I separated background and rayleigh. the background includes
-                       // not only the rayleigh, but also the sky and the dark current.
-                       int       bckgrdinit,    // init background processing. fill bckgrdcalib
+                       int   rayleighflag,  // enable rayleigh processing
+                       float *rayleigh,     // rayleigh background, ns*ns*nsubs
+                                            // here I separated background and rayleigh. the background includes
+                                            // not only the rayleigh, but also the sky and the dark current.
+                       int   bckgrdinit,    // init background processing. fill bckgrdcalib
            
-                       int       counter,       // current counter (in number of cycles)
-                       int       niter)         // total # of cycles over which to integrate
+                       int   counter,       // current counter (in number of cycles)
+                       int   niter)         // total # of cycles over which to integrate
            
 {
   /* Declarations */
@@ -445,8 +445,9 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   float         tot, totrayleigh, krp, kip, sky;
   float         corfact;
   long          log2nr, log2nc, n, ns, nb;
-  int           i,j,k,l,koff,integrate;
-  int           vsc; // vsc = valid sub counter
+  int           i,j,k,l,koff;
+  // int           integrate;
+  // int           vsc; // vsc = valid sub counter
 
   
   /*
@@ -462,8 +463,8 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   ns = 1 << log2nr;  // side of small array, pixels, n=ns*ns
   nb = binxy * binxy;
 
-  integrate = 1; // force to pass by the end (subap overlap upgrade)
-  if (niter > 1) {integrate = 1;}  // we are in "integrating mode"
+  // integrate = 1; // force to pass by the end (subap overlap upgrade)
+  // if (niter > 1) {integrate = 1;}  // we are in "integrating mode"
 
   // Allocate memory for the input operands and check its availability.
   A            = fftwf_malloc ( n * sizeof ( fftwf_complex ) );
@@ -544,7 +545,7 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   p  = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_FORWARD, FFTW_ESTIMATE);
   p1 = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-  vsc = 0;
+  // vsc = 0;
   for ( l=0 ; l<nsubs ; l++ ) {
 
     if (svipc_subok[l]==0) continue;
