@@ -304,7 +304,10 @@ struct dm_struct
   long    disjointpup;    // boolean. if set, dm(n) will be filtered by an array
                           // disjointpup(,,n) that has to be defined by the user
                           // see user_pupil(). Allow for GMT-type topology.
-
+  pointer pegged;         // pointer to a vector that contains index of pegged actuators
+                          // that is, dead actuators (index in valid numbering)
+  pointer epegged;        // same for extrapolated actuators (index in extrap numbering)
+  
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first electrode in ring.
