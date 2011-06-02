@@ -270,6 +270,12 @@ func comp_dm_shape(nm,command,extrap=)
   sphase = array(float,[2,nxy,nxy]);
 
   if (!is_set(extrap)) {
+    // pegged valid actuators (right now, set to position 0):
+    if (dm(nm).pegged) {
+      com = *command;
+      com(*dm(nm).pegged) = 0.0f;
+      command = &com; // this way this does not go up in integrated commands
+    }
 
     if (dm(nm).elt == 1) { //use fast dm shape computation
       _dmsumelt, dm(nm)._def, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._nact),
@@ -280,6 +286,13 @@ func comp_dm_shape(nm,command,extrap=)
 
   } else { // extrapolated actuators
 
+    // pegged extrapolated actuators (right now, set to position 0):
+    if (dm(nm).epegged) {
+      com = *command;
+      com(*dm(nm).epegged) = 0.0f;
+      command = &com; // this way this does not go up in integrated commands
+    }
+    
     if (dm(nm).elt == 1) { //use fast dm shape computation
       _dmsumelt, dm(nm)._edef, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._enact),
         dm(nm)._ei1, dm(nm)._ej1, command, &sphase,nxy,nxy;
@@ -505,6 +518,8 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       rayleigh = wfs(beam).laserpower/(6.62e-34*3e8/589e-9)*sbnr*d^2/(4*pi*r^2.)*
         deltar*loop.ittime*wfs(nwfs).optthroughput;
 
+      if (rayleigh_fudge) rayleigh *= rayleigh_fudge;
+
       // compute position angles of the beam center for this altitude
       alpha = sin(phib)*cos(thetab)-sin(phin)*cos(thetan) - xsubap/r + xsubap/altsod;
       beta  = sin(phib)*sin(thetab)-sin(phin)*sin(thetan) - ysubap/r + ysubap/altsod;
@@ -621,8 +636,9 @@ func do_imat(disp=)
   if (disp) { plsys,1; animate,1; }
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
-  status = store_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
-                                    skyfluxpersub_orig, bias_orig, flat_orig);
+  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
+                           skyfluxpersub_orig, bias_orig, flat_orig;
+
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
 
@@ -711,8 +727,8 @@ func do_imat(disp=)
   }
 
   // restore original values to WFS structure:
-  status = restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
-                                      skyfluxpersub_orig, bias_orig, flat_orig);
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
+                             skyfluxpersub_orig, bias_orig, flat_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -2041,8 +2057,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
-  status = store_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
-                                    skyfluxpersub_orig, bias_orig, flat_orig);
+  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
+                           skyfluxpersub_orig, bias_orig, flat_orig;
+
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
 
@@ -2097,8 +2114,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   wfs.filtertilt = mem;
 
   // restore original values to WFS structure:
-  status = restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
-                                      skyfluxpersub_orig, bias_orig, flat_orig);
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
+                             skyfluxpersub_orig, bias_orig, flat_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
