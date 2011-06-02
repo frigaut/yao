@@ -114,9 +114,15 @@ func make_pzt_dm(nm,&def,disp=)
       //IF fitted from Hadamard experimental iMat:
       //      a_had = [0.2506,8.37,2.24497,26.2,0,0];//BETTER SET OF PARAM !!!
       a_had = [26.2,8.37]/8.*dm(nm).pitch;
-      def(,,i)= (sinc(sqrt((x-cubval(i,1))^2.)/a_had(1))* \
-                 sinc(sqrt((y-cubval(i,2))^2.)/a_had(1))* \
-                 exp(-((x-cubval(i,1))/a_had(2))^2. - ((y-cubval(i,2))/a_had(2))^2. ));
+
+      // make sure which sinc we're using:
+      if (abs(sinc(1.))<1e-10) fact=1.; else fact=pi;
+
+      def(,,i)= (sinc(fact * sqrt((x-cubval(i,1))^2.)/a_had(1))* \
+                 sinc(fact * sqrt((y-cubval(i,2))^2.)/a_had(1))* \
+                 exp(-((x-cubval(i,1))/a_had(2))^2.              \
+                     -((y-cubval(i,2))/a_had(2))^2. ));
+                     
       } else {
         tmpx       = clip(abs((x-cubval(i,1))/ir),1e-8,2.);
         tmpy       = clip(abs((y-cubval(i,2))/ir),1e-8,2.);
