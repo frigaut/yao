@@ -304,7 +304,9 @@ struct dm_struct
   long    disjointpup;    // boolean. if set, dm(n) will be filtered by an array
                           // disjointpup(,,n) that has to be defined by the user
                           // see user_pupil(). Allow for GMT-type topology.
-
+  long    wfspath;        // Whether mirror is on path of WFSs in subsystem only
+  long    fit_wfs;        // which WFS direction to fit the DM in on WFS path
+  
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first electrode in ring.
@@ -437,6 +439,7 @@ struct gs_struct
   float   zenithangle;    // zenith angle. Optional [0.]. The zenith angle is used to compute:
                           // - r0 off-zenith
                           // - atmopheric turbulence layer altitude
+                          // - effective turbulence layer speed
                           // - LGS altitude and thickness of Na Layer
                           // - LGS brighness
                           // note that dm altitude is unchanged.

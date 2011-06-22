@@ -656,14 +656,19 @@ func do_imat(disp=)
       command(i) = float(dm(nm).push4imat);
       mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
 
-      if (mat.method != "mmse-sparse"){
-        // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
-        iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
-      } else {
-        rcobuild, iMatSP, mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat, mat.sparse_thresh;
-      }
-
-
+        if (mat.method != "mmse-sparse"){
+          if (!dm(nm).fit_wfs){
+            // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
+            iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
+          }
+        } else {
+          if (!dm(nm).fit_wfs){
+            rcobuild, iMatSP, mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat, mat.sparse_thresh;
+          } else {
+            rcobuild, iMatSP, mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0., mat.sparse_thresh;
+          }
+        }
+      
       // display, if requested:
       // WFS spots:
       if (is_set(disp)) {
@@ -1261,197 +1266,197 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   statsokvec   = (statsokvec >= loop.startskip);
 
   // Build the position vector vs iteration by phase screen
-  deltax  = sim.pupildiam/tel.diam*(*atm.layerspeed)*loop.ittime;
+  deltax  = sim.pupildiam/tel.diam*(*atm.layerspeed)*cos(dtor*gs.zenithangle)*loop.ittime;
   // has to start away from edge as this is the coordinate of the beam center
   /// will modified later on when we know the beams geometry. see few lines below.
-    xposvec = (1.+iposvec*deltax(-,)*cos(dtor*(*atm.winddir)(-,)));
-    yposvec = (1.+iposvec*deltax(-,)*sin(dtor*(*atm.winddir)(-,)));
+  xposvec = (1.+iposvec*deltax(-,)*cos(dtor*(*atm.winddir)(-,)));
+  yposvec = (1.+iposvec*deltax(-,)*sin(dtor*(*atm.winddir)(-,)));
+  
+  psize  = tel.diam/sim.pupildiam;  // pixel in meter
 
-    psize  = tel.diam/sim.pupildiam;  // pixel in meter
-
-    //===========================================================
-    // PRE-COMPUTATION OF THE INTERSECT POSITIONS FOR EACH WFS GS
-    //===========================================================
-
-    // zero-centered vector of position (our reference)
-    xref = indgen(_n)-(_n+1)/2.;
-    yref = indgen(_n)-(_n+1)/2.;
-
-    // loop on WFS
-    for (n=1;n<=nwfs;n++) {
-
-      // loop on screen
-      for (ns=1;ns<=nscreens;ns++) {
-
-        // offsets of the center of beam on screen NS
-        xoff = (wfs(n).gspos)(1)*4.848e-6*(*atm._layeralt)(ns)/psize;
-        yoff = (wfs(n).gspos)(2)*4.848e-6*(*atm._layeralt)(ns)/psize;
-
-        // if we are dealing with LGS, there is a geometric
-        // factor on the beam size
-        if (wfs(n)._gsalt != 0) {
-          fact = (wfs(n)._gsalt-(*atm._layeralt)(ns))/wfs(n)._gsalt;
-        } else {
-          fact = 1.;
-        }
-
-        // Compute and stuff the array
-        wfsxposcub(,ns,n) = xref*fact + xoff;
-        wfsyposcub(,ns,n) = yref*fact + yoff;
-      }
-
-      // loop on DMs
-      for (ns=1;ns<=ndm;ns++) {
-
-        // offsets of the center of beam on DM NS
-        xoff = (wfs(n).gspos)(1)*4.848e-6*(dm.alt)(ns)/psize;
-        yoff = (wfs(n).gspos)(2)*4.848e-6*(dm.alt)(ns)/psize;
-
-        // if we are dealing with LGS, there is a geometric
-        // factor on the beam size
-        if (wfs(n)._gsalt != 0) {
-          fact = (wfs(n)._gsalt-(dm.alt)(ns))/wfs(n)._gsalt;
-        } else {
-          fact = 1.;
-        }
-
-        // Compute and stuff the array
-        dmwfsxposcub(,ns,n) = xref*fact + xoff;
-        dmwfsyposcub(,ns,n) = yref*fact + yoff;
-      }
-
-      // loop on optics
-      for (ns=1;ns<=noptics;ns++) {
-
-        // offsets of the center of beam on optics #NS
-        xoff = (wfs(n).gspos)(1)*4.848e-6*opt(ns).alt/psize;
-        yoff = (wfs(n).gspos)(2)*4.848e-6*opt(ns).alt/psize;
-
-        // if we are dealing with LGS, there is a geometric
-        // factor on the beam size
-        if (wfs(n)._gsalt != 0) {
-          fact = (wfs(n)._gsalt-opt(ns).alt)/wfs(n)._gsalt;
-        } else {
-          fact = 1.;
-        }
-
-        // Compute and stuff the array
-        optwfsxposcub(,ns,n) = xref*fact + xoff;
-        optwfsyposcub(,ns,n) = yref*fact + yoff;
-      }
-
-    }
-
-    // type conversion:
-    wfsxposcub = float(wfsxposcub);
-    wfsyposcub = float(wfsyposcub);
-    dmwfsxposcub = float(dmwfsxposcub);
-    dmwfsyposcub = float(dmwfsyposcub);
-    optwfsxposcub = float(optwfsxposcub);
-    optwfsyposcub = float(optwfsyposcub);
-
-
-    //=============================================================
-    // PRE-COMPUTATION OF THE INTERSECT POSITION FOR EACH PERF STAR
-    //=============================================================
-
-    // loop on target
-    for (n=1;n<=target._ntarget;n++) {
-
-      // loop on screen
-      for (ns=1;ns<=nscreens;ns++) {
-
-        // offsets of the center of beam on screen NS
-        xoff = (*target.xposition)(n)*4.848e-6*(*atm._layeralt)(ns)/psize;
-        yoff = (*target.yposition)(n)*4.848e-6*(*atm._layeralt)(ns)/psize;
-
-        // note: that's target. we can't be dealing with LGS here (no fact)
-        // Compute and stuff the array
-        gsxposcub(,ns,n) = xref + xoff;
-        gsyposcub(,ns,n) = yref + yoff;
-      }
-
-      // loop on DMs
-      for (ns=1;ns<=ndm;ns++) {
-
-        // offsets of the center of beam on DM NS
-        xoff = (*target.xposition)(n)*4.848e-6*(dm.alt)(ns)/psize;
-        yoff = (*target.yposition)(n)*4.848e-6*(dm.alt)(ns)/psize;
-
-        // note: that's target. we can't be dealing with LGS here (no fact)
-        // Compute and stuff the array
-        dmgsxposcub(,ns,n) = xref + xoff;
-        dmgsyposcub(,ns,n) = yref + yoff;
-      }
-
-      // loop on optics
-      for (ns=1;ns<=noptics;ns++) {
-
-        // offsets of the center of beam on DM NS
-        xoff = (*target.xposition)(n)*4.848e-6*opt(ns).alt/psize;
-        yoff = (*target.yposition)(n)*4.848e-6*opt(ns).alt/psize;
-
-        // note: that's target. we can't be dealing with LGS here (no fact)
-        // Compute and stuff the array
-        optgsxposcub(,ns,n) = xref + xoff;
-        optgsyposcub(,ns,n) = yref + yoff;
-      }
-
-    }
-    // type conversion:
-    gsxposcub = float(gsxposcub);
-    gsyposcub = float(gsyposcub);
-    dmgsxposcub = float(dmgsxposcub);
-    dmgsyposcub = float(dmgsyposcub);
-    optgsxposcub = float(optgsxposcub);
-    optgsyposcub = float(optgsyposcub);
-
-
-    //======================================
-    // SOME CHECKS TO AVOID INDICES OVERFLOW
-    //======================================
-
-    // Now we can modify xposvec and yposvec to make sure we are not going
-    // out of the phase screen arrays
-    xmargins = abs([min(_(wfsxposcub(*),gsxposcub(*))),max(_(wfsxposcub(*),gsxposcub(*)))]);
-    ymargins = abs([min(_(wfsyposcub(*),gsyposcub(*))),max(_(wfsyposcub(*),gsyposcub(*)))]);
-    xposvec = xposvec - min(xposvec) + xmargins(1) +1;
-    yposvec = yposvec - min(yposvec) + ymargins(1) +1;
-
-    // wrap so that it never goes out of bound (including off axis stuff)
-    // have to do that for each screens as they are moving at different speeds
+  //===========================================================
+  // PRE-COMPUTATION OF THE INTERSECT POSITIONS FOR EACH WFS GS
+  //===========================================================
+  
+  // zero-centered vector of position (our reference)
+  xref = indgen(_n)-(_n+1)/2.;
+  yref = indgen(_n)-(_n+1)/2.;
+  
+  // loop on WFS
+  for (n=1;n<=nwfs;n++) {
+    
+    // loop on screen
     for (ns=1;ns<=nscreens;ns++) {
-      // we know that xposvec is now purely positive (lines above),
-      // so that it is enough to insure that it will never go above upper limit:
-      // If pixel position of beam center (xposvec) is larger than the
-      // initial dimension of the screen + the xmargin necessary so that
-      // off-axis beams don't hit negative indices, then it is
-      // time to wrap by subtracting the original screen Xdim to
-      // xposvec.
-      xposvec(,ns) = xmargins(1)+ ( (xposvec(,ns)-xmargins(1)) % screendim(1));
-      // don't do for Y as we're not allowed to move along Y
-      // (screen not periodic)
+      
+      // offsets of the center of beam on screen NS
+      xoff = (wfs(n).gspos)(1)*4.848e-6*(*atm._layeralt)(ns)/psize;
+      yoff = (wfs(n).gspos)(2)*4.848e-6*(*atm._layeralt)(ns)/psize;
+      
+      // if we are dealing with LGS, there is a geometric
+      // factor on the beam size
+      if (wfs(n)._gsalt != 0) {
+        fact = (wfs(n)._gsalt-(*atm._layeralt)(ns))/wfs(n)._gsalt;
+      } else {
+        fact = 1.;
+      }
+      
+      // Compute and stuff the array
+      wfsxposcub(,ns,n) = xref*fact + xoff;
+      wfsyposcub(,ns,n) = yref*fact + yoff;
+    }
+    
+    // loop on DMs
+    for (ns=1;ns<=ndm;ns++) {
+      
+      // offsets of the center of beam on DM NS
+      xoff = (wfs(n).gspos)(1)*4.848e-6*(dm.alt)(ns)/psize;
+      yoff = (wfs(n).gspos)(2)*4.848e-6*(dm.alt)(ns)/psize;
+      
+      // if we are dealing with LGS, there is a geometric
+      // factor on the beam size
+      if (wfs(n)._gsalt != 0) {
+        fact = (wfs(n)._gsalt-(dm.alt)(ns))/wfs(n)._gsalt;
+      } else {
+        fact = 1.;
+      }
+      
+      // Compute and stuff the array
+      dmwfsxposcub(,ns,n) = xref*fact + xoff;
+      dmwfsyposcub(,ns,n) = yref*fact + yoff;
     }
 
-    // type conversion:
-    xposvec = float(xposvec);
-    yposvec = float(yposvec);
+    // loop on optics
+    for (ns=1;ns<=noptics;ns++) {
 
-    // so now we have everything initiliazed, and we will just have to
-    // interpolate the phase screen at points
-    // xposvec(iteration,screen#) + wfsxposcub(,screen#,wfs#)
-    // and corresponding for Y, and integrate on screen#
-    // to get the phase for a given WFS
-    // this integration is done by the C routine _get2dPhase
-    // which take, in addition to the screens and output phase parameters,
-    // only a set of X and Y positions as input [the one we just talked
-    // about, xposvec(iteration) + wfsxposcub(,,wfs#) ].
+      // offsets of the center of beam on optics #NS
+      xoff = (wfs(n).gspos)(1)*4.848e-6*opt(ns).alt/psize;
+      yoff = (wfs(n).gspos)(2)*4.848e-6*opt(ns).alt/psize;
+      
+      // if we are dealing with LGS, there is a geometric
+      // factor on the beam size
+      if (wfs(n)._gsalt != 0) {
+        fact = (wfs(n)._gsalt-opt(ns).alt)/wfs(n)._gsalt;
+      } else {
+        fact = 1.;
+      }
+      
+      // Compute and stuff the array
+      optwfsxposcub(,ns,n) = xref*fact + xoff;
+      optwfsyposcub(,ns,n) = yref*fact + yoff;
+    }
+    
+  }
 
-    // check that y index does not overflow:
-    get_turb_phase_initCheckOverflow;
+  // type conversion:
+  wfsxposcub = float(wfsxposcub);
+  wfsyposcub = float(wfsyposcub);
+  dmwfsxposcub = float(dmwfsxposcub);
+  dmwfsyposcub = float(dmwfsyposcub);
+  optwfsxposcub = float(optwfsxposcub);
+  optwfsyposcub = float(optwfsyposcub);
+  
 
-    inithistory = 1;
-    return 1;
+  //=============================================================
+  // PRE-COMPUTATION OF THE INTERSECT POSITION FOR EACH PERF STAR
+  //=============================================================
+  
+  // loop on target
+  for (n=1;n<=target._ntarget;n++) {
+    
+    // loop on screen
+    for (ns=1;ns<=nscreens;ns++) {
+      
+      // offsets of the center of beam on screen NS
+      xoff = (*target.xposition)(n)*4.848e-6*(*atm._layeralt)(ns)/psize;
+      yoff = (*target.yposition)(n)*4.848e-6*(*atm._layeralt)(ns)/psize;
+      
+      // note: that's target. we can't be dealing with LGS here (no fact)
+      // Compute and stuff the array
+      gsxposcub(,ns,n) = xref + xoff;
+      gsyposcub(,ns,n) = yref + yoff;
+    }
+    
+    // loop on DMs
+    for (ns=1;ns<=ndm;ns++) {
+      
+      // offsets of the center of beam on DM NS
+      xoff = (*target.xposition)(n)*4.848e-6*(dm.alt)(ns)/psize;
+      yoff = (*target.yposition)(n)*4.848e-6*(dm.alt)(ns)/psize;
+      
+      // note: that's target. we can't be dealing with LGS here (no fact)
+      // Compute and stuff the array
+      dmgsxposcub(,ns,n) = xref + xoff;
+      dmgsyposcub(,ns,n) = yref + yoff;
+    }
+    
+    // loop on optics
+    for (ns=1;ns<=noptics;ns++) {
+      
+      // offsets of the center of beam on DM NS
+      xoff = (*target.xposition)(n)*4.848e-6*opt(ns).alt/psize;
+      yoff = (*target.yposition)(n)*4.848e-6*opt(ns).alt/psize;
+      
+      // note: that's target. we can't be dealing with LGS here (no fact)
+      // Compute and stuff the array
+      optgsxposcub(,ns,n) = xref + xoff;
+      optgsyposcub(,ns,n) = yref + yoff;
+    }
+    
+  }
+  // type conversion:
+  gsxposcub = float(gsxposcub);
+  gsyposcub = float(gsyposcub);
+  dmgsxposcub = float(dmgsxposcub);
+  dmgsyposcub = float(dmgsyposcub);
+  optgsxposcub = float(optgsxposcub);
+  optgsyposcub = float(optgsyposcub);
+
+  
+  //======================================
+  // SOME CHECKS TO AVOID INDICES OVERFLOW
+  //======================================
+  
+  // Now we can modify xposvec and yposvec to make sure we are not going
+  // out of the phase screen arrays
+  xmargins = abs([min(_(wfsxposcub(*),gsxposcub(*))),max(_(wfsxposcub(*),gsxposcub(*)))]);
+  ymargins = abs([min(_(wfsyposcub(*),gsyposcub(*))),max(_(wfsyposcub(*),gsyposcub(*)))]);
+  xposvec = xposvec - min(xposvec) + xmargins(1) +1;
+  yposvec = yposvec - min(yposvec) + ymargins(1) +1;
+  
+  // wrap so that it never goes out of bound (including off axis stuff)
+  // have to do that for each screens as they are moving at different speeds
+  for (ns=1;ns<=nscreens;ns++) {
+    // we know that xposvec is now purely positive (lines above),
+    // so that it is enough to insure that it will never go above upper limit:
+    // If pixel position of beam center (xposvec) is larger than the
+    // initial dimension of the screen + the xmargin necessary so that
+    // off-axis beams don't hit negative indices, then it is
+    // time to wrap by subtracting the original screen Xdim to
+    // xposvec.
+    xposvec(,ns) = xmargins(1)+ ( (xposvec(,ns)-xmargins(1)) % screendim(1));
+    // don't do for Y as we're not allowed to move along Y
+    // (screen not periodic)
+  }
+  
+  // type conversion:
+  xposvec = float(xposvec);
+  yposvec = float(yposvec);
+
+  // so now we have everything initiliazed, and we will just have to
+  // interpolate the phase screen at points
+  // xposvec(iteration,screen#) + wfsxposcub(,screen#,wfs#)
+  // and corresponding for Y, and integrate on screen#
+  // to get the phase for a given WFS
+  // this integration is done by the C routine _get2dPhase
+  // which take, in addition to the screens and output phase parameters,
+  // only a set of X and Y positions as input [the one we just talked
+  // about, xposvec(iteration) + wfsxposcub(,,wfs#) ].
+
+  // check that y index does not overflow:
+  get_turb_phase_initCheckOverflow;
+  
+  inithistory = 1;
+  return 1;
 }
 //----------------------------------------------------
 
@@ -1527,12 +1532,21 @@ func get_phase2d_from_dms(nn,type)
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
+  mirrorcube = mircube; // create a copy
+  if (type == "target"){
+    dmidx = where(dm.wfspath == 0); // exclude DMs on WFS path
+  } else { // type == "wfs"
+    dmidx =  where(dm.wfspath == 0 | dm.subsystem == wfs(nn).subsystem);
+  }
+
+  mirrorcube = mirrorcube(,,dmidx);
+  
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
   // there are a few things to do to get ready
-  psnx = dimsof(mircube)(2);
-  psny = dimsof(mircube)(3);
-  nmirrors = dimsof(mircube)(4);
+  psnx = dimsof(mirrorcube)(2);
+  psny = dimsof(mirrorcube)(3);
+  nmirrors = dimsof(mirrorcube)(4);
 
   // here we have a branch to be able to process wfs and targets with the same
   // subroutine, this one.
@@ -1549,7 +1563,7 @@ func get_phase2d_from_dms(nn,type)
   ishifts = int(xshifts); xshifts = xshifts - ishifts;
   jshifts = int(yshifts); yshifts = yshifts - jshifts;
 
-  err = _get2dPhase(&mircube,psnx,psny,nmirrors,
+  err = _get2dPhase(&mirrorcube,psnx,psny,nmirrors,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
@@ -1557,7 +1571,7 @@ func get_phase2d_from_dms(nn,type)
   if (err != 0) {error,"Error in get_phase2d_from_dms";}
 
   bphase(_n1:_n2,_n1:_n2) = sphase;
-
+  
   return bphase;
 }
 
@@ -1906,7 +1920,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       // any cent.
     } else {
       if (cent == []){
-        grow,cent,sim._size/2+1;
+        grow,cent,sim._size/2+0.5;
         write,format ="FIXME: user wfs function: assuming cent is at %.1f\n", float(sim._size/2+1);
       } else {
         grow,cent,cent(1);
@@ -2386,8 +2400,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             } while (again != "n");
           }
 
-          ok = where(tmp >  dm(nm).thresholdresp*max(tmp));
-          nok= where(tmp <= dm(nm).thresholdresp*max(tmp));
+          if (dm(nm).fit_wfs){// if DM on WFS path only
+            ok = indgen(numberof(tmp));
+            nok = []; 
+          } else {          
+            ok = where(tmp >  dm(nm).thresholdresp*max(tmp));
+            nok= where(tmp <= dm(nm).thresholdresp*max(tmp));
+          }
+         
           dm(nm)._x = &(dmx(ok));
           dm(nm)._y = &(dmy(ok));
           if (dm(nm).elt == 1) {
@@ -2423,7 +2443,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             yao_fitswrite,YAO_SAVEPATH+dm(nm).iffile,long(*(dm(nm)._j1)),exttype="IMAGE",append=1;
           }
           dm(nm)._nact = (dimsof(*(dm(nm)._def)))(4);
-
+          
           // write extrapolated actuator influence functions file:
           yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._edef);
           yao_fitswrite,YAO_SAVEPATH+dm(nm)._eiffile,*(dm(nm)._ex),exttype="IMAGE",append=1;
@@ -2628,12 +2648,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");
             if (fileExist(filename)){
               dm(nm)._fMat = &restore_rco(filename);
-        } else {
-          svd = 1;  // need to recreate reconstructors
-        }
+            } else {
+              svd = 1;  // need to recreate reconstructors
+            }
           }
         }
-
+        
       }
     }
   }
@@ -2701,50 +2721,50 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // create the fitting matrices for tomography
     if (mat.fit_simple == 1){
-  for (nm=1;nm<=numberof(dm);nm++){
-    if (dm(nm).fitvirtualdm){
+      for (nm=1;nm<=numberof(dm);nm++){
+        if (dm(nm).fitvirtualdm){
 
-      virtualDMs = *dm(nm).fitvirtualdm;
-      nVirtualDMs = numberof(virtualDMs);
-
-      if (dm(nm).type == "stackarray"){
-        xloct = *dm(nm)._x; // location of the tomography actuators
-        yloct = *dm(nm)._y;
-
-        xlocv = ylocv = []; // location of the virtual actuators
-
-        for (c1=1;c1<=nVirtualDMs;c1++){
-          grow, xlocv, *dm(virtualDMs(c1))._x;
-          grow, ylocv, *dm(virtualDMs(c1))._y;
-        }
-      } else if (dm(nm).type == "zernike"){
-        xloct = indgen(dm(nm).minzer:dm(nm).nzer);
-        yloct = indgen(dm(nm).minzer:dm(nm).nzer);
-
-        xlocv = ylocv = []; // location of the virtual actuators
-
-        for (c1=1;c1<=nVirtualDMs;c1++){
-          grow, xlocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
-          grow, ylocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
+          virtualDMs = *dm(nm).fitvirtualdm;
+          nVirtualDMs = numberof(virtualDMs);
+          
+          if (dm(nm).type == "stackarray"){
+            xloct = *dm(nm)._x; // location of the tomography actuators
+            yloct = *dm(nm)._y;
+            
+            xlocv = ylocv = []; // location of the virtual actuators
+            
+            for (c1=1;c1<=nVirtualDMs;c1++){
+              grow, xlocv, *dm(virtualDMs(c1))._x;
+              grow, ylocv, *dm(virtualDMs(c1))._y;
+            }
+          } else if (dm(nm).type == "zernike"){
+            xloct = indgen(dm(nm).minzer:dm(nm).nzer);
+            yloct = indgen(dm(nm).minzer:dm(nm).nzer);
+            
+            xlocv = ylocv = []; // location of the virtual actuators
+            
+            for (c1=1;c1<=nVirtualDMs;c1++){
+              grow, xlocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
+              grow, ylocv, indgen(dm(virtualDMs(c1)).minzer:dm(virtualDMs(c1)).nzer);
+            }
+          }
+          
+          if (mat.method == "mmse"){
+            dm(nm)._fMat = &array(float,[2,dm(nm)._nact,sum(dm(virtualDMs)._nact)]);
+            for (c1=1;c1<=numberof(xlocv);c1++){
+              v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
+              (*dm(nm)._fMat)(,c1) = float(v1);
+            }
+          } else {
+            temp = rco();
+            for (c1=1;c1<=numberof(xlocv);c1++){
+              v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
+              rcobuild, temp, float(v1), mat.sparse_thresh;
+            }
+            dm(nm)._fMat = &rcotr(temp);
+          }
         }
       }
-
-      if (mat.method == "mmse"){
-        dm(nm)._fMat = &array(float,[2,dm(nm)._nact,sum(dm(virtualDMs)._nact)]);
-        for (c1=1;c1<=numberof(xlocv);c1++){
-          v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
-          (*dm(nm)._fMat)(,c1) = float(v1);
-        }
-      } else {
-        temp = rco();
-        for (c1=1;c1<=numberof(xlocv);c1++){
-          v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
-          rcobuild, temp, float(v1), mat.sparse_thresh;
-        }
-        dm(nm)._fMat = &rcotr(temp);
-      }
-    }
-  }
     } else { // mat.fit_simple = 0
 
       // define a grid on which to sample the phase
@@ -2776,11 +2796,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             if (sim.verbose) {
               write,format="\rFitting DM# %d, actuator %d/%d",nm,i,dm(nm)._nact;
             }
-            mircube  *= 0.0f;
+            mircube *= 0.0f;
             command *= 0.0f;
             command(i) = float(1.);
             mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
-            phase = get_phase2d_from_dms(mat.fit_target,"target");
+            if (dm(nm).wfspath){ // DM on WFS path only 
+              phase = get_phase2d_from_dms(dm(nm).fit_wfs,"wfs")-get_phase2d_from_dms(mat.fit_target,"target");
+            } else {
+              phase = get_phase2d_from_dms(mat.fit_target,"target");
+            }
+            
             phase = phase(idx,idx);
             active_phase =  phase(wpupil_sub);
             if (mat.method == "mmse"){
@@ -2820,7 +2845,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               command *= 0.0f;
               command(i) = 1.;
               mircube(n1:n2,n1:n2,nv) = comp_dm_shape(nv,&command);
-              phase = get_phase2d_from_dms(mat.fit_target,"target");
+              if (dm(nm).wfspath){ // DM on WFS path only 
+                phase = get_phase2d_from_dms(dm(nm).fit_wfs,"wfs")-get_phase2d_from_dms(mat.fit_target,"target");
+              } else {
+                phase = get_phase2d_from_dms(mat.fit_target,"target");
+              }
+
               phase = phase(idx,idx);
               active_phase =  phase(wpupil_sub);
               if (mat.method == "mmse"){
@@ -2888,7 +2918,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           if (!dm(nm).fitvirtualdm){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
-          if (!dm(nm).virtual){
+          if (!dm(nm).virtual & !dm(nm).fit_wfs){
             grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           actno += dm(nm)._nact;
@@ -2914,7 +2944,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         cMat = LUsolve(AtA+Cphi)(,+)*Gx(,+);
         yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
 
-        realDMs = where(!dm.virtual); // DMs used to compensate wavefront
+        realDMs = where(!dm.virtual & !dm.fit_wfs); // DMs used to compensate wavefront
         estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront
 
         nActReal = sum(dm(realDMs)._nact);
@@ -2930,7 +2960,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         startIdx = 1;
         for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).virtual){
+          if (!dm(nm).virtual & !dm(nm).fit_wfs){
             idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
             startIdx +=  dm(nm)._nact;
 
@@ -2999,7 +3029,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           if (!dm(nm).fitvirtualdm){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
-          if (!dm(nm).virtual){
+          if (!dm(nm).virtual & !dm(nm).fit_wfs){
             grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           actno += dm(nm)._nact;
