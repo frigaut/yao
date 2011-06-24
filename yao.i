@@ -1171,26 +1171,50 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     dimx     = dimsof(tmp)(2);
     dimy     = dimsof(tmp)(3);
     screendim = [dimx,dimy];
-    // Extend dimension in X for wrapping issues
-    pscreens = array(float,[3,dimx+2*sim._size,dimy,nscreens]);
-    // Stuff it
-    pscreens(1:dimx,,1) = tmp;
-    // free RAM
-    tmp      = [];
 
-    // Now read all the other screens and put in pscreens
-    for (i=2;i<=nscreens;i++) {
-      if (sim.verbose>=1) {
-        write,format="Reading phase screen \"%s\"\n",(*atm.screen)(i);
+    if (dimx == dimy){ // can wrap both x and y
+      // Extend dimension in X and Y for wrapping issues
+      pscreens = array(float,[3,dimx+2*sim._size,dimy+2*sim._size,nscreens]);
+      // Stuff it
+      pscreens(1:dimx,1:dimy,1) = tmp;
+      // free RAM
+      tmp      = [];
+
+      // Now read all the other screens and put in pscreens
+      for (i=2;i<=nscreens;i++) {
+        if (sim.verbose>=1) {
+          write,format="Reading phase screen \"%s\"\n",(*atm.screen)(i);
+        }
+        pscreens(1:dimx,1:dimy,i) = yao_fitsread((*atm.screen)(i));
       }
-      pscreens(1:dimx,,i) = yao_fitsread((*atm.screen)(i));
+      
+      // Extend the phase screen length for safe wrapping:
+      pscreens(dimx+1:,,) = pscreens(1:2*sim._size,,);
+      pscreens(,dimy+1:,) = pscreens(,1:2*sim._size,);
+
+    } else {
+      // Extend dimension in X for wrapping issues
+      pscreens = array(float,[3,dimx+2*sim._size,dimy,nscreens]);
+      // Stuff it
+      pscreens(1:dimx,,1) = tmp;
+      // free RAM
+      tmp      = [];
+
+      // Now read all the other screens and put in pscreens
+      for (i=2;i<=nscreens;i++) {
+        if (sim.verbose>=1) {
+          write,format="Reading phase screen \"%s\"\n",(*atm.screen)(i);
+        }
+        pscreens(1:dimx,,i) = yao_fitsread((*atm.screen)(i));
+      }
+      
+      // Extend the phase screen length for safe wrapping:
+      pscreens(dimx+1:,,) = pscreens(1:2*sim._size,,);
+      // Can't do in Y as the phase screens are not periodic (they have been cutted)
+      //  pscreens(,dimy+1:,) = pscreens(,1:sim._size,);
+      
     }
-
-    // Extend the phase screen length for safe wrapping:
-    pscreens(dimx+1:,,) = pscreens(1:2*sim._size,,);
-    // Can't do in Y as the phase screens are not periodic (they have been cutted)
-    //  pscreens(,dimy+1:,) = pscreens(,1:sim._size,);
-
+    
     // apply weights to each phase screens (normalize):
     // the screens are expressed in microns
     pscreens = pscreens*weight(-,-,);
@@ -1434,6 +1458,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     // time to wrap by subtracting the original screen Xdim to
     // xposvec.
     xposvec(,ns) = xmargins(1)+ ( (xposvec(,ns)-xmargins(1)) % screendim(1));
+    if (dimx == dimy){yposvec(,ns) = ymargins(1)+ ( (yposvec(,ns)-ymargins(1)) % screendim(2));}
     // don't do for Y as we're not allowed to move along Y
     // (screen not periodic)
   }
@@ -1453,7 +1478,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   // about, xposvec(iteration) + wfsxposcub(,,wfs#) ].
 
   // check that y index does not overflow:
-  get_turb_phase_initCheckOverflow;
+  if (dimx != dimy){get_turb_phase_initCheckOverflow;}
   
   inithistory = 1;
   return 1;
