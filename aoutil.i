@@ -654,7 +654,7 @@ func check_parameters(void)
   if (mat.sparse_MR == long()){mat.sparse_MR = 10000;}
   if (mat.sparse_MN == long()){mat.sparse_MN = 200000;}
   if (mat.sparse_thresh == float()){mat.sparse_thresh = 1e-8;}
-  if (mat.sparse_pcgtol == float()){mat.sparse_pcgtol = 1e-3;}
+  if (mat.sparse_pcgtol == float()){mat.sparse_pcgtol = 1e-6;}
   if (mat.fit_subsamp == long()){mat.fit_subsamp = 1;}
   if (mat.fit_target == long()){mat.fit_target = 1;}
   if (mat.fit_minval == float()){mat.fit_minval = 1e-2;}

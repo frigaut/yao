@@ -883,7 +883,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
    F.Rigaut, June 17,2002
 
    condition = Filter eigenvalues ev (and modes) for max(ev)/ev > condition
-   modalgain = vector of system mode gains to pre-multiply the contolr matrix
+   modalgain = vector of system mode gains to pre-multiply the control matrix
                with. rarely used as these modes are not generally natural
                w.r.t. the turbulence.
    all = if not set, one (1) mode is forced to be discarded (useful if regular
@@ -2425,7 +2425,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             } while (again != "n");
           }
 
-          if (dm(nm).fit_wfs){// if DM on WFS path only
+          if (dm(nm).fit_wfs){// if DM used for WFS
             ok = indgen(numberof(tmp));
             nok = []; 
           } else {          
@@ -2749,7 +2749,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       for (nm=1;nm<=numberof(dm);nm++){
         if (dm(nm).fitvirtualdm){
 
-          virtualDMs = *dm(nm).fitvirtualdm;
+          virtualDMs = int(*dm(nm).fitvirtualdm);
           nVirtualDMs = numberof(virtualDMs);
           
           if (dm(nm).type == "stackarray"){
@@ -2803,7 +2803,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       for (nm=1;nm<=numberof(dm);nm++){
         if (dm(nm).fitvirtualdm){
 
-          virtualDMs = *dm(nm).fitvirtualdm;
+          virtualDMs = int(*dm(nm).fitvirtualdm);
           nVirtualDMs = numberof(virtualDMs);
 
           // calculate the matrix that shows how the tomographic DM affects the phase
@@ -2996,7 +2996,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             } else {
               // tomographic DM
               vidx = [];
-              virtualDMs = *dm(nm).fitvirtualdm;
+              virtualDMs = int(*dm(nm).fitvirtualdm);
               for (c1=1;c1<= numberof(virtualDMs);c1++){
                 grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1)));
               }
@@ -3134,8 +3134,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
         }
 
-        fMatSP = rcotr(fMatSP);
-        t1 = rcoatb(fMatSP,rcotr(GaSP));
+        t1 = rcoatb(rcotr(fMatSP),rcotr(GaSP));
         fMatSP = GaSP = [];
 
         AtA = rcoata(GxSP);
@@ -3147,8 +3146,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         DtermSP = rcoadd(t1,GxSP);
         t1 = [];
         (*GxSP.xn) *= -1;
+        t2 = rcoatb(DtermSP,GxSP);
 
-        t2 =  rcotr(rcoatb(GxSP,DtermSP));
         DtermSP = [];
         CphiSPrco = ruo2rco(CphiSP);
         CphiSP = [];
@@ -3812,7 +3811,7 @@ func go(nshot,all=)
         (*loop.gainho)(order-1) * dm(nm).gain * errmb(indexDm(1,nm):indexDm(2,nm),imb);
     }
     } else { // tomographic DM; DM commands from virtual DMs
-      virtualDMs = *dm(nm).fitvirtualdm;
+      virtualDMs = int(*dm(nm).fitvirtualdm);
       virtualdmcommand = [];
       for (idx=1;idx<= numberof(virtualDMs);idx++){
         grow, virtualdmcommand, *dm(virtualDMs(idx))._command;
@@ -3832,7 +3831,7 @@ func go(nshot,all=)
 
         yv = *dm(nm)._y - avg(*dm(nm)._y);
         yv = yv / sqrt(sum(yv*yv));
-
+        
         *dm(nm)._command -= avg(*dm(nm)._command);
         *dm(nm)._command -= (xv(+)*(*dm(nm)._command)(+))*xv;
         *dm(nm)._command -= (yv(+)*(*dm(nm)._command)(+))*yv;
@@ -3904,7 +3903,7 @@ func go(nshot,all=)
   okcscreen = ( is_set(controlscreen) && (((i-1) % controlscreen) == 0) );
   if (is_set(controlscreen) && (i == loop.niter)) okcscreen=1;  // display at last iteration
 
-  if (savephase||okdisp) {
+  if (okdisp) {
     // get the residual phase; initially for the first target
     // display and save the residual wavefront
     residual_phase=get_phase2d_from_dms(1,"target") +
@@ -3917,8 +3916,6 @@ func go(nshot,all=)
 
     if (savephase){result=yao_fitswrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));}
   }
-
-
 
   // Computes the instantaneous PSF:
   if (ok) {
