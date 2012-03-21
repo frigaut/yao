@@ -657,15 +657,15 @@ func do_imat(disp=)
       mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
 
         if (mat.method != "mmse-sparse"){
-          if (!dm(nm).fit_wfs){
+          if (!dm(nm).ncp){
             // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
             iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
           }
         } else {
-          if (!dm(nm).fit_wfs){
-            rcobuild, iMatSP, mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat, mat.sparse_thresh;
+          if (!dm(nm).ncp){
+            rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat), mat.sparse_thresh;
           } else {
-            rcobuild, iMatSP, mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0., mat.sparse_thresh;
+            rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0.), mat.sparse_thresh;
           }
         }
       
@@ -1558,12 +1558,21 @@ func get_phase2d_from_dms(nn,type)
   bphase = array(float,sim._size,sim._size);
 
   mirrorcube = mircube; // create a copy
+  dmidx = where(dm.ncp == 0);
+  
   if (type == "target"){
-    dmidx = where(dm.wfspath == 0); // exclude DMs on WFS path
+    if (*target.ncpdm != []){
+      ncpdm = (*target.ncpdm)(nn);
+      if (ncpdm != 0 && noneof(dmidx == ncpdm)){
+        grow, dmidx, ncpdm;
+      }
+    }
   } else { // type == "wfs"
-    dmidx =  where(dm.wfspath == 0 | dm.subsystem == wfs(nn).subsystem);
+    if (wfs(nn).ncpdm != 0 && noneof(dmidx == wfs(nn).ncpdm)){
+      grow, dmidx, wfs(nn).ncpdm;
+    }
   }
-
+      
   mirrorcube = mirrorcube(,,dmidx);
   
   // Now we can call the C interpolation routine and get the integrated
@@ -1868,7 +1877,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (is_set(clean)) {forcemat=1;}
 
   default_dpi=dpi;
-
+  
   if (anyof(wfs.nintegcycles != 1) && (loop.method == "open-loop")) {
     exit, ">> nintegcycles > 1 not implemented for open-loop, exiting";
     }
@@ -2425,7 +2434,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             } while (again != "n");
           }
 
-          if (dm(nm).fit_wfs){// if DM used for WFS
+          if (dm(nm).ncp){// if DM used for WFS
             ok = indgen(numberof(tmp));
             nok = []; 
           } else {          
@@ -2781,7 +2790,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               (*dm(nm)._fMat)(,c1) = float(v1);
             }
           } else {
-            temp = rco();
+            temp = rco_d();
             for (c1=1;c1<=numberof(xlocv);c1++){
               v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
               rcobuild, temp, float(v1), mat.sparse_thresh;
@@ -2825,8 +2834,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             command *= 0.0f;
             command(i) = float(1.);
             mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
-            if (dm(nm).wfspath){ // DM on WFS path only 
-              phase = get_phase2d_from_dms(dm(nm).fit_wfs,"wfs")-get_phase2d_from_dms(mat.fit_target,"target");
+            if (dm(nm).ncp){ // DM on WFS path only 
+              phase = get_phase2d_from_dms(dm(nm).ncpnumber,dm(nm).ncptype)-get_phase2d_from_dms(mat.fit_target,"target");
             } else {
               phase = get_phase2d_from_dms(mat.fit_target,"target");
             }
@@ -2846,7 +2855,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           } else {
             regmatrix = *dm(nm)._regmatrix;
             ruox, regmatrix, dm(nm).regparam;
-            tomoFit = ruoadd(rcoata(transpose(tomoMatSP)),regmatrix);
+            tomoFit = ruoadd(rcoata(tomoMatSP),regmatrix);
             regmatrix = [];
             dm_fMatSP = rco();
           }
@@ -2870,8 +2879,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               command *= 0.0f;
               command(i) = 1.;
               mircube(n1:n2,n1:n2,nv) = comp_dm_shape(nv,&command);
-              if (dm(nm).wfspath){ // DM on WFS path only 
-                phase = get_phase2d_from_dms(dm(nm).fit_wfs,"wfs")-get_phase2d_from_dms(mat.fit_target,"target");
+              if (dm(nm).ncp){ // DM on WFS path only 
+                phase = get_phase2d_from_dms(dm(nm).ncpnumber,dm(nm).ncptype)-get_phase2d_from_dms(mat.fit_target,"target");
               } else {
                 phase = get_phase2d_from_dms(mat.fit_target,"target");
               }
@@ -2907,7 +2916,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
   }
-
+  
   // in the opposite case, plus if svd=1 (request re-do SVD):
   if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
     if (mat.method == "svd") {
@@ -2943,7 +2952,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           if (!dm(nm).fitvirtualdm){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
-          if (!dm(nm).virtual & !dm(nm).fit_wfs){
+          if (!dm(nm).virtual & !dm(nm).ncp){
             grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           actno += dm(nm)._nact;
@@ -2966,16 +2975,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
         }
 
-        cMat = LUsolve(AtA+Cphi)(,+)*Gx(,+);
+        cMat = LUsolve(AtA+Cphi,transpose(Gx));
         yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
 
-        realDMs = where(!dm.virtual & !dm.fit_wfs); // DMs used to compensate wavefront
+        realDMs = where(!dm.virtual & !dm.ncp); // DMs used to compensate wavefront
         estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront
 
-        nActReal = sum(dm(realDMs)._nact);
-        nActEst = sum(dm(estDMs)._nact);
+        nRealAct = sum(dm(realDMs)._nact);
+        nEstAct = sum(dm(estDMs)._nact);
 
-        fMat = array(float,[2,nActReal, nActEst]);
+        fMat = array(float,[2,nRealAct, nEstAct]);
 
         indexDm       = array(long,2,ndm);
         indexDm(,1)   = [1,dm(1)._nact];
@@ -2985,7 +2994,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         startIdx = 1;
         for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).virtual & !dm(nm).fit_wfs){
+          if (!dm(nm).virtual & !dm(nm).ncp){
             idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
             startIdx +=  dm(nm)._nact;
 
@@ -3008,20 +3017,20 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         Dterm = Ga(,+)*fMat(+,)-Gx;
         polcMat = Gx(+,)*Dterm(+,)-Cphi;
-        dMat = LUsolve(AtA+Cphi)(,+)*polcMat(+,);
+        dMat = LUsolve(AtA+Cphi,polcMat);
         yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
       } else {
         nAct = (dimsof(iMat))(3);
         Cphi = array(float,[2,nAct,nAct]);
 
-      mc = 0; // matrix counter
-      for (nm=1;nm<=nDMs;nm++){
+        mc = 0; // matrix counter
+        for (nm=1;nm<=nDMs;nm++){
           if (!dm(nm).fitvirtualdm){
-        Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
-        mc += dm(nm)._nact;
-      }
+            Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
+            mc += dm(nm)._nact;
+          }
         }
-      cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi)(,+)*iMat(,+);
+        cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
       }
 
     } else if (mat.method == "mmse-sparse"){
@@ -3054,7 +3063,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           if (!dm(nm).fitvirtualdm){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
-          if (!dm(nm).virtual & !dm(nm).fit_wfs){
+          if (!dm(nm).virtual & !dm(nm).ncp){
             grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           actno += dm(nm)._nact;
@@ -3095,9 +3104,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         nEstAct =sum(dm(where(!dm.fitvirtualdm))._nact);
         nEstDMs = numberof(where(!dm.fitvirtualdm));
-
+        nRealAct = sum(dm(where(!dm.virtual & !dm.ncp))._nact);
+            
         for (nm=1;nm<=numberof(dm);nm++) {
           if (dm(nm).virtual){ continue; } // no virtual DMs in the rows
+          if (dm(nm).ncp){ continue; } // no non-common path DMs in the rows
 
           if (dm(nm).fitvirtualdm) {
             dmfMat = rcotr(*dm(nm)._fMat);
@@ -3110,10 +3121,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
             for (c1=1;c1<=dm(nm)._nact;c1++){
               row = array(float,[2,nEstAct,1]);
-              vec = array(float,nEstAct);
+              vec = array(float,nRealAct);
               vec(c1) = 1.;
               row(vdmidx) = rcoxv(dmfMat, vec); // extract row c1
-
+              
               if (fMatSP == []){
                 fMatSP = sprco(row);
               } else {
@@ -3749,19 +3760,50 @@ func go(nshot,all=)
     if (sum(usedMes != 0) == 0){ // sparse CG method does not work if all zeros
       err = array(float,AtAregSP.r);
     } else {
+      Ats=rcoxv(GxSP,usedMes)
       if ((loop.method == "pseudo open-loop") && (i > 1) && (polcMatSP != [])){
-        Ats=float(rcoxv(GxSP,usedMes)-rcoxv(polcMatSP,estdmcommand));
-      } else {
-        Ats=rcoxv(GxSP,usedMes);
+        // apply polc correction
+        polccorr = rcoxv(polcMatSP,estdmcommand);
+        if (anyof(wfs.nintegcycles > 1)){
+          // if some DMs are not updating because the WFSs have not finished intergrating, then the POLC correction should not be applied to those DMs
+          // check to see which DMs have updated; only non tomographic DMs
+          mc = 0; // counter
+          for (nm=1;nm<=numberof(dm);nm++){
+            if (!dm(nm).fitvirtualdm){
+              comms = Ats(mc+1:mc+dm(nm)._nact);
+              if (comms(rms) == 0){ // has not updated
+                polccorr(mc+1:mc+dm(nm)._nact) = 0;
+              }
+              mc += dm(nm)._nact;
+            }
+          }
+        }
+        Ats -= polccorr;
       }
       err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
     }
   } else {
     err = cMat(,+) * usedMes(+);
     if ((loop.method == "pseudo open-loop") && (i > 1) && (dMat != [])){
-      err -= dMat(,+) * estdmcommand(+);
+      polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
+      if (anyof(wfs.nintegcycles > 1)){
+        // if some DMs are not updating because the WFSs have not finished intergrating, then the POLC correction should not be applied to those DMs
+        // check to see which DMs have updated; only non tomographic DMs
+        mc = 0; // counter
+        for (nm=1;nm<=numberof(dm);nm++){
+          if (!dm(nm).fitvirtualdm){
+            comms = err(mc+1:mc+dm(nm)._nact);
+            if (comms(rms) == 0){ // has not updated
+              polccorr(mc+1:mc+dm(nm)._nact) = 0;
+            }
+            mc += dm(nm)._nact;
+          }
+        }
+      }
+      err -= polccorr;
     }
   }
+
 
   if (user_loop_err!=[]) user_loop_err;
 
@@ -4034,7 +4076,7 @@ func go(nshot,all=)
     // Display residual wavefront
     plsys,5;
     pli, (pupil*residual_phase)(n1:n2,n1:n2);
-    mypltitle,"Residual wavefront on target#1",[0.,-0.0];
+    mypltitle,"Residual wavefront on target #1",[0.,-0.0];
 
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
     if (animFlag && (nshots!=0) && (loopCounter<loop.niter-disp) ) fma;
@@ -4276,10 +4318,12 @@ func after_loop(void)
         jt,(*target.lambda)(jl),(*target.xposition)(jt),(*target.yposition)(jt),
         fwhm(jt,jl),strehl(jt,jl),e50(jt,jl);
     }
-    write,format="Field Avg % 5.2f                   %6.1f   %.3f     %6.1f\n",
+    if (target._ntarget > 1){
+      write,format="Field Avg % 5.2f                   %6.1f   %.3f     %6.1f\n",
       (*target.lambda)(jl),fwhm(avg,jl),strehl(avg,jl),e50(avg,jl);
-    write,format="Field rms                         %6.1f   %.3f     %6.1f\n",
-      fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
+      write,format="Field rms                         %6.1f   %.3f     %6.1f\n",
+        fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
+    }
   }
 
   // Some logging of the results in file parprefix+".res":

@@ -147,6 +147,7 @@ struct wfs_struct
   long    svipc;          // number of parallel process to use for this WFS.
                           // (0 or 1: don't parallelize)
   float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
+  long    ncpdm;          // DM on the path of the WFS, if any
 
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
@@ -304,8 +305,9 @@ struct dm_struct
   long    disjointpup;    // boolean. if set, dm(n) will be filtered by an array
                           // disjointpup(,,n) that has to be defined by the user
                           // see user_pupil(). Allow for GMT-type topology.
-  long    wfspath;        // Whether mirror is on path of WFSs in subsystem only
-  long    fit_wfs;        // which WFS direction to fit the DM in on WFS path
+  long    ncp;            // boolean. if set, the mirror is on the non-common path for MOAO type correction 
+  string  ncptype  ;     // whether to fit to a wfs or target to non-common path
+  long    ncpnumber;     // which target or wfs to fit to for non-common path
   
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
@@ -426,6 +428,7 @@ struct target_struct
   pointer xposition;      // float vectorptr. X positions in arcsec. Required [none]
   pointer yposition;      // float vectorptr. Y positions in arcsec. Required [none]
   pointer dispzoom;       // float vectorptr. Display zoom (typically around 1.). Optional [1.]
+  pointer ncpdm;          // DM on the path of the targets, if any
 
   // Internal keywords
   long    _ntarget;       // Internal: # of target

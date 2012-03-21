@@ -1071,7 +1071,7 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
     bval    = b(*mcaodm(nm).valid_ptr,1:nb_modes);
     bext    = b(*mcaodm(nm).extrap_ptr,1:nb_modes);
     bval_i  = (svd_inverse(bval(+,)*bval(+,),condy))(,+) * bval(,+);
-    bval_i  = (LUsolve(bval(+,)*bval(+,)))(,+) * bval(,+);
+    bval_i  = LUsolve(bval(+,)*bval(+,)),transpose(bval));
     extrapbn  = bext(,+)*bval_i(+,);
 
     //Lets try to test it ?
@@ -1229,7 +1229,8 @@ func klmodes_4extrap(nm, n_rm_modes,nsamp)
 
  mat1 = VectValid(,+)*VectExtrap(,+)/nsamp;
  mat2 = VectValid(,+)*VectValid(,+)/nsamp;
- mat2_inv = LUsolve(mat2);
+ dims = (dimsof(mat2))(2);
+ mat2_inv = LUsolve(mat2,unit(dims)); // compatible with LAPACK
 
  //-------------------------------------------------------
  //Step4 : Compute the Extrapolator

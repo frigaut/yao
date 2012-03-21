@@ -704,7 +704,6 @@ func check_parameters(void)
   if (loop.modalgainfile == string()) loop.modalgainfile = "";
   if (loop.stats_every==0) loop.stats_every=4;
 
-
   //============================================================================
   // DONE WITH BASIC EXISTENCE AND CONSISTENCY CHECKINGS AND DEFAULT ASSIGNMENTS
   //============================================================================
@@ -737,8 +736,8 @@ func check_parameters(void)
     // WFS initialization routine that is still used to set other parameters used with
     // method 1. So we put DUMMY VALUES.
     if (wfs(ns).shmethod == 1) {
-      wfs(ns).pixsize = 0.1;
-      wfs(ns).npixels = 2;
+      if (wfs(ns).pixsize == 0){wfs(ns).pixsize = 0.1;}
+      if (wfs(ns).npixels == 0){wfs(ns).npixels = 2;}
     }
     if ( (wfs(ns).type=="curvature") && (wfs(ns).nintegcycles != 1) ) {
       write,"\n I have not implemented yet nintegcycle > 1 for curvature WFS.";
