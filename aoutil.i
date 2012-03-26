@@ -1336,7 +1336,7 @@ func make_pupil(dim,pupd,xc=,yc=,real=,cobs=)
    */
 {
   if (real == 1) {
-    pup = exp(-(dist(dim,xc=xc,yc=yc)/(pupd/2.))^60.)^0.69314;
+    pup = exp(-clip(dist(dim,xc=xc,yc=yc)/(pupd/2.),0.,2.)^60.)^0.69314;
   } else {
     //    xc;yc;info,xc;
     //    tv,dist(dim,xc=xc,yc=yc);pause,2000;
@@ -1344,7 +1344,7 @@ func make_pupil(dim,pupd,xc=,yc=,real=,cobs=)
   }
   if (is_set(cobs)) {
     if (real == 1) {
-      pup -= exp(-(dist(dim,xc=xc,yc=yc)/(pupd*cobs/2.))^60.)^0.69314;
+      pup -= exp(-clip(dist(dim,xc=xc,yc=yc)/(pupd*cobs/2.),0.,2.)^60.)^0.69314;
     } else {
       pup -= dist(dim,xc=xc,yc=yc) < (pupd*cobs+1.)/2.;
     }
