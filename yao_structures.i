@@ -147,6 +147,7 @@ struct wfs_struct
   long    svipc;          // number of parallel process to use for this WFS.
                           // (0 or 1: don't parallelize)
   float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
+  long    ncpdm;          // DM on the path of the WFS, if any
 
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
@@ -307,6 +308,9 @@ struct dm_struct
   pointer pegged;         // pointer to a vector that contains index of pegged actuators
                           // that is, dead actuators (index in valid numbering)
   pointer epegged;        // same for extrapolated actuators (index in extrap numbering)
+  long    ncp;            // boolean. if set, the mirror is on the non-common path for MOAO type correction 
+  string  ncptype  ;     // whether to fit to a wfs or target to non-common path
+  long    ncpnumber;     // which target or wfs to fit to for non-common path
   
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
@@ -427,6 +431,7 @@ struct target_struct
   pointer xposition;      // float vectorptr. X positions in arcsec. Required [none]
   pointer yposition;      // float vectorptr. Y positions in arcsec. Required [none]
   pointer dispzoom;       // float vectorptr. Display zoom (typically around 1.). Optional [1.]
+  pointer ncpdm;          // DM on the path of the targets, if any
 
   // Internal keywords
   long    _ntarget;       // Internal: # of target
@@ -440,6 +445,7 @@ struct gs_struct
   float   zenithangle;    // zenith angle. Optional [0.]. The zenith angle is used to compute:
                           // - r0 off-zenith
                           // - atmopheric turbulence layer altitude
+                          // - effective turbulence layer speed
                           // - LGS altitude and thickness of Na Layer
                           // - LGS brighness
                           // note that dm altitude is unchanged.

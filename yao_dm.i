@@ -699,8 +699,6 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   }
   // compute the IF covariance matrix
   defcov = def(+,)*def(+,);
-  // find the inverse:
-  defcovi = LUsolve(defcov);
 
   // now look at the anisoplanatism modes:
   // same, extract ipupil of appropriate dimension
@@ -714,7 +712,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   anisoproj = def(+,)*defa(+,);
 
   // command vector (matrices, 3 modes) to apply to DM to get a given mode
-  alow = defcovi(+,)*anisoproj(+,);
+  alow = LUsolve(defcov,anisoproj);
 
   // display:
   if (disp) {
@@ -759,7 +757,6 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   }
 
   defcov = def(+,)*def(+,);
-  defcovi = LUsolve(defcov);
 
   pupaniso = array(float,[2,sim._size,sim._size]);
   pupaniso(dm(nmhigh)._n1:dm(nmhigh)._n2,dm(nmhigh)._n1:dm(nmhigh)._n2)=puphigh;
@@ -769,7 +766,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   defa = (*dm(nmaniso)._def)(*,)(w,);
   anisoproj = def(+,)*defa(+,);
 
-  ahigh = defcovi(+,)*anisoproj(+,);
+  ahigh = LUsolve(defcov,anisoproj);
 
   if (disp || (sim.debug == 2)) {
     for (i=1;i<=3;i++) {

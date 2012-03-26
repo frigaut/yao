@@ -1,10 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/Users/frigaut/yorick/relocate
-Y_EXE=/Users/frigaut/yorick/relocate/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick
+Y_EXE=/usr/lib/yorick/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/Users/frigaut/yorick/relocate
-Y_EXE_SITE=/Users/frigaut/yorick/relocate
-Y_HOME_PKG=
+Y_EXE_HOME=/usr/lib/yorick
+Y_EXE_SITE=/usr/lib/yorick
 
 # ----------------------------------------------------- optimization flags
 
@@ -24,16 +23,15 @@ PKG_EXENAME=yorick
 
 # PKG_DEPLIBS=-Lsomedir -lsomelib   for dependencies of this package
 # PKG_DEPLIBS=-lfftw3f_threads -lfftw3f -lpthread -lm
-PKG_DEPLIBS=-L/opt/local/lib -lfftw3f -L/Users/frigaut/yorick/relocate/lib -limutil
+PKG_DEPLIBS=-lfftw3f
 # on OSX, use the next command to link to the static version of imutil:
-#PKG_DEPLIBS=-L$(Y_EXE_HOME)/lib -limutil -L/path/to/fftw3_libs -lfftw3f
+# PKG_DEPLIBS=-L$(Y_EXE_HOME)/lib -limutil -L/path/to/fftw3_libs -lfftw3f
 
 # set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS=-Wall
 # on OSX (or other platforms), you may need to add the path to the
 # fftw3 include files:
 # PKG_CFLAGS=-Wall -I/path/to/fftw3/include
-PKG_CFLAGS=-Wall -I/opt/local/include
 PKG_LDFLAGS=
 
 # list of additional package names you want in PKG_EXENAME

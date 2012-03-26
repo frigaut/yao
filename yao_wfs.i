@@ -1063,7 +1063,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     if (x!=long(x)) error,swrite(format="sim.pupildiam not multiple of wfs(%i).shnxsub",ns);
 
     x = wfs(ns).pyr_mod_npts/4.;
-    if (x!=long(x)) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);
+    if (x!=long(x) && wfs(n).pyr_mod_ampl != 0.) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);
 
     // compute size of small complex amp image based on field stop size
     // To save computing time, we will extract a subimage from
@@ -1370,7 +1370,7 @@ func zernike_wfs(pupsh,phase,ns,init=)
     wfs_wzer = where(zernike(1)*ipupil);
     wfs_zer = array(float,[2,numberof(wfs_wzer),nzer]);
     for (i=1;i<=nzer;i++) wfs_zer(,i) = zernike_ext(i)(*)(wfs_wzer);
-    wfs_zer = LUsolve(wfs_zer(+,)*wfs_zer(+,))(+,)*wfs_zer(,+);
+    wfs_zer = LUsolve(wfs_zer(+,)*wfs_zer(+,),transpose(wfs_zer));
     // wfs_zer(nzer,npt in pupil)
     tmp = where(zernike(1)(avg,));
     zn12 = minmax(tmp);
@@ -1419,7 +1419,7 @@ func dh_wfs(pupsh,phase,ns,init=)
       wfs(ns)._wpha2dhc = &wfs_wdh;
 
       def = def(*,)(wfs_wdh,);
-      wfs_dh = LUsolve(def(+,)*def(+,))(+,)*def(,+);
+      wfs_dh = LUsolve(def(+,)*def(+,),transpose(def));
       wfs(ns)._pha2dhc = &wfs_dh;
 
       tmp = where(pupsh(avg,));

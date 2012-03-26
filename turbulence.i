@@ -116,18 +116,26 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=)
     psfunc(i) = sqrt((fsx+fsy)/2.);
     gui_progressbar_frac,0.25+0.6*(i-off(1))/(off(2)-off(1));
   }
-  theo = sqrt(6.88*indgen(off(2))^1.66);
-
-  //  write,format="normalization factor = %f\n",sqrt(6.88*off^1.666/fs);
+  
+  c = (24./5.*gamma(6/5.))^(5/6.);
+  r = float(indgen(off(2)));
+  if (l0 == 0){
+    theo = sqrt(2*c*r^(5./3.));
+  } else {
+    f0 = 1./l0;
+    c = (24./5.*gamma(6/5.))^(5/6.);
+    r = float(indgen(off(2)));
+    theo = sqrt(2*c*gamma(11./6.)/(2^(5./6)*pi^(8./3))*(f0)^(-5./3)*(gamma(5./6.)/2^(1./6.) - (2*pi*r*f0)^(5./6.)*gsl_sf_bessel_Knu(5./6., 2*pi*r*f0)));
+  }
+  
   write,format="normalization factor (actual/theo)= %f\n",
     (nfact=avg(psfunc(off(1):off(2))/theo(off(1):off(2))));
   write,psfunc(off(1):off(2))/theo(off(1):off(2));
 
   pscreen(*) = pscreen(*)/float(nfact);
   
-
-  print,"Sectionning and saving phase screens";
-  gui_progressbar_text,"Sectionning and saving phase screens";
+  print,"Sectioning and saving phase screens";
+  gui_progressbar_text,"Sectioning and saving phase screens";
   pscreen = reform(pscreen,[3,dimx,dimy,nscreen]);
   if (!is_void(prefix)) {
     for (i=1;i<=nscreen;i++) {
@@ -188,7 +196,7 @@ func generate_phase(dim)
 
 func generate_von_karman_spectrum(dim,k0,nalias=,silent=)
 /* DOCUMENT func generate_von_karman_spectrum(sdim,bdim,k0)
-   generate correct VoKarman spectrum including aliasing.
+   generate correct von Karman spectrum including aliasing.
      
    SEE ALSO:
  */
