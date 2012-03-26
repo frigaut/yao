@@ -1,3 +1,7 @@
+To do, 5/8/2011:
+- LLTxy in mcao_rayleigh
+- solve issue with GMT pupil and LLT location (both elongation and fratricide)
+
 Upgrades:
 - add KL DM (done in 4.3.0)
 - add vibration spectrum (done)
@@ -17,7 +21,7 @@ Upgrades:
   - created yao_wfs.i and relocated all wfs related functions
   - created yao_dm.i and relocated all dm related functions
   - created yao_structures.i and relocated all struct definitions
-  - changed all function names from old style (with capitals, 
+  - changed all function names from old style (with capitals,
     e.g. checkParameters) to new style (no capital, but underscores,
     e.g. check_parameters). To keep the API compatibility with existing user
     code, I have copied the function names into the old names (see API compat
@@ -97,7 +101,7 @@ wfs_display_mode = "spatial" set if any wfs.pupoffset is non-zero.
 sorry, for now can't have both the spatial AND angular display
 
 Compatibility:
-new yao is fully compatible with old parfile and user code. 
+new yao is fully compatible with old parfile and user code.
 However, it is *not* compatible with binary configs saved with previous version. This means that you will have to remember to re-run aoinit with option clean=1
 
 

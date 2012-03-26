@@ -30,6 +30,7 @@ func sync_child(void)
   mes = shm_read(shmkey,slotname);
   mes = cv2sv(mes)(1);  // one at a time. FIXME
   if (mes!="") {
+    if (smdebug) write,format="%s executing %s\n",svipc_procname,mes;
     include,["status = "+mes+"()"],1;
     shm_free,shmkey,slotname;
     shm_write,shmkey,slotname,&sv2cv("");
@@ -292,7 +293,7 @@ func sync_misreg(void)
 
 func reset_strehl(void)
 {
-  extern imav, niterok,strehls_inter;
+  extern imav, niterok,strehls_inter,psf_child_started;
 
   if (sim.svipc) {
     targets = ["PSFs"];
@@ -303,7 +304,9 @@ func reset_strehl(void)
   // no action to take.
   imav *= 0;
   niterok = 0;
-  strehls_inter *= 0;
+  // shm_write,shmkey,"imlp",&imav;
+  psf_child_started=0;
+  // strehls_inter *= 0;
 }
 
 func sync_reset_strehl(void)
@@ -311,7 +314,6 @@ func sync_reset_strehl(void)
   extern imav, niterok;
   imav *= 0;
   niterok = 0;
-  
 }
 
 func set_ngs_geometry(wfsxpos,wfsypos)

@@ -215,11 +215,13 @@ if (!is_void(path2conf)) {
 
 // before we do anything else (to avoid forking a large process),
 // let's try to determine what OS we are in:
-f = popen("uname",0);
-rep = ""; read,f,format="%s",rep;
-close,f;
-rep = strcase(0,rep);
-if ( (rep=="darwin") || (rep=="linux") ) os_env = rep; else os_env="unknown";
+//f = popen("uname",0);
+//rep = ""; read,f,format="%s",rep;
+//close,f;
+//rep = strcase(0,rep);
+//if ( (rep=="darwin") || (rep=="linux") ) os_env = rep; else os_env="unknown";
+os_env="unknown";
+
 
 plug_in,"yao";
 
@@ -292,7 +294,7 @@ func comp_dm_shape(nm,command,extrap=)
       com(*dm(nm).epegged) = 0.0f;
       command = &com; // this way this does not go up in integrated commands
     }
-    
+
     if (dm(nm).elt == 1) { //use fast dm shape computation
       _dmsumelt, dm(nm)._edef, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._enact),
         dm(nm)._ei1, dm(nm)._ej1, command, &sphase,nxy,nxy;
@@ -694,6 +696,7 @@ func do_imat(disp=)
             mypltitle,"WFSs spots",[0.,-0.005],height=12;
           }
         }
+        if ((nm==1) && (i==1)) { plsys,2; limits,square=1; limits; }
         // mirror surface
         plsys,3;
         limits,square=1;
@@ -1849,7 +1852,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (anyof(wfs.nintegcycles != 1) && (loop.method == "open-loop")) {
     exit, ">> nintegcycles > 1 not implemented for open-loop, exiting";
     }
-  
+
   // Sets other parameters:
   sim._size = int(2^ceil(log(sim.pupildiam)/log(2)+1));
   size      = sim._size;
@@ -2946,12 +2949,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
 
         startIdx = 1;
-        for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).virtual){
+        for (nm=1;nm<=nDMs;nm++) {
+          if (!dm(nm).virtual) {
             idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
             startIdx +=  dm(nm)._nact;
 
-            if (!dm(nm).fitvirtualdm){
+            if (!dm(nm).fitvirtualdm) {
               // real (ordinary) DM
               vidx = indgen(indexDm(1,nm):indexDm(2,nm));
               fMat(idx,vidx) = float(unit(dm(nm)._nact));
@@ -2976,17 +2979,17 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         nAct = (dimsof(iMat))(3);
         Cphi = array(float,[2,nAct,nAct]);
 
-      mc = 0; // matrix counter
-      for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).fitvirtualdm){
-        Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
-        mc += dm(nm)._nact;
-      }
+        mc = 0; // matrix counter
+        for (nm=1;nm<=nDMs;nm++) {
+          if (!dm(nm).fitvirtualdm) {
+            Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
+            mc += dm(nm)._nact;
+          }
         }
-      cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi)(,+)*iMat(,+);
+        cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi)(,+)*iMat(,+);
       }
 
-    } else if (mat.method == "mmse-sparse"){
+    } else if (mat.method == "mmse-sparse") {
 
       // create the regularization matrices for each DM
       nAct = iMatSP.r;
@@ -3168,6 +3171,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     w0 = where(dm.alt == 0);
     nmlow = where( (dm(w0).type == "stackarray") | (dm(w0).type == "bimorph") |
                    (dm(w0).type == "zernike") | (dm(w0).type == "dh")  );
+    nmlow = w0(nmlow);
     if (numberof(nmlow) == 0) {
       pyk_error,"I can not find a DM at altitude 0 to produce the lower "+
         "part of the anisoplanatism modes !";
@@ -3195,6 +3199,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     wn0 = where(dm.alt == dm(nmaniso).alt);
     nmhigh = where( (dm(wn0).type == "stackarray") | (dm(wn0).type == "bimorph") |
                     (dm(wn0).type == "zernike") | (dm(wn0).type == "dh")  );
+    nmhigh = wn0(nmhigh);
     if (numberof(nmhigh) == 0) {
       pyk_error,"I can not find a DM at the requested altitude to produce the higher "+
         "part of the anisoplanatism modes !";
@@ -3218,7 +3223,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (noneof(nmhigh == tmp)) { error,"Invalid selection"; }
       nmhigh = tmp;
     }
-
     project_aniso_dm,nmaniso(1),nmlow(1),nmhigh(1),disp=0;
   }
 
@@ -3356,7 +3360,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
   extern time, strehllp, strehlsp, itv, ok, njumpsinceswap;
   extern remainingTimestring  ;
   extern cbmes, cbcom, cberr;
-  extern indexDm, waniso, wdmaniso;
+  extern indexDm, aniso, waniso, wdmaniso;
   extern ditherPeriod, ditherAmp, ditherGain, cggain, ditherMes;
   extern ditherCosLast, ditherSinLast, ditherMesCos, ditherMesSin;
   extern dispImImav;
@@ -3550,6 +3554,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
     status = svipc_start_forks();
 
     status = init_sync();
+    status = reset_strehl();
   }
 
   if (animFlag && dispFlag) {
@@ -3731,7 +3736,7 @@ func go(nshot,all=)
   // get the anisoplanatism mode coefficients and project it
   // in the actuator space
   if (aniso) {
-    err -= comaniso(,+) * err(waniso)(+);
+    err += dm(wdmaniso).gain*(comaniso(,+) * err(waniso)(+));
     err(waniso) = 0.;
     //      dm(wdmaniso)._command = invcomaniso(+,)*
   }
@@ -3895,8 +3900,9 @@ func go(nshot,all=)
         imav = shm_read(shmkey,"imlp");
         niterok += 1;
         grow,itv,i;
-        grow,strehlsp,im(max,max,1)/sairy;
-        grow,strehllp,imav(max,max,1,0)/sairy/(niterok+1e-5);
+        if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
+        grow,strehlsp,im(max,max,sind)/sairy;
+        grow,strehllp,imav(max,max,sind,0)/sairy/(niterok+1e-5);
       }
       extern psf_child_started;
       // give the go for next batch:
@@ -3923,8 +3929,9 @@ func go(nshot,all=)
       }
       niterok += 1;
       grow,itv,i;
-      grow,strehlsp,im(max,max,1)/sairy;
-      grow,strehllp,imav(max,max,1,0)/sairy/(niterok+1e-5);
+      if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
+      grow,strehlsp,im(max,max,sind)/sairy;
+      grow,strehllp,imav(max,max,sind,0)/sairy/(niterok+1e-5);
     }
   }
 
@@ -4292,6 +4299,7 @@ func after_loop(void)
   // saved graphics
   window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
   fma;
+  hcpon;
 
   disp2d,im,*target.xposition,*target.yposition,1,zoom=*target.dispzoom,init=1;
   for (jl=1;jl<=target._nlambda;jl++) {
@@ -4304,7 +4312,6 @@ func after_loop(void)
   }
   axisLegend,"arcsec","arcsec";
   mypltitle=parprefix+"/ Average PSF";
-  hcp;
   if (strehlsp != []) {
     fma;
     limits;
@@ -4312,9 +4319,10 @@ func after_loop(void)
     plg,strehlsp,itv;
     if (strehllp!=[]) plg,strehllp,itv,color="red";
     myxytitles,"Iterations","Strehl";
-    hcp;
+    // hcp;
   }
   plt,sim.name,0.01,0.227,tosys=0;
+  hcpoff;
   hcp_finish;
 
   gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...DONE",YAO_SAVEPATH+parprefix);

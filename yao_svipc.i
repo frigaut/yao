@@ -53,6 +53,7 @@ func svipc_init(void)
   }
   shm_init_done = 1;
   shm_write,shmkey,"quit?",&([0]);
+  // shm_write,shmkey,"reset_strehl?",&([0]);
 
   // what's in semaphores?
   // sem#          content
@@ -589,6 +590,13 @@ func psf_listen(void)
       yorick_quit;
     }
 
+    // do we need to reset? (e.g. master has restarted aoloop)
+    // if (shm_read(shmkey,"reset_strehl?")(1)) {
+      // shm_write,shmkey,"reset_strehl?",&([0]);
+      // write,format="%s reset strehl\n",svipc_procname;
+      // imav *= 0;
+    // }
+
     // anything to sync?
     status = sync_child();
 
@@ -700,7 +708,7 @@ func wfs_listen(nf,nsv)
     loopCounter = shm_read(shmkey,"loop_counter")(1);
     mircube = shm_read(shmkey,"mircube");
     if (smdebug) {
-      write,format="%s","doing wfsing of WFS ";
+      write,format="WFS fork#%d %s",nf,"doing wfsing of WFS ";
       for (i=1;i<=numberof(nsv)-1;i++) write,format="%d, ",nsv(i);
       write,format="%d\n",nsv(0);
     }
