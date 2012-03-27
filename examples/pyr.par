@@ -1,0 +1,89 @@
+// YAO parameter file
+//-------------------------------
+tel.diam	   = 8;
+tel.cobs	   = 0.;
+
+sim.name           = "8 metre telescope w/ Pyramid WFS"
+sim.pupildiam      = 128;
+sim.debug          = 0;
+sim.verbose        = 1;
+
+//-------------------------------
+nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+n = 1;
+wfs(n).type	       = "pyramid";
+wfs(n).fstop       = "round";
+wfs(n).fssize      = 1.6;
+wfs(n).lambda      = 0.65;
+wfs(n).shnxsub	   = 32;
+wfs(n).npixpersub  = sim.pupildiam/wfs(n).shnxsub;
+
+wfs(n).gspos       = [0.,0.];
+wfs(n).gsalt       = 0.;
+wfs(n).gsmag       = -5;
+wfs(n).skymag      = 15.;
+wfs(n).noise       = 1;
+wfs(n).ron         = 3.;
+wfs(n).darkcurrent = 0.;
+
+wfs(n).pyr_mod_npts= 16;
+wfs(n).pyr_mod_ampl= 0.45;
+wfs(n).pyr_padding = 2;
+wfs(n).pyr_mod_loc = "after";
+
+//-------------------------------
+ndm                = 1;
+dm = array(dms,ndm);
+
+n = 1;
+
+dm(n).type	   = "stackarray";
+dm(n).iffile	   = "";
+dm(n).nxact	   = wfs(n).shnxsub+1;
+dm(n).pitch	   = wfs(n).npixpersub;
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 1.;
+dm(n).push4imat    = 0.10;
+dm(n).elt          = 1;
+dm(n).gain         = 1.;
+dm(n).regtype      = "laplacian";
+
+if (wfs(1).type == "hartmann"){
+   dm(1).regparam     = 1e-2;
+} else {dm(1).regparam     = 1e-2;}
+//dm(1).regparam = 3e-2;
+//-------------------------------
+mat.method = "mmse";
+// mat.method = "svd";
+// mat.condition = &([10.]);
+// mat.file = "";
+
+//-------------------------------
+target.lambda	   = &([2.2]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+r0 = 0.10;
+
+//-------------------------------
+atm.dr0at05mic     = tel.diam/r0;  // this is r0=0.2 at 500 nm
+atm.screen	   = &(Y_USER+"data/screen1.fits");
+atm.layerfrac      = &([1.0]);
+atm.layerspeed     = &([12.]);
+atm.layeralt	   = &([0.]);
+atm.winddir        = &([0.]);
+
+//-------------------------------
+gs.zeropoint	   = 1.2e11;
+
+//-------------------------------
+loop.gain	   = 0.3;
+loop.framedelay    = 2;
+loop.niter	   = 100000;
+loop.startskip     = 30;
+loop.ittime	   = 0.001;
+loop.modalgainfile = "simulModeGains.fits";
+// loop.leak          = 0.05;

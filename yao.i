@@ -3044,6 +3044,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         Cphi = array(float,[2,nAct,nAct]);
 
         mc = 0; // matrix counter
+        nDMs = numberof(dm);
         for (nm=1;nm<=nDMs;nm++){
           if (!dm(nm).fitvirtualdm){
             Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
