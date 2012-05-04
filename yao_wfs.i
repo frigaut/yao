@@ -1116,7 +1116,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     // let's save pyr_focmask whatever the method is, as we will
     // use it for photometry calculation:
     pyr_focmask = roll(focmask);
-    if (pyr_mod_location!="after") {
+    if (wfs(ns).pyr_mod_loc!="after") {
       tmp = array(0,[3,pyr_npix,pyr_npix,4]);
       tmp(,,1) = pyr_focmask(npup-pyr_npix+1:,npup-pyr_npix+1:);
       tmp(,,2) = tmp(,,1)(::-1,);
@@ -1180,7 +1180,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   phot_norm_factor = sum(tmp*pyr_focmask)/sum(tmp);
 
   // apply field stop if needed:
-  if (pyr_mod_location=="after") complex_amplitude *= *wfs(ns)._submask;
+  if (wfs(ns).pyr_mod_loc=="after") complex_amplitude *= *wfs(ns)._submask;
 
   reimaged_pupil = array(double,[3,pyr_npix,pyr_npix,4]);
 
@@ -1228,7 +1228,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
       // extract subimage from large image complex amplitude array:
       ca = roll(complex_amplitude,[cx(k)+xoffset(i),cy(k)+yoffset(i)]);
 
-      if (pyr_mod_location!="after") {
+      if (wfs(ns).pyr_mod_loc!="after") {
         small_comp_amp = ca(1:pyr_npix,1:pyr_npix)*(*wfs(ns)._submask)(,,i);
         roll,small_comp_amp;
       } else small_comp_amp = roll(ca(1:pyr_npix,1:pyr_npix));

@@ -165,8 +165,8 @@ struct wfs_struct
   long    pyr_padding;    // Pad the pupil image to reduce spatial aliasing [unitless]
                           // A pad of 1 means adding wfs.npixpersub pixels
                           // on each side of the pupil image. Typical 0 to 4.
-  string  pyr_mod_loc;    // Location of modulation (before/after the field stop.
-                          // valid value are "before" or "after"
+  string  pyr_mod_loc;    // Location of modulation, before/after the field stop.
+                          // valid value are "before" or "after" (default "after")
 
   // Shack-Hartmann WFS only keywords:
   long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
