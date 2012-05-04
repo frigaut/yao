@@ -197,7 +197,8 @@ struct wfs_struct
   long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and
                           // filtertilt must be set). Optional [0]
   int     rayleighflag;   // set to one to take rayleigh into account
-                          // zernike wfs only
+  
+  // zernike wfs only
   int     nzer;           // # of zernike sensed
 
   // DH wfs only
