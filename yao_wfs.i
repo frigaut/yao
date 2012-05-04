@@ -1358,9 +1358,14 @@ func zernike_wfs(pupsh,phase,ns,init=)
   // the phase at the input (call from multwfs) is in microns.
   // I have chosen to return coefficients of zernikes in nm (rms)
 
-  extern wfs_zer,wfs_wzer,zn12;
+  extern pwfs_zer,pwfs_wzer,pzn12;
 
   if (init) {
+    if ((pwfs_zer==[])||(numberof(pwfs_zer)!=nwfs)) {
+      pwfs_zer = array(pointer,nwfs);
+      pwfs_wzer = array(pointer,nwfs);
+      pzn12 = array(pointer,nwfs);
+    }
     pupd  = sim.pupildiam;
     size  = sim._size;
     nzer  = wfs(ns).nzer(1);
@@ -1374,9 +1379,16 @@ func zernike_wfs(pupsh,phase,ns,init=)
     // wfs_zer(nzer,npt in pupil)
     tmp = where(zernike(1)(avg,));
     zn12 = minmax(tmp);
+    pwfs_zer(ns) = &wfs_zer;
+    pwfs_wzer(ns) = &wfs_wzer;
+    pzn12(ns) = &zn12;
     if (sim.verbose>=1) write,"Zernike wfs initialized";
     return;
   }
+
+  zn12 = *pzn12(ns);
+  wfs_zer = *pwfs_zer(ns);
+  wfs_wzer = *pwfs_wzer(ns);
 
   wfs(ns)._fimage = wfs(ns)._dispimage = \
           &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
