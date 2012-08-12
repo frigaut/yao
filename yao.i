@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.8.5";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2011mar16";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.1";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012may21";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1193,7 +1193,8 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
     if (dimx == dimy){ // can wrap both x and y
       // Extend dimension in X and Y for wrapping issues
-      pscreens = array(float,[3,dimx+2*sim._size,dimy+2*sim._size,nscreens]);
+      // Made larger to accommodate GLAO, Marcos van Dam, May 2012
+      pscreens = array(float,[3,dimx+4*sim._size,dimy+4*sim._size,nscreens]);
       // Stuff it
       pscreens(1:dimx,1:dimy,1) = tmp;
       // free RAM
@@ -1208,8 +1209,8 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       }
       
       // Extend the phase screen length for safe wrapping:
-      pscreens(dimx+1:,,) = pscreens(1:2*sim._size,,);
-      pscreens(,dimy+1:,) = pscreens(,1:2*sim._size,);
+      pscreens(dimx+1:,,) = pscreens(1:4*sim._size,,);
+      pscreens(,dimy+1:,) = pscreens(,1:4*sim._size,);
 
     } else {
       // Extend dimension in X for wrapping issues
@@ -2706,8 +2707,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               svd = 1;  // need to recreate reconstructors
             }
           }
-        }
-        
+        }        
       }
     }
   }
@@ -2809,6 +2809,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               v1 = ((xloct == xlocv(c1)) + (yloct == ylocv(c1)) == 2);
               (*dm(nm)._fMat)(,c1) = float(v1);
             }
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
+            yao_fitswrite,filename,*dm(nm)._fMat;
           } else {
             temp = rco_d();
             for (c1=1;c1<=numberof(xlocv);c1++){
@@ -2816,6 +2818,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               rcobuild, temp, float(v1), mat.sparse_thresh;
             }
             dm(nm)._fMat = &rcotr(temp);
+            filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");
+            save_rco, *dm(nm)._fMat, filename;
           }
         }
       }
@@ -3029,7 +3033,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               for (c1=1;c1<= numberof(virtualDMs);c1++){
                 grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1)));
               }
-
               fMat(idx,vidx) =  *dm(nm)._fMat;
             }
           }

@@ -38,8 +38,11 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // WORK OUT THE NUMBER OF PHOTONS COLLECTED PER SUBAPERTURE AND SAMPLE
   //====================================================================
 
-  telSurf  = pi/4.*tel.diam^2.;
-
+  // this is modified to take into account the actual surface area of the 
+  // telescope, rather than the telescope area for a circular telescope with 
+  // no central obscuration
+  telSurf = sum(pupil)*(tel.diam/sim.pupildiam)^2;
+		    
   // from the guide star (computed here as used in wfs_check_pixel_size):
   if (wfs(ns).gsalt == 0) {
 
@@ -480,7 +483,6 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   // subsize in meters:
   subsize_m = subsize * tel.diam/sim.pupildiam;
-
 
   wfs(ns)._skynphotons = wfs(ns)._zeropoint*10^(-0.4*wfs(ns).skymag)* // #photons/tel/sec/arcsec^2
     subsize_m^2./telSurf*                    // -> per full subaperture
@@ -944,8 +946,8 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
 
     } else { // we are dealing with a LGS
 
-      telsurface = pi/4.*tel.diam^2.(1-tel.cobs^2.)*1e4; // in cm^2
-
+      // modified to use the actual telescope surface area
+      telsurface = sum(pupil)*(tel.diam/sim.pupildiam)^2*1e4;
       wfs(ns)._nphotons = gs.lgsreturnperwatt*wfs(ns).laserpower*
         telsurface*loop.ittime;
 
@@ -1030,7 +1032,6 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
  */
 {
   extern wfs;
-  extern wsubok;
   extern sky_frame;
   extern pyr_binfact, pyr_npix, pyr_focmask;
   local  padding, npixpersub, binfact, npix;
@@ -1058,7 +1059,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   mod_ampl_pixels =  wfs(ns).pyr_mod_ampl/psize; // modulation in pixels
 
   if (init) {
-
+    if (wfs(ns).pyr_denom != "median"){wfs(ns).pyr_denom = "subap";}
     x = double(sim.pupildiam)/shnxsub;
     if (x!=long(x)) error,swrite(format="sim.pupildiam not multiple of wfs(%i).shnxsub",ns);
 
@@ -1116,7 +1117,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     // let's save pyr_focmask whatever the method is, as we will
     // use it for photometry calculation:
     pyr_focmask = roll(focmask);
-    if (wfs(ns).pyr_mod_loc!="after") {
+    if (wfs(ns).pyr_mod_loc !="after") {
       tmp = array(0,[3,pyr_npix,pyr_npix,4]);
       tmp(,,1) = pyr_focmask(npup-pyr_npix+1:,npup-pyr_npix+1:);
       tmp(,,2) = tmp(,,1)(::-1,);
@@ -1128,8 +1129,6 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     // find out which pixels in the reimaged pupil have to be
     // retained for the final signal calculation:
     pupreb = bin2d(pup*1.,npixpersub)/npixpersub^2.;
-    wsubok = where(pupreb>=wfs(ns).fracIllum);
-    wfs(ns)._nmes = 2*numberof(wsubok);
     sky_frame = pupreb/sum(pupreb)/4.;
 
     wfs(ns)._nphotons = wfs(ns)._zeropoint*2.51189^(-wfs(ns).gsmag)*
@@ -1181,7 +1180,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
   // apply field stop if needed:
   if (wfs(ns).pyr_mod_loc=="after") complex_amplitude *= *wfs(ns)._submask;
-
+  
   reimaged_pupil = array(double,[3,pyr_npix,pyr_npix,4]);
 
   // prepare arrays to shift re-imaged pupil
@@ -1228,7 +1227,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
       // extract subimage from large image complex amplitude array:
       ca = roll(complex_amplitude,[cx(k)+xoffset(i),cy(k)+yoffset(i)]);
 
-      if (wfs(ns).pyr_mod_loc!="after") {
+      if (wfs(ns).pyr_mod_loc !="after") {
         small_comp_amp = ca(1:pyr_npix,1:pyr_npix)*(*wfs(ns)._submask)(,,i);
         roll,small_comp_amp;
       } else small_comp_amp = roll(ca(1:pyr_npix,1:pyr_npix));
@@ -1243,9 +1242,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
         roll,mim,[modim_xoff(i),modim_yoff(i)];
         modim += mim;
         if (pyr_disp>=2) {
-          // fma; plsys,1; pli,modim; limits; limits,square=1;
           fma; plsys,1; pli,abs(small_comp_amp); limits; limits,square=1;
-          // plsys,2;      pli,roll(abs(complex_amplitude)); limits; limits,square=1;
           plsys,2; pli,roll(reimaged_pupil(,,i)); limits; limits,square=1;
           if (hitReturn()=="s") return;
         }
@@ -1283,6 +1280,13 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     npix = pyr_npix/binfact;
   } else npix = pyr_npix;
 
+  if (init){
+    subapint = reimaged_pupil(,,sum); // sum of all the subaperture intensities
+    medianint = median(subapint(*)); 
+    wfs(ns)._validsubs = &(where(subapint>=wfs(ns).fracIllum*medianint));
+    wfs(ns)._nmes = 2*numberof(*wfs(ns)._validsubs);
+  }
+    
   // photometry and noise:
   totflux = sum(reimaged_pupil);
   reimaged_pupil *= phot_norm_factor*wfs(ns)._nphotons/totflux;
@@ -1324,18 +1328,26 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   tmp(ii2,ii1) = reimaged_pupil(,,2);
   tmp(ii1,ii2) = reimaged_pupil(,,3);
   tmp(ii2,ii2) = reimaged_pupil(,,4);
+
   wfs(ns)._fimage = &tmp; // save this to display
   if (pyr_disp) { plsys,4; pli,tmp; limits; limits,square=1;}
 
   // extract the illuminated pixels:
-  pixels = reimaged_pupil(*,)(wsubok,);
+  pixels = reimaged_pupil(*,)(*wfs(ns)._validsubs,);
 
   // threshold the pixels
   pixels = max(pixels,wfs(ns).shthreshold);
 
+  // determine the denominator
+  if (wfs(ns).pyr_denom == "median"){
+    denom = (pixels(avg,sum));
+  } else {
+    denom = pixels(,sum)+1e-6;
+  }
+    
   // compute the final signal, using quadcell formula:
-  sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/(pixels(,sum)+1e-6);
-  sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/(pixels(,sum)+1e-6);
+  sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/denom;
+  sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/denom;
 
   return _(sigx,sigy);
 }
@@ -1385,7 +1397,6 @@ func zernike_wfs(pupsh,phase,ns,init=)
     if (sim.verbose>=1) write,"Zernike wfs initialized";
     return;
   }
-
   zn12 = *pzn12(ns);
   wfs_zer = *pwfs_zer(ns);
   wfs_wzer = *pwfs_wzer(ns);
