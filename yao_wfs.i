@@ -1480,22 +1480,6 @@ func mult_wfs_int_mat(disp=,subsys=)
   for (ns=1;ns<=nwfs;ns++) {
    filterTiltOrig = wfs(ns).filtertilt; wfs(ns).filtertilt = 0;
 
-    // Impose noise = rmsbias = rmsflat = 0 for interaction matrix measurements
-    // now done within do_imat (no need to do that at each call, and
-    // this use to put a large overhead when using wfs.svipc (sync for every
-    // actuators).
-    //    noiseOrig = wfs(ns).noise; wfs(ns).noise = 0n;
-    //    cycleOrig = wfs(ns).nintegcycles; wfs(ns).nintegcycles = 1;
-    //    if (*wfs(ns)._skyfluxpersub!=[]) {
-    //      skyfluxpersubOrig = *wfs(ns)._skyfluxpersub; *wfs(ns)._skyfluxpersub *= 0;
-    //    }
-    //    if (wfs(ns).type == "hartmann" ) {
-    //      kconv_orig = wfs(ns)._kernelconv; wfs(ns)._kernelconv = 1n;
-    //      bias  = *wfs(ns)._bias; *wfs(ns)._bias = *wfs(ns)._bias*0.0f;
-    //      flat  = *wfs(ns)._flat; *wfs(ns)._flat = *wfs(ns)._flat*0.0f+1.0f;
-    //    }
-
-    //    offsets = wfs(ns).gspos;
     phase   = get_phase2d_from_dms(ns,"wfs");
     // uncomment if needed:
     //    phase  += get_phase2d_from_optics(ns,"wfs");
@@ -1541,17 +1525,6 @@ func mult_wfs_int_mat(disp=,subsys=)
     grow,mes,smes;
 
     wfs(ns).filtertilt = filterTiltOrig;
-    // restore whatever value was in bias and flat
-    // again, this was now moved to do_imat()
-    //    if (wfs(ns).type == "hartmann" ) {
-    //      wfs(ns)._bias = &bias; wfs(ns)._flat = &flat;
-    //      wfs(ns)._kernelconv = kconv_orig;
-    //    }
-    //    wfs(ns).noise = noiseOrig;
-    //    wfs(ns).nintegcycles = cycleOrig;
-    //    if (*wfs(ns)._skyfluxpersub!=[]) *wfs(ns)._skyfluxpersub = skyfluxpersubOrig;
-    //  }
-    //  if (anyof(wfs.svipc>1)) status = sync_wfs_forks();
   }
   return mes;
 }

@@ -196,7 +196,7 @@
 
 extern aoSimulVersion, aoSimulVersionDate;
 aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012may21";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012sept06";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -638,8 +638,8 @@ func do_imat(disp=)
   if (disp) { plsys,1; animate,1; }
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
-  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-                           skyfluxpersub_orig, bias_orig, flat_orig;
+  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig, 
+                                       bckgrdcalib_orig, bias_orig, flat_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -735,8 +735,8 @@ func do_imat(disp=)
   }
 
   // restore original values to WFS structure:
-  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-                             skyfluxpersub_orig, bias_orig, flat_orig;
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig,
+                             bckgrdcalib_orig, bias_orig, flat_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -754,13 +754,13 @@ func do_imat(disp=)
 }
 
 
-func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
-                              &skyfluxpersub_orig, &bias_orig, &flat_orig)
+func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, &skyfluxpersub_orig, 
+                              &bckgrdcalib_orig,&bias_orig, &flat_orig)
 {
   extern wfs;
 
   noise_orig = cycle_orig = kconv_orig = array(0n,nwfs);
-  skyfluxpersub_orig = bias_orig = flat_orig = array(pointer,nwfs);
+  skyfluxpersub_orig = bckgrdcalib_orig = bias_orig = flat_orig = array(pointer,nwfs);
 
   for (ns=1;ns<=nwfs;ns++) {
 
@@ -774,6 +774,11 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
     if (*wfs(ns)._skyfluxpersub!=[]) {
       skyfluxpersub_orig(ns) = &(*wfs(ns)._skyfluxpersub);
       *wfs(ns)._skyfluxpersub *= 0;
+    }
+
+    if (*wfs(ns)._bckgrdcalib!=[]) {
+      bckgrdcalib_orig(ns) = &(*wfs(ns)._bckgrdcalib);
+      *wfs(ns)._bckgrdcalib *= 0;
     }
 
     if (wfs(ns).type == "hartmann" ) {
@@ -790,7 +795,8 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
 }
 
 func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
-                                skyfluxpersub_orig, bias_orig, flat_orig)
+                                skyfluxpersub_orig,bckgrdcalib_orig,
+                                bias_orig, flat_orig)
 {
   extern wfs;
   for (ns=1;ns<=nwfs;ns++) {
@@ -801,6 +807,8 @@ func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
 
     if (*wfs(ns)._skyfluxpersub!=[])                    \
       wfs(ns)._skyfluxpersub = skyfluxpersub_orig(ns);
+    if (*wfs(ns)._bckgrdcalib!=[])                    \
+      wfs(ns)._bckgrdcalib = bckgrdcalib_orig(ns);
 
     if (wfs(ns).type == "hartmann" ) {
       wfs(ns)._kernelconv = kconv_orig(ns);
@@ -2114,7 +2122,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
   store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-                           skyfluxpersub_orig, bias_orig, flat_orig;
+    skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -2171,7 +2179,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // restore original values to WFS structure:
   restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-                             skyfluxpersub_orig, bias_orig, flat_orig;
+    skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
