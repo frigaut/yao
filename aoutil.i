@@ -694,7 +694,9 @@ func check_parameters(void)
   }
 
   // LOOP STRUCTURE
-  if (loop.method == string) loop.method = "closed-loop";
+  if (loop.method == string()) loop.method = "closed-loop";
+  loop_method_options = ["closed-loop","open-loop","pseudo open-loop"];
+  if (noneof(loop_method_options == loop.method)) exit,"ERROR: loop.method should be set to closed-loop, open-loop or pseudo open-loop";
   if ((loop.method == "open-loop") && (loop.gain != 1 || loop.leak != 1)){
     write, "Warning: For open-loop simulations the recommended settings are";
     write, "loop.gain = 1. and loop.leak = 1.";

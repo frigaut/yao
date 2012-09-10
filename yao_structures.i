@@ -165,9 +165,10 @@ struct wfs_struct
   long    pyr_padding;    // Pad the pupil image to reduce spatial aliasing [unitless]
                           // A pad of 1 means adding wfs.npixpersub pixels
                           // on each side of the pupil image. Typical 0 to 4.
-  string  pyr_mod_loc;    // Location of modulation, before/after the field stop.
-                          // valid value are "before" or "after" (default "after")
-
+  string  pyr_mod_loc;    // Location of modulation (before/after the field stop.
+                          // valid value are "before" or "after"
+  string  pyr_denom;      // what to use as the denominator, "subap" (default, like a SH quad cell) or "median" (median subaperture intensity)      
+  
   // Shack-Hartmann WFS only keywords:
   long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
   long    shnxsub;        // # of subaperture in telescope diameter. Required [none]
@@ -197,7 +198,7 @@ struct wfs_struct
   long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and
                           // filtertilt must be set). Optional [0]
   int     rayleighflag;   // set to one to take rayleigh into account
-  
+
   // zernike wfs only
   int     nzer;           // # of zernike sensed
 
