@@ -23,6 +23,8 @@
 require,"svipc.i";
 require,"yao_setnsync.i";
 
+// use svipc_debug to set svipc debug
+
 nshm    = 50;
 nsem    = 80;
 
@@ -99,9 +101,9 @@ func svipc_wfs_init(phase,ns)
   //  nforks_per_wfs(ns) = wfs(ns).svipc;
 
   // Initialize a few generic variable we're gonna need:
-  // This on serves to indicate to the forks that a sync is needed
+  // This one serves to indicate to the forks that a sync is needed
   shm_write,shmkey,swrite(format="sync_wfs%d_forks",ns),&([0]);
-  // This on is used to quit the forks
+  // This one is used to quit the forks
   shm_write,shmkey,"quit_wfs_forks?",&([0]);
 
   // To avoid a shm_write/shm_read at each iter, I have opted to
@@ -162,6 +164,8 @@ func svipc_wfs_init(phase,ns)
       optwfsxposcub = optwfsyposcub = optgsxposcub = optgsyposcub = [];
       statsokvec = sphase = bphase = imtmp = imphase = [];
       strehllp = strehlsp = itv = commb = errmb = [];
+
+      if (sim.debug) write,format="WFS#%d child %d spawned with PID %d\n",ns,nf,getpid();
 
       // start listening
       status = wfs_fork_listen(ns,nf);
