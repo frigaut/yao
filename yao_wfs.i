@@ -530,6 +530,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   }
 
   // CALIBRATE BACKGROUND IMAGES (have to run sh_wfs for that):
+  bckgrdsub = wfs(ns)._bckgrdsub;
   wfs(ns)._bckgrdsub  = 0; // it doesn't matter
   wfs(ns)._bckgrdinit = 1;
 
@@ -541,11 +542,11 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   // first sync if needed (svipc)
   if (wfs(ns).svipc>1) status = sync_wfs_forks();
-  sh_wfs,pupsh,pupsh*0.0f,ns;
+  for (i=1;i<=wfs(ns).nintegcycles;i++) sh_wfs,pupsh,pupsh*0.0f,ns;
   wfs.noise=noiseOrig;
 
   wfs(ns)._bckgrdinit = 0;
-  wfs(ns)._bckgrdsub  = 1; // now yes, enable it (by default)
+  wfs(ns)._bckgrdsub  = bckgrdsub;
 
   // the following fixes a bug we have since 4.7.1:
   // wfs(ns)._bckgrdcalib = &(*wfs(ns)._fimage);

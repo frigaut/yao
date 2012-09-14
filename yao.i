@@ -1809,7 +1809,7 @@ func aoread(parfile)
   atm  = atm_struct();
   opts = opt_struct();
   sim  = sim_struct();
-  wfss = wfs_struct();
+  wfss = wfs_struct(_bckgrdsub=1);
   dms  = dm_struct();
   mat  = mat_struct();
   tel  = tel_struct();
