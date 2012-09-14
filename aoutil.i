@@ -165,16 +165,6 @@ func create_yao_window(dpi)
 
 //----------------------------------------------------
 
-func print_struct(structure,strstr) {
-  tmp = strParse(strParse(strParse(strJoin(print(structure)),"(")(2),")")(1),",");
-  if (!am_subroutine()) {return tmp;}
-  for (i=1;i<=numberof(tmp);i++) {
-    write,format=strstr+".%s\n",tmp(i);
-  }
-}
-
-//----------------------------------------------------
-
 //func xyxy2xxyy(void)
 func xxyy2xyxy(void)
 {

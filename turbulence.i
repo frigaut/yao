@@ -69,7 +69,7 @@ phaseStructFunc = phase_struct_func;
 
 //+++++++++++++++++++++++++++
 
-func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=)
+func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
   /* DOCUMENT create_phase_screens(dimx,dimy,prefix=)
      Create phase screens and save them in fits files.
      The saved phase screens have a dimension dimx*dimy.
@@ -95,14 +95,14 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=)
 
 {
   if (is_void(l0)) l0 = 0.;
-  gui_progressbar_text,"Generating the screen power spectrum";
+  if (yaopy) gui_progressbar_text,"Generating the screen power spectrum";
   nps = (no_ipart?1:2);
   nscreen = dimx/dimy*nps;
-  pscreen = generate_phase_with_L0(dimx,l0,nalias=nalias,no_ipart=no_ipart);
-  gui_progressbar_frac,0.25;
+  pscreen = generate_phase_with_L0(dimx,l0,nalias=nalias,no_ipart=no_ipart,silent=silent);
+  if (yaopy) gui_progressbar_frac,0.25;
 
-  print,"Normalizing phase screens";
-  gui_progressbar_text,"Normalizing phase screens";
+  if (!silent) write,"Normalizing phase screens";
+  if (yaopy) gui_progressbar_text,"Normalizing phase screens";
   off = [1,5]; // spatial offset for structure function normalization
   psfunc = array(float,off(2));
   for (i=off(1);i<=off(2);i++ ) {
@@ -114,7 +114,7 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=)
     }
     fsx /= nps; fsy /= nps;
     psfunc(i) = sqrt((fsx+fsy)/2.);
-    gui_progressbar_frac,0.25+0.6*(i-off(1))/(off(2)-off(1));
+    if (yaopy) gui_progressbar_frac,0.25+0.6*(i-off(1))/(off(2)-off(1));
   }
   
   c = (24./5.*gamma(6/5.))^(5/6.);
@@ -127,26 +127,26 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=)
     r = float(indgen(off(2)));
     theo = sqrt(2*c*gamma(11./6.)/(2^(5./6)*pi^(8./3))*(f0)^(-5./3)*(gamma(5./6.)/2^(1./6.) - (2*pi*r*f0)^(5./6.)*gsl_sf_bessel_Knu(5./6., 2*pi*r*f0)));
   }
-  
-  write,format="normalization factor (actual/theo)= %f\n",
-    (nfact=avg(psfunc(off(1):off(2))/theo(off(1):off(2))));
-  write,psfunc(off(1):off(2))/theo(off(1):off(2));
+  nfact = avg(psfunc(off(1):off(2))/theo(off(1):off(2)));
+  if (!silent) write,format="normalization factor (actual/theo)= %f\n",
+    avg(psfunc(off(1):off(2))/theo(off(1):off(2)));
+  if (!silent) write,psfunc(off(1):off(2))/theo(off(1):off(2));
 
   pscreen(*) = pscreen(*)/float(nfact);
   
-  print,"Sectioning and saving phase screens";
-  gui_progressbar_text,"Sectioning and saving phase screens";
+  if (!silent) write,"Sectioning and saving phase screens";
+  if (yaopy) gui_progressbar_text,"Sectioning and saving phase screens";
   pscreen = reform(pscreen,[3,dimx,dimy,nscreen]);
   if (!is_void(prefix)) {
     for (i=1;i<=nscreen;i++) {
       fname = prefix+((nscreen==1) ? "":swrite(i,format="%i"))+".fits";
       fits_write,fname,pscreen(,,i),overwrite=1;
-      gui_progressbar_text,swrite(format="Saving %s",fname);
-      gui_progressbar_frac,0.85+0.15*i/nscreen;
+      if (yaopy) gui_progressbar_text,swrite(format="Saving %s",fname);
+      if (yaopy) gui_progressbar_frac,0.85+0.15*i/nscreen;
     }
   }
 
-  after,4,clean_progressbar;
+  if (yaopy) after,4,clean_progressbar;
   return pscreen;
 }
 createPhaseScreens = create_phase_screens;
@@ -159,7 +159,7 @@ func clean_progressbar(void)
 
 //+++++++++++++++++++++++++++
 
-func generate_phase(dim)
+func generate_phase(dim,silent=)
   /* DOCUMENT generate_phase(size)
      Generate by Fourier an un-normalized 2D phase screen from the 
      -11/3 amplitude and a randomn phase component. Only returns the 
@@ -171,22 +171,22 @@ func generate_phase(dim)
 
 {
   randomize;
-  print,"Creating arrays";
-  print,"Creating amplitude";
+  if (!silent) write,"Creating arrays";
+  if (!silent) write,"Creating amplitude";
   tmp   = clip(dist(dim),1e-8,);
   amp = eclat(tmp^(-11.f/6.f));
   p = array(complex,dim,dim);
   p.re  = amp;
   p.im  = amp;
   amp = [];
-  print,"Creating phase";
+  if (!silent) write,"Creating phase";
   pha = float(random(dim,dim)*2.*pi);
   p.re  = p.re*cos(pha);
   p.im  = p.im*sin(pha);
   pha = [];
   p.re(1,1)= 0.;
   p.im(1,1)= 0.;
-  print,"Doing FFT...";
+  if (!silent) write,"Doing FFT...";
   phaout  = float(fft(p,1));
   p = [];
   return phaout;
