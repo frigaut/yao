@@ -152,7 +152,8 @@ if (!is_void(path2conf)) {
 yaopy=1; // used in yao.i to know if using pygtk GUI
 if (pyk_debug==[]) pyk_debug=0;
 //sleep=200;
-default_dpi=dpi=70;
+if (default_dpi==[]) default_dpi=70;
+dpi = default_dpi;
 initdone=0;
 
 func yaopy_quit(void)
@@ -532,7 +533,7 @@ func set_gs_mag(gsmag)
       if (initdone) {
         if (wfs(i).type=="curvature") curv_wfs,,,i,init=1,disp=0,silent=1;
         else if (wfs(i).type=="hartmann") {
-          if (wfs(ll).disjointpup) {
+          if (wfs(i).disjointpup) {
             shwfs_init,disjointpup(,,i),i,silent=1;
           } else shwfs_init,ipupil,i,silent=1;
         }
