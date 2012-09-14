@@ -146,6 +146,24 @@ func svipc_wfs_init(phase,ns)
   // leave a trace that we've gone through here.
   wfs(ns)._svipc_init_done = 1;
 
+  // now we'll have to set the random_seed for the child to something
+  // different than the parent and different for all children,
+  // otherwise the next random numbers will be the same for
+  // parent and all children.
+  // However it should be the same each time we start over, otherwise
+  // it'll be impossible to compare results for short sample length.
+  // at least that's the philosophy I've been following with yao
+  // since a long time. So let's do that this way:
+  svipc_random_seeds = random(wfs(ns).svipc);
+  // if the user decides to restart a run and wish to use the same
+  // random seed, he should do
+  // random_seed,x; ran1init; // x = ]0.,1.[ exclusive.
+  // if the user decides to do that, then the svipc_random_seeds
+  // will be the same as previously, if the random_seed is done
+  // each time at the same "location" in the calling code.
+  // thus the children will also be set with the same seed.
+
+
   for (nf=1;nf<=wfs(ns).svipc;nf++) {
 
     (*wfs(ns)._fork_subs)(,nf) = int(tofork==nf);
@@ -164,7 +182,10 @@ func svipc_wfs_init(phase,ns)
       optwfsxposcub = optwfsyposcub = optgsxposcub = optgsyposcub = [];
       statsokvec = sphase = bphase = imtmp = imphase = [];
       strehllp = strehlsp = itv = commb = errmb = [];
-
+      
+      // set the random_seed determined above:
+      random_seed,svipc_random_seeds(nf);
+      
       if (sim.debug) write,format="WFS#%d child %d spawned with PID %d\n",ns,nf,getpid();
 
       // start listening
