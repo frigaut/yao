@@ -444,6 +444,7 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   fftwf_plan    p,p1;
   float         tot, totrayleigh, krp, kip, sky;
   float         corfact;
+  //~ float         totdark;
   long          log2nr, log2nc, n, ns, nb;
   int           i,j,k,l,koff;
   // int           integrate;
@@ -483,11 +484,15 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   //Zero out final image if first iteration
   if (counter == 1) {
     // in fact, let's put the dark current value in there:
-    //for (i=0;i<(fimnx*fimny);i++) { fimage[i] = 0.0f; }
+    //~ for (i=0;i<(fimnx*fimny);i++) { fimage[i] = 0.0f; }
     // these 2 lines temporarily disabled for svipc shm_var of ffimage:
     // FIXME (remove comments):FIXME FIXME FIXME
-    //    totdark = (float) niter * darkcurrent;
-    //    for (i=0;i<(fimnx*fimny);i++) { fimage[i] = totdark; }
+    //~ totdark = (float) niter * darkcurrent;
+    //~ for (i=0;i<(fimnx*fimny);i++) { fimage[i] = totdark; }
+    // 2012sep17: the problem above it seems is that the loop is over the
+    // entire array. If several forks are accessing it, -> problem.
+    // the simplest might be to add it at the yorick level before
+    // calling _shwfs_spots2slopes().
   }
 
 
@@ -674,7 +679,7 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
     sky = skyflux[l];  // sky per rebinned pixel, e-/frame
 
     for ( i = 0; i < nb; i++ ) { 
-      //        bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
+      //~ bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
       bimage[i] += ( sky + brayleigh[i] ) * bsubmask[i]; 
     }
 

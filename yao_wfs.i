@@ -844,7 +844,7 @@ func sh_wfs(pupsh,phase,ns)
                  *wfs(ns)._imistart, *wfs(ns)._imjstart,
                  wfs(ns)._fimnx , wfs(ns)._fimny,
                  *wfs(ns)._fluxpersub, *wfs(ns)._raylfluxpersub,
-                 *wfs(ns)._skyfluxpersub, float(wfs(ns).darkcurrent*loop.ittime),
+                 *wfs(ns)._skyfluxpersub, float(wfs(ns).darkcurrent*loop.ittime), // darkcurrent not applied in there anymore (2012sep17)
                  int(wfs(ns).rayleighflag),
                  *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
                  wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
@@ -858,7 +858,8 @@ func sh_wfs(pupsh,phase,ns)
 
     // spot image to slopes:
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
-    err = _shwfs_spots2slopes( ffimage,
+      ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
+      err = _shwfs_spots2slopes( ffimage,
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                   wfs(ns)._nsub4disp, wfs(ns).npixels,
                   wfs(ns)._fimnx , fimny, yoffset,
