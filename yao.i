@@ -2720,7 +2720,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
   }
 
-  if (svd || forcemat){
+  if (svd || forcemat || need_new_iMat){
     // create the regularization matrices
     nDMs = numberof(dm);
     for (nm=1;nm<=nDMs;nm++){
