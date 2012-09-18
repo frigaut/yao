@@ -735,8 +735,7 @@ func do_imat(disp=)
   }
 
   // restore original values to WFS structure:
-  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig,
-                             bckgrdcalib_orig, bias_orig, flat_orig;
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig,darkcurrent_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -755,11 +754,12 @@ func do_imat(disp=)
 
 
 func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, &skyfluxpersub_orig, 
-                              &bckgrdcalib_orig,&bias_orig, &flat_orig)
+                              &bckgrdcalib_orig,&bias_orig, &flat_orig, &darkcurrent_orig)
 {
   extern wfs;
 
   noise_orig = cycle_orig = kconv_orig = array(0n,nwfs);
+  darkcurrent_orig = array(float,nwfs);
   skyfluxpersub_orig = bckgrdcalib_orig = bias_orig = flat_orig = array(pointer,nwfs);
 
   for (ns=1;ns<=nwfs;ns++) {
@@ -767,9 +767,12 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, &skyfluxper
     // Impose noise = rmsbias = rmsflat = 0 for interaction matrix measurements
     noise_orig(ns) = wfs(ns).noise;
     wfs(ns).noise = 0n;
-
+    
     cycle_orig(ns) = wfs(ns).nintegcycles;
     wfs(ns).nintegcycles = 1n;
+
+    darkcurrent_orig(ns) = wfs(ns).darkcurrent;
+    wfs(ns).darkcurrent = float(0.);
 
     if (*wfs(ns)._skyfluxpersub!=[]) {
       skyfluxpersub_orig(ns) = &(*wfs(ns)._skyfluxpersub);
@@ -796,13 +799,13 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, &skyfluxper
 
 func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
                                 skyfluxpersub_orig,bckgrdcalib_orig,
-                                bias_orig, flat_orig)
+                                bias_orig, flat_orig, darkcurrent_orig)
 {
   extern wfs;
   for (ns=1;ns<=nwfs;ns++) {
 
     wfs(ns).noise = noise_orig(ns);
-
+    wfs(ns).darkcurrent = darkcurrent_orig(ns);
     wfs(ns).nintegcycles = cycle_orig(ns);
 
     if (*wfs(ns)._skyfluxpersub!=[])                    \
@@ -2122,7 +2125,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
   store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-    skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig;
+    skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig,darkcurrent_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -2178,8 +2181,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   wfs.filtertilt = mem;
 
   // restore original values to WFS structure:
-  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-    skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig;
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig, darkcurrent_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
