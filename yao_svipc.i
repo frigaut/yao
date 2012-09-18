@@ -397,6 +397,7 @@ func svipc_start_forks(void)
       status = topwfs_listen();
       return;
     }
+    svipc_procname = ""; // unassign for parent
   }
 
   // PSFs child
@@ -415,6 +416,7 @@ func svipc_start_forks(void)
       status = psf_listen();
       return;
     }
+    svipc_procname = ""; // unassign for parent
   }
 
   // WFSs children
@@ -435,6 +437,7 @@ func svipc_start_forks(void)
         status = wfs_listen(nf,ns);
         // wfs_listen() will loop and not exit.
       }
+      svipc_procname = ""; // unassign for parent
     }
   }
 
@@ -635,7 +638,7 @@ func psf_listen(void)
       for (jt=1;jt<=target._ntarget;jt++) {
         cubphase(,,jt)  = getPhase2dFromDms(jt,"target") +    \
           getPhase2dFromOptics(jt,"target") +                 \
-          getTurbPhase(loopCounter,jt,"target");
+          get_turb_phase(loopCounter,jt,"target");
       }
       // compute image cube from phase cube
       err = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
@@ -763,7 +766,7 @@ func svipc_single_wfs(iter,ns)
   offsets = wfs(ns).gspos;
   phase   = getPhase2dFromDms(ns,"wfs");
   phase  += getPhase2dFromOptics(ns,"wfs");
-  phase  += getTurbPhase(iter,ns,"wfs");
+  phase  += get_turb_phase(iter,ns,"wfs");
 
   if (wfs(ns).correctUpTT) {
     phase = correctUpLinkTT(phase,ns);

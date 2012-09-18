@@ -4,12 +4,12 @@ local yao_setnsync;
    in an yao session, e.g., r0, wfs noise, wfs flux, etc...
    - Set the proper variables, and write in shared memory if need be.
    - Execute the needed action to effect the change (e.g. changing
-     the Cn2 profile will need to re-run getTurbPhaseInit() )
+     the Cn2 profile will need to re-run get_turb_phase_init() )
 
    Implement syncing of the child, when in svipc mode.
    - read the shared memory structure
    - Execute the needed action to effect the change (e.g. changing
-     the Cn2 profile will need to re-run getTurbPhaseInit() )
+     the Cn2 profile will need to re-run get_turb_phase_init() )
    SEE ALSO: yao, yao_svipc
 */
 
@@ -162,6 +162,13 @@ func set_noise(noise_flag)
     // broadcast message to children
     broadcast_sync,targets,"sync_noise";
   }
+  if (anyof(wfs.svipc)) {
+    // save the wfs structures
+    var = vsave(wfs);
+    // write in shm
+    shm_write,shmkey,"wfs_structs",&var;
+    status = sync_wfs_forks();
+  }
   // no action to take.
 }
 
@@ -198,7 +205,7 @@ func set_dr0(dr0)
     broadcast_sync,targets,"sync_dr0";
   }
   // action to take.
-  getTurbPhaseInit,skipReadPhaseScreens=1;
+  get_turb_phase_init,skipReadPhaseScreens=0;
 }
 
 func sync_dr0(void)
@@ -209,9 +216,10 @@ func sync_dr0(void)
     var = shm_read(shmkey,"atm_structs");
     restore,openb(var);
   }
-  write,format="D/r0 sync'ed on child %s\n",svipc_procname;
+  write,format="D/r0 sync'ed on child %s (D/r0=%.2f)\n",\
+    svipc_procname,atm.dr0at05mic;
   // action to take.
-  getTurbPhaseInit,skipReadPhaseScreens=1;  
+  get_turb_phase_init,skipReadPhaseScreens=0;
 }
 
 
@@ -240,7 +248,7 @@ func set_cn2(layerfrac)
     broadcast_sync,targets,"sync_cn2";
   }
   // action to take.
-  getTurbPhaseInit,skipReadPhaseScreens=1;
+  get_turb_phase_init,skipReadPhaseScreens=1;
 }
 
 func sync_cn2(void)
@@ -253,7 +261,7 @@ func sync_cn2(void)
   }
   write,format="Cn2 sync'ed on child %s\n",svipc_procname;
   // action to take.
-  getTurbPhaseInit,skipReadPhaseScreens=1;  
+  get_turb_phase_init,skipReadPhaseScreens=1;  
 }
 
 
@@ -333,7 +341,7 @@ func set_ngs_geometry(wfsxpos,wfsypos)
     // broadcast message to children
     broadcast_sync,targets,"sync_cn2";
   }
-  getTurbPhaseInit,skipReadPhaseScreens=1;
+  get_turb_phase_init,skipReadPhaseScreens=1;
 }
 
 func sync_ngs_geometry(void)
@@ -346,6 +354,6 @@ func sync_ngs_geometry(void)
   }
   write,format="NGS geometry sync'ed on child %s\n",svipc_procname;
   // no action to take.
-  getTurbPhaseInit,skipReadPhaseScreens=1;
+  get_turb_phase_init,skipReadPhaseScreens=1;
 }
 
