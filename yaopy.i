@@ -342,7 +342,7 @@ func change_seeing(seeing) {  //seeing at 550 (V band)
     r0at500 = (0.500e-6/seeing/4.848e-6)*(500./550.)^0.2;
     atm.dr0at05mic     = tel.diam/r0at500;
     // propagate to child if svipc:
-    set_dr0,atm.dr0at05mic;
+    if (set_dr0!=[]) set_dr0,atm.dr0at05mic;
   } else atm.dr0at05mic = 0.;
   if (initdone) get_turb_phase_init;
 }
