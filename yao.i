@@ -1891,8 +1891,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   }
 
-  if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+
-                       "forcemat=%d,svd=%d,keepdmconfig=%d\n",
+  if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+ \
+                       "forcemat=%d,svd=%d,keepdmconfig=%d\n", \
                        disp,clean,forcemat,svd,keepdmconfig;
 
   sphase = bphase = mircube = [];
@@ -3548,6 +3548,11 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
     }
   }
 
+  // special: re-init phase screens, as often we want to change the
+  // number of iterations without re-doing the full aoinit
+  // note: ok, but have to quit_forks() explicitely if using svipc.
+  if (loop.niter > dimsof(xposvec)(2)) get_turb_phase_init;
+
   // reset cyclecounters
   wfs._cyclecounter = wfs._cyclecounter*0 +1;
 
@@ -3696,7 +3701,8 @@ func go(nshot,all=)
 
   if (loopCounter==0) {
     // initialize timers
-    tic,2; starttime = _nowtime(2);
+    tic,2; 
+    starttime = _nowtime(2);
   }
 
   go_start:  now = tac(2);
@@ -3704,8 +3710,13 @@ func go(nshot,all=)
   loopCounter++;
   nshots--;
 
-  gui_progressbar_frac,float(loopCounter)/loop.niter;
-  gui_progressbar_text,swrite(format="%d out of %d iterations",loopCounter,loop.niter);
+  // update gui progress bar, but don't do it too often.
+  if (max_progressbar_update_freq==[]) max_progressbar_update_freq=5.; // in Hz
+  if (tac(3)>(1./max_progressbar_update_freq)) {
+    gui_progressbar_frac,float(loopCounter)/loop.niter;
+    gui_progressbar_text,swrite(format="%d out of %d iterations",loopCounter,loop.niter);
+    tic,3;
+  }
 
   comvec=[];
 
@@ -4052,6 +4063,12 @@ func go(nshot,all=)
       if (wfs(ns).type=="zernike") continue;
       if (wfs(ns)._cyclecounter == 1) {*wfs(ns)._dispimage = *wfs(ns)._fimage;}
     }
+  }
+
+  // testing display by external yorick process. Proof of concept.
+  if ((display_offline)&&(shm_init_done)) {
+    // nothing to do right now as we use variables shm_var'ed from
+    // sh_wfs + loopCounter already in shm
   }
 
   if (okdisp) {
