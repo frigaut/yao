@@ -311,8 +311,9 @@ struct dm_struct
                           // that is, dead actuators (index in valid numbering)
   pointer epegged;        // same for extrapolated actuators (index in extrap numbering)
   long    ncp;            // boolean. if set, the mirror is on the non-common path for MOAO type correction 
-  string  ncptype  ;     // whether to fit to a wfs or target to non-common path
-  long    ncpnumber;     // which target or wfs to fit to for non-common path
+  string  ncptype  ;      // whether to fit to a wfs or target to non-common path
+  long    ncpnumber;      // which target or wfs to fit to for non-common path
+  long    use_def_of;     // don't compute defs but use the one computed for dm# use_def_of
   
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]

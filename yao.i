@@ -2224,9 +2224,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if ( (fileExist(YAO_SAVEPATH+dm(n).iffile)) && (!is_set(clean)) ) {
 
       if (sim.verbose>=1) {
-        write,format="  >> Reading file %s\n",dm(n).iffile;
+        write,format=">> Reading file %s\n",dm(n).iffile;
       }
-      dm(n)._def = &(float(yao_fitsread(YAO_SAVEPATH+dm(n).iffile)));
+      if (dm(n).use_def_of) {
+        write,format="Replicating influence functions of DM%d\n",dm(n).use_def_of;
+        dm(n)._def = dm(dm(n).use_def_of)._def;
+      } else {
+        dm(n)._def = &(float(yao_fitsread(YAO_SAVEPATH+dm(n).iffile)));
+      }
       dm(n)._nact = dimsof(*(dm(n)._def))(4);
       if ( dm(n).type == "stackarray" ) {
         dm(n)._x = &(yao_fitsread(YAO_SAVEPATH+dm(n).iffile,hdu=1));
@@ -2240,7 +2245,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
       if ( (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) && (!is_set(clean)) ) {
         if (sim.verbose>=1) {
-          write,format="  >> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
+          write,format=">> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
         }
         dm(n)._edef = &(float(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile)));
         dm(n)._enact = dimsof(*(dm(n)._edef))(4);
@@ -2257,7 +2262,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else { // else compute the influence functions:
 
       if (sim.verbose>=1) {
-        write,format="  >> Computing Influence functions for mirror # %d\n",n;
+        write,format=">> Computing Influence functions for mirror # %d\n",n;
       }
 
       if (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) {// delete the extrapolated influence functions
@@ -2265,40 +2270,51 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
       if (disp) { plsys,1; animate,1; }
 
-      if (dm(n).type == "bimorph") {
-        make_curvature_dm, n, disp=disp,cobs=tel.cobs;
-      } else if (dm(n).type == "stackarray") {
-        if (dm(n).elt == 1) {
-          make_pzt_dm_elt, n, disp=disp;
-        } else {
-          make_pzt_dm, n, disp=disp;
-        }
-      } else if (dm(n).type == "zernike") {
-        make_zernike_dm, n, disp=disp;
-      } else if (dm(n).type == "dh") {
-        make_dh_dm, n, disp=disp;
-      } else if (dm(n).type == "kl") {
-        make_kl_dm, n, disp=disp;
-      } else if (dm(n).type == "tiptilt") {
-        make_tiptilt_dm, n, disp=disp;
-      } else if (dm(n).type == "segmented") {
-        make_segmented_dm, n, disp=disp;
-      } else if (dm(n).type == "aniso") {
-        make_aniso_dm, n, disp=disp;
+      if (dm(n).use_def_of) {
+
+        write,format="Replicating influence functions of DM%d\n",dm(n).use_def_of;
+        dm(n)._def = dm(dm(n).use_def_of)._def;
+        dm(n)._nact = dm(dm(n).use_def_of)._nact;
+
       } else {
-        // we're dealing with a user defined DM function:
-        // assign user_wfs to requested function/type:
-        cmd = swrite(format="user_dm = %s",dm(n).type);
-        include,[cmd],1;
-        user_dm, n;
+
+        if (dm(n).type == "bimorph") {
+          make_curvature_dm, n, disp=disp,cobs=tel.cobs;
+        } else if (dm(n).type == "stackarray") {
+          if (dm(n).elt == 1) {
+            make_pzt_dm_elt, n, disp=disp;
+          } else {
+            make_pzt_dm, n, disp=disp;
+          }
+        } else if (dm(n).type == "zernike") {
+          make_zernike_dm, n, disp=disp;
+        } else if (dm(n).type == "dh") {
+          make_dh_dm, n, disp=disp;
+        } else if (dm(n).type == "kl") {
+          make_kl_dm, n, disp=disp;
+        } else if (dm(n).type == "tiptilt") {
+          make_tiptilt_dm, n, disp=disp;
+        } else if (dm(n).type == "segmented") {
+          make_segmented_dm, n, disp=disp;
+        } else if (dm(n).type == "aniso") {
+          make_aniso_dm, n, disp=disp;
+        } else {
+          // we're dealing with a user defined DM function:
+          // assign user_wfs to requested function/type:
+          cmd = swrite(format="user_dm = %s",dm(n).type);
+          include,[cmd],1;
+          user_dm, n;
+        }
+      
       }
       if (disp) { plsys,1; animate,0; }
 
       // the IF are in microns/volt
       if (sim.verbose>=1) {
-        write,format="\n  >> Storing influence functions in %s...",dm(n).iffile;
+        write,format="\n>> Storing influence functions in %s...",dm(n).iffile;
       }
-      yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
+      if (dm(n).use_def_of) yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,[0.];
+      else yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
       if (sim.verbose>=1) write,"Done";
       if ( dm(n).type == "stackarray" ) {
         yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
@@ -2493,10 +2509,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           dm(nm)._def = &((*(dm(nm)._def))(,,ok));
 
           if (sim.verbose>=1) {
-            write,format="  DM #%d: # of valid actuators: %d. "+
+            write,format="DM #%d: # of valid actuators: %d. "+
               "(I got rid of %d actuators after iMat)\n",
               nm,numberof(ok),numberof(nok);
-            write,format="  >> valid I.F. stored in %s\n",dm(nm).iffile;
+            write,format=">> valid I.F. stored in %s\n",dm(nm).iffile;
           }
 
           // rewrite influence function file:
@@ -2633,7 +2649,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
 
-      if (sim.verbose>=1) {write,format=" >> Reading file %s\n\n",loop.modalgainfile;}
+      if (sim.verbose>=1) {write,format=">> Reading file %s\n\n",loop.modalgainfile;}
       modalgain = yao_fitsread(YAO_SAVEPATH+loop.modalgainfile);
 
     }
@@ -2660,7 +2676,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
-    if (sim.verbose>=1) {write,format="  >> Reading file %s\n",mat.file;}
+    if (sim.verbose>=1) {write,format=">> Reading file %s\n",mat.file;}
     if (mat.method != "mmse-sparse") {
       // read out mat file and stuff iMat and cMat:
       tmp = yao_fitsread(YAO_SAVEPATH+mat.file);
@@ -3366,7 +3382,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 }
 
 //---------------------------------------------------------------
-func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
+func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_reinit_wfs=)
 /* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    Prepare all arrays for the execution of the loop (function go()).
 
@@ -3380,6 +3396,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
                    might confuse the user if not turned off in normal operation
                    see animate() yorick function. ON by default.
    savephase     = set to save residual wavefront on first target as fits file
+   no_reinit_wfs = don't re-init wfs
    SEE ALSO: aoread, aoinit, go, restart
  */
 {
@@ -3539,12 +3556,14 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
     if (wfs(ns).type=="zernike") continue;
     if (wfs(ns).type=="dh") continue;
     wfs(ns)._dispimage = &(*wfs(ns)._fimage*0.0f);
-    if (wfs(ns).type == "hartmann") {
-      if (wfs(ns).disjointpup) {
-        shwfs_init,disjointpup(,,ns),ns,silent=1;
-      } else shwfs_init,ipupil,ns,silent=1;
-    } else if (wfs(ns).type == "curvature") {
-      curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
+    if (!no_reinit_wfs) {
+      if (wfs(ns).type == "hartmann") {
+        if (wfs(ns).disjointpup) {
+          shwfs_init,disjointpup(,,ns),ns,silent=1;
+        } else shwfs_init,ipupil,ns,silent=1;
+      } else if (wfs(ns).type == "curvature") {
+        curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
+      }
     }
   }
 
@@ -4131,7 +4150,7 @@ func go(nshot,all=)
     // Display residual wavefront
     plsys,5;
     pli, (pupil*residual_phase)(n1:n2,n1:n2);
-    mypltitle,"Residual wavefront on target #1",[0.,-0.0];
+    mypltitle,"Residual wavefront on target #1",[0.,-0.0],height=12;
 
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
     if (animFlag && (nshots!=0) && (loopCounter<loop.niter-disp) ) fma;
@@ -4355,7 +4374,7 @@ func after_loop(void)
 
   // End of loop calculations (fwhm, EE, Strehl):
   fairy  = findfwhm(airy,saveram=1);
-  e50airy= encircled_energy(airy,ee50);
+  if (!no_ee) e50airy= encircled_energy(airy,ee50); else e50airy=0.;
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
 
 
@@ -4365,7 +4384,7 @@ func after_loop(void)
   for (jl=1;jl<=target._nlambda;jl++) {
     for (jt=1;jt<=target._ntarget;jt++) {
       fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
-      encircled_energy,imav(,,jt,jl),tmp;
+      if (!no_ee) encircled_energy,imav(,,jt,jl),tmp; else tmp=0.;
       e50(jt,jl)  = tmp*psize(jl);
 
       write,format=
