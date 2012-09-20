@@ -291,6 +291,8 @@ func make_kl_dm(nm,&def,disp=)
    */
 {
   require,"yaokl.i";
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,swrite(format="Computing Influence Functions for DM#%d: KL",nm);
   dim   = dm(nm)._n2-dm(nm)._n1+1;
   //  nkllow = dm(nm).nklfiltered;
   nkllow = 1;
@@ -358,7 +360,7 @@ func make_zernike_dm(nm,&def,disp=)
    */
 {
   gui_progressbar_frac,0.;
-  gui_progressbar_text,"Computing Influence Functions";
+  gui_progressbar_text,swrite(format="Computing Influence Functions for DM#%d: Zernikes",nm);
   dim   = dm(nm)._n2-dm(nm)._n1+1;
   nzer  = dm(nm).nzer;
   minzer = dm(nm).minzer;
@@ -377,7 +379,7 @@ func make_zernike_dm(nm,&def,disp=)
   for (i=1;i<=(nzer-minzer+1);i++) {
     def(,,i) = zernike_ext(i+minzer-1);
     if (disp == 1) {fma; pli,def(,,i);}
-    gui_progressbar_frac,float(i)/nzer;
+    gui_progressbar_frac,float(i)/(nzer-minzer+1.);
   }
   if (sim.verbose>=1) {write,format="Number of zernike :%d\n",nzer;}
 
@@ -403,7 +405,7 @@ func make_dh_dm(nm,&def,disp=)
 {
 
   gui_progressbar_frac,0.;
-  gui_progressbar_text,"Computing Influence Functions for modal DM : disk harmonics";
+  gui_progressbar_text,swrite(format="Computing Influence Functions for DM#%d: disk harmonics",nm);
   dim   = dm(nm)._n2-dm(nm)._n1+1;
   cobs  = tel.cobs;
   ndh   = dm(nm).ndh; // create this variable in dm structure
