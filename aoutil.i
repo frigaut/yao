@@ -160,6 +160,8 @@ func create_yao_window(dpi)
       set_style, landscape, systems, legends, clegends;
     }
   }
+  plsys,1; limits,square=1;
+  plsys,2; limits,square=1;
 }
 
 
