@@ -1785,6 +1785,7 @@ func make_fieldstop(ns)
   subsize    = sim.pupildiam/wfs(ns).shnxsub(0);
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   sdim       = long(2^ceil(log(subsize)/log(2)+1));
+  if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
   fftpixsize = wfs(ns).pixsize/wfs(ns)._rebinfactor; // fft pixel size in arcsec
 
   // if field stop size has not been set, set it to the subap fov (which seems
