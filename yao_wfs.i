@@ -390,17 +390,26 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // 2004mar22: added a guard pixel for each subaperture for the display
   // 2009oct06: removed it, in the process of implementing the optical
   // coupling between subapertures
-  wfsnpix = wfs(ns).npixels;
+  if (npb==[]) npb=0;
+  wfsnpix = wfs(ns).npixels+npb;
+
+  write,format="nbigpixels = %d, wfsnpix = %d, npb=%d\n",\
+    nbigpixels,wfsnpix,npb;
 
   imistart = (istart-min(istart))/subsize*(wfsnpix);
   imjstart = (jstart-min(jstart))/subsize*(wfsnpix);
-  wfs(ns)._imistart = &(int(imistart));
-  wfs(ns)._imjstart = &(int(imjstart));
+  wfs(ns)._imistart = &(int(imistart+npb/2));
+  wfs(ns)._imjstart = &(int(imjstart+npb/2));
 
-  wfs(ns)._imistart2 = &(int(imistart+(nbigpixels-wfsnpix)/2));
-  wfs(ns)._imjstart2 = &(int(imjstart+(nbigpixels-wfsnpix)/2));
+  wfs(ns)._imistart2 = &(int(imistart+(nbigpixels-wfsnpix)/2)+npb/2);
+  wfs(ns)._imjstart2 = &(int(imjstart+(nbigpixels-wfsnpix)/2)+npb/2);
+  //~ wfs(ns)._imistart2 = &(int(imistart+npb/2));
+  //~ wfs(ns)._imjstart2 = &(int(imjstart+npb/2));
 
-  fimdim = long(nxsub*wfsnpix+(nbigpixels-wfsnpix));
+  *wfs(ns)._imistart;
+  *wfs(ns)._imistart2;
+
+  fimdim = long(nxsub*wfsnpix+(nbigpixels-wfsnpix)+npb);
   wfs(ns)._fimage = &(array(float,[2,fimdim,fimdim]));
   wfs(ns)._fimnx = int(fimdim);
   wfs(ns)._fimny = int(fimdim);
@@ -853,7 +862,6 @@ func sh_wfs(pupsh,phase,ns)
                  *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
                  wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
 
-
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
       sem_take,semkey,20+4*(ns-1)+1,count=wfs(ns).svipc-1;
@@ -863,6 +871,7 @@ func sh_wfs(pupsh,phase,ns)
     // spot image to slopes:
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
       ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
+      
       err = _shwfs_spots2slopes( ffimage,
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                   wfs(ns)._nsub4disp, wfs(ns).npixels,
