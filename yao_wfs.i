@@ -62,6 +62,35 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   }
   // see below for # of photons from sky
+  
+  //=============================================================
+  // LGS ELONGATION FROM DEFOCUS METHOD (NOT KERNEL CONVOLUTION)
+  //=============================================================
+  if (wfs(ns).gsalt == 0) {
+    wfs(ns).lgs_prof_amp = wfs(ns).lgs_prof_alt = &float([0.]);
+  } else {
+    if (wfs(ns).lgs_prof_amp==[]) {
+      // then the user probably want to use the kernel method
+      // but we need to pass some values to _shwfs_phase2spots()
+      wfs(ns).lgs_prof_amp = wfs(ns).lgs_prof_alt = &float([0.]);
+    }
+    // in check_parameters, we'll need to check:
+    // (a) if lgs_prof_amp and alt are set, gsdepth should not be !=0
+    // (b) check the type of lgs_prof_amp and alt (should be float)
+  }
+  if (numberof(*wfs(ns).lgs_prof_amp)>1) {
+    // ok, so according to my calculations, we have:
+    // a4[m] = D^2/(16*sqrt(3)) * 1/f
+    // a4[rd] = a4[m]*2*pi/lambda = D^2/(16*sqrt(3)) * 2*pi/lambda * 1/f
+    a4s = (tel.diam/2.)^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6 * 1./2./ *wfs(ns).lgs_prof_alt;
+    a4s = a4s-avg(a4s);
+    a4s;
+    wfs(ns)._lgs_defocuses = &span(-2,2,numberof(*wfs(ns).lgs_prof_amp));
+    wfs(ns)._lgs_defocuses = &(a4s);
+  } else wfs(ns)._lgs_defocuses = &float([0.]);
+  
+  
+  wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size)/(sim.pupildiam/2.))^2.); "\n\nFIXME FIXME DEFOCUS\n\n";
 
   //=============================================================
   // COMPUTE KERNEL TO CONVOLVE _SHWFS IMAGE FOR IMAT CALIBRATION
@@ -194,7 +223,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // compute other setup variables for _shwfs:
 
   //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDANT. USED FOR LGS ELONGATION
+  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
   //==========================================================================
 
   if (wfs(ns)._kernelconv != 0n) {
@@ -381,17 +410,19 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   wfs(ns)._binxy = nbigpixels;
 
-  // centroid reference vector, after final extraction of subimage:
-  centroidw = indgen(wfs(ns).npixels)-1.-(wfs(ns).npixels/2.-0.5);
-  // we might as well express it in arcsec:
-  centroidw = float(centroidw*actualPixelSize);
-  wfs(ns)._centroidw = &centroidw;
-
   // 2004mar22: added a guard pixel for each subaperture for the display
   // 2009oct06: removed it, in the process of implementing the optical
   // coupling between subapertures
   if (npb==[]) npb=0;
   wfsnpix = wfs(ns).npixels+npb;
+  wfs(ns).npixels2 = wfsnpix;
+
+  // centroid reference vector, after final extraction of subimage:
+  centroidw = indgen(wfs(ns).npixels2)-1.-(wfs(ns).npixels2/2.-0.5);
+  // we might as well express it in arcsec:
+  centroidw = float(centroidw*actualPixelSize);
+  wfs(ns)._centroidw = &centroidw;
+
 
   write,format="nbigpixels = %d, wfsnpix = %d, npb=%d\n",\
     nbigpixels,wfsnpix,npb;
@@ -401,8 +432,8 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns)._imistart = &(int(imistart+npb/2));
   wfs(ns)._imjstart = &(int(imjstart+npb/2));
 
-  wfs(ns)._imistart2 = &(int(imistart+(nbigpixels-wfsnpix)/2)+npb/2);
-  wfs(ns)._imjstart2 = &(int(imjstart+(nbigpixels-wfsnpix)/2)+npb/2);
+  wfs(ns)._imistart2 = &(int(imistart+(nbigpixels-wfsnpix)/2+npb/2));
+  wfs(ns)._imjstart2 = &(int(imjstart+(nbigpixels-wfsnpix)/2+npb/2));
   //~ wfs(ns)._imistart2 = &(int(imistart+npb/2));
   //~ wfs(ns)._imjstart2 = &(int(imjstart+npb/2));
 
@@ -594,7 +625,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     i = where(*wfs(ns)._validsubs)(1);
     x1 = (*wfs(ns)._imistart2)(i);
     y1 = (*wfs(ns)._imjstart2)(i);
-    l1 = wfs(ns).npixels;
+    l1 = wfs(ns).npixels2;
     plg,_(y1,y1,y1+l1,y1+l1,y1),_(x1,x1+l1,x1+l1,x1,x1),color="green",width=3;
     // then fisplay the whole subaperture field of view
     x1 = (*wfs(ns)._imistart)(i);
@@ -844,6 +875,10 @@ func sh_wfs(pupsh,phase,ns)
     }
 
     // C function calls
+    if (dyn_range_correct==[]) dyn_range_correct=1;
+    tmp = float(indices(subsize));
+    wfs(ns)._unittip = &(tmp(,,1)*dyn_range_correct);
+    wfs(ns)._unittilt = &(tmp(,,2)*dyn_range_correct);
 
     // phase to spot image (returned in ffimage)
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
@@ -853,7 +888,10 @@ func sh_wfs(pupsh,phase,ns)
                  *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
                  *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
                  *wfs(ns)._binindices, wfs(ns)._binxy,
-                 wfs(ns)._rebinfactor, ffimage, *wfs(ns)._svipc_subok,
+                 wfs(ns)._rebinfactor, int(npb), *wfs(ns)._unittip, 
+                 *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
+                 *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
+                 *wfs(ns)._unitdefocus, ffimage, *wfs(ns)._svipc_subok,
                  *wfs(ns)._imistart, *wfs(ns)._imjstart,
                  wfs(ns)._fimnx , wfs(ns)._fimny,
                  *wfs(ns)._fluxpersub, *wfs(ns)._raylfluxpersub,
@@ -871,10 +909,10 @@ func sh_wfs(pupsh,phase,ns)
     // spot image to slopes:
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
       ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
-      
+
       err = _shwfs_spots2slopes( ffimage,
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
-                  wfs(ns)._nsub4disp, wfs(ns).npixels,
+                  wfs(ns)._nsub4disp, wfs(ns).npixels2,
                   wfs(ns)._fimnx , fimny, yoffset,
                   *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
                   *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise,

@@ -178,6 +178,7 @@ struct wfs_struct
                           // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
   float   pixsize;        // Subaperture pixel size in arcsec. Required [none]
   int     npixels;        // Final # of pixels in subaperture. Required [none]
+  int     npixels2;       // Final # of pixels in subaperture. Required [none]
   float   pupoffset(2);   // offset of the whole wfs subs w.r.t telescope aperture [meter]
                           // allow misregistration w.r.t tel pupil and funky configurations
   long    shthmethod;     // 1: yao default, 2: podium, 3: brightest pixels. Required [1]
@@ -198,6 +199,8 @@ struct wfs_struct
   long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and
                           // filtertilt must be set). Optional [0]
   int     rayleighflag;   // set to one to take rayleigh into account
+  pointer lgs_prof_amp;   // vector of lgs profile (intensity, Arbitrary, renormlaized later using laserpower), same # as lgs_prof_alt
+  pointer lgs_prof_alt;   // vector of lgs profile (altitudes in m), same # as lgs_prof_amp
 
   // zernike wfs only
   int     nzer;           // # of zernike sensed
@@ -251,6 +254,10 @@ struct wfs_struct
   pointer _imjstart;      //
   pointer _imistart2;     //
   pointer _imjstart2;     //
+  pointer _unittip;       // unit tip array (1,2,3,...) for enlarging dynamical range
+  pointer _unittilt;      // same for tilt
+  pointer _lgs_defocuses; // vector of defocus values (in rd) corresponding to lgs_profile_alt
+  pointer _unitdefocus;   // as it says. float. dimsof [2,sim._size,sim._size]
   int     _fimnx;         // x dim of wfs._fimage
   int     _fimny;         // y dim of wfs._fimage
   pointer _fimny2;        // y dim of (possibly split) wfs._fimage for _shwfs_spots2slopes (svipc)

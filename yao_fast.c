@@ -410,7 +410,13 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
                        int   binxy,         // side size of binned subaperture image,
                                             // (simage rebinnned)
                        int   rebinfactor,   // rebin factor from small to big pixels
-           
+                       int   npb,           // n pixel band (added to enlarge field, part of dynamical range work)
+                       float *unittip,      // nx*ny array with unit tip (1,2,3..)
+                       float *unittilt,     // nx*ny array with unit tilt
+                       float *lgs_prof_amp, // vector of lgs profile amplitudes
+                       float *lgs_defocuses,// vector of lgs profile altitudes
+                       int   n_in_profile,  // dimension of lgs_prof_amp and lgs_prof_alt
+                       float *unit_defocus,  // as it says, same dimsof as phase
                        float *fimage,       // final image with spots
                        int   *svipc_subok,  // to skip (0) subap for svipc partial spot comput.
                        int   *imistart,     // vector of i starts of each image
@@ -444,13 +450,16 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   fftwf_plan    p,p1;
   float         tot, totrayleigh, krp, kip, sky;
   float         corfact;
-  //~ float         totdark;
   long          log2nr, log2nc, n, ns, nb;
-  int           i,j,k,l,koff;
-  // int           integrate;
-  // int           vsc; // vsc = valid sub counter
+  int           i,j,k,l,koff,kk,nalt;
+  float         dx,dxp,dy,dyp;
+  float         lgsdef,lgsamp;
+  int           idxp,idyp,ndx,ndy;
+  int           dynrange;
 
-  
+  // enlarge dynamical range?
+  if (npb==0) dynrange=0; else dynrange=1;
+
   /*
     Global setup for FFTs:
   */
@@ -550,147 +559,223 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   p  = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_FORWARD, FFTW_ESTIMATE);
   p1 = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-  // vsc = 0;
-  for ( l=0 ; l<nsubs ; l++ ) {
-
-    if (svipc_subok[l]==0) continue;
+  for (nalt=0;nalt<n_in_profile;nalt++) {
     
-    // reset A and result
-    ptr = (void *)A;
-    for ( i=0; i<n ; i++ ) {  
-      *(ptr)   = 0.0f; *(ptr+1) = 0.0f; ptr +=2;
-    }
-    ptr = (void *)result;
-    for ( i=0; i<n ; i++ ) {  
-      *(ptr)   = 0.0f; *(ptr+1) = 0.0f; ptr +=2;
-    }
-
-    koff = istart[l] + jstart[l]*dimx;
-
-    ptr = (void *)A;
-    for ( j=0; j<ny ; j++ ) {
-      for ( i=0; i<nx ; i++ ) {
-
-        k = koff + i + j*dimx;
-        *(ptr + 2*(i+j*ns))   = pupil[k] * cos( phasescale*(phase[k] + phaseoffset[k]) );
-        *(ptr + 2*(i+j*ns)+1) = pupil[k] * sin( phasescale*(phase[k] + phaseoffset[k]) );
-      }
-    }
-
-    // Carry out a Forward 2d FFT transform, check for errors.
-    fftwf_execute(p); /* repeat as needed */
-
-    ptr = (void *)result;
-    for ( i = 0; i < n; i++ ) {
-      simage[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
-      ptr +=2;
-    }
-
-    if (kernconv == 1) {
-      // Transform simage
+    lgsdef = lgs_defocuses[nalt];
+    if (n_in_profile==1) lgsamp=1.0f; else lgsamp = lgs_prof_amp[nalt];
+  
+    // vsc = 0;
+    for ( l=0 ; l<nsubs ; l++ ) {
+  
+      if (svipc_subok[l]==0) continue;
+      
+      // reset A and result
       ptr = (void *)A;
-      for ( i = 0; i < n; i++ ) {
-        *(ptr)   = simage[i]; 
-        *(ptr+1) = 0.0f;
-        ptr +=2;
+      for ( i=0; i<n ; i++ ) {  
+        *(ptr)   = 0.0f; *(ptr+1) = 0.0f; ptr +=2;
       }
-      fftwf_execute(p); /* repeat as needed */
-
-      // multiply by kernel transform:
-      ptr  = (void *)K;
-      ptr1 = (void *)A;
-      ptr2 = (void *)result;
-      for ( i = 0; i < n; i++ ) {
-        // this is FFT(kernel) * FFT(kernels)
-        krp = *(ptr)*kerfftr[i+l*n]- *(ptr+1)*kerffti[i+l*n];
-        kip = *(ptr)*kerffti[i+l*n]+ *(ptr+1)*kerfftr[i+l*n];
-        // and next we multiply by FFT(image):
-        *(ptr1)   = *(ptr2)*krp   - *(ptr2+1)*kip;
-        *(ptr1+1) = *(ptr2+1)*krp + *(ptr2)*kip;
-        ptr +=2; ptr1 +=2; ptr2 +=2;
-      }
-      // Transform back:
-      fftwf_execute(p1); /* repeat as needed */
-
       ptr = (void *)result;
-      for ( i = 0; i < n; i++ ) {
-        simage[i] = ( *(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
-        ptr +=2;
+      for ( i=0; i<n ; i++ ) {  
+        *(ptr)   = 0.0f; *(ptr+1) = 0.0f; ptr +=2;
       }
-    }
-
-    // FLUX NORMALIZATION FOR STAR. Has to be done *before* applying fieldstop
-    // will be used a bit below
-    tot = 0.0f;
-    for ( i = 0; i < n; i++ ) { tot += simage[i]; }
-
-    // APPLY FIELD STOP / AMPLITUDE MASK
-    // For instance to take into account the central dark spot of STRAP,
-    // or more generally a field stop
-    if (domask == 1) {
-      for ( i = 0; i < n; i++ ) {
-        simage[i] = simage[i] * submask[i];
+  
+      koff = istart[l] + jstart[l]*dimx;
+  
+        
+      // START section to allow larger dynamical range by
+      // subtracting a tilt to the phase and moving later on
+      // the image in the big image
+      // (declarations on top of function)
+      if (dynrange) {
+        // compute approximate average slope over the subaperture
+        // it doesn't matter if this is not the exact value
+        // as it only serves to determine if we should offset,
+        // but the end result should be the same (aliasing will change
+        // a bit). And this should not be far from the true value anyway
+        // by the theorem of the circulation (average gradient in X
+        // is the difference of the average phase between the 2 edges)  
+        // no that doesn't work for subapertures at the edge!
+        // we'll have to do the whole average gradient calculation
+        dx = 0.0f; dy = 0.0f;
+        ndx = 0; ndy = 0;
+        for ( j=0; j<(ny-1); j++ ) {
+          for ( i=0; i<(nx-1) ; i++ ) {
+            k = koff + i + j*dimx;
+            if (pupil[k]&&pupil[k+1]) {
+              dx += (phase[k+1]+lgsdef*unit_defocus[k+1]-phase[k]-lgsdef*unit_defocus[k]);
+              ndx++;
+            }
+            if (pupil[k]&&pupil[k+dimx]) {
+              dy += (phase[k+dimx]+lgsdef*unit_defocus[k+dimx]-phase[k]-lgsdef*unit_defocus[k]);
+              ndy++;
+            }
+          }
+        }
+        if (ndx) dx = phasescale*dx/(float)(ndx);
+        if (ndy) dy = phasescale*dy/(float)(ndy);
+        // now we need to transform this average phase gradient into
+        // pixel motion.
+        // So how many small pixels we expect the spot to move?
+        // if dx = 2*pi, the spot will wrap all the way back to center,
+        // i.e. will move by ns pixels, and by ns/rebinfactor big pixels.
+        // Hence the motion in big pixel is:
+        dxp = dx*(float)(ns)/2./3.1415926536/(float)(rebinfactor);
+        dyp = dy*(float)(ns)/2./3.1415926536/(float)(rebinfactor);
+        // round to the nearest big pixel: 
+        idxp = lroundf(dxp);
+        idyp = lroundf(dyp);
+        if (idxp!=0) dx = dx * (float)(idxp)/dxp; else dx=0.0f;
+        if (idyp!=0) dy = dy * (float)(idyp)/dyp; else dy=0.0f;
+        //~ if ((idxp!=0)||(idyp!=0)) printf("idxp = %d, idyp = %d, dx=%f, dy=%f\n",idxp,idyp,dx,dy);
+        if (idxp<(-npb)) idxp=-npb;
+        if (idxp>npb) idxp=npb;
+        if (idyp<(-npb)) idyp=-npb;
+        if (idyp>npb) idyp=npb;
+      } else {
+        dx = 0.0f; dy = 0.0f; 
+        idxp = 0; idyp = 0;
       }
-    }
-
-    // IF BACKGROUND CALIBRATION, NULL STAR SIGNAL
-    if (bckgrdinit) {
-      for ( i = 0; i < n; i++ ) { simage[i] = 0.0f; }
-    }
-
-    // PUT THIS SUBAPERTURE'S SIMAGE INTO BIMAGE (binned image)
-    for ( i = 0; i < nb; i++ ) { bimage[i] = 0.0f; }
-
-    for ( i = 0; i < n; i++ ) {
-      if (binindices[i] >= 0) {
-        bimage[binindices[i]] += simage[i];
-      }
-    }
-
-    // NORMALIZE FLUX FOR STAR
-    if (tot > 0.0f) {
-      tot = flux[l]/tot;
-      for ( i = 0; i < nb; i++ ) { bimage[i] = bimage[i]*tot; }
-    }
-
-    // COMPUTE RAYLEIGH BACKGROUND
-    // I have to do this after the convolution because otherwise there is a lot
-    // of wrapping/ringing. I could do it once the image is binned. Saved for future
-    // upgrade (will save a bit of time).
-    for ( i = 0; i < nb; i++ ) { brayleigh[i] = 0.0f; }
-    if (rayleighflag == 1) {
-      for ( i = 0; i < n; i++ ) {
-        if (binindices[i] >= 0) {
-          brayleigh[binindices[i]] += rayleigh[i+l*n];
+      // END section to allow larger dynamical range
+      // (more below to add to phase and to shift imagelets)
+  
+      ptr = (void *)A;
+      if (dynrange) {
+        for ( j=0; j<ny ; j++ ) {
+          for ( i=0; i<nx ; i++ ) {
+            k = koff + i + j*dimx;
+            kk = i + j*nx;
+            *(ptr + 2*(i+j*ns))   = pupil[k] * cos( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]) - dx*unittip[kk] - dy*unittilt[kk]);
+            *(ptr + 2*(i+j*ns)+1) = pupil[k] * sin( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]) - dx*unittip[kk] - dy*unittilt[kk]);
+          }
+        }
+      } else {
+        for ( j=0; j<ny ; j++ ) {
+          for ( i=0; i<nx ; i++ ) {
+            k = koff + i + j*dimx;
+            *(ptr + 2*(i+j*ns))   = pupil[k] * cos( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]));
+            *(ptr + 2*(i+j*ns)+1) = pupil[k] * sin( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]));
+          }
         }
       }
-      // NORMALIZE FLUX FOR RAYLEIGH
-      totrayleigh = 0.0f;
-      for ( i = 0; i < nb; i++ ) { totrayleigh += brayleigh[i]; }
-
-      if (totrayleigh > 0.0f) {
-        totrayleigh = rayleighflux[l]/totrayleigh;
-        for ( i = 0; i < nb; i++ ) { brayleigh[i] = brayleigh[i]*totrayleigh; }
+  
+      // Carry out a Forward 2d FFT transform, check for errors.
+      fftwf_execute(p); /* repeat as needed */
+  
+      ptr = (void *)result;
+      for ( i = 0; i < n; i++ ) {
+        simage[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
+        ptr +=2;
       }
-    }
-
-    // NORMALIZE FLUX FOR SKY
-    //    sky = skyflux[l] / (float)(nb);  // sky per rebinned pixel, e-/frame
-    sky = skyflux[l];  // sky per rebinned pixel, e-/frame
-
-    for ( i = 0; i < nb; i++ ) { 
-      //~ bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
-      bimage[i] += ( sky + brayleigh[i] ) * bsubmask[i]; 
-    }
-
-    // put image where it belongs in large image
-    koff = imistart[l] + imjstart[l]*fimnx;
-
-    for ( j=0 ; j<binxy ;j++) {
-      for ( i=0 ; i<binxy ;i++) {
-        k = koff + i + j*fimnx;
-        //        fimage[k] += bimage[i+j*binxy];
-        *(fimage+k) += bimage[i+j*binxy];
+  
+      if (kernconv == 1) {
+        // Transform simage
+        ptr = (void *)A;
+        for ( i = 0; i < n; i++ ) {
+          *(ptr)   = simage[i]; 
+          *(ptr+1) = 0.0f;
+          ptr +=2;
+        }
+        fftwf_execute(p); /* repeat as needed */
+  
+        // multiply by kernel transform:
+        ptr  = (void *)K;
+        ptr1 = (void *)A;
+        ptr2 = (void *)result;
+        for ( i = 0; i < n; i++ ) {
+          // this is FFT(kernel) * FFT(kernels)
+          krp = *(ptr)*kerfftr[i+l*n]- *(ptr+1)*kerffti[i+l*n];
+          kip = *(ptr)*kerffti[i+l*n]+ *(ptr+1)*kerfftr[i+l*n];
+          // and next we multiply by FFT(image):
+          *(ptr1)   = *(ptr2)*krp   - *(ptr2+1)*kip;
+          *(ptr1+1) = *(ptr2+1)*krp + *(ptr2)*kip;
+          ptr +=2; ptr1 +=2; ptr2 +=2;
+        }
+        // Transform back:
+        fftwf_execute(p1); /* repeat as needed */
+  
+        ptr = (void *)result;
+        for ( i = 0; i < n; i++ ) {
+          simage[i] = ( *(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
+          ptr +=2;
+        }
+      }
+  
+      // FLUX NORMALIZATION FOR STAR. Has to be done *before* applying fieldstop
+      // will be used a bit below
+      // LGS FIXME FIXME FIXME: flux totally screwed up w/ new lgs_prof_amp!
+      tot = 0.0f;
+      for ( i = 0; i < n; i++ ) { tot += simage[i]; }
+  
+      // APPLY FIELD STOP / AMPLITUDE MASK
+      // For instance to take into account the central dark spot of STRAP,
+      // or more generally a field stop
+      if (domask == 1) {
+        for ( i = 0; i < n; i++ ) {
+          simage[i] = simage[i] * submask[i];
+        }
+      }
+  
+      // IF BACKGROUND CALIBRATION, NULL STAR SIGNAL
+      if (bckgrdinit) {
+        for ( i = 0; i < n; i++ ) { simage[i] = 0.0f; }
+      }
+  
+      // PUT THIS SUBAPERTURE'S SIMAGE INTO BIMAGE (binned image)
+      for ( i = 0; i < nb; i++ ) { bimage[i] = 0.0f; }
+  
+      for ( i = 0; i < n; i++ ) {
+        if (binindices[i] >= 0) {
+          bimage[binindices[i]] += simage[i];
+        }
+      }
+  
+      // NORMALIZE FLUX FOR STAR
+      if (tot > 0.0f) {
+        tot = flux[l]/tot;
+        for ( i = 0; i < nb; i++ ) { bimage[i] = bimage[i]*tot; }
+      }
+  
+      // COMPUTE RAYLEIGH BACKGROUND
+      // I have to do this after the convolution because otherwise there is a lot
+      // of wrapping/ringing. I could do it once the image is binned. Saved for future
+      // upgrade (will save a bit of time).
+      for ( i = 0; i < nb; i++ ) { brayleigh[i] = 0.0f; }
+      if (rayleighflag == 1) {
+        for ( i = 0; i < n; i++ ) {
+          if (binindices[i] >= 0) {
+            brayleigh[binindices[i]] += rayleigh[i+l*n];
+          }
+        }
+        // NORMALIZE FLUX FOR RAYLEIGH
+        totrayleigh = 0.0f;
+        for ( i = 0; i < nb; i++ ) { totrayleigh += brayleigh[i]; }
+  
+        if (totrayleigh > 0.0f) {
+          totrayleigh = rayleighflux[l]/totrayleigh;
+          for ( i = 0; i < nb; i++ ) { brayleigh[i] = brayleigh[i]*totrayleigh; }
+        }
+      }
+  
+      // NORMALIZE FLUX FOR SKY
+      //    sky = skyflux[l] / (float)(nb);  // sky per rebinned pixel, e-/frame
+      sky = skyflux[l];  // sky per rebinned pixel, e-/frame
+  
+      for ( i = 0; i < nb; i++ ) { 
+        //~ bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
+        bimage[i] += ( sky + brayleigh[i] ) * bsubmask[i]; 
+      }
+  
+      // put image where it belongs in large image
+      // (idp to allow larger dynamical range, see above)
+      koff = imistart[l]+idxp + (imjstart[l]+idyp)*fimnx;
+  
+      for ( j=0 ; j<binxy ;j++) {
+        for ( i=0 ; i<binxy ;i++) {
+          k = koff + i + j*fimnx;
+          //        fimage[k] += bimage[i+j*binxy];
+          // LGS FIXME FIXME FIXME: flux totally screwed up w/ new lgs_prof_amp!
+          *(fimage+k) += lgsamp*bimage[i+j*binxy];
+        }
       }
     }
   }

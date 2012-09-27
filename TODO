@@ -1,3 +1,10 @@
+dynamical range increase and lgs elongation plan B, 2012sep27:
+Not finished, to do:
+- fix normalization of wfs._lgs_defocuses
+- fix amplitude normalization
+- fix field stop. right now not shifted properly following shift of image
+
+
 To do, 5/8/2011:
 - LLTxy in mcao_rayleigh
 - solve issue with GMT pupil and LLT location (both elongation and fratricide)
