@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012sept06";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012sept28";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1812,7 +1812,7 @@ func aoread(parfile)
   atm  = atm_struct();
   opts = opt_struct();
   sim  = sim_struct();
-  wfss = wfs_struct(_bckgrdsub=1);
+  wfss = wfs_struct(dispzoom=1,_bckgrdsub=1);
   dms  = dm_struct();
   mat  = mat_struct();
   tel  = tel_struct();

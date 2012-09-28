@@ -462,7 +462,7 @@ func check_parameters(void)
       exit,swrite(format="wfs(%d).lambda has not been set",ns);
     }
 
-    if (wfs(ns).dispzoom == 0) {wfs(ns).dispzoom = 1;}
+    //~ if (wfs(ns).dispzoom == 0) {wfs(ns).dispzoom = 1;}
 
     if ((wfs(ns).type == "curvature") && ((*wfs(ns).nsubperring) == [])) {
       write,format="wfs(%d).nsubperring has not been set.\n",ns;
@@ -867,15 +867,16 @@ func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
     }
     if ((zoom != []) && (numberof(zoom) != nim)) {zoom = array(zoom,nim);}
     if (zoom == []) {zoom = array(1.,nim);}
-    xd = abs(xpos-xpos(-,));
-    yd = abs(ypos-ypos(-,));
+    w  = where(zoom!=0);
+    xd = abs(xpos(w)-xpos(-,w));
+    yd = abs(ypos(w)-ypos(-,w));
     di = sqrt(xd^2.+yd^2.);
     di = di+unit(nim)*max(di);
-    basezoom = (1.+0.9*min(di)/2.)*zoom;
+    basezoom = (1.+0.9*min(di(w))/2.)*zoom;
     basezoomptr(area) = &basezoom;
     if (!is_set(nolimits)) {
-      limits,min(xpos-basezoom),max(xpos+basezoom),
-        min(ypos-basezoom),max(ypos+basezoom),square=1;
+      limits,min(xpos(w)-basezoom),max(xpos(w)+basezoom),
+        min(ypos(w)-basezoom),max(ypos(w)+basezoom),square=1;
     }
     if (earlyExit) return;
   }
@@ -885,12 +886,14 @@ func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
   if ( cas=="ptr") {
     if (!is_set(power)) {
       for (i=1;i<=nim;i++) {
+        if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(*ar(1))(2));
         pli,*ar(i),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
       }
     } else {
       for (i=1;i<=nim;i++) {
+        if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(*ar(1))(2));
         pli,*ar(i)^power,xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
@@ -899,12 +902,14 @@ func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
   } else {
     if (!is_set(power)) {
       for (i=1;i<=nim;i++) {
+        if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(ar(,,1))(2));
         pli,ar(,,i),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
       }
     } else {
       for (i=1;i<=nim;i++) {
+        if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(ar(,,1))(2));
         pli,ar(,,i)^power,xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;

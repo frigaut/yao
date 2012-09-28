@@ -78,19 +78,12 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     // (a) if lgs_prof_amp and alt are set, gsdepth should not be !=0
     // (b) check the type of lgs_prof_amp and alt (should be float)
   }
-  if (numberof(*wfs(ns).lgs_prof_amp)>1) {
-    // ok, so according to my calculations, we have:
-    // a4[m] = D^2/(16*sqrt(3)) * 1/f
-    // a4[rd] = a4[m]*2*pi/lambda = D^2/(16*sqrt(3)) * 2*pi/lambda * 1/f
-    a4s = (tel.diam/2.)^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6 * 1./2./ *wfs(ns).lgs_prof_alt;
-    a4s = a4s-avg(a4s);
-    a4s;
-    wfs(ns)._lgs_defocuses = &span(-2,2,numberof(*wfs(ns).lgs_prof_amp));
-    wfs(ns)._lgs_defocuses = &(a4s);
-  } else wfs(ns)._lgs_defocuses = &float([0.]);
-  
-  
-  wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size)/(sim.pupildiam/2.))^2.); "\n\nFIXME FIXME DEFOCUS\n\n";
+  // compute wfs._lgs_defocuses from wfs.lgs_prof_alt:
+  shwfs_comp_lgs_defocuses,ns;
+    
+  xyc = sim._cent;
+  xyc += wfs(ns).LLTxy*sim.pupildiam/tel.diam;
+  wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size,xc=xyc(1),yc=xyc(2))/(sim.pupildiam/2.))^2.);
 
   //=============================================================
   // COMPUTE KERNEL TO CONVOLVE _SHWFS IMAGE FOR IMAT CALIBRATION
@@ -290,7 +283,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   }
 
   //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDANT. USED FOR LGS ELONGATION
+  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
   //==========================================================================
 
   rayleighflux = array(0.0f,wfs(ns)._nsub4disp);
@@ -434,11 +427,6 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   wfs(ns)._imistart2 = &(int(imistart+(nbigpixels-wfsnpix)/2+npb/2));
   wfs(ns)._imjstart2 = &(int(imjstart+(nbigpixels-wfsnpix)/2+npb/2));
-  //~ wfs(ns)._imistart2 = &(int(imistart+npb/2));
-  //~ wfs(ns)._imjstart2 = &(int(imjstart+npb/2));
-
-  *wfs(ns)._imistart;
-  *wfs(ns)._imistart2;
 
   fimdim = long(nxsub*wfsnpix+(nbigpixels-wfsnpix)+npb);
   wfs(ns)._fimage = &(array(float,[2,fimdim,fimdim]));
@@ -1652,6 +1640,31 @@ func mult_wfs(iter,disp=)
   }
   return mes;
 }
+
+
+//----------------------------------------------------
+
+func shwfs_comp_lgs_defocuses(ns)
+{
+  extern wfs;
+  // This routine computes the defocus coefficients wfs._lgs_defocuses
+  // from the wfs.lgs_prof_alt vector.
+  // ok, so according to my calculations, we have:
+  // a4[m] = D^2/(16*sqrt(3)) * 1/RoC
+  // a4[rd] = a4[m]*2*pi/lambda = D^2/(16*sqrt(3)) * 2*pi/lambda * 1/RoC
+  // and f = RoC/2
+  if ((*wfs(ns).lgs_prof_alt==[])||(allof(*wfs(ns).lgs_prof_alt==0.))) {
+    if (sim.verbose>0) \
+      write,format="shwfs_comp_lgs_defocuses: wfs(%d).lgs_prof_alt undefined\n",ns;
+    wfs(ns)._lgs_defocuses = &float([0.]);
+    return;
+  }
+  tmp = (tel.diam/2.)^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6;
+  a4s = tmp * 1./2./ *wfs(ns).lgs_prof_alt;
+  a4cur = tmp * 1./2./ wfs(ns).lgs_focus_alt;
+  a4s = a4s-a4cur;
+  wfs(ns)._lgs_defocuses = &float(a4s);
+}  
 
 //----------------------------------------------------
 
