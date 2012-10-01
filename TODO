@@ -1,3 +1,19 @@
+- is there a bug in the fact that the disk harmonic are not defined
+on a support larger than the pupil (for shmethod=1, don't we need
+one more pixel outside of pupil?) ??? same for KL.
+
+BUG: 
+> dm(1).type="zernike"
+> dm(1).nzer=50
+> dm(1).alt = 1000
+> aoinit,disp=1,clean=1
+Checking parameters ... 
+Check parameters: OK
+nbigpixels = 16, wfsnpix = 18, npb=2
+*** glibc detected *** /usr/lib/yorick/2.2/bin/yorick: malloc(): memory corruption: 0x0000000001f6cc70 ***
+
+
+
 dynamical range increase and lgs elongation plan B, 2012sep27:
 Not finished, to do:
 - fix normalization of wfs._lgs_defocuses

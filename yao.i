@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.2";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012sept28";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.3";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct01";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -253,6 +253,13 @@ clean_progressbar = gui_show_statusbar1 = gui_hide_statusbar1 = pyk_flush = null
 YAO_SAVEPATH = get_cwd();
 
 //----------------------------------------------------
+func comp_dm_shape_init(nm)
+{
+  extern wpupil;
+  if (numberof(wpupil)!=ndm) wpupil = array(pointer,ndm);
+  wpupil(nm) = &long(where((abs(*dm(nm)._def))(,,sum)));
+}
+
 func comp_dm_shape(nm,command,extrap=)
 /* DOCUMENT comp_dm_shape(nm,command,extrap=)
    Fast compute of DM #nm shape from a command vector.
@@ -266,6 +273,8 @@ func comp_dm_shape(nm,command,extrap=)
    SEE ALSO:
 */
 {
+  if (dmsum_use_new&&(wpupil==[])) for (i=1;i<=ndm;i++) comp_dm_shape_init,i;
+  
   if (typeof(*command)!="float") error,"command is not float";
 
   n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = int(n2-n1+1);
@@ -283,7 +292,9 @@ func comp_dm_shape(nm,command,extrap=)
       _dmsumelt, dm(nm)._def, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._nact),
         dm(nm)._i1, dm(nm)._j1, command, &sphase,nxy,nxy;
     } else { // use standard
-      _dmsum, dm(nm)._def, nxy, nxy, dm(nm)._nact, command, &sphase;
+      if (dmsum_use_new) _dmsum2, dm(nm)._def, wpupil(nm), \
+        numberof(*wpupil(nm)), dm(nm)._nact, command, &sphase, numberof(sphase);
+      else _dmsum, dm(nm)._def, nxy, nxy, dm(nm)._nact, command, &sphase;
     }
 
   } else { // extrapolated actuators
@@ -299,7 +310,9 @@ func comp_dm_shape(nm,command,extrap=)
       _dmsumelt, dm(nm)._edef, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._enact),
         dm(nm)._ei1, dm(nm)._ej1, command, &sphase,nxy,nxy;
     } else { // use standard
-      _dmsum, dm(nm)._edef, nxy, nxy, dm(nm)._enact, command, &sphase;
+      if (dmsum_use_new) _dmsum2, dm(nm)._edef, wpupil(nm), \
+        numberof(*wpupil(nm)), dm(nm)._enact, command, &sphase, numberof(sphase);
+      else _dmsum, dm(nm)._edef, nxy, nxy, dm(nm)._enact, command, &sphase;
     }
 
   }

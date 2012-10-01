@@ -178,7 +178,8 @@ struct wfs_struct
                           // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
   float   pixsize;        // Subaperture pixel size in arcsec. Required [none]
   int     npixels;        // Final # of pixels in subaperture. Required [none]
-  int     npixels2;       // Final # of pixels in subaperture. Required [none]
+  float   extfield;       // Extended field of view (to enlarge dynamical range) [arcsec]
+                          // will be rounded of to nearest possible value.
   float   pupoffset(2);   // offset of the whole wfs subs w.r.t telescope aperture [meter]
                           // allow misregistration w.r.t tel pupil and funky configurations
   long    shthmethod;     // 1: yao default, 2: podium, 3: brightest pixels. Required [1]
@@ -244,6 +245,8 @@ struct wfs_struct
   pointer _tiltrefv;      // internal: tilt reference meas. vector
   pointer _tiprefvn;      // internal: tip reference meas. vector. normalized (norm=1)
   pointer _tiltrefvn;     // internal: tilt reference meas. vector. normalized.
+  int     _npixels;      // internal: final # of pixels in subaperture
+  int     _npb;           // internal: number of pad pixel for extended field option (on each side)
   pointer _istart;        //
   pointer _jstart;        //
   pointer _binindices;    //

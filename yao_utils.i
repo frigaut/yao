@@ -50,6 +50,11 @@ extern _dmsum
    void _dmsum(pointer def, int nxdef, int nydef, int nzdef, pointer coefs, pointer outphase)
 */
 
+extern _dmsum2
+/* PROTOTYPE
+   void _dmsum2(pointer def, pointer inddef, long ninddef, long ndef, pointer coefs, pointer outphase, long ndmshape)
+*/
+
 extern _dmsumelt
 /* PROTOTYPE
    void _dmsumelt(pointer def, int nxdef, int nydef, int nzdef, pointer i1, pointer j1,

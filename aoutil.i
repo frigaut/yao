@@ -867,16 +867,16 @@ func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
     }
     if ((zoom != []) && (numberof(zoom) != nim)) {zoom = array(zoom,nim);}
     if (zoom == []) {zoom = array(1.,nim);}
-    w  = where(zoom!=0);
-    xd = abs(xpos(w)-xpos(-,w));
-    yd = abs(ypos(w)-ypos(-,w));
+    xd = abs(xpos-xpos(-,));
+    yd = abs(ypos-ypos(-,));
     di = sqrt(xd^2.+yd^2.);
     di = di+unit(nim)*max(di);
+    w  = where(zoom!=0);
     basezoom = (1.+0.9*min(di(w))/2.)*zoom;
     basezoomptr(area) = &basezoom;
     if (!is_set(nolimits)) {
-      limits,min(xpos(w)-basezoom),max(xpos(w)+basezoom),
-        min(ypos(w)-basezoom),max(ypos(w)+basezoom),square=1;
+      limits,min(xpos(w)-basezoom(w)),max(xpos(w)+basezoom(w)),
+        min(ypos(w)-basezoom(w)),max(ypos(w)+basezoom(w)),square=1;
     }
     if (earlyExit) return;
   }

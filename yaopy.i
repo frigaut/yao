@@ -241,7 +241,7 @@ func clean_progressbar(void)
 
 func gui_progressbar_frac(frac)
 {
-  pyk,swrite(format="progressbar.set_fraction(%f)",float(frac));  
+  pyk,swrite(format="progressbar.set_fraction(%f)",float(clip(frac,0.,1.)));  
 }
 
 func gui_progressbar_text(text)

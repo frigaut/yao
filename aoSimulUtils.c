@@ -135,6 +135,30 @@ void _dmsum(float *def,     // pointer to dm influence functions
   }
 }
 
+void _dmsum2(float *def,     // pointer to dm influence functions
+      long  *inddef,   // vector of indices where def != 0
+      long  ninddef,   // # of elements in inddef
+	    long  ndef,      // Z (3rd) dim = # IFs
+	    float *coefs,   // command coefficients
+	    float *dmshape, // pointer to output phase.
+      long  ndmshape) // # of elements in dmshape
+{
+  /* Declarations */
+  int i, k;
+  float co;
+
+  /* Zero out dmshape */
+  for ( i=0 ; i<ndmshape ; i++) { dmshape[i] = 0.0f; }
+
+  /* Loop over influence functions and commands */
+  for ( k=0 ; k<ndef ; k++ ) {
+    co = coefs[k];
+    for ( i=0 ; i<ninddef ; i++) {
+      dmshape[inddef[i]] += co * def[inddef[i]+k*ndmshape];
+    }
+  }
+}
+
 /************************************************************************
  * Function void _dmsumelt                                                 *
  * This routine simply loop on the number of actuator and computes the  *
