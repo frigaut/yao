@@ -66,29 +66,22 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   //=============================================================
   // LGS ELONGATION FROM DEFOCUS METHOD (NOT KERNEL CONVOLUTION)
   //=============================================================
-  if (wfs(ns).gsalt == 0) {
-    wfs(ns).lgs_prof_amp = wfs(ns).lgs_prof_alt = &float([0.]);
-  } else {
-    if (wfs(ns).lgs_prof_amp==[]) {
-      // then the user probably want to use the kernel method
-      // but we need to pass some values to _shwfs_phase2spots()
-      wfs(ns).lgs_prof_amp = wfs(ns).lgs_prof_alt = &float([0.]);
-    }
-    // in check_parameters, we'll need to check:
-    // (a) if lgs_prof_amp and alt are set, gsdepth should not be !=0
-    // (b) check the type of lgs_prof_amp and alt (should be float)
-  }
-  // compute wfs._lgs_defocuses from wfs.lgs_prof_alt:
+  // existence of lgs_prof_amp and alt have been done in check_parameters()
+  // Compute the defocus coef. wfs._lgs_defocuses from wfs.lgs_prof_alt:
   shwfs_comp_lgs_defocuses,ns;
-    
-  xyc = sim._cent;
-  xyc += wfs(ns).LLTxy*sim.pupildiam/tel.diam;
-  wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size,xc=xyc(1),yc=xyc(2))/(sim.pupildiam/2.))^2.);
 
-  if (dyn_range_correct==[]) dyn_range_correct=1;
-  tmp = float(indices(subsize));
-  wfs(ns)._unittip = &(tmp(,,1)*dyn_range_correct);
-  wfs(ns)._unittilt = &(tmp(,,2)*dyn_range_correct);
+  // compute wfs(ns)._unitdefocus, used in the extended field defocus method:
+  if (wfs(ns).type=="hartmann") {
+    xyc = sim._cent;
+    xyc += wfs(ns).LLTxy*sim.pupildiam/tel.diam;
+    wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size,xc=xyc(1),\
+                                  yc=xyc(2))/(sim.pupildiam/2.))^2.);
+  
+    dyn_range_correct = (numberof(*wfs(ns).lgs_prof_amp)>1);
+    tmp = float(indices(subsize));
+    wfs(ns)._unittip = &(tmp(,,1)*dyn_range_correct);
+    wfs(ns)._unittilt = &(tmp(,,2)*dyn_range_correct);
+  }
 
 
   //=============================================================
@@ -358,7 +351,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // SUBAPERTURE SIZE AND PIXEL SIZE
   //================================
   wfs_check_pixel_size,ns,sdim,rebinFactor,actualPixelSize,\
-    printheader=(ns==1),silent=silent;
+    printheader=0,silent=1;
   sdimpow2   = int(log(sdim)/log(2));
 
   // now compute _shwfs C routine internal array size:
@@ -414,7 +407,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // coupling between subapertures
   // extended field of view stuff, work out npb:
   tmp = (wfs(ns).extfield-wfs(ns).npixels*wfs(ns).pixsize)/wfs(ns).pixsize;
-  wfs(ns)._npb = clip(lround(tmp/2.),0,);
+  wfs(ns)._npb = clip(2*lround(tmp/2.),0,);
   wfsnpix = wfs(ns).npixels+wfs(ns)._npb;
   wfs(ns)._npixels = wfsnpix;
 
@@ -427,6 +420,10 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   write,format="nbigpixels = %d, wfsnpix = %d, wfs._npb=%d\n",\
     nbigpixels,wfsnpix,wfs(ns)._npb;
+
+  // just for print out to screen if needed:
+  wfs_check_pixel_size,ns,sdim,rebinFactor,actualPixelSize,\
+    printheader=(ns==1),silent=silent;
 
   imistart = (istart-min(istart))/subsize*(wfsnpix);
   imjstart = (jstart-min(jstart))/subsize*(wfsnpix);
@@ -714,7 +711,7 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
   if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
   err        = 0;
 
-  desiredPixelSize = wfs(ns)._origpixsize;
+  desiredPixelSize = wfs(ns).pixsize;
   desiredNpixels = wfs(ns).npixels;
   quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
   rebinFactor = long(round(desiredPixelSize/quantumPixelSize));
@@ -731,19 +728,20 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
   if (!is_set(silent)) {
     f = open(YAO_SAVEPATH+parprefix+".res","a+");
     if (is_set(printheader)) {
-      write,"WFS# |       Pixel sizes         | Subap. size | Number of pixels | #photons";
-      write,"     | Desired  Quantum  Actual  | Max  Actual | Desired   Actual | /sub/iter";
-      write,f,"\nWFS# |       Pixel sizes         | Subap. size | Number of pixels | #photons";
-      write,f,"     | Desired  Quantum  Actual  | Max  Actual | Desired   Actual | /sub/iter";
+      write,"WFS# |     Pixel sizes        | Subaperture size | Numb of pixels | #photons";
+      write,"     | Desired Quantum Actual | Max  Actual Extd | Desired Actual | /sub/iter";
+      write,f,"\nWFS# |     Pixel sizes        | Subaperture size | Numb of pixels | #photons";
+      write,f,"     | Desired Quantum Actual | Max  Actual Extd | Desired Actual | /sub/iter";
     }
-    write,format="%2d      %.5f  %.5f  %.5f   %4.2f  %4.2f    %2dx%2d      %2dx%2d   %.1f\n",
+    npext = max([wfs(ns).npixels,wfs(ns)._npixels]);
+    write,format="%2d      %.4f  %.4f  %.4f   %4.2f  %4.2f  %4.2f   %2dx%2d   %2dx%2d    %.1f\n",
       ns,desiredPixelSize,quantumPixelSize,actualPixelSize,quantumPixelSize*sdim,
-      actualPixelSize*wfs(ns).npixels,desiredNpixels,desiredNpixels,
-      wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
-    write,f,format="%2d      %.5f  %.5f  %.5f   %4.2f  %4.2f    %2dx%2d      %2dx%2d   %.1f\n",
+      actualPixelSize*wfs(ns).npixels,actualPixelSize*npext,desiredNpixels,
+      desiredNpixels,wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
+    write,f,format="%2d      %.4f  %.4f  %.4f   %4.2f  %4.2f  %4.2f   %2dx%2d   %2dx%2d    %.1f\n",
       ns,desiredPixelSize,quantumPixelSize,actualPixelSize,quantumPixelSize*sdim,
-      actualPixelSize*wfs(ns).npixels,desiredNpixels,desiredNpixels,
-      wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
+      actualPixelSize*wfs(ns).npixels,actualPixelSize*npext,desiredNpixels,
+      desiredNpixels,wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
     close,f;
   }
 
@@ -1664,6 +1662,9 @@ func shwfs_comp_lgs_defocuses(ns)
   }
   tmp = (tel.diam/2.)^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6;
   a4s = tmp * 1./2./ *wfs(ns).lgs_prof_alt;
+  if (wfs(ns).lgs_focus_alt==0) {
+    wfs(ns).lgs_focus_alt = sum(*wfs(ns).lgs_prof_alt * (*wfs(ns).lgs_prof_amp))/sum(*wfs(ns).lgs_prof_amp);
+  }
   a4cur = tmp * 1./2./ wfs(ns).lgs_focus_alt;
   a4s = a4s-a4cur;
   wfs(ns)._lgs_defocuses = &float(a4s);
@@ -1899,6 +1900,146 @@ func pyramid_wfs_checks(nchecks)
     aoloop,disp=1;
     go,all=1;
   }
+}
+
+func sh_wfs_speed_tests(case,png=)
+{
+  if (!case) {
+    write,"sh_wfs_speed_tests,case  with case=1,2,3,4,..";
+    return;
+  }
+  
+  if (case==1) {
+    // first dependency on pupildiam:
+    cname = "pupildiam"; cunit = "pixels";
+    in = [32,48,64,80,96,128,160,256];
+    tim = in*0.;
+    pfit = 1; pzero = 1;
+    for (i=1;i<=numberof(in);i++) {
+      aoread,"sh6x6.par";
+      wfs(1).shnxsub = 8;
+      wfs(1).pixsize=0.001;
+      wfs(1).npixels=6;
+      wfs(1).noise = 0;
+      atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+      atm.dr0at05mic=0.;
+      sim.pupildiam = in(i);
+      aoinit,disp=0;
+      tic;
+      for (j=1;j<=100;j++) sh_wfs,pupil,pupil*0.0f,1;
+      now = tim(i) = 1000./100.*tac();
+      write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
+        sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+    }
+    // from above: fits really well with N^2 law, i.e. # of pixel to process.
+    // not dominated by FFT apparently.
+  } else if (case==2) {
+    cname = "wfs.npixels"; cunit = "pixels";
+    in = [2,4,6,8,10,12,14,16];
+    tim = in*0.;
+    pfit = 0; pzero = 0;
+    for (i=1;i<=numberof(in);i++) {
+      aoread,"sh6x6.par";
+      wfs(1).shnxsub = 8;
+      sim.pupildiam = 256;
+      wfs(1).pixsize=0.1;
+      wfs(1).noise = 0;
+      atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+      atm.dr0at05mic=0.;
+      wfs(1).npixels=in(i);
+      aoinit,disp=0;
+      in(i) = wfs(1).npixels;
+      tic;
+      for (j=1;j<=10;j++) sh_wfs,pupil,pupil*0.0f,1;
+      now = tim(i) = 1000./10.*tac();
+      write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
+        sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+    }
+  } else if (case==3) {
+    cname = "shnxsub"; cunit = "#sub";
+    in = [2,4,8,16,32];
+    tim = in*0.;
+    pfit = 0; pzero = 0;
+    for (i=1;i<=numberof(in);i++) {
+      aoread,"sh6x6.par";
+      wfs(1).shnxsub = in(i);
+      sim.pupildiam = 256;
+      wfs(1).pixsize=0.1;
+      wfs(1).noise = 0;
+      atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+      atm.dr0at05mic=0.;
+      wfs(1).npixels=6;
+      aoinit,disp=0;
+      tic;
+      for (j=1;j<=10;j++) sh_wfs,pupil,pupil*0.0f,1;
+      now = tim(i) = 1000./10.*tac();
+      write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
+        sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+    }
+  } else if (case==4) {
+    cname = "extendedfield"; cunit = "pixels";
+    in = [0,2,4,6,8,10.];
+    tim = in*0.;
+    pfit = 0; pzero = 0;
+    for (i=1;i<=numberof(in);i++) {
+      aoread,"sh6x6.par";
+      wfs(1).extfield = in(i);
+      wfs(1).shnxsub = 8;
+      sim.pupildiam = 256;
+      wfs(1).pixsize=0.1;
+      wfs(1).npixels=6;
+      wfs(1).noise = 0;
+      atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+      atm.dr0at05mic=0.;
+      aoinit,disp=0;
+      in(i) = wfs(1)._npb;
+      tic;
+      for (j=1;j<=100;j++) sh_wfs,pupil,pupil*0.0f,1;
+      now = tim(i) = 1000./100.*tac();
+      write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
+        sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+    }
+  } else if (case==5) {
+    cname = "lgsprofile"; cunit = "#points";
+    in = [2,4,8,16,32];
+    tim = in*0.;
+    pfit = 0; pzero = 0;
+    for (i=1;i<=numberof(in);i++) {
+      aoread,"sh6x6.par";
+      wfs(1).extfield = 10.;
+      wfs(1).shnxsub = 64;
+      sim.pupildiam = 256;
+      wfs(1).pixsize=0.5;
+      wfs(1).npixels=6;
+      wfs(1).noise = 0;
+      wfs(1).gsalt = 90000.;
+      wfs(1).laserpower=30.;
+      wfs(1).lgs_prof_amp = &array(1.0f,in(i));
+      wfs(1).lgs_prof_alt = &float(span(92000.,100000,in(i)));
+      atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+      atm.dr0at05mic=0.;
+      aoinit,disp=0;
+      tic;
+      for (j=1;j<=10;j++) sh_wfs,pupil,pupil*0.0f,1;
+      now = tim(i) = 1000./10.*tac();
+      write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
+        sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+    }
+  }
+  window,dpi=120,wait=1;
+  plot,tim,in; 
+  plmargin;
+  plp,tim,in,symbol=20,size=0.3;
+  limits,0.,,0.;
+  if (pzero) plg,[0.,tim(1)],[0.,in(1)],type=2;
+  // compare with n^2:
+  if (pfit) {
+    fit = tim(0)/in(0)^2*in^2;
+    plg,fit,in,color="red";
+  }
+  pltitle,"sh!_wfs() exec time vs "+cname;
+  xytitles,cname+" ["+cunit+"]","sh!_wfs() exec time [ms]",[-0.01,0.];
+  if (png) png_write,"shwfs_exec_time_vs_"+cname+".png",rgb_read();
 }
 
 func svipc_time_sh_wfs(void,nit=,svipc=,doplot=)

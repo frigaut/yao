@@ -251,6 +251,7 @@ func wfs_fork_listen(ns,nf)
     status = sync_wfs_from_master(ns,nf);
 
     // do our stuff:
+    error,"FIXME ! new APIs for this function";
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
              *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
              *wfs(ns)._jstart, int(subsize), int(subsize),

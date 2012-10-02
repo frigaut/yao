@@ -1597,28 +1597,29 @@ func get_phase2d_from_dms(nn,type)
    SEE ALSO:
 */
 {
-
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
-  mirrorcube = mircube; // create a copy
-  dmidx = where(dm.ncp == 0);
+  if (anyof(dm.ncp)||(target.ncpdm)||(wfs(nn).ncpdm)) {
+    mirrorcube = mircube; // create a copy
+    dmidx = where(dm.ncp == 0);
   
-  if (type == "target"){
-    if (*target.ncpdm != []){
-      ncpdm = (*target.ncpdm)(nn);
-      if (ncpdm != 0 && noneof(dmidx == ncpdm)){
-        grow, dmidx, ncpdm;
+    if (type == "target"){
+      if (*target.ncpdm != []){
+        ncpdm = (*target.ncpdm)(nn);
+        if (ncpdm != 0 && noneof(dmidx == ncpdm)){
+          grow, dmidx, ncpdm;
+        }
+      }
+    } else { // type == "wfs"
+      if (wfs(nn).ncpdm != 0 && noneof(dmidx == wfs(nn).ncpdm)){
+        grow, dmidx, wfs(nn).ncpdm;
       }
     }
-  } else { // type == "wfs"
-    if (wfs(nn).ncpdm != 0 && noneof(dmidx == wfs(nn).ncpdm)){
-      grow, dmidx, wfs(nn).ncpdm;
-    }
-  }
-      
-  mirrorcube = mirrorcube(,,dmidx);
   
+    mirrorcube = mirrorcube(,,dmidx);
+  } else eq_nocopy,mirrorcube,mircube;
+
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
   // there are a few things to do to get ready
@@ -1838,7 +1839,7 @@ func aoread(parfile)
     exit,swrite(format="Can not find parameter file %s !",parfile);}
 
   // read out the parfile. This stuffs values into the structures:
-  require,parfile;
+  include,parfile,1;
 
   //=====================================
   // PARAMETER CHECKS. SETS SOME DEFAULTS

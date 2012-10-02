@@ -556,6 +556,13 @@ func check_parameters(void)
     }
 
     wfs.ron = float(wfs.ron);
+    
+    if (!wfs(ns).lgs_prof_amp) wfs(ns).lgs_prof_amp = &float([0.]);
+    if (!wfs(ns).lgs_prof_alt) wfs(ns).lgs_prof_alt = &float([0.]);
+    if (numberof(*wfs(ns).lgs_prof_amp)!=numberof(*wfs(ns).lgs_prof_alt)) {
+      error,"numberof(*wfs(ns).lgs_prof_amp)!=numberof(*wfs(ns).lgs_prof_alt)";
+    }
+    
   }
 
   // DM STRUCTURE
