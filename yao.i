@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct01";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.4";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct03";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
