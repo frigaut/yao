@@ -46,18 +46,18 @@
  ************************************************************************/
 
 int _get2dPhase(float *pscreens, /* dimension [psnx,psny,nscreens] */
-		int psnx, 
-		int psny, 
-		int nscreens, 
-		float *outphase, /* dimension [phnx,phny] */
-		int phnx, 
-		int phny, 
-		int *ishifts,    /* array of X integer shifts dimension [phnx,nscreens] */
-		float *xshifts,  /* array of X fractional shifts dimension [phnx,nscreens] */
-		int *jshifts,    /* array of Y integer shifts dimension [phnx,nscreens] */
-		float *yshifts)  /* array of Y fractional shifts dimension [phnx,nscreens] */
+                int psnx, 
+                int psny, 
+                int nscreens, 
+                float *outphase, /* dimension [phnx,phny] */
+                int phnx, 
+                int phny, 
+                int *ishifts,    /* array of X integer shifts dimension [phnx,nscreens] */
+                float *xshifts,  /* array of X fractional shifts dimension [phnx,nscreens] */
+                int *jshifts,    /* array of Y integer shifts dimension [phnx,nscreens] */
+                float *yshifts)  /* array of Y fractional shifts dimension [phnx,nscreens] */
      /* ishifts[k,nscreens] and jshifts[k,nscreens] are the integer shifts for screen[k]
-	xshifts[k,nscreens] and yshifts[k,nscreens] are the fractional shifts for screen[k],
+        xshifts[k,nscreens] and yshifts[k,nscreens] are the fractional shifts for screen[k],
      */
 {
   int i,j,k,ips,jps;
@@ -74,24 +74,24 @@ int _get2dPhase(float *pscreens, /* dimension [psnx,psny,nscreens] */
     for (j=0;j<phny;++j) {
       for (i=0;i<phnx;++i) {
 
-	ips = ishifts[i+k*phnx];
-	jps = jshifts[j+k*phny];
-
-	/* Computes the weights for the 4 surrounding pixels */
-	wx1 = (1.0f - xshifts[i+k*phnx]);
-	wx2 = (xshifts[i+k*phnx]);
-	wy1 = (1.0f - yshifts[j+k*phny]);
-	wy2 = (yshifts[j+k*phny]);
-
-
-	/* Safety net: don't access elements outside of pscreens memory space */
-	if ( (firstel+ips+1+(jps+1)*psnx) >= (psnx*psny*nscreens) ) {return (1);}
-
-	/* Finaly, compute and integrate outphase */
-	outphase[i+j*phnx] += ( wx1*wy1*pscreens[firstel+ips+jps*psnx]
-				+ wx2*wy1*pscreens[firstel+ips+1+jps*psnx]
-				+ wx1*wy2*pscreens[firstel+ips+(jps+1)*psnx]
-				+ wx2*wy2*pscreens[firstel+ips+1+(jps+1)*psnx]);
+        ips = ishifts[i+k*phnx];
+        jps = jshifts[j+k*phny];
+        
+        /* Computes the weights for the 4 surrounding pixels */
+        wx1 = (1.0f - xshifts[i+k*phnx]);
+        wx2 = (xshifts[i+k*phnx]);
+        wy1 = (1.0f - yshifts[j+k*phny]);
+        wy2 = (yshifts[j+k*phny]);
+        
+        
+        /* Safety net: don't access elements outside of pscreens memory space */
+        if ( (firstel+ips+1+(jps+1)*psnx) >= (psnx*psny*nscreens) ) {return (1);}
+        
+        /* Finaly, compute and integrate outphase */
+        outphase[i+j*phnx] += ( wx1*wy1*pscreens[firstel+ips+jps*psnx]
+                              + wx2*wy1*pscreens[firstel+ips+1+jps*psnx]
+                              + wx1*wy2*pscreens[firstel+ips+(jps+1)*psnx]
+                              + wx2*wy2*pscreens[firstel+ips+1+(jps+1)*psnx]);
 
       }
     }
@@ -111,11 +111,11 @@ int _get2dPhase(float *pscreens, /* dimension [psnx,psny,nscreens] */
  ************************************************************************/
 
 void _dmsum(float *def,     // pointer to dm influence functions 
-	    int  nxdef,     // X dim
-	    int  nydef,     // Y dim
-	    int  nzdef,     // Z (3rd) dim = # IFs
-	    float *coefs,   // command coefficients
-	    float *dmshape) // pointer to output phase.
+            int  nxdef,     // X dim
+            int  nydef,     // Y dim
+            int  nzdef,     // Z (3rd) dim = # IFs
+            float *coefs,   // command coefficients
+            float *dmshape) // pointer to output phase.
 {
   /* Declarations */
   int i, k;
@@ -136,12 +136,12 @@ void _dmsum(float *def,     // pointer to dm influence functions
 }
 
 void _dmsum2(float *def,     // pointer to dm influence functions
-      long  *inddef,   // vector of indices where def != 0
-      long  ninddef,   // # of elements in inddef
-	    long  ndef,      // Z (3rd) dim = # IFs
-	    float *coefs,   // command coefficients
-	    float *dmshape, // pointer to output phase.
-      long  ndmshape) // # of elements in dmshape
+             long  *inddef,   // vector of indices where def != 0
+             long  ninddef,   // # of elements in inddef
+             long  ndef,      // Z (3rd) dim = # IFs
+             float *coefs,   // command coefficients
+             float *dmshape, // pointer to output phase.
+             long  ndmshape) // # of elements in dmshape
 {
   /* Declarations */
   int i, k;
@@ -171,15 +171,15 @@ void _dmsum2(float *def,     // pointer to dm influence functions
  ************************************************************************/
 
 void _dmsumelt(float *def,     // pointer to dm influence functions 
-	       int  nxdef,     // X dim
-	       int  nydef,     // Y dim
-	       int  nzdef,     // Z (3rd) dim = # IFs
-	       int  *i1,       // i indice at which to put def # k in output phase
-	       int  *j1,       // j indice at which to put def # k in output phase
-	       float *coefs,   // command coefficients
-	       float *dmshape, // pointer to output phase.
-	       int  outnx,     // X dim of output array
-	       int  outny)     // Y dim of output array
+               int  nxdef,     // X dim
+               int  nydef,     // Y dim
+               int  nzdef,     // Z (3rd) dim = # IFs
+               int  *i1,       // i indice at which to put def # k in output phase
+               int  *j1,       // j indice at which to put def # k in output phase
+               float *coefs,   // command coefficients
+               float *dmshape, // pointer to output phase.
+               int  outnx,     // X dim of output array
+               int  outny)     // Y dim of output array
 {
   /* Declarations */
   int i, j, k, ioff;
@@ -196,11 +196,11 @@ void _dmsumelt(float *def,     // pointer to dm influence functions
       // if index out of final image, continue.
       if ( ((i1[k]+i) < 0) | ((i1[k]+i) > (outnx-1)) ) continue;
       for ( j=0 ; j<nydef ; j++) {
-	// if index out of final image, continue.
-	if ( ((j1[k]+j) < 0) | ((j1[k]+j) > (outny-1)) ) continue;
-	// now we map the def indices into the output array indices
-	ioff = (i1[k]+i) + outnx*(j1[k]+j);
-	dmshape[ioff] += co * def[i+nxdef*j+n*k];
+        // if index out of final image, continue.
+        if ( ((j1[k]+j) < 0) | ((j1[k]+j) > (outny-1)) ) continue;
+        // now we map the def indices into the output array indices
+        ioff = (i1[k]+i) + outnx*(j1[k]+j);
+        dmshape[ioff] += co * def[i+nxdef*j+n*k];
       }
     }
   }
