@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.4";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct03";
+aoSimulVersion = yaoVersion = aoYaoVersion = "4.9.5";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct10";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1336,7 +1336,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   // Build the position vector vs iteration by phase screen
   deltax  = sim.pupildiam/tel.diam*(*atm.layerspeed)*cos(dtor*gs.zenithangle)*loop.ittime;
   // has to start away from edge as this is the coordinate of the beam center
-  /// will modified later on when we know the beams geometry. see few lines below.
+  // will modified later on when we know the beams geometry. see few lines below.
   xposvec = (1.+iposvec*deltax(-,)*cos(dtor*(*atm.winddir)(-,)));
   yposvec = (1.+iposvec*deltax(-,)*sin(dtor*(*atm.winddir)(-,)));
   
@@ -1600,7 +1600,7 @@ func get_phase2d_from_dms(nn,type)
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
-  if (anyof(dm.ncp)||(target.ncpdm)||(wfs(nn).ncpdm)) {
+  if (anyof(dm.ncp)||(target.ncpdm)||((type=="wfs")&&(wfs(nn).ncpdm))) {
     mirrorcube = mircube; // create a copy
     dmidx = where(dm.ncp == 0);
   

@@ -63,17 +63,17 @@
  *
  */
 
-
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>
-#include <sys/time.h>
+#include <time.h>
 #include "ydata.h"
 #include "yapi.h"
 
+#include "play.h"  // for p_wall_secs() and p_cpu_secs()
 
 #define FFTWOPTMODE FFTW_EXHAUSTIVE
 // use FFTW_PATIENT for thread optimization (see below):
@@ -103,6 +103,61 @@ void _gaussdev(float *xmv, long n);
 // {
   // ypush_int(n_threads);
 // }
+
+
+float sine(float x)
+{
+  const float pi = 3.141592653589793f;
+  const float B = 4.0f/pi;
+  const float C = -4.0f/(pi*pi);
+  const float D = 2*pi;
+  const float P = 0.225;
+
+  x = x - roundf(x/D)*D;
+  
+  float y = B * x + C * x * fabsf(x);
+  
+  y = P * (y * abs(y) - y) + y;
+  
+  return y;
+}
+float sign(float x)
+{
+  return (float)((x > 0) - (x < 0));
+}
+
+float cosine(float x)
+{
+  const float hpi = 3.141592653589793f/2.0f;
+
+  float y = sine(x+hpi);
+  //~ float y = sine(x+hpi);
+  //~ y = sign(y)*sqrt(1-y*y);
+  
+  return y;
+}
+
+void sinecosinef(float x, float *s, float *c)
+{
+  float sc;
+  *s = sine(x);
+  *c = cosine(x);
+  sc = (*c)*(*c) + (*s)*(*s);
+
+/*
+  sc = 1.0f - 0.5f*(sc-1.0f); // approximation of 1./sqrt()
+  *s = *s * sc;
+  *c = *c * sc;
+  */
+  // sincos, 4.64
+  // this 4.15
+  // sine and cosine 3.0
+
+  sc = 1.0f/sqrtf(sc);
+  *s = *s * sc;
+  *c = *c * sc;
+  // this above, 4.66 (much better)
+}
 
 void _import_wisdom(char *wisdom_file)
 {
@@ -208,6 +263,7 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
   float         *ptr;
   long          i,k,koff,n;
   fftwf_plan     p;
+  float         ppsin,ppcos;
       
   /* Set the size of 2d FFT. */
   n = 1 << n2;
@@ -232,8 +288,13 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
 
     for ( i=0; i<n*n; i++ ) {
       if ( pupil[i] != 0.f ) {
-        *(ptr)   = pupil[i] * cos( phase[koff+i] * scal );
-        *(ptr+1) = pupil[i] * sin( phase[koff+i] * scal );
+        //~ *(ptr)   = pupil[i] * cosf( phase[koff+i] * scal );
+        //~ *(ptr+1) = pupil[i] * sinf( phase[koff+i] * scal );
+        //~ *(ptr)   = pupil[i] * cosine( phase[koff+i] * scal );
+        //~ *(ptr+1) = pupil[i] * sine( phase[koff+i] * scal );
+        sinecosinef(phase[koff+i] * scal, &ppsin, &ppcos);
+        *(ptr)   = pupil[i] * ppcos;
+        *(ptr+1) = pupil[i] * ppsin;
       } else {
         *(ptr)   = 0.0f;
         *(ptr+1) = 0.0f;
@@ -378,8 +439,8 @@ void _fftVE2(fftwf_complex *in,
    at pre-defined positions.
 */
 int _shwfs_phase2spots(float *pupil,        // input pupil
-                       float *phase,        // input phase
-                       float phasescale,    // phase scaling factor
+                       float *phase,        // input phase, in microns
+                       float phasescale,    // phase scaling factor: microns -> radians @ wfs.lambda
                        float *phaseoffset,  // input phase offset
                        int   dimx,          // X dim of phase. Used as stride for extraction
            
@@ -453,10 +514,15 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   long          log2nr, log2nc, n, ns, nb;
   int           i,j,k,l,koff,kk,nalt;
   float         dx,dxp,dy,dyp;
-  float         lgsdef,lgsamp;
+  float         lgsdef,lgsamp,pp,ppsin,ppcos;
   int           idxp,idyp,ndx,ndy;
   int           dynrange;
-
+  int           debug=0;
+  double        sys,cpu0,cpu1,cpu2,cpu3,cpu4,cpu5,cpu6;
+  double        cpu10,cpu21,cpu32,cpu43,cpu54,cpu65;
+  
+  cpu10=0.0;cpu21=0.0;cpu32=0.0;cpu43=0.0;cpu54=0.0;cpu65=0.0;
+  
   // enlarge dynamical range?
   if (npb==0) dynrange=0; else dynrange=1;
 
@@ -503,7 +569,6 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
     // the simplest might be to add it at the yorick level before
     // calling _shwfs_spots2slopes().
   }
-
 
   // compute bsubmask from submask and binindices:
   for ( i = 0; i < nb; i++ ) { bsubmask[i] = (float)(1-domask); }
@@ -569,6 +634,8 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   
       if (svipc_subok[l]==0) continue;
       
+      cpu0  = p_cpu_secs(&sys);
+
       // reset A and result
       ptr = (void *)A;
       for ( i=0; i<n ; i++ ) {  
@@ -581,7 +648,6 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   
       koff = istart[l] + jstart[l]*dimx;
   
-        
       // START section to allow larger dynamical range by
       // subtracting a tilt to the phase and moving later on
       // the image in the big image
@@ -602,25 +668,25 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
           for ( i=0; i<(nx-1) ; i++ ) {
             k = koff + i + j*dimx;
             if (pupil[k]&&pupil[k+1]) {
-              dx += (phase[k+1]+lgsdef*unit_defocus[k+1]-phase[k]-lgsdef*unit_defocus[k]);
+              dx += (phasescale*(phase[k+1]-phase[k])+lgsdef*(unit_defocus[k+1]-unit_defocus[k]));
               ndx++;
             }
             if (pupil[k]&&pupil[k+dimx]) {
-              dy += (phase[k+dimx]+lgsdef*unit_defocus[k+dimx]-phase[k]-lgsdef*unit_defocus[k]);
+              dy += (phasescale*(phase[k+dimx]-phase[k])+lgsdef*(unit_defocus[k+dimx]-unit_defocus[k]));
               ndy++;
             }
           }
         }
-        if (ndx) dx = phasescale*dx/(float)(ndx);
-        if (ndy) dy = phasescale*dy/(float)(ndy);
+        if (ndx) dx = dx/(float)(ndx); // in radian/pixel
+        if (ndy) dy = dy/(float)(ndy);
         // now we need to transform this average phase gradient into
         // pixel motion.
         // So how many small pixels we expect the spot to move?
         // if dx = 2*pi, the spot will wrap all the way back to center,
         // i.e. will move by ns pixels, and by ns/rebinfactor big pixels.
         // Hence the motion in big pixel is:
-        dxp = dx*(float)(ns)/2./3.1415926536/(float)(rebinfactor);
-        dyp = dy*(float)(ns)/2./3.1415926536/(float)(rebinfactor);
+        dxp = dx/2./3.1415926536*(float)(ns)/(float)(rebinfactor);
+        dyp = dy/2./3.1415926536*(float)(ns)/(float)(rebinfactor);
         // round to the nearest big pixel: 
         idxp = lroundf(dxp);
         idyp = lroundf(dyp);
@@ -638,26 +704,60 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
       // END section to allow larger dynamical range
       // (more below to add to phase and to shift imagelets)
   
+      cpu1  = p_cpu_secs(&sys);
+      cpu10 += cpu1-cpu0;
+
       ptr = (void *)A;
       if (dynrange) {
         for ( j=0; j<ny ; j++ ) {
           for ( i=0; i<nx ; i++ ) {
             k = koff + i + j*dimx;
             kk = i + j*nx;
-            *(ptr + 2*(i+j*ns))   = pupil[k] * cos( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]) - dx*unittip[kk] - dy*unittilt[kk]);
-            *(ptr + 2*(i+j*ns)+1) = pupil[k] * sin( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]) - dx*unittip[kk] - dy*unittilt[kk]);
+            pp = phasescale*(phase[k] + phaseoffset[k]) + lgsdef*unit_defocus[k] - dx*unittip[kk] - dy*unittilt[kk];
+            //~ sincosf(pp,&ppsin,&ppcos);
+            sinecosinef(pp,&ppsin,&ppcos);
+            *(ptr + 2*(i+j*ns))   = pupil[k] * ppcos;
+            *(ptr + 2*(i+j*ns)+1) = pupil[k] * ppsin;
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * cosine(pp);
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * sine(pp);
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * cosf(pp);
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * sinf(pp);
+            //~ ppsin = sinf(pp);
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * sqrtf(1.0f-ppsin*ppsin);
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * ppsin;
+            //~ ppcos = cosf(pp);
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * ppcos;
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * sqrtf(1.0f-ppcos*ppcos);
           }
         }
       } else {
         for ( j=0; j<ny ; j++ ) {
           for ( i=0; i<nx ; i++ ) {
             k = koff + i + j*dimx;
-            *(ptr + 2*(i+j*ns))   = pupil[k] * cos( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]));
-            *(ptr + 2*(i+j*ns)+1) = pupil[k] * sin( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]));
+            // median value for this call with sin and cos = 50ms (512)
+            //~ pp = cosf( phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]));
+            pp = phasescale*(phase[k] + lgsdef*unit_defocus[k] + phaseoffset[k]);
+            //~ sincosf(pp,&ppsin,&ppcos);
+            sinecosinef(pp,&ppsin,&ppcos);
+            *(ptr + 2*(i+j*ns))   = pupil[k] * ppcos;
+            *(ptr + 2*(i+j*ns)+1) = pupil[k] * ppsin;
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * cosine(pp);
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * sine(pp);
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * cosf(pp);
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * sinf(pp);
+            //~ ppsin = sinf(pp);
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * sqrtf(1.0f-ppsin*ppsin);
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * ppsin;
+            //~ ppcos = cosf(pp);
+            //~ *(ptr + 2*(i+j*ns))   = pupil[k] * ppcos;
+            //~ *(ptr + 2*(i+j*ns)+1) = pupil[k] * sqrtf(1.0f-ppcos*ppcos);
           }
         }
       }
   
+      cpu2  = p_cpu_secs(&sys);
+      cpu21 += cpu2-cpu1;
+
       // Carry out a Forward 2d FFT transform, check for errors.
       fftwf_execute(p); /* repeat as needed */
   
@@ -666,6 +766,9 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
         simage[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
         ptr +=2;
       }
+
+      cpu3  = p_cpu_secs(&sys);
+      cpu32 += cpu3-cpu2;
   
       if (kernconv == 1) {
         // Transform simage
@@ -700,6 +803,9 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
         }
       }
   
+      cpu4  = p_cpu_secs(&sys);
+      cpu43 += cpu4-cpu3;
+
       // FLUX NORMALIZATION FOR STAR. Has to be done *before* applying fieldstop
       // will be used a bit below
       // LGS FIXME FIXME FIXME: flux totally screwed up w/ new lgs_prof_amp!
@@ -764,6 +870,9 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
         //~ bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
         bimage[i] += ( sky + brayleigh[i] ) * bsubmask[i]; 
       }
+      
+      cpu5  = p_cpu_secs(&sys);
+      cpu54 += cpu5-cpu4;
   
       // put image where it belongs in large image
       // (idp to allow larger dynamical range, see above)
@@ -777,9 +886,17 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
           *(fimage+k) += lgsamp*bimage[i+j*binxy];
         }
       }
+      
+      cpu6  = p_cpu_secs(&sys);
+      cpu65 += cpu6-cpu5;
+      
     }
   }
-
+  
+  if (debug) {
+    printf("\n1-0 %.3f  2-1(%d,%d) %.3f  3-2 %.3f  4-3 %.3f  5-4 %.3f  6-5 %.3f\n",\
+     cpu10*1000.,dynrange,n_in_profile,cpu21*1000.,cpu32*1000.,cpu43*1000.,cpu54*1000.,cpu65*1000.);
+  }
   //============================
   // END OF LOOP ON SUBAPERTURES
   //============================
@@ -795,6 +912,12 @@ int _shwfs_phase2spots(float *pupil,        // input pupil
   free ( simage );
   free ( brayleigh ); /* fixed memleak 2008nov18 */
   free ( bsubmask );
+
+
+/*
+all time used by loop, good:
+1-0 0.000  2-1 0.000  3-2 73.329  4-3 0.000
+*/  
 
 
   return (0);
@@ -1196,6 +1319,7 @@ int _cwfs (float *pupil,      // input pupil
   float         tot;
   long          log2nr, log2nc, n, ns;
   int           i,k,sindstride,koff;
+  float         pp,ppsin,ppcos;
 
   /*
     Global setup for FFTs:
@@ -1240,8 +1364,10 @@ int _cwfs (float *pupil,      // input pupil
   ptr = (void *)A;
   for ( i=0; i<n ; i++ ) {
     if (pupil[i] != 0.0f) {
-      *(ptr)   = pupil[i]*cos(phasescale*(phase[i]+phaseoffset[i]));
-      *(ptr+1) = pupil[i]*sin(phasescale*(phase[i]+phaseoffset[i]));
+      pp = phasescale*(phase[i]+phaseoffset[i]);
+      sinecosinef(pp,&ppsin,&ppcos);
+      *(ptr)   = pupil[i]*ppcos;
+      *(ptr+1) = pupil[i]*ppsin;
     } else {
       *(ptr)   = 0.0f;
       *(ptr+1) = 0.0f;

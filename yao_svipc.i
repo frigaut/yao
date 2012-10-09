@@ -218,6 +218,7 @@ func wfs_fork_listen(ns,nf)
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   phasescale  = float(2*pi/wfs(ns).lambda);
   sdim        = long(2^ceil(log(subsize)/log(2)+1));
+  if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
   sdimpow2    = int(log(sdim)/log(2));
 
   // to protect from a WFS sync, let's not put it in the wfs structure
@@ -250,23 +251,25 @@ func wfs_fork_listen(ns,nf)
     // sync if needed:
     status = sync_wfs_from_master(ns,nf);
 
-    // do our stuff:
-    error,"FIXME ! new APIs for this function";
+    // do our stuff:            
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
-             *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
-             *wfs(ns)._jstart, int(subsize), int(subsize),
-             wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
-             *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
-             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
-             *wfs(ns)._binindices, wfs(ns)._binxy,
-             wfs(ns)._rebinfactor, ffimage, svipc_subok,
-             *wfs(ns)._imistart, *wfs(ns)._imjstart,
-             wfs(ns)._fimnx , wfs(ns)._fimny,
-             *wfs(ns)._fluxpersub, *wfs(ns)._raylfluxpersub,
-             *wfs(ns)._skyfluxpersub, float(wfs(ns).darkcurrent*loop.ittime),
-             int(wfs(ns).rayleighflag),
-             *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
-                              wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
+            *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
+            *wfs(ns)._jstart, int(subsize), int(subsize),
+            wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
+            *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
+            *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
+            *wfs(ns)._binindices, wfs(ns)._binxy,
+            wfs(ns)._rebinfactor, wfs(ns)._npb, *wfs(ns)._unittip, 
+            *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
+            *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
+            *wfs(ns)._unitdefocus, ffimage, svipc_subok,
+            *wfs(ns)._imistart, *wfs(ns)._imjstart,
+            wfs(ns)._fimnx , wfs(ns)._fimny,
+            *wfs(ns)._fluxpersub, *wfs(ns)._raylfluxpersub,
+            *wfs(ns)._skyfluxpersub, float(wfs(ns).darkcurrent*loop.ittime),
+            int(wfs(ns).rayleighflag),
+            *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
+            wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
 
     // give trigger back:
     if (sim.debug>20) write,format="fork: giving trigger on sem %d\n",20+4*(ns-1)+1;

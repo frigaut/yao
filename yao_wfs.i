@@ -77,7 +77,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size,xc=xyc(1),\
                                   yc=xyc(2))/(sim.pupildiam/2.))^2.);
   
-    dyn_range_correct = (numberof(*wfs(ns).lgs_prof_amp)>1);
+    dyn_range_correct = (numberof(*wfs(ns).lgs_prof_amp)>0);
     tmp = float(indices(subsize));
     wfs(ns)._unittip = &(tmp(,,1)*dyn_range_correct);
     wfs(ns)._unittilt = &(tmp(,,2)*dyn_range_correct);
@@ -871,23 +871,23 @@ func sh_wfs(pupsh,phase,ns)
     // C function calls
     // phase to spot image (returned in ffimage)
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
-                 *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
-                 *wfs(ns)._jstart, int(subsize), int(subsize),
-                 wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
-                 *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
-                 *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
-                 *wfs(ns)._binindices, wfs(ns)._binxy,
-                 wfs(ns)._rebinfactor, wfs(ns)._npb, *wfs(ns)._unittip, 
-                 *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
-                 *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
-                 *wfs(ns)._unitdefocus, ffimage, *wfs(ns)._svipc_subok,
-                 *wfs(ns)._imistart, *wfs(ns)._imjstart,
-                 wfs(ns)._fimnx , wfs(ns)._fimny,
-                 *wfs(ns)._fluxpersub, *wfs(ns)._raylfluxpersub,
-                 *wfs(ns)._skyfluxpersub, float(wfs(ns).darkcurrent*loop.ittime), // darkcurrent not applied in there anymore (2012sep17)
-                 int(wfs(ns).rayleighflag),
-                 *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
-                 wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
+            *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
+            *wfs(ns)._jstart, int(subsize), int(subsize),
+            wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
+            *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
+            *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
+            *wfs(ns)._binindices, wfs(ns)._binxy,
+            wfs(ns)._rebinfactor, wfs(ns)._npb, *wfs(ns)._unittip, 
+            *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
+            *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
+            *wfs(ns)._unitdefocus, ffimage, *wfs(ns)._svipc_subok,
+            *wfs(ns)._imistart, *wfs(ns)._imjstart,
+            wfs(ns)._fimnx , wfs(ns)._fimny,
+            *wfs(ns)._fluxpersub, *wfs(ns)._raylfluxpersub,
+            *wfs(ns)._skyfluxpersub, float(wfs(ns).darkcurrent*loop.ittime), // darkcurrent not applied in there anymore (2012sep17)
+            int(wfs(ns).rayleighflag),
+            *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
+            wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
 
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
@@ -1660,14 +1660,22 @@ func shwfs_comp_lgs_defocuses(ns)
     wfs(ns)._lgs_defocuses = &float([0.]);
     return;
   }
-  tmp = (tel.diam/2.)^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6;
-  a4s = tmp * 1./2./ *wfs(ns).lgs_prof_alt;
+  tmp = tel.diam^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6;
+  a4s = tmp * 1./ *wfs(ns).lgs_prof_alt;
   if (wfs(ns).lgs_focus_alt==0) {
     wfs(ns).lgs_focus_alt = sum(*wfs(ns).lgs_prof_alt * (*wfs(ns).lgs_prof_amp))/sum(*wfs(ns).lgs_prof_amp);
   }
-  a4cur = tmp * 1./2./ wfs(ns).lgs_focus_alt;
+  a4cur = tmp * 1./ wfs(ns).lgs_focus_alt;
   a4s = a4s-a4cur;
   wfs(ns)._lgs_defocuses = &float(a4s);
+/* tests on 2012oct09:
+ * diam=25, off-axis = 11.7m, delta_alt = 10km, sep should be 11.7/4.=2.92
+ * lambda=0.65, pixsize=0.2145, sep = 2.82 < yeah.
+ * lambda=1.0, pixsize=0.1980, sep = 2.76 < yeah
+ * lambda=2.0, pixsize=0.2640, sep =2.71
+ * I think we can say it works. let's try for larger pixsize:
+ * lambda=2.0, pixsize=0.3960, sep=2.76, good.
+ */
 }  
 
 //----------------------------------------------------

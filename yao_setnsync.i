@@ -154,7 +154,8 @@ func set_noise(noise_flag)
   wfs.noise = noise_flag;
 
   if (sim.svipc) {
-    targets = ["WFS","WFS1","WFS2","WFS3"];
+    //~ targets = ["WFS","WFS1","WFS2","WFS3"];
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
     // save the wfs structures
     var = vsave(wfs);
     // write in shm
@@ -196,8 +197,9 @@ func set_dr0(dr0)
   atm.dr0at05mic = dr0
 
   if (sim.svipc) {
-    targets = ["WFS","WFS1","WFS2","WFS3","PSFs"];
-    // save the wfs structures
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
+    targets = _(targets,"PSFs");
+    // save the atm structures
     var = vsave(atm);
     // write in shm
     shm_write,shmkey,"atm_structs",&var;
@@ -239,7 +241,8 @@ func set_cn2(layerfrac)
   *atm.layerfrac = layerfrac;
 
   if (sim.svipc) {
-    targets = ["WFS","WFS1","WFS2","WFS3","PSFs"];
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
+    targets = _(targets,"PSFs");
     // save the wfs structures
     var = vsave(atm);
     // write in shm
@@ -274,6 +277,7 @@ func set_misreg(misreg,nm=)
   dm(nm).misreg = misreg;
 
   if (sim.svipc) {
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
     targets = ["WFS","WFS1","WFS2","WFS3"];
     if ((sim.svipc>>1)&1) grow,targets,["DM1","DM2"];
     // save the wfs structures
@@ -333,13 +337,14 @@ func set_ngs_geometry(wfsxpos,wfsypos)
   wfs(6:6+ngs-1).gspos(2,) = wfsypos;
   
   if (sim.svipc) {
-    targets = ["WFS","WFS1","WFS2","WFS3","PSFs"];
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
+    targets = _(targets,"PSFs");
     // save the wfs structures
-    var = vsave(atm);
+    var = vsave(wfs);
     // write in shm
-    shm_write,shmkey,"atm_structs",&var;
+    shm_write,shmkey,"wfs_structs",&var;
     // broadcast message to children
-    broadcast_sync,targets,"sync_cn2";
+    broadcast_sync,targets,"sync_ngs_geometry";
   }
   get_turb_phase_init,skipReadPhaseScreens=1;
 }
@@ -357,3 +362,41 @@ func sync_ngs_geometry(void)
   get_turb_phase_init,skipReadPhaseScreens=1;
 }
 
+func set_lgs_profile(amp,alt,lgs_focus_alt,ns)
+{
+  extern wfs;
+
+  if (numberof(amp)!=numberof(alt)) {
+    write,"numberof(amp)!=numberof(alt)";
+    return;
+  }
+  
+  for (i=1;i<=numberof(ns);i++) {
+    if (amp!=[]) wfs(ns(i)).lgs_prof_amp = &float(amp);
+    if (alt!=[]) wfs(ns(i)).lgs_prof_alt = &float(alt);
+    if (lgs_focus_alt!=[]) wfs(ns(i)).lgs_focus_alt = lgs_focus_alt; \
+    shwfs_comp_lgs_defocuses,ns(i);
+  }
+  
+  if (sim.svipc) {
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
+    // save the wfs structures
+    var = vsave(wfs);
+    // write in shm
+    shm_write,shmkey,"wfs_structs",&var;
+    // broadcast message to children
+    broadcast_sync,targets,"sync_lgs_profile";
+  }
+}
+
+func sync_lgs_profile(void)
+{
+  extern wfs;
+  
+  if (sim.svipc) {
+    var = shm_read(shmkey,"wfs_structs");
+    restore,openb(var);
+  }
+  write,format="LGS profile sync'ed on child %s\n",svipc_procname;
+  //~ for (i=1;i<=numberof(ns);i++) shwfs_comp_lgs_defocuses,ns(i);
+}
