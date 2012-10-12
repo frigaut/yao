@@ -126,11 +126,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     write,format="Kernel FWHM for the iMat calibration = %f\n",kernelfwhm;
   }
 
-  tmp = eclat(makegaussian(sdim,kernelfwhm/quantumPixelSize,
-                           xc=sdim/2+1,yc=sdim/2+1));
-  tmp(1,1) = 1.; // this insures that even with fwhm=0, the kernel is a dirac
-  tmp = tmp/sum(tmp);
-  wfs(ns)._kernel = &(float(tmp));
+  // 2012oct11: we'll produce the kernel array later once we have computed _nx
 
   //==================================
   // COMPUTE ISTART AND JSTART VECTORS
@@ -214,76 +210,9 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   // compute other setup variables for _shwfs:
 
-  //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
-  //==========================================================================
-
-  if (wfs(ns)._kernelconv != 0n) {
-    // if kernelconv is 0, then the _shwfs routine does not use wfs._kernels,
-    // so no need to compute it.
-
-    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(sdim)-sdim/2.-1)*quantumPixelSize;  // coordinate array in arcsec
-
-    if (sim.verbose >= 1) {
-      write,format="%s\n","Pre-computing Kernels for the SH WFS";
-    }
-
-    kall = [];
-
-    gui_progressbar_frac,0.;
-    gui_progressbar_text,swrite(format=\
-      "Precomputing subaperture kernels, WFS#%d",ns);
-
-    for (l=1; l<=wfs(ns)._nsub4disp; l++) {
-      // for each subaperture, we have to find the elongation and the angle.
-      xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-      xllt = wfs(ns).LLTxy(1); yllt = wfs(ns).LLTxy(2);
-      d = sqrt((xsub-xllt)^2. +(ysub-yllt)^2.);
-      if (d == 0) {
-        elong = ang = 0.;
-      } else {
-        elong = atan((wfs(ns)._gsalt+wfs(ns)._gsdepth)/d)-atan(wfs(ns)._gsalt/d);
-        elong /= 4.848e-6; // now in arcsec
-        ang = atan(ysub-yllt,xsub-xllt); // fixed 2004aug02
-      }
-      angp90 = ang+pi/2.;
-
-      expo = 4.;
-      alpha = elong/(2.*log(2)^(1/expo));
-      beta = 2*quantumPixelSize/(2.*log(2)^(1/expo));
-      alpha = clip(alpha,0.5*quantumPixelSize,);
-      beta = clip(beta,0.5*quantumPixelSize,alpha);
-
-      tmp  = exp(-((cos(ang)*xy(,,1)+sin(ang)*xy(,,2))/alpha)^expo);
-      tmp *= exp(-((cos(angp90)*xy(,,1)+sin(angp90)*xy(,,2))/beta)^expo);
-      tmp = tmp/sum(tmp);
-      grow,kall,(eclat(tmp))(*);
-
-      s2 = tel.diam/nxsub*0.9/2.;
-      //if (sim.debug >= 2) {fma; pli,tmp,xsub-s2,ysub-s2,xsub+s2,ysub+s2;}
-      // below: this was too many characters to go thru the python pipe.
-      // with fast processor, we compute fast and send too fast. 2009oct22.
-      //gui_progressbar_text,swrite(format=\
-      //  "Precomputing subaperture kernels for LGS elongation, WFS#%d, sub#%d/%d",\
-      //  ns,l,wfs(ns)._nsub4disp);
-      gui_progressbar_frac,float(l)/wfs(ns)._nsub4disp;
-
-    }
-
-    clean_progressbar;
-    //if (sim.debug >=2) {hitReturn;}
-
-    wfs(ns)._kernels = &(float(kall));
-    wfs(ns)._kerfftr = &(float(kall*0.));
-    wfs(ns)._kerffti = &(float(kall*0.));
-    kall = [];
-
-  }
-
-  //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
-  //==========================================================================
+  //==============================================
+  // COMPUTE RAYLEIGH STUFF: SUBAPERTURE DEPENDANT
+  //==============================================
 
   rayleighflux = array(0.0f,wfs(ns)._nsub4disp);
   sodiumflux   = array(1.0f,wfs(ns)._nsub4disp);
@@ -354,15 +283,30 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     printheader=0,silent=1;
   sdimpow2   = int(log(sdim)/log(2));
 
+  // 2004mar22: added a guard pixel for each subaperture for the display
+  // 2009oct06: removed it, in the process of implementing the optical
+  // coupling between subapertures
+  // extended field of view stuff, work out npb:
+  // we want to pad wfs.npixels by a integer number of pixel on each side
+  // to get as close as possible to the requested extfield:
+  //~ if (!wfs(ns)._npixels) wfs(ns)._npixels = wfs(ns).npixels;
+  tmp = (wfs(ns).extfield-wfs(ns).npixels*wfs(ns).pixsize)/wfs(ns).pixsize;
+  wfs(ns)._npb = clip(2*lround(tmp/2.),0,); // pixel to add as "b"order for extended fov, binned pixels
+  wfs(ns)._npixels = wfs(ns).npixels+wfs(ns)._npb; // [binned pixels, extended image]
+  wfs(ns)._nx = wfs(ns)._npixels*rebinFactor; // [small pixels]
+  // note that nx can actually be smaller than sdim, as we are xfering into the
+  // ximage and the xfer is bound checked.
+  wfs(ns).extfield = wfs(ns)._npixels*wfs(ns).pixsize;
+
   // now compute _shwfs C routine internal array size:
   // for bimage (trimmed and rebinned simage):
   wfs(ns)._rebinfactor = rebinFactor;
-  nbigpixels = long(sdim/rebinFactor);
+  nbigpixels = long(wfs(ns)._nx/rebinFactor);
   // check eveness of nbigpixels is same as wfs.npixels:
-  if (even(wfs(ns).npixels)!=even(nbigpixels)) nbigpixels--;
+  if (even(wfs(ns)._npixels)!=even(nbigpixels)) nbigpixels--;
 
   // subsize of sdim that we will use in bimage:
-  rdim = long(rebinFactor*nbigpixels);
+  rdim = long(wfs(ns)._nx);
   xy = long(indices(rdim)-1.);
   tmp = xy(,,1)/rebinFactor + xy(,,2)/rebinFactor*nbigpixels;
 
@@ -390,26 +334,17 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // cases. after the fft, and 1/2 pixel shift, the spot is centered on
   // the 2^n x 2^n fft array.
 
-
-  binindices = array(-1l,[2,sdim,sdim]);
+  binindices = array(-1l,[2,wfs(ns)._nx,wfs(ns)._nx]);
   binindices(1:rdim,1:rdim) = tmp;
-  ss = ceil((sdim-rdim)/2.);
-  binindices = roll(binindices,[ss,ss]);
-  binindices = int(eclat(binindices));
+  ss = ceil((wfs(ns)._nx-rdim)/2.);
+  //~ binindices = roll(binindices,[ss,ss]);
+  //~ binindices = int(eclat(binindices));
   // stuff some more of wfs structure for WFS "ns":
   wfs(ns)._binindices = &(int(binindices));
   // checked, it seems to work.
-
   wfs(ns)._binxy = nbigpixels;
-
-  // 2004mar22: added a guard pixel for each subaperture for the display
-  // 2009oct06: removed it, in the process of implementing the optical
-  // coupling between subapertures
-  // extended field of view stuff, work out npb:
-  tmp = (wfs(ns).extfield-wfs(ns).npixels*wfs(ns).pixsize)/wfs(ns).pixsize;
-  wfs(ns)._npb = clip(2*lround(tmp/2.),0,);
-  wfsnpix = wfs(ns).npixels+wfs(ns)._npb;
-  wfs(ns)._npixels = wfsnpix;
+  
+  if (stop_at==43) error;
 
   // centroid reference vector, after final extraction of subimage:
   centroidw = indgen(wfs(ns)._npixels)-1.-(wfs(ns)._npixels/2.-0.5);
@@ -418,26 +353,29 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns)._centroidw = &centroidw;
 
 
-  write,format="nbigpixels = %d, wfsnpix = %d, wfs._npb=%d\n",\
-    nbigpixels,wfsnpix,wfs(ns)._npb;
+  write,format="nbigpixels = %d, wfs._npixels = %d, wfs._npb=%d\n",\
+    nbigpixels,wfs(ns)._npixels,wfs(ns)._npb;
 
   // just for print out to screen if needed:
   wfs_check_pixel_size,ns,sdim,rebinFactor,actualPixelSize,\
     printheader=(ns==1),silent=silent;
 
-  imistart = (istart-min(istart))/subsize*(wfsnpix);
-  imjstart = (jstart-min(jstart))/subsize*(wfsnpix);
-  wfs(ns)._imistart = &(int(imistart+wfs(ns)._npb/2));
-  wfs(ns)._imjstart = &(int(imjstart+wfs(ns)._npb/2));
+  if (wfs(ns).spotpitch==0) wfs(ns).spotpitch = wfs(ns)._npixels;
+  imistart = (istart-min(istart))/subsize*(wfs(ns).spotpitch);
+  imjstart = (jstart-min(jstart))/subsize*(wfs(ns).spotpitch);
 
-  wfs(ns)._imistart2 = &(int(imistart+(nbigpixels-wfsnpix)/2+wfs(ns)._npb/2));
-  wfs(ns)._imjstart2 = &(int(imjstart+(nbigpixels-wfsnpix)/2+wfs(ns)._npb/2));
+  wfs(ns)._imistart = &(int(imistart));
+  wfs(ns)._imjstart = &(int(imjstart));
+  wfs(ns)._imistart2 = &(int(imistart));
+  wfs(ns)._imjstart2 = &(int(imjstart));
 
-  fimdim = long(nxsub*wfsnpix+(nbigpixels-wfsnpix)+wfs(ns)._npb);
+  //~ fimdim = long(nxsub*wfs(ns)._npixels+(nbigpixels-wfs(ns)._npixels)+wfs(ns)._npb);
+  fimdim = long((nxsub-1)*wfs(ns).spotpitch+wfs(ns)._npixels);
   wfs(ns)._fimage = &(array(float,[2,fimdim,fimdim]));
   wfs(ns)._fimnx = int(fimdim);
   wfs(ns)._fimny = int(fimdim);
 
+  if (stop_at==44) error;
   // This is the tilt to add to the input phase so that
   // the individual subaperture images fall in between
   // the pixels of the quadcell
@@ -462,13 +400,91 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     *wfs(ns)._tiltsh *= 0;
   }
 
+  //================================
+  // COMMON KERNEL: FOLLOW UP
+  //================================
+  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
+  tmp = eclat(makegaussian(wfs(ns)._nx,kernelfwhm/quantumPixelSize,
+                           xc=wfs(ns)._nx/2.+1,yc=wfs(ns)._nx/2.+1));
+  tmp(1,1) = 1.; // this insures that even with fwhm=0, the kernel is a dirac
+  tmp = tmp/sum(tmp);
+  wfs(ns)._kernel = &(float(tmp));
+
+  //==========================================================================
+  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
+  //==========================================================================
+
+  if (wfs(ns)._kernelconv != 0n) {
+    // if kernelconv is 0, then the _shwfs routine does not use wfs._kernels,
+    // so no need to compute it.
+
+    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
+    xy = (indices(wfs(ns)._nx)-wfs(ns)._nx/2.-1)*quantumPixelSize;  // coordinate array in arcsec
+
+    if (sim.verbose >= 1) {
+      write,format="%s\n","Pre-computing Kernels for the SH WFS";
+    }
+
+    kall = [];
+
+    gui_progressbar_frac,0.;
+    gui_progressbar_text,swrite(format=\
+      "Precomputing subaperture kernels, WFS#%d",ns);
+
+    for (l=1; l<=wfs(ns)._nsub4disp; l++) {
+      // for each subaperture, we have to find the elongation and the angle.
+      xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
+      xllt = wfs(ns).LLTxy(1); yllt = wfs(ns).LLTxy(2);
+      d = sqrt((xsub-xllt)^2. +(ysub-yllt)^2.);
+      if (d == 0) {
+        elong = ang = 0.;
+      } else {
+        elong = atan((wfs(ns)._gsalt+wfs(ns)._gsdepth)/d)-atan(wfs(ns)._gsalt/d);
+        elong /= 4.848e-6; // now in arcsec
+        ang = atan(ysub-yllt,xsub-xllt); // fixed 2004aug02
+      }
+      angp90 = ang+pi/2.;
+
+      expo = 4.;
+      alpha = elong/(2.*log(2)^(1/expo));
+      beta = 2*quantumPixelSize/(2.*log(2)^(1/expo));
+      alpha = clip(alpha,0.5*quantumPixelSize,);
+      beta = clip(beta,0.5*quantumPixelSize,alpha);
+
+      tmp  = exp(-((cos(ang)*xy(,,1)+sin(ang)*xy(,,2))/alpha)^expo);
+      tmp *= exp(-((cos(angp90)*xy(,,1)+sin(angp90)*xy(,,2))/beta)^expo);
+      tmp = tmp/sum(tmp);
+      grow,kall,float((eclat(tmp))(*));
+
+      s2 = tel.diam/nxsub*0.9/2.;
+      //if (sim.debug >= 2) {fma; pli,tmp,xsub-s2,ysub-s2,xsub+s2,ysub+s2;}
+      // below: this was too many characters to go thru the python pipe.
+      // with fast processor, we compute fast and send too fast. 2009oct22.
+      //gui_progressbar_text,swrite(format=\
+      //  "Precomputing subaperture kernels for LGS elongation, WFS#%d, sub#%d/%d",\
+      //  ns,l,wfs(ns)._nsub4disp);
+      gui_progressbar_frac,float(l)/wfs(ns)._nsub4disp;
+
+    }
+
+    clean_progressbar;
+    //if (sim.debug >=2) {hitReturn;}
+
+    wfs(ns)._kernels = &(float(kall));
+    wfs(ns)._kerfftr = &(float(kall*0.0f));
+    wfs(ns)._kerffti = &(float(kall*0.0f));
+    kall = [];
+
+  }
+
+
 
   //================================
   // FIELD STOP / AMPLITUDE MASK
   //================================
 
   if (sim.debug>1) \
-    write,format="Dimension for optional amplitude mask: %d\n",2^sdimpow2;
+    write,format="Dimension for optional amplitude mask: %d\n",wfs(ns)._nx;
 
   // reads out the amplitude mask for the subaperture:
   if (wfs(ns).fsname) {
@@ -477,16 +493,16 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     tmp = yao_fitsread(YAO_SAVEPATH+wfs(ns).fsname);
 
     // check that dims are OK:
-    if (anyof(dimsof(tmp)!=[2,2^sdimpow2,2^sdimpow2])) {
+    if (anyof(dimsof(tmp)!=[2,wfs(ns)._nx,wfs(ns)._nx])) {
       error,swrite(format="Bad dimensions for %s. Should be %d, found %d\n",
-                   wfs(ns).fsname,2^sdimpow2,dimsof(tmp)(2));
+                   wfs(ns).fsname,wfs(ns)._nx,dimsof(tmp)(2));
     }
 
     // check of mask is centered (can be a common cause of mistake):
-    f1x = sum(tmp(1:2^(sdimpow2-1),));
-    f2x = sum(tmp(2^(sdimpow2-1)+1:,));
-    f1y = sum(tmp(,1:2^(sdimpow2-1)));
-    f2y = sum(tmp(,2^(sdimpow2-1)+1:));
+    f1x = sum(tmp(1:wfs(ns)._nx/2,));
+    f2x = sum(tmp(wfs(ns)._nx/2+1:,));
+    f1y = sum(tmp(,1:wfs(ns)._nx/2));
+    f2y = sum(tmp(,wfs(ns)._nx/2+1:));
 
     if ((f1x!=f2x)||(f1y!=f2y)) {
       write,format="%s\n","\nWARNING!";
@@ -497,7 +513,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
       write,format="%s\n\n","purpose, you should correct your mask.";
     }
     // modify as required:
-    wfs(ns)._submask = &(float(roll(tmp)));
+    wfs(ns)._submask = &(float(tmp));
     wfs(ns)._domask = 1l;
 
   } else if (strlen(wfs(ns).fstop)>0) {
@@ -699,6 +715,7 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
 {
   extern wfs;
 
+  if (wfs(ns).shmethod==1) return;
 
   pupd       = sim.pupildiam;
   nxsub      = wfs(ns).shnxsub(0);
@@ -868,6 +885,7 @@ func sh_wfs(pupsh,phase,ns)
       fimny      = wfs(ns)._fimny;
     }
 
+    if (stop_at==42) error;
     // C function calls
     // phase to spot image (returned in ffimage)
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
@@ -877,7 +895,7 @@ func sh_wfs(pupsh,phase,ns)
             *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
             *wfs(ns)._binindices, wfs(ns)._binxy,
-            wfs(ns)._rebinfactor, wfs(ns)._npb, *wfs(ns)._unittip, 
+            wfs(ns)._rebinfactor, wfs(ns)._nx, *wfs(ns)._unittip, 
             *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
             *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
             *wfs(ns)._unitdefocus, ffimage, *wfs(ns)._svipc_subok,
@@ -888,7 +906,7 @@ func sh_wfs(pupsh,phase,ns)
             int(wfs(ns).rayleighflag),
             *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
             wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
-
+        
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
       sem_take,semkey,20+4*(ns-1)+1,count=wfs(ns).svipc-1;
@@ -898,11 +916,11 @@ func sh_wfs(pupsh,phase,ns)
     // spot image to slopes:
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
       ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
-
+      
       err = _shwfs_spots2slopes( ffimage,
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                   wfs(ns)._nsub4disp, wfs(ns)._npixels,
-                  wfs(ns)._fimnx , fimny, yoffset,
+                  wfs(ns)._fimnx , wfs(ns)._fimny, yoffset,
                   *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
                   *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise,
                   *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
@@ -910,6 +928,7 @@ func sh_wfs(pupsh,phase,ns)
                   mesvec);
     } else mesvec *= 0;
 
+    
     //write,format="%d %f ",wfs(ns)._cyclecounter,sum(*wfs(ns)._fimage),mesvec(ptp);
 
     if ( wfs(ns).svipc>1 ) {
@@ -946,6 +965,8 @@ func sh_wfs(pupsh,phase,ns)
     shm_unvar,mesvec;
     shm_unvar,ffimage;
   }
+
+  if (stop_at==45) hitReturn;
 
   // return measurement vector in arcsec (thanks to centroiw):
   return mesvec2;

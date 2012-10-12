@@ -1802,7 +1802,7 @@ func make_fieldstop(ns)
 
   // if field stop size has not been set, set it to the subap fov (which seems
   // the best thing to do)
-  if (wfs(ns).fssize==0) wfs(ns).fssize = wfs(ns).npixels * wfs(ns).pixsize;
+  if (wfs(ns).fssize==0) wfs(ns).fssize = wfs(ns)._npixels * wfs(ns).pixsize;
   if (sim.verbose>=1) {
     write,format="WFS#%d Field stop size = %f\n",ns,wfs(ns).fssize;
   }
@@ -1810,14 +1810,16 @@ func make_fieldstop(ns)
   fs_size_fftpix = wfs(ns).fssize/fftpixsize;
 
   if (wfs(ns).fstop=="none") {
-    fs = array(1n,[2,sdim,sdim]);
+    fs = array(1n,[2,wfs(ns)._nx,wfs(ns)._nx]);
   } else if (wfs(ns).fstop=="round") {
-    fs = dist(sdim,xc=sdim/2+0.5,yc=sdim/2+0.5)<=(fs_size_fftpix/2.);
+    fs = dist(wfs(ns)._nx,xc=wfs(ns)._nx/2+0.5, \
+              yc=wfs(ns)._nx/2+0.5)<=(fs_size_fftpix/2.);
   } else { // anything else -> square FS
-    fs = array(0n,[2,sdim,sdim]);
+    fs = array(0n,[2,wfs(ns)._nx,wfs(ns)._nx]);
     hsize = long(round(fs_size_fftpix/2.));
-    hsize = clip(hsize,,sdim/2);
-    fs(sdim/2-hsize+1:sdim/2+hsize,sdim/2-hsize+1:sdim/2+hsize) = 1n;
+    hsize = clip(hsize,,wfs(ns)._nx/2);
+    fs(wfs(ns)._nx/2-hsize+1:wfs(ns)._nx/2+hsize, \
+       wfs(ns)._nx/2-hsize+1:wfs(ns)._nx/2+hsize) = 1n;
   }
   if (wfs(ns).fsoffset!=[]) {
     // only roll by an integer # of fft pixel:
@@ -1830,7 +1832,7 @@ func make_fieldstop(ns)
         ns,(wfs(ns).fsoffset)(1),(wfs(ns).fsoffset)(2);
     }
   }
-  wfs(ns)._submask = &(float(roll(fs)));
+  wfs(ns)._submask = &(float(fs));
   wfs(ns)._domask = 1l;
 }
 

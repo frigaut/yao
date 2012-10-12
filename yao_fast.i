@@ -186,16 +186,21 @@ extern _fftVE2
 
 
 //==================================================================
+extern embed_image
+/* PROTOTYPE
+   int embed_image(float array inim, int indx, int indy,    
+   float array outim, int outdx, int outdy, int destx, int desty)
+*/
 
 extern _shwfs_phase2spots
 /* PROTOTYPE
    int _shwfs_phase2spots(float array pupil, float array phase,
-   float phasescale, float array phaseoffset, int dimx,
-   int array istart, int array jstart, int nx, int ny,
+   float phasescale, float array phaseoffset, int dim,
+   int array istart, int array jstart, int nsx, int nsy,
    int nsubs, int sdimpow2, long domask, float array submask, 
    float array kernel, float array kernels, float array kerfftr,
    float array kerffti, int initkernels, int kernelconv,
-   int array binindices, int binxy, int rebinfactor, int npb,
+   int array binindices, int binxy, int rebinfactor, int nx,
    float array unittip, float array unittilt,
    float array lgs_profile, float array defocuses, int n_in_profile,
    float array unit_defocus, float array fimage, int array svipc_subok,
