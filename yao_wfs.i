@@ -1701,8 +1701,8 @@ func shwfs_comp_lgs_defocuses(ns)
 
 //----------------------------------------------------
 
-func shwfs_tests(name, clean=, wfs_svipc=, debug=, verbose=, batch=)
-/* DOCUMENT shwfs_tests(void,clean=,wfs_svipc=,debug=,verbose=,batch=)
+func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
+/* DOCUMENT shwfs_tests(void,clean=,wfs_svipc=,debug=,dpi=, verbose=,batch=)
 
    Use to check that sh_wfs looks allright (NGS and LGS). Test a variety
    of features (sky, bias, flats, etc...) + background subtraction for
@@ -1730,9 +1730,14 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, verbose=, batch=)
   wfs.svipc     = (wfs_svipc?wfs_svipc:0)
   wfs(1).gsmag  = 8;
   wfs(1).skymag = 0;
-  aoinit,dpi=90,clean=clean;
+  wfs(1).fstop  = "round";
+  wfs(1).fssize = 1.9;
+  wfs(1).spotpitch = 12;
+  sim.verbose   = 1;
+  dpi = (dpi?dpi:(default_dpi?default_dpi:90));
+  aoinit,dpi=dpi,clean=clean;
   winkill;
-  window,0,wait=1,dpi=90,width=0,height=0;
+  window,0,wait=1,dpi=dpi,width=0,height=0;
 
   wfs(1).noise=0;
   shwfs_tests_plots,"NGS w/o sky, w/o noise",batch=batch;
@@ -1759,21 +1764,21 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, verbose=, batch=)
   wfs(1).ron=4;
   shwfs_tests_plots,"NGS w/ sky, w/ noise",batch=batch;
 
-  // "TURNING OFF STAR";
-  // wfs(1).gsmag = 12;
-  // wfs(1).skymag = 10;
-  // sim.debug = 0;
-  // aoinit;
-//
-  // wfs(1).noise=0;
-  // shwfs_tests_plots,"NO NGS with w/ sky, no noise",batch=batch;
-//
-  // wfs(1).noise=1;
-  // wfs(1).ron=0;
-  // shwfs_tests_plots,"NO NGS with w/ sky, w/ noise but no RON",batch=batch;
-//
-  // wfs(1).ron=4;
-  // shwfs_tests_plots,"NO NGS with w/ sky, w/ noise",batch=batch;
+  "TURNING OFF STAR";
+  wfs(1).gsmag = 21;
+  wfs(1).skymag = 10;
+  sim.debug = 0;
+  aoinit;
+  
+  wfs(1).noise=0;
+  shwfs_tests_plots,"NO NGS with w/ sky, no noise",batch=batch;
+  
+  wfs(1).noise=1;
+  wfs(1).ron=0;
+  shwfs_tests_plots,"NO NGS with w/ sky, w/ noise but no RON",batch=batch;
+  
+  wfs(1).ron=4;
+  shwfs_tests_plots,"NO NGS with w/ sky, w/ noise",batch=batch;
 
   write,"W/ BIAS";
   wfs(1).gsmag = 8;
@@ -1820,7 +1825,7 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, verbose=, batch=)
   wfs.gsalt     = 90000;
   wfs.gsdepth   = 10000;
   wfs.laserpower = 10.;
-  wfs.rayleighflag = 1;
+  wfs.rayleighflag = 1; // oct12: rayleigh broken currently.
   aoinit,disp=1,clean=clean;
   // aoloop,disp=1;
 

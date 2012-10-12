@@ -195,7 +195,7 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = "4.10.0";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "4.10.0";
 aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct12";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
@@ -242,8 +242,14 @@ require,"yaodh.i";
 // compatibility with GUI (yaopy.i)
 func null (arg,..) { return 0; }
 
-
-
+func parse_yao_version(ver)
+{
+  extern yao_major_version,yao_minor_version;
+  tmp = strtok(ver,".",3);
+  yao_major_version = tonum(tmp(1));
+  yao_minor_version = tonum(tmp(2));
+}
+parse_yao_version,yao_version;
 
 // All below is designed to be overwritten by appropriate values
 // in yaopy.i when using yao through the GUI
