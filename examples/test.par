@@ -31,6 +31,9 @@ wfs(n).noise       = 1;
 wfs(n).ron         = 3.5;
 wfs(n).shthreshold = 0.;
 wfs(n).nintegcycles= 1;
+if (yao_major_version&&(yao_major_version>=4)&&(yao_minor_version>=10)) {
+  wfs(n).extfield = 2.;
+}
 
 //-------------------------------
 ndm                = 2;
