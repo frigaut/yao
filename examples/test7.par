@@ -22,6 +22,7 @@ tel.cobs	   = 0.1125;
 nwfs               = 2; // number of WFSs (>1 if e.g. mcao)
 wfs = array(wfss,nwfs);
 
+no_pad_simage = 1;
 n   = 1;
 wfs(n).subsystem   = 1;
 wfs(n).type	       = "hartmann";
