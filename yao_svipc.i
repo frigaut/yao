@@ -259,7 +259,7 @@ func wfs_fork_listen(ns,nf)
             *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
             *wfs(ns)._binindices, wfs(ns)._binxy,
-            wfs(ns)._rebinfactor, wfs(ns)._npb, *wfs(ns)._unittip, 
+            wfs(ns)._rebinfactor, wfs(ns)._nx, *wfs(ns)._unittip, 
             *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
             *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
             *wfs(ns)._unitdefocus, ffimage, svipc_subok,

@@ -353,8 +353,8 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns)._centroidw = &centroidw;
 
 
-  write,format="nbigpixels = %d, wfs._npixels = %d, wfs._npb=%d\n",\
-    nbigpixels,wfs(ns)._npixels,wfs(ns)._npb;
+  //~ write,format="nbigpixels = %d, wfs._npixels = %d, wfs._npb=%d\n",\
+    //~ nbigpixels,wfs(ns)._npixels,wfs(ns)._npb;
 
   // just for print out to screen if needed:
   wfs_check_pixel_size,ns,sdim,rebinFactor,actualPixelSize,\
@@ -715,7 +715,7 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
 {
   extern wfs;
 
-  if (wfs(ns).shmethod==1) return;
+  //~ if (wfs(ns).shmethod==1) return;
 
   pupd       = sim.pupildiam;
   nxsub      = wfs(ns).shnxsub(0);
