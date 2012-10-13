@@ -590,7 +590,7 @@ int _shwfs_phase2spots(
    float darkcurrent,   // dark current, e-/pix/frame
    
    int   rayleighflag,  // enable rayleigh processing
-   float *rayleigh,     // rayleigh background, ns*ns*nsubs
+   float *rayleigh,     // rayleigh background, nx*nx*nsubs
                         // here I separated background and rayleigh. the background includes
                         // not only the rayleigh, but also the sky and the dark current.
    int   bckgrdinit,    // init background processing. fill bckgrdcalib
@@ -999,7 +999,7 @@ int _shwfs_phase2spots(
     if (rayleighflag==1) {
       for ( i=0 ; i<nx*nx ; i++ ) {
         if (binindices[i]>=0) {
-          brayleigh[binindices[i]] += rayleigh[i+l*n];
+          brayleigh[binindices[i]] += rayleigh[i+l*nx*nx];
         }
       }
       // NORMALIZE FLUX FOR RAYLEIGH

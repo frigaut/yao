@@ -210,72 +210,6 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   // compute other setup variables for _shwfs:
 
-  //==============================================
-  // COMPUTE RAYLEIGH STUFF: SUBAPERTURE DEPENDANT
-  //==============================================
-
-  rayleighflux = array(0.0f,wfs(ns)._nsub4disp);
-  sodiumflux   = array(1.0f,wfs(ns)._nsub4disp);
-
-  if (wfs(ns).rayleighflag == 1n) {
-
-    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(sdim)-sdim/2.-1)*quantumPixelSize;  // coordinate array in arcsec
-
-    if (sim.verbose > 0) {write,"Pre-computing Rayleigh for the SH WFS";}
-
-    kall = [];
-
-    rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
-      swrite(format="%d",long(gs.zenithangle))+".fits";
-    isthere = fileExist(YAO_SAVEPATH+rayfname);
-    fov    = quantumPixelSize*sdim;
-    aspp   = quantumPixelSize;
-
-
-    if ( (isthere) && (!clean) ) {
-
-      kall         = yao_fitsread(YAO_SAVEPATH+rayfname)*1e6;
-      rayleighflux = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=1);
-      sodiumflux   = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=2);
-
-    } else {
-
-      for (l=1; l<=wfs(ns)._nsub4disp; l++) {
-
-        xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-        tmp = mcao_rayleigh(ns,ysub,xsub,fov=fov,aspp=aspp,zenith=gs.zenithangle);
-        rayleighflux(l) = sum(tmp(,,1));
-        sodiumflux(l)   = sum(tmp(,,2));
-        tmp = transpose(tmp(,,1));
-        // the switch of xsub <-> ysub and transpose are to accomodate the
-        // C vs yorick 0 vs 1 start array index.
-        //        tmp = tmp/sum(tmp);
-        grow,kall,(eclat(tmp))(*);
-
-      }
-
-      yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
-      yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
-      yao_fitswrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
-
-    }
-
-    if (sim.verbose > 0) {
-      write,"From Rayleigh calculations:";
-      write,format="Rayleigh / Sodium ratio in worse/best subapertures: %f, %f\n",
-        max(rayleighflux/sodiumflux),min(rayleighflux/sodiumflux);
-      write,format="Rayleigh flux varies between %f and %f /cm2/looptime\n",
-        min(rayleighflux),max(rayleighflux);
-      write,format="Sodium   flux varies between %f and %f /cm2/looptime\n",
-        min(sodiumflux),max(sodiumflux);
-    }
-
-    wfs(ns)._rayleigh = &(float(kall));
-    kall = [];
-  } else wfs(ns)._rayleigh = &([0.0f]); // to avoid type conversion error in _shwfs call
-
-
   //================================
   // SUBAPERTURE SIZE AND PIXEL SIZE
   //================================
@@ -476,6 +410,72 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     kall = [];
 
   }
+
+  //==============================================
+  // COMPUTE RAYLEIGH STUFF: SUBAPERTURE DEPENDENT
+  //==============================================
+
+  rayleighflux = array(0.0f,wfs(ns)._nsub4disp);
+  sodiumflux   = array(1.0f,wfs(ns)._nsub4disp);
+
+  if (wfs(ns).rayleighflag == 1n) {
+
+    if (sim.verbose > 0) {write,"Pre-computing Rayleigh for the SH WFS";}
+
+    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
+    xy = (indices(wfs(ns)._nx)-wfs(ns)._nx/2.-1)*quantumPixelSize;  // coordinate array in arcsec
+
+    kall = [];
+
+    rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
+      swrite(format="%d",long(gs.zenithangle))+".fits";
+    isthere = fileExist(YAO_SAVEPATH+rayfname);
+    fov    = quantumPixelSize*wfs(ns)._nx;
+    aspp   = quantumPixelSize;
+
+
+    if ( (isthere) && (!clean) ) {
+
+      kall         = yao_fitsread(YAO_SAVEPATH+rayfname)*1e6;
+      rayleighflux = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=1);
+      sodiumflux   = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=2);
+
+    } else {
+
+      for (l=1; l<=wfs(ns)._nsub4disp; l++) {
+
+        xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
+        tmp = mcao_rayleigh(ns,ysub,xsub,fov=fov,aspp=aspp,zenith=gs.zenithangle);
+        rayleighflux(l) = sum(tmp(,,1));
+        sodiumflux(l)   = sum(tmp(,,2));
+        tmp = transpose(tmp(,,1));
+        // the switch of xsub <-> ysub and transpose are to accomodate the
+        // C vs yorick 0 vs 1 start array index.
+        //        tmp = tmp/sum(tmp);
+        grow,kall,(eclat(tmp))(*);
+
+      }
+
+      yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
+      yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
+      yao_fitswrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
+
+    }
+
+    if (sim.verbose > 0) {
+      write,"From Rayleigh calculations:";
+      write,format="Rayleigh / Sodium ratio in worse/best subapertures: %f, %f\n",
+        max(rayleighflux/sodiumflux),min(rayleighflux/sodiumflux);
+      write,format="Rayleigh flux varies between %f and %f /cm2/looptime\n",
+        min(rayleighflux),max(rayleighflux);
+      write,format="Sodium   flux varies between %f and %f /cm2/looptime\n",
+        min(sodiumflux),max(sodiumflux);
+    }
+
+    wfs(ns)._rayleigh = &(float(kall));
+    kall = [];
+  } else wfs(ns)._rayleigh = &([0.0f]); // to avoid type conversion error in _shwfs call
+
 
 
 
@@ -1824,9 +1824,10 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   sim.pupildiam = thispdiam;
   wfs.gsalt     = 90000;
   wfs.gsdepth   = 10000;
-  wfs.laserpower = 10.;
+  wfs.laserpower= 10.;
+  sim.verbose   = 1;
   wfs.rayleighflag = 1; // oct12: rayleigh broken currently.
-  aoinit,disp=1,clean=clean;
+  aoinit,disp=1,dpi=dpi,clean=clean;
   // aoloop,disp=1;
 
   shwfs_tests_plots,"2 LGSs with Rayleigh",batch=batch;
@@ -2011,7 +2012,7 @@ func sh_wfs_speed_tests(case,png=)
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
     }
   } else if (case==4) {
-    cname = "extendedfield"; cunit = "pixels";
+    cname = "extendedfield"; cunit = "wfs.!_npb=pixels";
     in = [0,2,4,6,8,10.];
     tim = in*0.;
     pfit = 0; pzero = 0;
@@ -2071,9 +2072,9 @@ func sh_wfs_speed_tests(case,png=)
     fit = tim(0)/in(0)^2*in^2;
     plg,fit,in,color="red";
   }
-  pltitle,"sh!_wfs() exec time vs "+cname;
+  pltitle,swrite(format="sh!_wfs() exec time vs %s (%s)",cname,yao_version);
   xytitles,cname+" ["+cunit+"]","sh!_wfs() exec time [ms]",[-0.01,0.];
-  if (png) png_write,"shwfs_exec_time_vs_"+cname+".png",rgb_read();
+  if (png) png_write,"shwfs_exec_time_vs_"+cname+"_v"+yao_version+".png",rgb_read();
 }
 
 func svipc_time_sh_wfs(void,nit=,svipc=,doplot=)
