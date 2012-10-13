@@ -97,7 +97,7 @@ func all_layers2(ns,npt,fwhm)
   shwfs_comp_lgs_defocuses,ns;
 }
 
-func ubc_profile(void)
+func ubc_profile(bin2)
 {
   extern wfs;
   amp = [0.00125154,0.00143618,0.00161906,0.0481773,0.043927,0.0533849,0.0932741,
@@ -105,6 +105,10 @@ func ubc_profile(void)
       0.00831713,0.00523775,0.0045743,0.0048842,0.00324208];
   alt = [90,91.3158,92.6316,93.9474,95.2632,96.5789,97.8947,99.2105,100.526,101.842,
         103.158,104.474,105.789,107.105,108.421,109.737,111.053,112.368,113.684,115]*1e3;
+  if (bin2) {
+    amp = (amp+roll(amp,1))(indgen(10)*2);
+    alt = (alt+roll(alt,1))(indgen(10)*2)/2.;
+  }
   for (i=1;i<=6;i++) {
     wfs(i).lgs_prof_amp= &float(amp);
     wfs(i).lgs_prof_alt= &float(alt);

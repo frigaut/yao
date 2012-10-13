@@ -1942,8 +1942,13 @@ func pyramid_wfs_checks(nchecks)
 
 func sh_wfs_speed_tests(case,png=)
 {
-  if (!case) {
+  if (case==[]) {
     write,"sh_wfs_speed_tests,case  with case=1,2,3,4,..";
+    return;
+  }
+
+  if (case==0) {
+    for (i=1;i<=6;i++) sh_wfs_speed_tests,i,png=png;
     return;
   }
   
@@ -1968,9 +1973,10 @@ func sh_wfs_speed_tests(case,png=)
       now = tim(i) = 1000./100.*tac();
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+      label = yao_struct_member_to_string(["wfs(1).shnxsub", \
+        "wfs(1).pixsize","wfs(1).npixels","wfs(1).noise", \
+        "wfs(1).extfield","wfs(1)._nx"]);
     }
-    // from above: fits really well with N^2 law, i.e. # of pixel to process.
-    // not dominated by FFT apparently.
   } else if (case==2) {
     cname = "wfs.npixels"; cunit = "pixels";
     in = [2,4,6,8,10,12,14,16];
@@ -1992,6 +1998,9 @@ func sh_wfs_speed_tests(case,png=)
       now = tim(i) = 1000./10.*tac();
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+      label = yao_struct_member_to_string(["sim.pupildiam","wfs(1).shnxsub", \
+        "wfs(1).pixsize","wfs(1).noise", \
+        "wfs(1).extfield","wfs(1)._nx"]);
     }
   } else if (case==3) {
     cname = "shnxsub"; cunit = "#sub";
@@ -2013,6 +2022,9 @@ func sh_wfs_speed_tests(case,png=)
       now = tim(i) = 1000./10.*tac();
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+      label = yao_struct_member_to_string(["sim.pupildiam", \
+        "wfs(1).pixsize","wfs(1).npixels","wfs(1).noise", \
+        "wfs(1).extfield","wfs(1)._nx"]);
     }
   } else if (case==4) {
     cname = "extended_field_w_kernel"; cunit = "wfs._npb=pixels";
@@ -2037,6 +2049,8 @@ func sh_wfs_speed_tests(case,png=)
       now = tim(i) = 1000./100.*tac();
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+      label = yao_struct_member_to_string(["sim.pupildiam","wfs(1).shnxsub", \
+        "wfs(1).pixsize","wfs(1).npixels","wfs(1).noise"]);
     }
   } else if (case==5) {
     cname = "lgsprofile"; cunit = "#points";
@@ -2063,6 +2077,9 @@ func sh_wfs_speed_tests(case,png=)
       now = tim(i) = 1000./10.*tac();
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+      label = yao_struct_member_to_string(["sim.pupildiam","wfs(1).shnxsub", \
+        "wfs(1).pixsize","wfs(1).npixels","wfs(1).noise", \
+        "wfs(1).extfield","wfs(1)._nx"]);
     }
   } else if (case==6) {
     cname = "extended_field_wo_kernel"; cunit = "wfs._npb=pixels";
@@ -2087,9 +2104,12 @@ func sh_wfs_speed_tests(case,png=)
       now = tim(i) = 1000./100.*tac();
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+      label = yao_struct_member_to_string(["sim.pupildiam","wfs(1).shnxsub", \
+        "wfs(1).pixsize","wfs(1).npixels","wfs(1).noise"]);
     }
   }
-  window,dpi=120,wait=1;
+  winkill,0;
+  window,0,dpi=120,wait=1;
   plot,tim,in; 
   plmargin;
   plp,tim,in,symbol=20,size=0.3;
@@ -2102,7 +2122,22 @@ func sh_wfs_speed_tests(case,png=)
   }
   pltitle,escapechar(swrite(format="sh_wfs() exec time vs %s (%s)",cname,yao_version));
   xytitles,escapechar(cname+" ["+cunit+"]"),escapechar("sh_wfs() exec time [ms]"),[-0.01,0.];
+  l = limits();
+  plt,escapechar(label),l(2),l(3),tosys=1,justify="RB",height=10;
   if (png) png_write,"shwfs_exec_time_vs_"+cname+"_v"+yao_version+".png",rgb_read();
+}
+
+func yao_struct_member_to_string(name)
+{
+  str = "";
+  for (i=1;i<=numberof(name);i++) {
+    include,[swrite(format="tmp = %s",name(i))],1;
+    if ((structof(tmp)==int)||(structof(tmp)==long)) fmt="%d";
+    if ((structof(tmp)==float)||(structof(tmp)==double)) fmt="%.3f";
+    str += swrite(format="%s = "+fmt,name(i),tmp);
+    if (i<numberof(name)) str += "\n";
+  }
+  return str;
 }
 
 func svipc_time_sh_wfs(void,nit=,svipc=,doplot=)
