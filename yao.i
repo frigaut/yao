@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "4.10.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct12";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "4.10.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct13";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -3378,6 +3378,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     write,f,format="Mirror #%1d, %s, %d actuators, conjugated @ %.0f m\n",
       nm,dm(nm).type,dm(nm)._nact,dm(nm).alt;
   }
+
   for (ns=1;ns<=nwfs;ns++) {
     write,f,format="WFS #%2d, %s (meth. %d), %2d subap., offaxis "+
       "(%+4.1f\",%+4.1f\"), noise %s\n",
@@ -3389,7 +3390,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     cos(gs.zenithangle*dtor)^0.6,loop.niter;
   close,f;
 
-
+  // make sure kernelconv is good after the imat:
+  for (ns=1;ns<=nwfs;ns++) {
+    wfs(ns)._kernelconv = 1n;
+    if ((wfs(ns).kernel==0)&&(wfs(ns)._gsdepth==0)) wfs(ns)._kernelconv = 0n;
+    if (wfs(ns).shmethod==1) wfs(ns)._kernelconv = 0n;
+  }
+  
   // basic initialization in case of svipc use:
   if (sim.svipc) require,"yao_svipc.i";
 

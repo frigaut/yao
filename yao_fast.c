@@ -238,6 +238,35 @@ int _init_fftw_plans(int nlimit)
   return(0);
 }
 
+int _init_fftw_plan(int size)
+{
+  fftwf_complex *inf;
+  fftwf_complex *outf;
+  fftwf_plan p1,p2,p3;
+  float *rinf;
+  int plan_mode;
+
+  plan_mode = FFTWOPTMODE;
+
+  printf("Optimizing 2D FFT - size = %d\n",size);
+  fflush(stdout);
+  rinf = fftwf_malloc(size*size*sizeof(float));
+  inf  = fftwf_malloc(size*size*sizeof(fftwf_complex));
+  outf = fftwf_malloc(size*size*sizeof(fftwf_complex));
+  p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
+  p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
+  p3 = fftwf_plan_dft_r2c_2d(size, size, rinf, outf, plan_mode);
+
+  fftwf_free(rinf);
+  fftwf_free(inf);
+  fftwf_free(outf);
+  fftwf_destroy_plan(p1);
+  fftwf_destroy_plan(p2);
+  fftwf_destroy_plan(p3);
+
+  return(0);
+}
+
 /**************************************************************
  * The following function computes the PSF, given a pupil and *
  * a phase, both float. phase can be a 3 dimensional array,   *

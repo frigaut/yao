@@ -122,7 +122,7 @@ func init_fftw_wisdom(nlimit)
     write,format="%s\n","If you wish to re-run init_fftw_wisdom,";
     write,format="%s\n","delete the existing fftw_wisdom.dat";
   } else { //file does not exist
-    _init_fftw_plans,nlimit;
+    _init_fftw_plans,int(nlimit);
     _export_wisdom,wisdom_file;
   }
 }
@@ -133,7 +133,11 @@ func init_fftw_wisdom(nlimit)
 
 extern _init_fftw_plans
 /* PROTOTYPE
-   int _init_fftw_plans(long nlimit)
+   int _init_fftw_plans(int nlimit)
+*/
+extern _init_fftw_plan
+/* PROTOTYPE
+   int _init_fftw_plan(int size)
 */
 extern _import_wisdom
 /* PROTOTYPE

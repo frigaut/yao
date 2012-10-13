@@ -231,6 +231,9 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // note that nx can actually be smaller than sdim, as we are xfering into the
   // ximage and the xfer is bound checked.
   wfs(ns).extfield = wfs(ns)._npixels*wfs(ns).pixsize;
+  
+  // call optimizer for this size FFTW:
+  _init_fftw_plan,int(wfs(ns)._nx);
 
   // now compute _shwfs C routine internal array size:
   // for bimage (trimmed and rebinned simage):
@@ -2012,7 +2015,7 @@ func sh_wfs_speed_tests(case,png=)
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
     }
   } else if (case==4) {
-    cname = "extendedfield"; cunit = "wfs.!_npb=pixels";
+    cname = "extended_field_w_kernel"; cunit = "wfs._npb=pixels";
     in = [0,2,4,6,8,10.];
     tim = in*0.;
     pfit = 0; pzero = 0;
@@ -2024,6 +2027,7 @@ func sh_wfs_speed_tests(case,png=)
       wfs(1).pixsize=0.1;
       wfs(1).npixels=6;
       wfs(1).noise = 0;
+      wfs(1).kernel = 0.2;
       atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
       atm.dr0at05mic=0.;
       aoinit,disp=0;
@@ -2060,6 +2064,30 @@ func sh_wfs_speed_tests(case,png=)
       write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
         sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
     }
+  } else if (case==6) {
+    cname = "extended_field_wo_kernel"; cunit = "wfs._npb=pixels";
+    in = [0,2,4,6,8,10.];
+    tim = in*0.;
+    pfit = 0; pzero = 0;
+    for (i=1;i<=numberof(in);i++) {
+      aoread,"sh6x6.par";
+      wfs(1).extfield = in(i);
+      wfs(1).shnxsub = 8;
+      sim.pupildiam = 256;
+      wfs(1).pixsize=0.1;
+      wfs(1).npixels=6;
+      wfs(1).noise = 0;
+      wfs(1).kernel = 0.0;
+      atm.screen = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+      atm.dr0at05mic=0.;
+      aoinit,disp=0;
+      in(i) = wfs(1)._npb;
+      tic;
+      for (j=1;j<=100;j++) sh_wfs,pupil,pupil*0.0f,1;
+      now = tim(i) = 1000./100.*tac();
+      write,format="pupd=%d SH%dx%d, npixels=%d, time/call=%.1fms\n",
+        sim.pupildiam, wfs(1).shnxsub, wfs(1).shnxsub, wfs(1).npixels, now;
+    }
   }
   window,dpi=120,wait=1;
   plot,tim,in; 
@@ -2072,8 +2100,8 @@ func sh_wfs_speed_tests(case,png=)
     fit = tim(0)/in(0)^2*in^2;
     plg,fit,in,color="red";
   }
-  pltitle,swrite(format="sh!_wfs() exec time vs %s (%s)",cname,yao_version);
-  xytitles,cname+" ["+cunit+"]","sh!_wfs() exec time [ms]",[-0.01,0.];
+  pltitle,escapechar(swrite(format="sh_wfs() exec time vs %s (%s)",cname,yao_version));
+  xytitles,escapechar(cname+" ["+cunit+"]"),escapechar("sh_wfs() exec time [ms]"),[-0.01,0.];
   if (png) png_write,"shwfs_exec_time_vs_"+cname+"_v"+yao_version+".png",rgb_read();
 }
 
