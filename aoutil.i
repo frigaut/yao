@@ -1810,17 +1810,18 @@ func make_fieldstop(ns)
   fs_size_fftpix = wfs(ns).fssize/fftpixsize;
 
   if (wfs(ns).fstop=="none") {
-    fs = array(1n,[2,wfs(ns)._nx,wfs(ns)._nx]);
+    fs = array(1n,[2,wfs(ns)._nx4fft,wfs(ns)._nx4fft]);
   } else if (wfs(ns).fstop=="round") {
-    fs = dist(wfs(ns)._nx,xc=wfs(ns)._nx/2+0.5, \
+    fs = dist(wfs(ns)._nx4fft,xc=wfs(ns)._nx/2+0.5, \
               yc=wfs(ns)._nx/2+0.5)<=(fs_size_fftpix/2.);
   } else { // anything else -> square FS
-    fs = array(0n,[2,wfs(ns)._nx,wfs(ns)._nx]);
+    fs = array(0n,[2,wfs(ns)._nx4fft,wfs(ns)._nx4fft]);
     hsize = long(round(fs_size_fftpix/2.));
     hsize = clip(hsize,,wfs(ns)._nx/2);
     fs(wfs(ns)._nx/2-hsize+1:wfs(ns)._nx/2+hsize, \
        wfs(ns)._nx/2-hsize+1:wfs(ns)._nx/2+hsize) = 1n;
   }
+  
   if (wfs(ns).fsoffset!=[]) {
     // only roll by an integer # of fft pixel:
     fsoffset = long(round(wfs(ns).fsoffset/fftpixsize));
@@ -1832,6 +1833,7 @@ func make_fieldstop(ns)
         ns,(wfs(ns).fsoffset)(1),(wfs(ns).fsoffset)(2);
     }
   }
+
   wfs(ns)._submask = &(float(fs));
   wfs(ns)._domask = 1l;
 }

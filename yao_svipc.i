@@ -259,7 +259,7 @@ func wfs_fork_listen(ns,nf)
             *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
             *wfs(ns)._binindices, wfs(ns)._binxy,
-            wfs(ns)._rebinfactor, wfs(ns)._nx, *wfs(ns)._unittip, 
+            wfs(ns)._rebinfactor, wfs(ns)._nx4fft, *wfs(ns)._unittip, 
             *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
             *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
             *wfs(ns)._unitdefocus, ffimage, svipc_subok,
@@ -324,6 +324,8 @@ func split_subok(ns,&yoffset,&ysize)
 
   for (i=1;i<=wfs(ns).svipc;i++) {
     subok(,i)  = ((nt+1)==i);
+    if (numberof(where(subok(,i)))==0) \
+     error,swrite(format="Too many threads, max # thread = number of row of subap (%d)\n",wfs(ns).shnxsub);
     yoffset(i) = (*wfs(ns)._imjstart2)(where(subok(,i))(1));
     ysize(i)   = (*wfs(ns)._imjstart2)(where(subok(,i))(0)) - \
       yoffset(i)+wfs(ns).npixels;

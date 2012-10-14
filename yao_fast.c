@@ -759,7 +759,7 @@ int _shwfs_phase2spots(
     }
     fftwf_execute(fftpx);
   }
-  fftwf_destroy_plan(fftpx); /* mem leak fixed 2008nov18 ! */
+  fftwf_destroy_plan(fftpx);
 
   fftps  = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_FORWARD, FFTW_ESTIMATE);
   fftpx  = fftwf_plan_dft_2d(nx, nx, Ax, resultx, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -1032,23 +1032,28 @@ int _shwfs_phase2spots(
         }
       }
       // NORMALIZE FLUX FOR RAYLEIGH
+      if (debug) printf("here4-1\n");
       totrayleigh = 0.0f;
       for ( i=0 ; i<nb*nb ; i++ ) { totrayleigh += brayleigh[i]; }
+      if (debug) printf("l=%d, totrayleigh=%f\n",l,totrayleigh);
   
       if (totrayleigh > 0.0f) {
         totrayleigh = rayleighflux[l]/totrayleigh;
-        for ( i = 0; i < nb; i++ ) { brayleigh[i] = brayleigh[i]*totrayleigh; }
+        for ( i = 0; i < nb*nb; i++ ) brayleigh[i] = brayleigh[i]*totrayleigh;
       }
+      if (debug) printf("here4-2\n");
     }
   
     // NORMALIZE FLUX FOR SKY
     //    sky = skyflux[l] / (float)(nb);  // sky per rebinned pixel, e-/frame
     sky = skyflux[l];  // sky per rebinned pixel, e-/frame
   
+    if (debug) printf("here4-3\n");
     for ( i=0 ; i<nb*nb ; i++ ) { 
       // bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
       bimage[i] += ( sky + brayleigh[i] ) * bsubmask[i]; 
     }
+    if (debug) printf("here4-4\n");
     
     cpu5  = p_cpu_secs(&sys);
     cpu54 += cpu5-cpu4;
@@ -1059,8 +1064,6 @@ int _shwfs_phase2spots(
     for ( j=0 ; j<nb ;j++) {
       for ( i=0 ; i<nb ;i++) {
         k = koff + i + j*fimnx;
-        //        fimage[k] += bimage[i+j*binxy];
-        // LGS FIXME FIXME FIXME: flux totally screwed up w/ new lgs_prof_amp!
         *(fimage+k) += bimage[i+j*nb];
         //~ if (bimage[i+j*nb]==0) printf("bimage[%d]==0 ",i+j*nb);
       }
@@ -1212,9 +1215,9 @@ int _shwfs_spots2slopes(
   // supposed to result from miscalibrations
     
   // if requested, we should now subtract the background:
-  //~ if (bckgrdsub) {
-    //~ for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) fimage[i] -= bckgrdcalib[i];
-  //~ }
+  if (bckgrdsub) {
+    for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) fimage[i] -= bckgrdcalib[i];
+  }
 
   //thresholding in case of default yao thresholding or "podium" thresholding
   if (shthmethod == 1 || shthmethod == 2) {

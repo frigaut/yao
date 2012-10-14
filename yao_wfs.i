@@ -146,9 +146,6 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   } else puppixoffset = [0,0];
 
   nsubs = nxsub*nxsub;
-//  istart = (indgen(nsubs)-1)/nxsub*subsize  +is+puppixoffset(1);
-//  jstart = ((indgen(nsubs)-1)%nxsub)*subsize+is+puppixoffset(2);
-
   istart = ((indgen(nsubs)-1)%nxsub)*subsize + is + puppixoffset(1);
   jstart = ((indgen(nsubs)-1)/nxsub)*subsize + is + puppixoffset(2);
   xsub = (((indgen(nsubs)-1)%nxsub)+0.5)*tel.diam/nxsub-tel.diam/2.;
@@ -161,7 +158,6 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   fluxPerSub = array(float,nsubs);
 
   for (i=1;i<=nsubs;i++) {
-
     fluxPerSub(i) = sum(pupsh(istart(i):istart(i)+subsize-1,
                               jstart(i):jstart(i)+subsize-1));
   }
@@ -177,16 +173,12 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // - the really valid ones, for which we will compute the slope information -> _nsub
 
   if (wfs(ns).shmethod==2) {
-
     gind       = where(fluxPerSub > 0);
-
   } else {
-
     // shmethod=1 -> geometrical SH.
     // for these, it makes no sense to differentiate display and slope/valid
     // subapertures. We'll make them the same
     gind       = where(fluxPerSub > fracsub);
-
   }
 
   // then out of these, we will only compute mesvec for the "valid":
@@ -232,8 +224,27 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // ximage and the xfer is bound checked.
   wfs(ns).extfield = wfs(ns)._npixels*wfs(ns).pixsize;
   
+  // now let's find if there are better dimension for the fft:
+  if ((wfs(ns)._npb>0)&&(wfs(ns).shmethod==2)) {
+    nffts = 20; ncalls = 50;
+    ffttim = array(0.,nffts);
+    fftn = wfs(ns)._nx+indgen(nffts)-1;
+    for (i=1;i<=nffts;i++) {
+      tmp = array(complex,[2,fftn(i),fftn(i)]);
+      for (j=1;j<=2;j++) _fftVE2,&tmp.re,&tmp.im,fftn(i),1; // warm up
+      tic; 
+      for (j=1;j<=ncalls;j++) _fftVE2,&tmp.re,&tmp.im,fftn(i),-1; 
+      ffttim(i) = tac()/ncalls*1e6; // in microseconds
+    }
+    tmp = [];
+    wfs(ns)._nx4fft = fftn(wheremin(ffttim)(1));
+    if (sim.verbose) {
+      write,format="FFTW: Best dim for ximage = %d, up from %d (time=%.2fms, down from %.2fms)\n",\
+        wfs(ns)._nx4fft,wfs(ns)._nx,min(ffttim),ffttim(1);
+    }
+  } else wfs(ns)._nx4fft = wfs(ns)._nx;
   // call optimizer for this size FFTW:
-  _init_fftw_plan,int(wfs(ns)._nx);
+  if (wfs(ns).shmethod==2) _init_fftw_plan,int(wfs(ns)._nx4fft);
 
   // now compute _shwfs C routine internal array size:
   // for bimage (trimmed and rebinned simage):
@@ -271,7 +282,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // cases. after the fft, and 1/2 pixel shift, the spot is centered on
   // the 2^n x 2^n fft array.
 
-  binindices = array(-1l,[2,wfs(ns)._nx,wfs(ns)._nx]);
+  binindices = array(-1l,[2,wfs(ns)._nx4fft,wfs(ns)._nx4fft]);
   binindices(1:rdim,1:rdim) = tmp;
   ss = ceil((wfs(ns)._nx-rdim)/2.);
   //~ binindices = roll(binindices,[ss,ss]);
@@ -341,8 +352,8 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // COMMON KERNEL: FOLLOW UP
   //================================
   quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-  tmp = eclat(makegaussian(wfs(ns)._nx,kernelfwhm/quantumPixelSize,
-                           xc=wfs(ns)._nx/2.+1,yc=wfs(ns)._nx/2.+1));
+  tmp = eclat(makegaussian(wfs(ns)._nx4fft,kernelfwhm/quantumPixelSize,
+                           xc=wfs(ns)._nx4fft/2.+1,yc=wfs(ns)._nx4fft/2.+1));
   tmp(1,1) = 1.; // this insures that even with fwhm=0, the kernel is a dirac
   tmp = tmp/sum(tmp);
   wfs(ns)._kernel = &(float(tmp));
@@ -356,7 +367,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     // so no need to compute it.
 
     quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(wfs(ns)._nx)-wfs(ns)._nx/2.-1)*quantumPixelSize;  // coordinate array in arcsec
+    xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;  // coordinate array in arcsec
 
     if (sim.verbose >= 1) {
       write,format="%s\n","Pre-computing Kernels for the SH WFS";
@@ -423,10 +434,10 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   if (wfs(ns).rayleighflag == 1n) {
 
-    if (sim.verbose > 0) {write,"Pre-computing Rayleigh for the SH WFS";}
+    if (sim.verbose > 0) {write,format="%s\n","Pre-computing Rayleigh for the SH WFS";}
 
     quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(wfs(ns)._nx)-wfs(ns)._nx/2.-1)*quantumPixelSize;  // coordinate array in arcsec
+    xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;  // coordinate array in arcsec
 
     kall = [];
 
@@ -516,7 +527,9 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
       write,format="%s\n\n","purpose, you should correct your mask.";
     }
     // modify as required:
-    wfs(ns)._submask = &(float(tmp));
+    tmp4fft = array(0.0f,[2,wfs(ns)._nx4fft,wfs(ns)._nx4fft]);
+    tmp4fft(1:wfs(ns)._nx,1:wfs(ns)._nx) = tmp;
+    wfs(ns)._submask = &(float(tmp4fft));
     wfs(ns)._domask = 1l;
 
   } else if (strlen(wfs(ns).fstop)>0) {
@@ -897,8 +910,8 @@ func sh_wfs(pupsh,phase,ns)
             wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
             *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
-            *wfs(ns)._binindices, wfs(ns)._binxy,
-            wfs(ns)._rebinfactor, wfs(ns)._nx, *wfs(ns)._unittip, 
+            *wfs(ns)._binindices, wfs(ns)._binxy, wfs(ns)._rebinfactor, 
+            wfs(ns)._nx4fft, *wfs(ns)._unittip, 
             *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
             *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
             *wfs(ns)._unitdefocus, ffimage, *wfs(ns)._svipc_subok,
@@ -1738,6 +1751,7 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   wfs(1).spotpitch = 12;
   sim.verbose   = 1;
   dpi = (dpi?dpi:(default_dpi?default_dpi:90));
+  if (quit_forks) quit_forks();
   aoinit,dpi=dpi,clean=clean;
   winkill;
   window,0,wait=1,dpi=dpi,width=0,height=0;
@@ -1755,6 +1769,7 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   write,"ADDING SKY";
   wfs(1).skymag = 10;
   sim.debug = 0;
+  if (quit_forks) quit_forks();
   aoinit;
 
   wfs(1).noise=0;
@@ -1768,26 +1783,28 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   shwfs_tests_plots,"NGS w/ sky, w/ noise",batch=batch;
 
   "TURNING OFF STAR";
-  wfs(1).gsmag = 21;
+  wfs(1).gsmag = 30;
   wfs(1).skymag = 10;
   sim.debug = 0;
+  if (quit_forks) quit_forks();
   aoinit;
   
   wfs(1).noise=0;
-  shwfs_tests_plots,"NO NGS with w/ sky, no noise",batch=batch;
+  shwfs_tests_plots,"(almost) NO NGS w/ sky, no noise",batch=batch;
   
   wfs(1).noise=1;
   wfs(1).ron=0;
-  shwfs_tests_plots,"NO NGS with w/ sky, w/ noise but no RON",batch=batch;
+  shwfs_tests_plots,"(almost) NO NGS w/ sky, w/ noise but no RON",batch=batch;
   
   wfs(1).ron=4;
-  shwfs_tests_plots,"NO NGS with w/ sky, w/ noise",batch=batch;
+  shwfs_tests_plots,"(almost) NO NGS w/ sky, w/ noise",batch=batch;
 
   write,"W/ BIAS";
   wfs(1).gsmag = 8;
   wfs(1).skymag = 10;
   wfs(1).biasrmserror = 50.;
   sim.debug = 0;
+  if (quit_forks) quit_forks();
   aoinit;
 
   wfs(1).noise=0;
@@ -1806,6 +1823,7 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   wfs(1).biasrmserror = 0.;
   wfs(1).flatrmserror = 0.3;
   sim.debug = 0;
+  if (quit_forks) quit_forks();
   aoinit;
 
   wfs(1).noise=0;
@@ -1828,10 +1846,9 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   wfs.gsalt     = 90000;
   wfs.gsdepth   = 10000;
   wfs.laserpower= 10.;
-  sim.verbose   = 1;
-  wfs.rayleighflag = 1; // oct12: rayleigh broken currently.
+  wfs.rayleighflag = 1;
+  if (quit_forks) quit_forks();
   aoinit,disp=1,dpi=dpi,clean=clean;
-  // aoloop,disp=1;
 
   shwfs_tests_plots,"2 LGSs with Rayleigh",batch=batch;
 
@@ -1948,7 +1965,10 @@ func sh_wfs_speed_tests(case,png=)
   }
 
   if (case==0) {
-    for (i=1;i<=6;i++) sh_wfs_speed_tests,i,png=png;
+    for (i=1;i<=6;i++) {
+      sh_wfs_speed_tests,i,png=png;
+      pause,100;
+    }
     return;
   }
   
@@ -2033,6 +2053,7 @@ func sh_wfs_speed_tests(case,png=)
     pfit = 0; pzero = 0;
     for (i=1;i<=numberof(in);i++) {
       aoread,"sh6x6.par";
+      sim.verbose = 1;
       wfs(1).extfield = in(i);
       wfs(1).shnxsub = 8;
       sim.pupildiam = 256;
@@ -2140,28 +2161,28 @@ func yao_struct_member_to_string(name)
   return str;
 }
 
-func svipc_time_sh_wfs(void,nit=,svipc=,doplot=)
+func svipc_time_sh_wfs(void,nit=,svipc=)
 {
   extern wfs;
 
   if (!nit) nit=100;
+  if (nit<20) nit=20;
   if (svipc!=[]) wfs.svipc=svipc;
 
   t=array(0.,nit);
   prepzernike,sim._size, sim.pupildiam+4;
   phase = float(zernike(5));
 
-  for(i=1;i<100;i++) {
+  for(i=1;i<nit;i++) {
     tic; r = sh_wfs(ipupil,phase,1); t(i)=tac()*1000.;
   }
   msg = swrite(format="%-20s %2d threads, sh_wfs() avg=%.2fms, median=%.2fms\n", \
                parprefix+":",wfs.svipc,avg(t(10:)),median(t(10:)));
   write,format="%s",msg;
-  if (doplot) { plot,r; pause,20; }
-  return msg;
+  return _(avg(t(10:)),median(t(10:)));
 }
 
-func svipc_shwfs_tests(parfile,nfork_max=,doplot=)
+func svipc_shwfs_tests(parfile,nfork_max=,nit=,doplot=)
 /* DOCUMENT svipc_shwfs_tests(parfile,nfork_max=,doplot=)
    nfork_max = max number of fork (will do 1 to this number).
       If not provided, this function tries to get the number
@@ -2176,6 +2197,8 @@ func svipc_shwfs_tests(parfile,nfork_max=,doplot=)
    SEE ALSO:
  */
 {
+  require,"svipc.i";
+  
   if (nfork_max==[]) {
     if (catch(0x10)) {
       nfork_max=4;
@@ -2196,10 +2219,16 @@ func svipc_shwfs_tests(parfile,nfork_max=,doplot=)
   aoread,parfile;
   sim.verbose = sim.debug =0;
   aoinit;
+  tim = [];
   for (nf=1;nf<=nfork_max;nf++) {
-    grow,msg,svipc_time_sh_wfs(svipc=nf,doplot=doplot);
+    grow,tim,svipc_time_sh_wfs(svipc=nf,nit=nit)(0);
     if (nf>1) status = quit_wfs_forks();
   }
-  //  write,msg;
+  if (doplot) {
+    plot,tim;
+    xytitles,"Number of threads","Median execution time [ms]";
+    pltitle,"svipc timing";
+    limits,square=0; limits; plmargin;
+  }
 }
 

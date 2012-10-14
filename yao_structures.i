@@ -249,6 +249,7 @@ struct wfs_struct
   int     _npixels;       // internal: final # of pixels in subaperture
   int     _npb;           // internal: number of pad pixel for extended field option (on each side)
   int     _nx;            // dimension of extended array image
+  int     _nx4fft;        // dimension of extended array image (for fft)
   pointer _istart;        //
   pointer _jstart;        //
   pointer _binindices;    //

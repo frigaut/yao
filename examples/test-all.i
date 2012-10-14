@@ -74,12 +74,18 @@ for (i=1;i<=numberof(f);i++) {
 //~ perf(0).strehl = strehl(1,0); // first position, last lambda
 //~ perf(0).lambda = (*target.lambda)(0);
 write,"\nSUCCESS: ALL TESTS OK.\n\nPerformance Summary:";
+f = open(swrite(format="test-all_v%s.dat",yaoVersion),"a");
+write,f,timestamp();
 write,format="%-12s %-34s %-8s%-10s%-10s\n","Parfile","Name","iter/s","Display?","Strehl";
+write,f,format="%-12s %-34s %-8s%-10s%-10s\n","Parfile","Name","iter/s","Display?","Strehl";
 for (i=1;i<=numberof(perf);i++) {
   if (strlen(perf(i).name)>34) name = strpart(perf(i).name,1:31)+"...";
   else name = perf(i).name;
-  write,format="%-12s %-34s %-8.1f%-10s%.2f@%.2fmic\n",\
+  str = swrite(format="%-12s %-34s %-8.1f%-10s%.2f@%.2fmic",\
   strpart(strtok(perf(i).parfile,".")(1),1:12), \
-  name,perf(i).itps,perf(i).display, \
-  perf(i).strehl,perf(i).lambda;
+  name,perf(i).itps,perf(i).display,perf(i).strehl,perf(i).lambda);
+  write,format="%s\n",str;
+  write,f,format="%s\n",str;
 }
+close,f;
+
