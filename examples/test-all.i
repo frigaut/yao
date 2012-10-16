@@ -75,7 +75,8 @@ for (i=1;i<=numberof(f);i++) {
 //~ perf(0).lambda = (*target.lambda)(0);
 write,"\nSUCCESS: ALL TESTS OK.\n\nPerformance Summary:";
 f = open(swrite(format="test-all_v%s.dat",yaoVersion),"a");
-write,f,timestamp();
+write,f,format="%s\n","----------------------------------------------------------";
+write,f,format="%s\n",timestamp();
 write,format="%-12s %-34s %-8s%-10s%-10s\n","Parfile","Name","iter/s","Display?","Strehl";
 write,f,format="%-12s %-34s %-8s%-10s%-10s\n","Parfile","Name","iter/s","Display?","Strehl";
 for (i=1;i<=numberof(perf);i++) {
