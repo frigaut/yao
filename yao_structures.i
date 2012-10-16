@@ -148,7 +148,7 @@ struct wfs_struct
                           // (0 or 1: don't parallelize)
   float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
   long    ncpdm;          // DM on the path of the WFS, if any
-
+  
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first subaperture of ring.

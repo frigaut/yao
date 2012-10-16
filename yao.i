@@ -195,8 +195,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "4.10.99";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct15";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.0.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct16";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -250,6 +250,12 @@ func parse_yao_version(ver)
   yao_minor_version = tonum(tmp(2));
 }
 parse_yao_version,yao_version;
+
+// import fftw wisdom file:
+if (fftw_wisdom_file==[]) fftw_wisdom_file=Y_USER+"fftw_wisdom_file.dat";
+if (_import_wisdom(expand_path(fftw_wisdom_file))) \
+  write,format=" Warning: Can't read FFTW wisdom from %s\n", \
+                         expand_path(fftw_wisdom_file);
 
 // All below is designed to be overwritten by appropriate values
 // in yaopy.i when using yao through the GUI
@@ -1159,8 +1165,8 @@ func get_turb_phase_init(skipReadPhaseScreens=)
                   // in any off-axis beam and altitude (low margin, up margin)
     ymargins,     // same for Y. We use that in get_turb_phase to determine when to
                   // wrap.
-    statsokvec,   // 1 if it is ok to collect stats at this iteration.
-                  // 0 if not, e.g. we just did a jump. dim [iteration]
+    //~ statsokvec,   // 1 if it is ok to collect stats at this iteration.
+                  //~ // 0 if not, e.g. we just did a jump. dim [iteration]
     inithistory,  // 1 if init has been done.
     screendim;    // [phase screen X dim, Y dim] before they are extended for safe wrapping
 
@@ -1336,8 +1342,9 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
   // build a vector of the iterations at which statistics
   // should be accumulated. 1 if ok to accumulate statistics, 0 if not.
-  statsokvec   = (indgen(loop.niter)-1) % loop.skipevery;
-  statsokvec   = (statsokvec >= loop.startskip);
+  // 2012oct16: moved to aoloop()
+  //~ statsokvec   = (indgen(loop.niter)-1) % loop.skipevery;
+  //~ statsokvec   = (statsokvec >= loop.startskip);
 
   // Build the position vector vs iteration by phase screen
   deltax  = sim.pupildiam/tel.diam*(*atm.layerspeed)*cos(dtor*gs.zenithangle)*loop.ittime;
@@ -2163,16 +2170,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   mem = wfs.filtertilt; wfs.filtertilt *= 0n;
 
   // step per pixel to have a x" tilt:
-  push = 0.005; // in arcsec
+  if (!push4ttref) push4ttref=0.1; // in arcsec
 
   // tip:
   mircube *= 0.0f;
-  mircube(,,1) = float(tip1arcsec*push);
+  mircube(,,1) = float(tip1arcsec*push4ttref);
 
   // we've changed some wfs value. sync svipc if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
 
-  mes = mult_wfs_int_mat(disp=disp)/push;  // mes in arcsec
+  mes = mult_wfs_int_mat(disp=disp)/push4ttref;  // mes in arcsec
 
   wfs._tiprefv = split_wfs_vector(mes);
 
@@ -2184,12 +2191,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // one has just to do sum(vector * tiprefv)
 
   // tilt:
-  mircube(,,1) = float(tilt1arcsec*push);
+  mircube(,,1) = float(tilt1arcsec*push4ttref);
 
   // we've changed some wfs value. sync svipc if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
 
-  mes = mult_wfs_int_mat(disp=disp)/push;  // mes in arcsec
+  mes = mult_wfs_int_mat(disp=disp)/push4ttref;  // mes in arcsec
 
   wfs._tiltrefv = split_wfs_vector(mes);
 
@@ -2434,7 +2441,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if ( sum(dm(estDMs)._nact) > sum(wfs._nmes) ) {
       write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",sum(dm._nact),sum(wfs._nmes);
       if (mat.method == "svd"){
-        write,format="%s\n\n","I will not be able to invert the iMat using the simple yao SVD";
+        write,format="%s\n\n","I will not be able to invert the iMat using"+\
+                     " the simple yao SVD";
         typeReturn;
       }
     }
@@ -2667,7 +2675,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     modalgain = [];
 
-    if (fileExist(YAO_SAVEPATH+loop.modalgainfile)) {
+    if (strlen(loop.modalgainfile)&&(fileExist(YAO_SAVEPATH+loop.modalgainfile))) {
 
       if (sim.verbose>=1) {write,format=">> Reading file %s\n\n",loop.modalgainfile;}
       modalgain = yao_fitsread(YAO_SAVEPATH+loop.modalgainfile);
@@ -3040,7 +3048,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         mc = 0;
         for (nm=1;nm<=nDMs;nm++){
           if (!dm(nm).fitvirtualdm){
-            Cphi(mc+1:mc+dm(nm)._nact,mc+1:mc+dm(nm)._nact) = dm(nm).regparam*(*dm(nm)._regmatrix);
+            Cphi(mc+1:mc+dm(nm)._nact,mc+1:mc+dm(nm)._nact) = \
+                          dm(nm).regparam*(*dm(nm)._regmatrix);
             mc += dm(nm)._nact;
           }
         }
@@ -3096,7 +3105,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         nDMs = numberof(dm);
         for (nm=1;nm<=nDMs;nm++){
           if (!dm(nm).fitvirtualdm){
-            Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = (*dm(nm)._regmatrix)*dm(nm).regparam;
+            Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = \
+                                  (*dm(nm)._regmatrix)*dm(nm).regparam;
             mc += dm(nm)._nact;
           }
         }
@@ -3125,8 +3135,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       if (anyof(dm.fitvirtualdm)) {
-        estAct = []; // actuators used to estimate wavefront
-        realAct = []; // real (non virtual) actuators used to compensate the wavefront
+        estAct = [];  // actuators used to estimate wavefront
+        realAct = []; // real (non virtual) actuators used to compensate 
+                      // the wavefront
         actno = 0;
 
         for (nm=1;nm<=ndm;nm++){
@@ -3139,7 +3150,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           actno += dm(nm)._nact;
         }
 
-        // create copies of iMatSP and remove the rows corresponding to virtual actuators or tomographic actuators. Need to copy the data in the pointers to avoid modifying the data in iMatSP.
+        // create copies of iMatSP and remove the rows corresponding to 
+        // virtual actuators or tomographic actuators. Need to copy the 
+        // data in the pointers to avoid modifying the data in iMatSP.
 
         GaSP = iMatSP;
         GaSP.ix = &(*iMatSP.ix);
@@ -3241,6 +3254,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         AtA = rcoata(iMatSP);
         AtAregSP = ruoadd(AtA,CphiSP);
         AtA = CphiSP =  [];
+        save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
       }
 
       save_rco,iMatSP,YAO_SAVEPATH+mat.file;
@@ -3297,7 +3311,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       pyk_warning,swrite(format=\
         "Weird. There are %d high-order DMs at altitude=0 (look at console)",\
         numberof(nmlow));
-      write,format="Weird. There are %d high-order DMs at altitude=0:",numberof(nmlow);
+      write,format="Weird. There are %d high-order DMs at altitude=0:", \
+            numberof(nmlow);
       for (i=1;i<=numberof(nmlow);i++) {
         write,format="DM #%d:",nmlow(i);
         print,dm(i);
@@ -3316,10 +3331,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                     (dm(wn0).type == "zernike") | (dm(wn0).type == "dh")  );
     nmhigh = wn0(nmhigh);
     if (numberof(nmhigh) == 0) {
-      pyk_error,"I can not find a DM at the requested altitude to produce the higher "+
-        "part of the anisoplanatism modes !";
-      error,"I can not find a DM at the requested altitude to produce the higher "+
-        "part of the anisoplanatism modes !";
+      pyk_error,"I can not find a DM at the requested altitude to produce "+ \
+                "the higher part of the anisoplanatism modes !";
+      error,"I can not find a DM at the requested altitude to produce "+ \
+            "the higher part of the anisoplanatism modes !";
     }
     if (numberof(nmhigh) > 1) {
       pyk_warning,swrite(format=\
@@ -3427,55 +3442,6 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
    SEE ALSO: aoread, aoinit, go, restart
  */
 {
-/* Old help.
-   The parameters are entered in a parameter file, called for instance
-   "sh12.par". The sequence for running an AO simulation is -to date-
-   as follow:
-
-   > aoread,"sh12.par"
-   > aoinit,disp=1,forcemat=1  (or forcemat=0 if IF and matrices already
-   computed)
-   > psf = aoloop(disp=1)      (this routine)
-
-   This simulates the ao loop. After the initialization, the loop
-   steps include:
-   - get the turbulent phase from get_turb_phase()
-   - subtract the mirror figure (previous iteration)
-   - get the WFS measurements (SH or curvature)
-   - computes the command vector from command matrix
-   with a pure integrator with gain
-   - computes the mirror shape
-   - computes the PSF
-   - accumulate the results if the statistics flag allows it.
-   - displays and writes out the results
-
-   I have changed the structure of this routine on June 11, 2002 to
-   include the get_turb_phase function. One of the goal of this new
-   structure is to allow for better statistics in doing short time
-   sequences separated by large gaps. In other words, the time sequence
-   is as follow:
-   - Start the close loop
-   - do ao.LoopStartSkip iteration without accumulating statistics,
-   just to allow convergence
-   - Start accumulating statistics
-   - after ao.LoopSkipEvery steps, jump in time/space by
-   ao.LoopSkipBy steps
-   - Continue from there, starting by skiping ao.LoopStartSkip steps,
-   and then accumulate before the next jump
-   This has the great advantage that it provides a much faster convergence
-   of the results, as you flip through completely uncorrelated phase
-   samples quite fast, instead of having to let them pass at loop speed
-   (which is necessarily quite slow as one loop step is typically 1ms).
-   It works really nicely and output PSF are much smoother annd
-   statistically significant. Also of course, this technique allow to
-   account for servolag error (if not, one could get independant phase
-   realization for each step and the convergence would be even faster).
-   However, this means that you "loose" ao.LoopStartSkip steps each
-   time you jump. Also, ao.LoopStartSkip has to be large enough that
-   you don't get the tail of the convergence curve, else you will
-   get a biased estimate (lower performance than with the regular
-   continuous loop scheme)
-*/
   extern looptime, mircube, command, wfsMesHistory, cubphase;
   extern im, imav, imtmp, airy, sairy, fwhm, e50;
   extern niterok;
@@ -3487,7 +3453,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   extern ditherPeriod, ditherAmp, ditherGain, cggain, ditherMes;
   extern ditherCosLast, ditherSinLast, ditherMesCos, ditherMesSin;
   extern dispImImav;
-  extern loopCounter, nshots;
+  extern loopCounter, nshots, statsokvec;
   extern savecbFlag, dpiFlag, controlscreenFlag;
   extern dispFlag, nographinitFlag, animFlag;
   extern aoloop_disp,aoloop_savecb;
@@ -3577,7 +3543,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   // photons and the extra-focal distance, so it is possible to loop
   // on "aoloop" with various l without the need for a aoinit (although
   // you would still be using the cMat determined for the original l,
-  // but that might be on purpose.
+  // but that might be on purpose).
+  // Sometimes, a re-init might take a long time (e.g. for ELT systems),
+  // and might be unnecessary, so the user might want to skip it. Use
+  // no_reinit_wfs=1 to do so.
   for (ns=1;ns<=nwfs;ns++) {
     // define _dispimage
     if (wfs(ns).type=="zernike") continue;
@@ -3593,6 +3562,9 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       }
     }
   }
+
+  statsokvec   = (indgen(loop.niter)-1) % loop.skipevery;
+  statsokvec   = (statsokvec >= loop.startskip);
 
   // special: re-init phase screens, as often we want to change the
   // number of iterations without re-doing the full aoinit
@@ -3628,7 +3600,8 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   // dithering set up for upTT compensation (LGS only)
   wfs._centroidgain = array(1.f,nwfs);
   //  if (anyof(wfs.centGainOpt)) {
-  // we dither if there is an uplink, filtertilt is set and centGainOpt is requested
+  // we dither if there is an uplink, filtertilt is set and 
+  // centGainOpt is requested
   ditherPeriod = 8;
   ditherAmp = 0.05;  // supposed to be in arcsec
   ditherGain = 0.1;
@@ -3673,13 +3646,6 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   if (sim.svipc) {
     status = svipc_init();
-
-    /*
-    shm_write,shmkey,"flux_per_wfs",&flux_per_wfs;
-    shm_var,shmkey,"flux_per_wfs",flux_per_wfs;
-    shm_write,shmkey,"raylflux_per_wfs",&raylflux_per_wfs;
-    shm_var,shmkey,"raylflux_per_wfs",raylflux_per_wfs;
-    */
 
     status = svipc_start_forks();
 
@@ -3760,7 +3726,8 @@ func go(nshot,all=)
   if (max_progressbar_update_freq==[]) max_progressbar_update_freq=5.; // in Hz
   if (tac(3)>(1./max_progressbar_update_freq)) {
     gui_progressbar_frac,float(loopCounter)/loop.niter;
-    gui_progressbar_text,swrite(format="%d out of %d iterations",loopCounter,loop.niter);
+    gui_progressbar_text,swrite(format="%d out of %d iterations",loopCounter, \
+      loop.niter);
     tic,3;
   }
 
@@ -3786,13 +3753,14 @@ func go(nshot,all=)
     if (numberof(wdither) != 0) { nditherarray = array(1.,numberof(wdither)); }
     ditherCosCurr = ditherAmp*cos(2*pi*i/ditherPeriod);
     ditherSinCurr = ditherAmp*sin(2*pi*i/ditherPeriod);
-    // subtract last command and add new. the circular motion is known. radius=ditherAmp.
+    // subtract last command and add new. the circular motion is 
+    // known. radius=ditherAmp.
     wfs(wdither)._upttcommand -= [ditherCosLast,ditherSinLast]*nditherarray(-,);
     wfs(wdither)._upttcommand += [ditherCosCurr,ditherSinCurr]*nditherarray(-,);
     ditherCosLast = ditherCosCurr;
     ditherSinLast = ditherSinCurr;
-    // do the temporal filtering on cos and sin measurements (see requirements documents
-    // I wrote for tOSC regarding the process)
+    // do the temporal filtering on cos and sin measurements 
+    // (see requirements documents I wrote for tOSC regarding the process)
     ditherMesCos = (1-ditherGain)*ditherMesCos + ditherGain*wfs._tt(1,)*
       cos(2*pi*i/ditherPeriod);
     ditherMesSin = (1-ditherGain)*ditherMesSin + ditherGain*wfs._tt(2,)*
@@ -3858,8 +3826,10 @@ func go(nshot,all=)
         // apply polc correction
         polccorr = rcoxv(polcMatSP,estdmcommand);
         if (anyof(wfs.nintegcycles > 1)){
-          // if some DMs are not updating because the WFSs have not finished intergrating, then the POLC correction should not be applied to those DMs
-          // check to see which DMs have updated; only non tomographic DMs
+          // if some DMs are not updating because the WFSs have not finished 
+          // integrating, then the POLC correction should not be applied to 
+          // those DMs
+          // Check to see which DMs have updated; only non tomographic DMs
           mc = 0; // counter
           for (nm=1;nm<=numberof(dm);nm++){
             if (!dm(nm).fitvirtualdm){
@@ -3880,8 +3850,10 @@ func go(nshot,all=)
     if ((loop.method == "pseudo open-loop") && (i > 1) && (dMat != [])){
       polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
       if (anyof(wfs.nintegcycles > 1)){
-        // if some DMs are not updating because the WFSs have not finished intergrating, then the POLC correction should not be applied to those DMs
-        // check to see which DMs have updated; only non tomographic DMs
+        // if some DMs are not updating because the WFSs have not finished 
+        // integrating, then the POLC correction should not be applied to 
+        // those DMs.
+        // Check to see which DMs have updated; only non tomographic DMs
         mc = 0; // counter
         for (nm=1;nm<=numberof(dm);nm++){
           if (!dm(nm).fitvirtualdm){
@@ -4154,7 +4126,6 @@ func go(nshot,all=)
     } else {
       pli,(mircube(,,1)-min(mircube(,,1)))*ipupil,1,0.,2,1.;
       for (nm=2;nm<=ndm;nm++) {
-        //pli,mircube(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2,nm),nm,0.,nm+1,1.;
         if (dm(nm).alt==0) {
           pli,(mircube(,,nm)-min(mircube(,,nm)))*ipupil,nm,0.,nm+1,1.;
         } else {
@@ -4162,7 +4133,6 @@ func go(nshot,all=)
         }
       }
     }
-    // mypltitle,"DM(s)",[0.,0.008],height=12;
     myxytitles,"","DM(s)",[0.005,0.],height=12;
 
     // Strehl plots
@@ -4189,9 +4159,9 @@ func go(nshot,all=)
 
   // Fill the circular buffer
   if (is_set(savecb)) {
-    cbmes(,i) = wfsMesHistory(,loop.framedelay); //WfsMes;
+    cbmes(,i) = wfsMesHistory(,loop.framedelay);
     cbcom(,i) = comvec;
-    cberr(,i) = err;  // err was overwritten by calc_psf_fast, corrected 2007mar12
+    cberr(,i) = err;
   }
 
   glt      = 0.02;
@@ -4285,11 +4255,11 @@ func reset(void,nmv=)
 
   if (nmv==[]) nmv=indgen(ndm);
 
-  command *=0.0f; // bug noticed on 2006mar01:
+  command *=0.0f;
 
   for (i=1;i<=numberof(nmv);i++) {
     nm = nmv(i);
-    *dm(nm)._command *=0.0f; // < this should work instead.
+    *dm(nm)._command *=0.0f;
     if (dm(nm).hyst) {       // < take care of hysteresis
       *dm(nm)._vold *=0.0f;
       *dm(nm)._posold *=0.0f;

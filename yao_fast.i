@@ -148,7 +148,6 @@ extern _export_wisdom
    int _export_wisdom(string wisdom_file)
 */
 
-
 func fftVE(realp,imagp,dir)
 {
   if (typeof(realp) != "float") {realp=float(realp);}

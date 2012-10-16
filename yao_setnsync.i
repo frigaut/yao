@@ -400,3 +400,30 @@ func sync_lgs_profile(void)
   write,format="LGS profile sync'ed on child %s\n",svipc_procname;
   //~ for (i=1;i<=numberof(ns);i++) shwfs_comp_lgs_defocuses,ns(i);
 }
+
+// more generic functions:
+func sync_wfs(void)
+{
+  if (sim.svipc) {
+    targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
+    // save the wfs structures
+    var = vsave(wfs);
+    // write in shm
+    shm_free,shmkey,"wfs_structs";
+    shm_write,shmkey,"wfs_structs",&var;
+    // broadcast message to children
+    broadcast_sync,targets,"child_sync_wfs";
+  }
+}
+  
+func child_sync_wfs(void)
+{
+  extern wfs;
+  
+  if (sim.svipc) {
+    var = shm_read(shmkey,"wfs_structs");
+    restore,openb(var);
+  }
+  write,format="WFS structure sync'ed on child %s\n",svipc_procname;
+}
+

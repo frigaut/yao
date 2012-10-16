@@ -226,6 +226,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   
   // now let's find if there are better dimension for the fft:
   if ((wfs(ns)._npb>0)&&(wfs(ns).shmethod==2)) {
+    /*
     nffts = 20; ncalls = 50;
     ffttim = array(0.,nffts);
     fftn = wfs(ns)._nx+indgen(nffts)-1;
@@ -238,13 +239,25 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     }
     tmp = [];
     wfs(ns)._nx4fft = fftn(wheremin(ffttim)(1));
+    */
+    // determine prime factors for _nx and above. take first integer which
+    // prime factors are all <= 7:
+    _nx = wfs(ns)._nx-1;
+    do pf = prime_factors(++_nx); while (anyof(pf>7));
+    wfs(ns)._nx4fft = _nx;
+//    wfs(ns)._nx4fft = wfs(ns)._nx; // <<<<<<< test
     if (sim.verbose) {
-      write,format="FFTW: Best dim for ximage = %d, up from %d (time=%.2fms, down from %.2fms)\n",\
-        wfs(ns)._nx4fft,wfs(ns)._nx,min(ffttim),ffttim(1);
+      write,format="FFTW: Best dim for ximage = %d, up from %d\n", \
+        wfs(ns)._nx4fft,wfs(ns)._nx;
     }
   } else wfs(ns)._nx4fft = wfs(ns)._nx;
   // call optimizer for this size FFTW:
-  if (wfs(ns).shmethod==2) _init_fftw_plan,int(wfs(ns)._nx4fft);
+  if (wfs(ns).shmethod==2) {
+    _init_fftw_plan,int(wfs(ns)._nx4fft);
+    if (_export_wisdom(expand_path(fftw_wisdom_file))) \
+      write,format=" Warning: Can't export FFTW wisdom to %s\n", \
+                             expand_path(fftw_wisdom_file);
+  }
 
   // now compute _shwfs C routine internal array size:
   // for bimage (trimmed and rebinned simage):
@@ -1683,28 +1696,16 @@ func mult_wfs(iter,disp=)
 //----------------------------------------------------
 
 func shwfs_comp_lgs_defocuses(ns)
-{
-  extern wfs;
-  // This routine computes the defocus coefficients wfs._lgs_defocuses
-  // from the wfs.lgs_prof_alt vector.
-  // ok, so according to my calculations, we have:
-  // a4[m] = D^2/(16*sqrt(3)) * 1/RoC
-  // a4[rd] = a4[m]*2*pi/lambda = D^2/(16*sqrt(3)) * 2*pi/lambda * 1/RoC
-  // and f = RoC/2
-  if ((*wfs(ns).lgs_prof_alt==[])||(allof(*wfs(ns).lgs_prof_alt==0.))) {
-    if (sim.verbose>0) \
-      write,format="shwfs_comp_lgs_defocuses: wfs(%d).lgs_prof_alt undefined\n",ns;
-    wfs(ns)._lgs_defocuses = &float([0.]);
-    return;
-  }
-  tmp = tel.diam^2./(16*sqrt(3.)) * 2*pi/wfs(ns).lambda/1e-6;
-  a4s = tmp * 1./ *wfs(ns).lgs_prof_alt;
-  if (wfs(ns).lgs_focus_alt==0) {
-    wfs(ns).lgs_focus_alt = sum(*wfs(ns).lgs_prof_alt * (*wfs(ns).lgs_prof_amp))/sum(*wfs(ns).lgs_prof_amp);
-  }
-  a4cur = tmp * 1./ wfs(ns).lgs_focus_alt;
-  a4s = a4s-a4cur;
-  wfs(ns)._lgs_defocuses = &float(a4s);
+/* DOCUMENT shwfs_comp_lgs_defocuses,ns
+ * This routine computes the defocus coefficients wfs._lgs_defocuses,
+ * used by sh_wfs(), from the user-defined wfs.lgs_prof_alt vector.
+ * Example:
+ * wfs(1).lgs_prof_alt = &float([90,92,95,100,102]*1e3]);
+ * shwfs_comp_lgs_defocuses,1;
+ * add sync_wfs if using svipc.
+ * Note that ns can be a vector:
+ * shwfs_comp_lgs_defocuses,indgen(6);
+ */
 /* tests on 2012oct09:
  * diam=25, off-axis = 11.7m, delta_alt = 10km, sep should be 11.7/4.=2.92
  * lambda=0.65, pixsize=0.2145, sep = 2.82 < yeah.
@@ -1713,7 +1714,54 @@ func shwfs_comp_lgs_defocuses(ns)
  * I think we can say it works. let's try for larger pixsize:
  * lambda=2.0, pixsize=0.3960, sep=2.76, good.
  */
+{
+  extern wfs;
+  
+  for (i=1;i<=numberof(ns);i++) {
+    // ok, so according to my calculations, we have:
+    // a4[m] = D^2/(16*sqrt(3)) * 1/RoC
+    // a4[rd] = a4[m]*2*pi/lambda = D^2/(16*sqrt(3)) * 2*pi/lambda * 1/RoC
+    // and f = RoC/2
+    if ((*wfs(ns(i)).lgs_prof_alt==[])||(allof(*wfs(ns(i)).lgs_prof_alt==0.))) {
+      if (sim.verbose>0) \
+        write,format="shwfs_comp_lgs_defocuses: wfs(%d).lgs_prof_alt undefined\n",ns(i);
+      wfs(ns(i))._lgs_defocuses = &float([0.]);
+      return;
+    }
+    tmp = tel.diam^2./(16*sqrt(3.)) * 2*pi/wfs(ns(i)).lambda/1e-6;
+    a4s = tmp * 1./ *wfs(ns(i)).lgs_prof_alt;
+    if (wfs(ns(i)).lgs_focus_alt==0) {
+      wfs(ns(i)).lgs_focus_alt = sum(*wfs(ns(i)).lgs_prof_alt * (*wfs(ns(i)).lgs_prof_amp))/sum(*wfs(ns(i)).lgs_prof_amp);
+    }
+    a4cur = tmp * 1./ wfs(ns(i)).lgs_focus_alt;
+    a4s = a4s-a4cur;
+    wfs(ns(i))._lgs_defocuses = &float(a4s);
+  }
 }  
+
+func slope_offset_defocus(arcsec_per_meter,ns)
+/* DOCUMENT slope_offset_defocus(arcsec_per_meter,ns)
+ * Compute and add a defocus to the reference slopes for wfs ns
+ * Note that this is an offset.
+ * Example:
+ * slope_offset_defocus,0.05,[1,2];
+ * will add an offset of 0.05 arcsec/m off-axis, radially.
+ * which means that for a 25m telescope, the outer subaperture will
+ * see a radial slope change of 25/2.*0.05 = 0.625 arcsec
+ * Do not forget the sync_wfs if using svipc:
+ * slope_offset_defocus,0.05,[1,2]; sync_wfs;
+ */
+{
+  extern wfs;
+  for (i=1;i<=numberof(ns);i++) {
+    valid = where(*wfs(ns(i))._validsubs);
+    x = (*wfs(ns(i))._x)(valid); // in [m]
+    y = (*wfs(ns(i))._y)(valid); 
+    ref = _(x,y)*arcsec_per_meter;
+    *wfs(ns(i))._refmes += float(ref);
+  }
+}
+
 
 //----------------------------------------------------
 

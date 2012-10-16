@@ -159,31 +159,31 @@ void sinecosinef(float x, float *s, float *c)
   // this above, 4.66 (much better)
 }
 
-void _import_wisdom(char *wisdom_file)
+int _import_wisdom(char *wisdom_file)
 {
   FILE *fp;
+  int  status;
 
-  fp = fopen(wisdom_file, "r");
-  if (fftwf_import_wisdom_from_file(fp)==0)
-    printf("Error reading wisdom!\n");
+  if((fp = fopen(wisdom_file, "r"))==NULL) return (1);
+
+  status = 1-fftwf_import_wisdom_from_file(fp);
+
   fclose(fp);
+
+  return status;
 }
 
 int _export_wisdom(char *wisdom_file)
 {
   FILE *fp;
 
-  if((fp = fopen(wisdom_file, "w"))==NULL) {
-    printf("Error creating wisdom file\"%s\"\n",wisdom_file);
-    fflush(stdout);
-    return(0);
-  }
+  if((fp = fopen(wisdom_file, "w"))==NULL) return (1);
 
   fftwf_export_wisdom_to_file(fp);
 
   fclose(fp);
 
-  return(0);
+  return (0);
 }
 
 int _init_fftw_plans(int nlimit)
@@ -647,6 +647,7 @@ int _shwfs_phase2spots(
   int           i,j,k,l,koff,kk,nalt;
   int           idxp,idyp,ndx,ndy,dynrange;
   int           debug=0;
+  int           nxdiff;
   double        sys,cpu0,cpu1,cpu2,cpu3,cpu4,cpu5,cpu6;
   double        cpu10,cpu21,cpu32,cpu43,cpu54,cpu65;
   const float   pi = 3.141592653589793f;
@@ -722,6 +723,13 @@ int _shwfs_phase2spots(
     corfact = 1.0f / (float)rebinfactor / (float)rebinfactor;
     for ( i=0 ; i<nb*nb ; i++ ) { bsubmask[i] *= corfact; }
   }
+  
+  // in the following, we'll need to shift slightly where we embed simage
+  // into ximage.
+  // this is linked to the number of -1 pixels at the end of binindices.
+  nxdiff = 0;
+  // do that for first row only:
+  for (i=0;i<nx;i++) if (binindices[i]==-1) nxdiff++;
   
   // Set up the required memory for the FFT routines and 
   // check its availability.
@@ -904,7 +912,7 @@ int _shwfs_phase2spots(
       // Embed (and add to) this simage into ximage, the extended field 
       // of view image for this subaperture (with shifts computed above):
       if ( (debug>1) && (l==10) ) printf("\nns=%d nx=%d\n",(int)ns,(int)nx);
-      embed_image(simage,ns,ns,ximage,nx,nx,(nx-ns)/2+idxp,(nx-ns)/2+idyp,1);
+      embed_image(simage,ns,ns,ximage,nx,nx,(nx-ns)/2+idxp-nxdiff,(nx-ns)/2+idyp-nxdiff,1);
     
     } // END LOOP ON LGS PROFILE
     
