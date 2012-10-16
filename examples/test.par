@@ -46,7 +46,7 @@ dm(n).nxact        = 7;
 dm(n).pitch        = 10;
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.01;
-dm(n).push4imat    = 200;
+dm(n).push4imat    = 50;
 dm(n).elt          = 1;
 
 n  =2;
@@ -54,7 +54,7 @@ dm(n).type         = "tiptilt";
 dm(n).iffile       = "";
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.0005;
-dm(n).push4imat    = 2;
+dm(n).push4imat    = 50;
 
 //-------------------------------
 mat.condition      = &([15.]);
