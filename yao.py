@@ -410,7 +410,8 @@ class yao:
 #      self.glade.get_widget('loopgain').set_sensitive(1)
 #      self.glade.get_widget('imlambda').set_sensitive(1)
       self.glade.get_widget('go').grab_focus()
-      self.py2yo('do_aoloop_disp')
+      disprate = self.glade.get_widget('disp_rate').get_value()
+      self.py2yo('do_aoloop_disp %d' % disprate)
 
    def on_go_clicked(self,wdg):
       #self.py2yo('toggle_animate 1')

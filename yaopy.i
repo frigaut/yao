@@ -358,8 +358,8 @@ func do_aoinit_disp(void) {
   pyk,"set_cursor_busy(0)";
 }
 
-func do_aoloop_disp(void) {
-  aoloop,dpi=default_dpi;
+func do_aoloop_disp(disprate) {
+  aoloop,dpi=default_dpi,disp=disprate;
   plsys,1;
   animate,0;
   animate,1;
