@@ -1,4 +1,4 @@
-teldiam	= 42;
+teldiam	= 42.0;
 pupd    = 84*10;
 nxsub   = 84;
 seeing  = 0.7;
@@ -11,7 +11,7 @@ sim.verbose         = 2;
 //-------------------------------
 r0                  = (0.5e-6)/(seeing*4.848e-6);
 atm.dr0at05mic      = teldiam/r0;  // this is r0=0.166 at 550 nm
-atm.screen	        = &(Y_USER+"data/widescreen"+["1","2","3","4"]+".fits");
+atm.screen	        = &(Y_USER+"data/wide_screens_"+["1","2","3","4"]+".fits");
 atm.layerfrac       = &([0.4,0.2,0.3,0.1]);
 atm.layerspeed      = &([11.,20,29,35]);
 atm.layeralt	      = &([0.,400,6000,9000]);
