@@ -7,10 +7,10 @@ sim.verbose          = 1;
 
 //-------------------------------
 atm.dr0at05mic       = 30.;
-atm.screen	     = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.screen           = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
 atm.layerfrac        = &([0.4,0.2,0.3,0.1]);
 atm.layerspeed       = &([11.,20,29,35]);
-atm.layeralt	     = &([0.,400,6000,9000]);
+atm.layeralt         = &([0.,400,6000,9000]);
 atm.winddir          = &([0,0,0,0]);
 
 //-------------------------------
@@ -18,15 +18,15 @@ nwfs = 2; // number of WFSs (>1 if e.g. mcao)
 wfs = array(wfss,nwfs);
 
 n = 1;
-wfs(n).type	     = "hartmann";
+wfs(n).type          = "hartmann";
 wfs(n).subsystem     = 1;
-wfs(n).lambda	     = 0.65;
+wfs(n).lambda        = 0.65;
 wfs(n).gspos         = [0.,0.];
 wfs(n).gsalt         = 90000.;
 wfs(n).gsdepth       = 14000.;
 wfs(n).laserpower    = 10.;
-wfs(n).shmethod	     = 2;
-wfs(n).shnxsub	     = 12;
+wfs(n).shmethod      = 2;
+wfs(n).shnxsub       = 12;
 wfs(n).pixsize       = 0.1;
 wfs(n).npixels       = 20;
 wfs(n).shthreshold   = 0.;
@@ -39,14 +39,14 @@ wfs(n).dispzoom      = 2.;
 wfs(n).optthroughput = 0.5;
 
 n = 2;
-wfs(n).type	     = "hartmann";
+wfs(n).type          = "hartmann";
 wfs(n).subsystem     = 2;
-wfs(n).lambda	     = 0.65;
+wfs(n).lambda        = 0.65;
 wfs(n).gspos         = [0.,0.];
 wfs(n).gsalt         = 0.;
 wfs(n).gsmag         = 5.;
-wfs(n).shmethod	     = 2;
-wfs(n).shnxsub	     = 1;
+wfs(n).shmethod      = 2;
+wfs(n).shnxsub       = 1;
 wfs(n).pixsize       = 0.5;
 wfs(n).npixels       = 4;
 wfs(n).shthreshold   = 0.;
@@ -59,52 +59,53 @@ ndm = 2;
 dm = array(dms,ndm);
 
 n = 1;
-dm(n).type	    = "stackarray";
-dm(n).subsystem     = 1;
-dm(n).iffile	    = "";
-dm(n).nxact	    = 13;
-dm(n).pitch	    = 20;
-dm(n).alt           = 0.;
-dm(n).coupling      = 0.17;
-dm(n).unitpervolt   = 0.01;
-dm(n).push4imat     = 100;
+dm(n).type           = "stackarray";
+dm(n).subsystem      = 1;
+dm(n).iffile         = "";
+dm(n).nxact          = 13;
+dm(n).pitch          = 20;
+dm(n).alt            = 0.;
+dm(n).coupling       = 0.17;
+dm(n).unitpervolt    = 0.01;
+dm(n).push4imat      = 100;
 
 n = 2;
-dm(n).type	    = "tiptilt";
-dm(n).subsystem     = 2;
-dm(n).iffile	    = "";
-dm(n).alt           = 0.;
-dm(n).unitpervolt   = 0.0005;
-dm(n).push4imat     = 10;
+dm(n).type           = "tiptilt";
+dm(n).subsystem      = 2;
+dm(n).iffile         = "";
+dm(n).alt            = 0.;
+dm(n).unitpervolt    = 0.0005;
+dm(n).push4imat      = 10;
+dm(2).gain           = 0.5;
 
 //-------------------------------
-mat.condition       = &([15.,15.]);
-mat.file	    = "";
+mat.condition        = &([15.,15.]);
+mat.file             = "";
 
 //-------------------------------
-tel.diam	    = 7.9;
-tel.cobs	    = 0.1125;
+tel.diam             = 7.9;
+tel.cobs             = 0.1125;
 
 //-------------------------------
-target.lambda	    = &([1.65]);
-target.xposition    = &([0.]);
-target.yposition    = &([0]);
-target.dispzoom     = &([1.]);
+target.lambda        = &([1.65]);
+target.xposition     = &([0.]);
+target.yposition     = &([0]);
+target.dispzoom      = &([1.]);
 
 //-------------------------------
-gs.zeropoint	    = 1e11;
-gs.lgsreturnperwatt = 22.;
-gs.zenithangle      = 20.;
+gs.zeropoint         = 1e11;
+gs.lgsreturnperwatt  = 22.;
+gs.zenithangle       = 20.;
 
 //-------------------------------
-loop.gain	   = 0.6;
-loop.framedelay    = 1;
-loop.niter	   = 1000;
-loop.ittime	   = 2e-3;
-loop.startskip     = 10;
-loop.skipevery     = 100;
-loop.skipby        = 10000;
-loop.jumps2swapscreen = 3;
-loop.modalgainfile = "simulModeGains.fits";
+loop.gain            = 0.6;
+loop.framedelay      = 1;
+loop.niter           = 1000;
+loop.ittime          = 2e-3;
+loop.startskip       = 10;
+loop.skipevery       = 100;
+loop.skipby          = 10000;
+loop.jumps2swapscreen= 3;
+loop.modalgainfile   = "simulModeGains.fits";
 
 //-------------------------------
