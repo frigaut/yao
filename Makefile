@@ -45,7 +45,7 @@ PKG_CLEAN=
 # autoload file for this package, if any
 PKG_I_START=
 # non-pkg.i include files for this package, if any
-PKG_I_EXTRA=yao.i aoutil.i yaokl.i yao_newfits.i yao_util.i turbulence.i yao_gui.i yaopy.i yao_wfs.i yao_structures.i yao_dm.i yao_svipc.i yao_setnsync.i yaodh.i yao_disp.i
+PKG_I_EXTRA=yao.i aoutil.i yaokl.i yao_newfits.i yao_util.i turbulence.i yao_gui.i yaopy.i yao_wfs.i yao_structures.i yao_dm.i yao_svipc.i yao_setnsync.i yaodh.i yao_disp.i yao_lgs.i
 
 # -------------------------------- standard targets and rules (in Makepkg)
 

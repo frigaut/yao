@@ -1,6 +1,25 @@
 /*
-  YAO WFS functions
-*/
+ * yao_wfs.i
+ *
+ * Compilation of functions related to Wavefront Sensors
+ *
+ * This file is part of the yao package, an adaptive optics simulation tool.
+ *
+ * Copyright (c) 2002-2012, Francois Rigaut
+ *
+ * This program is free software; you can redistribute it and/or  modify it
+ * under the terms of the GNU General Public License  as  published  by the
+ * Free Software Foundation; either version 2 of the License,  or  (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope  that  it  will  be  useful, but
+ * WITHOUT  ANY   WARRANTY;   without   even   the   implied   warranty  of
+ * MERCHANTABILITY or  FITNESS  FOR  A  PARTICULAR  PURPOSE.   See  the GNU
+ * General Public License for more details (to receive a  copy  of  the GNU
+ * General Public License, write to the Free Software Foundation, Inc., 675
+ * Mass Ave, Cambridge, MA 02139, USA).
+ *
+ */
 
 func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 /* DOCUMENT func shwfs_init(pupsh,ns,silent=,imat=)
@@ -321,6 +340,8 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs_check_pixel_size,ns,sdim,rebinFactor,actualPixelSize,\
     printheader=(ns==1),silent=silent;
 
+  wfs(ns)._sdim = sdim;
+
   if (wfs(ns).spotpitch==0) wfs(ns).spotpitch = wfs(ns)._npixels;
   imistart = (istart-min(istart))/subsize*(wfs(ns).spotpitch);
   imjstart = (jstart-min(jstart))/subsize*(wfs(ns).spotpitch);
@@ -375,68 +396,8 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
   //==========================================================================
 
-  if (wfs(ns)._kernelconv != 0n) {
-    // if kernelconv is 0, then the _shwfs routine does not use wfs._kernels,
-    // so no need to compute it.
-
-    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;  // coordinate array in arcsec
-
-    if (sim.verbose >= 1) {
-      write,format="%s\n","Pre-computing Kernels for the SH WFS";
-    }
-
-    kall = [];
-
-    gui_progressbar_frac,0.;
-    gui_progressbar_text,swrite(format=\
-      "Precomputing subaperture kernels, WFS#%d",ns);
-
-    for (l=1; l<=wfs(ns)._nsub4disp; l++) {
-      // for each subaperture, we have to find the elongation and the angle.
-      xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-      xllt = wfs(ns).LLTxy(1); yllt = wfs(ns).LLTxy(2);
-      d = sqrt((xsub-xllt)^2. +(ysub-yllt)^2.);
-      if (d == 0) {
-        elong = ang = 0.;
-      } else {
-        elong = atan((wfs(ns)._gsalt+wfs(ns)._gsdepth)/d)-atan(wfs(ns)._gsalt/d);
-        elong /= 4.848e-6; // now in arcsec
-        ang = atan(ysub-yllt,xsub-xllt); // fixed 2004aug02
-      }
-      angp90 = ang+pi/2.;
-
-      expo = 4.;
-      alpha = elong/(2.*log(2)^(1/expo));
-      beta = 2*quantumPixelSize/(2.*log(2)^(1/expo));
-      alpha = clip(alpha,0.5*quantumPixelSize,);
-      beta = clip(beta,0.5*quantumPixelSize,alpha);
-
-      tmp  = exp(-((cos(ang)*xy(,,1)+sin(ang)*xy(,,2))/alpha)^expo);
-      tmp *= exp(-((cos(angp90)*xy(,,1)+sin(angp90)*xy(,,2))/beta)^expo);
-      tmp = tmp/sum(tmp);
-      grow,kall,float((eclat(tmp))(*));
-
-      s2 = tel.diam/nxsub*0.9/2.;
-      //if (sim.debug >= 2) {fma; pli,tmp,xsub-s2,ysub-s2,xsub+s2,ysub+s2;}
-      // below: this was too many characters to go thru the python pipe.
-      // with fast processor, we compute fast and send too fast. 2009oct22.
-      //gui_progressbar_text,swrite(format=\
-      //  "Precomputing subaperture kernels for LGS elongation, WFS#%d, sub#%d/%d",\
-      //  ns,l,wfs(ns)._nsub4disp);
-      gui_progressbar_frac,float(l)/wfs(ns)._nsub4disp;
-
-    }
-
-    clean_progressbar;
-    //if (sim.debug >=2) {hitReturn;}
-
-    wfs(ns)._kernels = &(float(kall));
-    wfs(ns)._kerfftr = &(float(kall*0.0f));
-    wfs(ns)._kerffti = &(float(kall*0.0f));
-    kall = [];
-
-  }
+  // if kernelconv is 0, then the _shwfs routine does not use wfs._kernels:
+  if (wfs(ns)._kernelconv != 0n) shwfs_init_lgs_kernels,ns;
 
   //==============================================
   // COMPUTE RAYLEIGH STUFF: SUBAPERTURE DEPENDENT
@@ -715,6 +676,61 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   if (anyof(wfs.svipc>1)) status = sync_wfs_forks();
 
   return 1;
+}
+
+//----------------------------------------------------
+func shwfs_init_lgs_kernels(ns)
+/* DOCUMENT shwfs_init_lgs_kernels(ns)
+ * COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. 
+ * USED FOR LGS ELONGATION
+ */
+{
+  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/wfs(ns)._sdim;
+  // coordinate array in arcsec:
+  xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;
+
+  if (sim.verbose >= 1) write,format="%s\n","Pre-computing Kernels for the SH WFS";
+
+  kall = [];
+
+  gui_progressbar_frac,0.;
+  gui_progressbar_text,swrite(format="Precomputing subaperture kernels, WFS#%d",ns);
+
+  for (l=1; l<=wfs(ns)._nsub4disp; l++) {
+    // for each subaperture, we have to find the elongation and the angle.
+    xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
+    xllt = wfs(ns).LLTxy(1); yllt = wfs(ns).LLTxy(2);
+    d = sqrt((xsub-xllt)^2. +(ysub-yllt)^2.);
+    if (d == 0) {
+      elong = ang = 0.;
+    } else {
+      elong = atan((wfs(ns)._gsalt+wfs(ns)._gsdepth)/d)-atan(wfs(ns)._gsalt/d);
+      elong /= 4.848e-6; // now in arcsec
+      ang = atan(ysub-yllt,xsub-xllt); // fixed 2004aug02
+    }
+    angp90 = ang+pi/2.;
+
+    expo = 4.;
+    alpha = elong/(2.*log(2)^(1/expo));
+    beta = 2*quantumPixelSize/(2.*log(2)^(1/expo));
+    alpha = clip(alpha,0.5*quantumPixelSize,);
+    beta = clip(beta,0.5*quantumPixelSize,alpha);
+
+    tmp  = exp(-((cos(ang)*xy(,,1)+sin(ang)*xy(,,2))/alpha)^expo);
+    tmp *= exp(-((cos(angp90)*xy(,,1)+sin(angp90)*xy(,,2))/beta)^expo);
+    tmp = tmp/sum(tmp);
+    grow,kall,float((eclat(tmp))(*));
+
+    s2 = tel.diam/wfs(ns).shnxsub*0.9/2.;
+    gui_progressbar_frac,float(l)/wfs(ns)._nsub4disp;
+  }
+
+  clean_progressbar;
+
+  wfs(ns)._kernels = &(float(kall));
+  wfs(ns)._kerfftr = &(float(kall*0.0f));
+  wfs(ns)._kerffti = &(float(kall*0.0f));
+  kall = [];
 }
 
 
@@ -1693,51 +1709,6 @@ func mult_wfs(iter,disp=)
 }
 
 
-//----------------------------------------------------
-
-func shwfs_comp_lgs_defocuses(ns)
-/* DOCUMENT shwfs_comp_lgs_defocuses,ns
- * This routine computes the defocus coefficients wfs._lgs_defocuses,
- * used by sh_wfs(), from the user-defined wfs.lgs_prof_alt vector.
- * Example:
- * wfs(1).lgs_prof_alt = &float([90,92,95,100,102]*1e3]);
- * shwfs_comp_lgs_defocuses,1;
- * add sync_wfs if using svipc.
- * Note that ns can be a vector:
- * shwfs_comp_lgs_defocuses,indgen(6);
- */
-/* tests on 2012oct09:
- * diam=25, off-axis = 11.7m, delta_alt = 10km, sep should be 11.7/4.=2.92
- * lambda=0.65, pixsize=0.2145, sep = 2.82 < yeah.
- * lambda=1.0, pixsize=0.1980, sep = 2.76 < yeah
- * lambda=2.0, pixsize=0.2640, sep =2.71
- * I think we can say it works. let's try for larger pixsize:
- * lambda=2.0, pixsize=0.3960, sep=2.76, good.
- */
-{
-  extern wfs;
-  
-  for (i=1;i<=numberof(ns);i++) {
-    // ok, so according to my calculations, we have:
-    // a4[m] = D^2/(16*sqrt(3)) * 1/RoC
-    // a4[rd] = a4[m]*2*pi/lambda = D^2/(16*sqrt(3)) * 2*pi/lambda * 1/RoC
-    // and f = RoC/2
-    if ((*wfs(ns(i)).lgs_prof_alt==[])||(allof(*wfs(ns(i)).lgs_prof_alt==0.))) {
-      if (sim.verbose>0) \
-        write,format="shwfs_comp_lgs_defocuses: wfs(%d).lgs_prof_alt undefined\n",ns(i);
-      wfs(ns(i))._lgs_defocuses = &float([0.]);
-      return;
-    }
-    tmp = tel.diam^2./(16*sqrt(3.)) * 2*pi/wfs(ns(i)).lambda/1e-6;
-    a4s = tmp * 1./ *wfs(ns(i)).lgs_prof_alt;
-    if (wfs(ns(i)).lgs_focus_alt==0) {
-      wfs(ns(i)).lgs_focus_alt = sum(*wfs(ns(i)).lgs_prof_alt * (*wfs(ns(i)).lgs_prof_amp))/sum(*wfs(ns(i)).lgs_prof_amp);
-    }
-    a4cur = tmp * 1./ wfs(ns(i)).lgs_focus_alt;
-    a4s = a4s-a4cur;
-    wfs(ns(i))._lgs_defocuses = &float(a4s);
-  }
-}  
 
 func slope_offset_defocus(arcsec_per_meter,ns)
 /* DOCUMENT slope_offset_defocus(arcsec_per_meter,ns)
