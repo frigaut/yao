@@ -59,6 +59,7 @@ require,"yao_gui.i";
 require,"utils.i";
 require,"yao_newfits.i";
 require,"yao_util.i";
+require,"yao_lgs.i";
 require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
