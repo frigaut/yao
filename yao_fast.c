@@ -316,18 +316,15 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
 
 int _fftVE(float *rp,
            float *ip,
-           int n2,       /* log2 of side linear dimension (e.g. 6 for 64x64 arrays) */
-           int dir)      /* forward (1) or reverse (-1) */
+           int   n,
+           int   dir)      /* forward (1) or reverse (-1) */
 {
   /* Declarations */
 
   fftwf_complex *in, *out;
   float         *ptr;
-  long          i,n;
-  fftwf_plan     p;
-      
-  /* Set the size of 2d FFT. */
-  n = 1 << n2;
+  long          i;
+  fftwf_plan    p;
 
   /* Allocate memory for the input operands and check its availability. */
   in  = fftwf_malloc(sizeof(fftwf_complex) * n * n);

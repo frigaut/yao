@@ -245,26 +245,11 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   
   // now let's find if there are better dimension for the fft:
   if ((wfs(ns)._npb>0)&&(wfs(ns).shmethod==2)) {
-    /*
-    nffts = 20; ncalls = 50;
-    ffttim = array(0.,nffts);
-    fftn = wfs(ns)._nx+indgen(nffts)-1;
-    for (i=1;i<=nffts;i++) {
-      tmp = array(complex,[2,fftn(i),fftn(i)]);
-      for (j=1;j<=2;j++) _fftVE2,&tmp.re,&tmp.im,fftn(i),1; // warm up
-      tic; 
-      for (j=1;j<=ncalls;j++) _fftVE2,&tmp.re,&tmp.im,fftn(i),-1; 
-      ffttim(i) = tac()/ncalls*1e6; // in microseconds
-    }
-    tmp = [];
-    wfs(ns)._nx4fft = fftn(wheremin(ffttim)(1));
-    */
     // determine prime factors for _nx and above. take first integer which
     // prime factors are all <= 7:
     _nx = wfs(ns)._nx-1;
     do pf = prime_factors(++_nx); while (anyof(pf>7));
     wfs(ns)._nx4fft = _nx;
-//    wfs(ns)._nx4fft = wfs(ns)._nx; // <<<<<<< test
     if (sim.verbose) {
       write,format="FFTW: Best dim for ximage = %d, up from %d\n", \
         wfs(ns)._nx4fft,wfs(ns)._nx;

@@ -142,15 +142,18 @@ func fftVE(realp,imagp,dir)
   dims = dimsof(x);
   if (dims(2) != dims(3)) { error,"arrays should be square"; }
 
-  n2       = int(log(dims(2))/log(2));
-  if ((2^n2) != dims(2)) { error," Dimension has to be a power of 2"; }
+  // below: this is stupid. Why should I limit to powers of 2?
+  //~ n2       = int(log(dims(2))/log(2));
+  //~ if ((2^n2) != dims(2)) { error," Dimension has to be a power of 2"; }
 
-  _fftVE,&x,&y,n2,dir;
+  _fftVE,&x,&y,int(dims(2)),dir;
 
   if (sub) return;
   
   return [x,y];
 }
+
+fftw = fftVE; // more logical name;
 
 //==================================================================
 extern _fftVE
