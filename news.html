@@ -70,7 +70,33 @@ is getting close to 1000 it/s. Part of this is Moore law, and part are further
 optimizations of the code.
 
 On the feature side, there is now a more complete model of SHWFS that allow to 
-define independantly field of view, field stop size and spotpitch (more to come).
+define independently field of view, field stop size and spotpitch, as illustrated 
+in this sketch:
+<center><img src="shwfs_yao_geometry.png" width="50%"/></center>
+<p>The definition is all <b>backward compatible</b>, so your old parfiles should not be 
+affected.</p>
+
+<h4>Shack-Hartmann extended field</h4>
+<p>One of the new interesting features gained by Shack-Hartmann WFS is the so 
+called "extended field" capability (wfs.extfield [arcsec]). Here is how it works.
+Up to now the subaperture field of view was wfs.pixsize*wfs.npixels. This was 
+limited to a certain value, namely wfs.lambda/pupil_plane_pixel_size_in_meter, 
+constrained by the laws of the FFT. For instance at 500nm and with 10cm per pixel
+in the pupil plane, you get one arcsec field of view. This limits still applies,
+but now this 1x1 arcsec "imagelet" is embedded into a larger image, with shifts
+computed from the average input tilt in front of the given subaperture (of course
+the said tilt is removed from the input phase as it is effectively taken care of 
+by the shift). This opens the possibility of much larger dynamical ranges without
+having to use a very large number of pixels in the input pupil. As far as turbulence
+goes, this also relieves the constraint of having 2-3 pixels per r0: Now that 
+tip-tilt is "removed" before doing the FFT to compute the subaperture spot, the 
+wrapping limit of 2pi per pixel is pushed further away (about 3 times further, 
+if we trust Noll, as the Tip-tilt-removed Noll residual is 13% of the phase 
+variance, thus 36% in rms). Thus one can now safely go to one pixel per r0 before
+hitting the wrapping/aliasing limit on the image formation in each subaperture.
+This means 2 times lower sim.pupildiam, and typically <i>a factor of 4 gain in 
+speed</i> (trust me). I hope that makes sense. </p>
+
     </div>
     </div>
 
