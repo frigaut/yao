@@ -1349,14 +1349,21 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   // sinc usual issue: sinc is defined both in yeti and yutils, but not
   // with the same def. yeti defines sinc(1.)=0., while yutils defines
   // sinc(pi)=0. Use yutils definition.
-  require,"util_fr.i";
-  sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
-  if (pyr_disp) { plsys,4; pli,sincar; limits; limits,square=1;}
+  //~ require,"util_fr.i";
+  //~ sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
+  // above: that's bad. require does not necessarily do it if it has
+  // already been included. Instead, do:
+  extern __sincar;
+  if (__sincar==[]) {
+    include,"util_fr.i",1;
+    __sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
+  }
+  if (pyr_disp) { plsys,4; pli,__sincar; limits; limits,square=1;}
 
   // perform the actual spatial filtering:
   for (i=1;i<=4;i++) {
     tmp = fft(reimaged_pupil(,,i),-1);
-    tmp *= sincar;
+    tmp *= __sincar;
     reimaged_pupil(,,i) = abs(fft(tmp,1));
   }
 

@@ -79,18 +79,12 @@ float sine(float x)
   
   return y;
 }
-float sign(float x)
-{
-  return (float)((x > 0) - (x < 0));
-}
 
 float cosine(float x)
 {
   const float hpi = 3.141592653589793f/2.0f;
 
   float y = sine(x+hpi);
-  //~ float y = sine(x+hpi);
-  //~ y = sign(y)*sqrt(1-y*y);
   
   return y;
 }
@@ -102,19 +96,9 @@ void sinecosinef(float x, float *s, float *c)
   *c = cosine(x);
   sc = (*c)*(*c) + (*s)*(*s);
 
-/*
-  sc = 1.0f - 0.5f*(sc-1.0f); // approximation of 1./sqrt()
-  *s = *s * sc;
-  *c = *c * sc;
-  */
-  // sincos, 4.64
-  // this 4.15
-  // sine and cosine 3.0
-
   sc = 1.0f/sqrtf(sc);
   *s = *s * sc;
   *c = *c * sc;
-  // this above, 4.66 (much better)
 }
 
 int _import_wisdom(char *wisdom_file)
