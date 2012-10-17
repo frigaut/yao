@@ -7,12 +7,9 @@
  * This plugin requires yao.py and yao.glade. These are looked for, but
  * the path can be forced setting Y_PYTHON and Y_GLADE
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: yaopy.i,v 1.14 2010/04/15 02:36:53 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -25,77 +22,6 @@
  * General Public License for more details (to receive a  copy  of  the GNU
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
- *
- * $Log: yaopy.i,v $
- * Revision 1.14  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.13  2008/01/17 19:32:16  frigaut
- * - fixed critical bug on seeing entry in GUI
- * - changed seeing(V) -> seeing(550nm) in GUI
- *
- * Revision 1.12  2008/01/02 13:54:53  frigaut
- * - correct size for the graphic inserts (no black border)
- * - updated spec files
- *
- * Revision 1.11  2007/12/27 09:06:28  frigaut
- * - bumped to version 4.2.3
- * - corrected problem with glade path (python does not like ~, so
- * replaced by expansion)
- *
- * Revision 1.10  2007/12/26 18:54:40  frigaut
- * fixed minor bugs, mostly related to path and permissions
- *
- * Revision 1.9  2007/12/21 20:48:47  frigaut
- * added get_env on Y_PYTHON, Y_GLADE, Y_CONF
- *
- * Revision 1.8  2007/12/20 13:34:53  frigaut
- * - various bug fixes
- * - better handlng of default parfile path
- * - better handling of options menu (WFS and DM)
- *
- * Revision 1.7  2007/12/19 19:44:19  frigaut
- * - solved a number of bugs and inconsistencies between regular yao call and
- *   GUI calls.
- * - fixed misregistration for curvature systems
- * - change: misregistration entry from the GUI is now in pupil diameter unit,
- *   not in subaperture unit!
- * - changed default efd in c188-bench.par
- *
- * Revision 1.6  2007/12/19 15:45:32  frigaut
- * - implemented yao.conf which defines the YAO_SAVEPATH directory where
- * all temporary files and result files will be saved
- * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
- * - bumped version to 4.2.0
- * - slight changes to GUI (edit conf file)
- *
- * Revision 1.5  2007/12/19 13:18:59  frigaut
- * - explicit message when screens are not present/found
- * - more messages in statusbar
- * - added statusbar1 (that can hide/show) for strehl status header
- *
- * Revision 1.4  2007/12/18 19:03:20  frigaut
- * - reworked Y_PYTHON and search for yao.py
- * - added Y_GLADE and path to yao.glade
- * - now removes CVS directories in install of examples and doc
- *
- * Revision 1.3  2007/12/17 20:21:04  frigaut
- * - renamed yaogtk -> yao (and updated Makefile accordingly)
- * - gotten rid of usleep() calls in yorick -> python communication. Instead,
- * am using a pyk_flush, which send a flush request to python every seconds.
- * This is still a hack to turn around the BLOCK bug in python, but at least
- * it does not use usleep (cleaner hack?).
- * - added debug python <> yorick entry in GUI help menu (set/unset pyk_debug)
- *
- * Revision 1.2  2007/12/13 16:04:21  frigaut
- * - modification to broken Makefile
- * - reshuffling of plug_in statement
- *
- * Revision 1.1.1.1  2007/12/12 23:29:10  frigaut
- * Initial Import - yorick-yao
- *
  *
  */
 

@@ -3,12 +3,9 @@
  *
  * wrappers for the compiled functions in yao_fast.c
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: yao_fast.i,v 1.4 2010/07/02 21:26:51 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -21,26 +18,6 @@
  * General Public License for more details (to receive a  copy  of  the GNU
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
- *
- * $Log: yao_fast.i,v $
- * Revision 1.4  2010/07/02 21:26:51  frigaut
- * - merged Aurea Garcia-Rissmann disk harmonic code
- * - implemented parallel extension (sim.svipc and wfs.svipc)
- * - a few bug fixes (and many more bug introduction with these major
- *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
- *
- * Revision 1.3  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.2  2007/12/13 16:04:21  frigaut
- * - modification to broken Makefile
- * - reshuffling of plug_in statement
- *
- * Revision 1.1.1.1  2007/12/12 23:29:11  frigaut
- * Initial Import - yorick-yao
- *
  *
  */
 

@@ -7,90 +7,89 @@ sim.verbose        = 0;
 
 //-------------------------------
 atm.dr0at05mic     = 40.;
-atm.screen	       = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.screen         = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
 atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
 atm.layerspeed     = &([11.,20,29,35]);
-atm.layeralt	   = &([0.,400,6000,9000]);
+atm.layeralt       = &([0.,400,6000,9000]);
 atm.winddir        = &([0,0,0,0]);
 
 //-------------------------------
-nwfs               = 2; // number of WFSs (>1 if e.g. mcao)
+nwfs = 2; // number of WFSs (>1 if e.g. mcao)
 wfs = array(wfss,nwfs);
 
 n   = 1;
-wfs(n).type	   = "hartmann";
+wfs(n).type        = "hartmann";
 wfs(n).subsystem   = 1;
-wfs(n).lambda	   = 0.65;
+wfs(n).lambda      = 0.65;
 wfs(n).gspos       = [0.,0.];
 wfs(n).gsalt       = 0.;
 wfs(n).gsmag       = 5.;
-wfs(n).shmethod	   = 1;
-wfs(n).shnxsub	   = 12;
+wfs(n).shmethod    = 1;
+wfs(n).shnxsub     = 12;
 wfs(n).filtertilt  = 1;  // using a dedicated TT guide star, so I filter this one.
 wfs(n).skymag      = 18.;
 
 n   = 2;
-wfs(n).type	   = "hartmann";
+wfs(n).type        = "hartmann";
 wfs(n).subsystem   = 2;
-wfs(n).lambda	   = 0.65;
+wfs(n).lambda      = 0.65;
 wfs(n).gspos       = [5.,0.];
 wfs(n).gsalt       = 0.;
 wfs(n).gsmag       = 16.;
 wfs(n).skymag      = 20.5;
-wfs(n).shmethod	   = 2;
-wfs(n).shnxsub	   = 1;
+wfs(n).shmethod    = 2;
+wfs(n).shnxsub     = 1;
 wfs(n).npixels     = 2;
 wfs(n).pixsize     = 0.5;
 wfs(n).noise       = 1;
-wfs(n).ron	   = 0.;
+wfs(n).ron         = 0.;
 wfs(n).darkcurrent = 500.;
 wfs(n).dispzoom    = 0.1;
 
 //-------------------------------
-ndm                = 2;
+ndm = 2;
 dm = array(dms,ndm);
 
 n  =1;
-dm(n).type	   = "stackarray";
+dm(n).type         = "stackarray";
 dm(n).subsystem    = 1;
-dm(n).iffile	   = "";
-dm(n).nxact	   = 13;
-dm(n).pitch	   = 5;
+dm(n).iffile       = "";
+dm(n).nxact        = 13;
+dm(n).pitch        = 5;
 dm(n).alt          = 0.;
-dm(n).unitpervolt   = 0.01;
+dm(n).unitpervolt  = 0.01;
 dm(n).push4imat    = 2;
 
 n  =2;
-dm(n).type	   = "tiptilt";
+dm(n).type         = "tiptilt";
 dm(n).subsystem    = 2;
-dm(n).iffile	   = "";
+dm(n).iffile       = "";
 dm(n).alt          = 0.;
-dm(n).unitpervolt   = 0.0005;
+dm(n).unitpervolt  = 0.0005;
 dm(n).push4imat    = 2;
 dm(n).gain         = 0.5;
 
 //-------------------------------
 mat.condition      = &([15.,100.]);
-mat.file	   = "";
 
 //-------------------------------
-tel.diam	   = 7.9;
-tel.cobs	   = 0.1125;
+tel.diam           = 7.9;
+tel.cobs           = 0.1125;
 
 //-------------------------------
-target.lambda	   = &([1.65]);
+target.lambda      = &([1.65]);
 target.xposition   = &([0.]);
 target.yposition   = &([0.]);
 target.dispzoom    = &([1.]);
 
 //-------------------------------
-gs.zeropoint	   = 3e11;
+gs.zeropoint       = 3e11;
 
 //-------------------------------
-loop.gain	   = 0.6;
+loop.gain          = 0.6;
 loop.framedelay    = 0;
-loop.niter	   = 500;
-loop.ittime	   = 2e-3;
+loop.niter         = 500;
+loop.ittime        = 2e-3;
 loop.startskip     = 10;
 loop.skipevery     = 10000;
 loop.skipby        = 10000;

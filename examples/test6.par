@@ -6,17 +6,17 @@ sim.debug           = 1;
 sim.verbose         = 1;
 
 //-------------------------------
-tel.diam	         = 3.6;
+tel.diam           = 3.6;
 
 //-------------------------------
 seeing             = 1.00; // in arcsec at 550nm (V band)
 r0at500            = (0.500e-6/seeing/4.848e-6)*(500./550.)^1.2;
 //atm.dr0at05mic   = 42.44;  // this is r0=0.166 at 550 nm
 atm.dr0at05mic     = tel.diam/r0at500;
-atm.screen	       = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.screen         = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
 atm.layerfrac      = &([0.6,0.1,0.1,0.1]);
 atm.layerspeed     = &([11.,20,35,30]);
-atm.layeralt	     = &([0.,400,6000,13000]);
+atm.layeralt       = &([0.,400,6000,13000]);
 atm.winddir        = &([0,0,0,0]);
 
 
@@ -25,9 +25,9 @@ nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
 wfs = array(wfss,nwfs);
 
 n   = 1;
-wfs(n).type	       = "dh";
+wfs(n).type        = "dh";
 wfs(n).ndh         = 45;
-wfs(n).lambda	     = 0.65;
+wfs(n).lambda      = 0.65;
 wfs(n).gspos       = [00.,0.];
 wfs(n).gsalt       = 0.;
 
@@ -36,33 +36,31 @@ ndm = 1;
 dm = array(dms,ndm);
 
 n = 1;
-dm(n).type	       = "dh";
+dm(n).type         = "dh";
 dm(n).ndh          = 45;
-dm(n).iffile	     = "";
+dm(n).iffile       = "";
 dm(n).alt          = 0.;
 dm(n).push4imat    = 0.01;
 
 //-------------------------------
 mat.condition      = &([50.]);
-mat.file	         = "";
 
 //-------------------------------
-target.lambda	     = &([1.65]);
+target.lambda      = &([1.65]);
 target.xposition   = &([0.]);
 target.yposition   = &([0.]);
 target.dispzoom    = &([1.]);
 
 //-------------------------------
-gs.zeropoint	     = 3e11;
+gs.zeropoint       = 3e11;
 
 //-------------------------------
-loop.gain	         = 0.4;
+loop.gain          = 0.4;
 loop.framedelay    = 2;
-loop.niter	       = 500;
-loop.ittime	       = 2.5e-3;
+loop.niter         = 500;
+loop.ittime        = 2.5e-3;
 loop.startskip     = 10;
 loop.skipevery     = 1000;
 loop.skipby        = 10000;
-loop.modalgainfile = "simulModeGains.fits";
 
 //-------------------------------

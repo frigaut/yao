@@ -1,12 +1,11 @@
 /*
  * yao_fast.c
  * 
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * yao wavefront sensors engines
+ * 
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: yao_fast.c,v 1.9 2010/07/02 21:26:51 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -19,47 +18,6 @@
  * General Public License for more details (to receive a  copy  of  the GNU
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
- *
- * $Log: yao_fast.c,v $
- * Revision 1.9  2010/07/02 21:26:51  frigaut
- * - merged Aurea Garcia-Rissmann disk harmonic code
- * - implemented parallel extension (sim.svipc and wfs.svipc)
- * - a few bug fixes (and many more bug introduction with these major
- *   parallel changes (!). The svipc=0 behavior should be unchanged.
- *
- * Revision 1.8  2010/06/09 15:03:43  frigaut
- * - Merged changes of Marcos Van Dam: This implements new reconstructors
- *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
- *   using sparse matrices, very fast). This adds a dependency on soy.
- *   There's now a few more elements in the dm and mat structures
- *
- * - added thback and cleaned up indentation in yao_fast.c
- *
- * Revision 1.7  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.6  2009/03/25 14:38:33  frigaut
- * - sync
- * - fixed a couple of bugs
- *
- * Revision 1.5  2008/11/19 00:53:19  frigaut
- * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
- * - fixed comments in newfits.i
- * - upped version to 4.2.6
- *
- * Revision 1.4  2008/01/02 13:54:53  frigaut
- * - correct size for the graphic inserts (no black border)
- * - updated spec files
- *
- * Revision 1.3  2007/12/19 14:02:08  frigaut
- * - gotten rid of annoying compilation warning (clean)
- *
- * Revision 1.2  2007/12/13 00:58:31  frigaut
- * added license and header
- *
- *
  *
  */
 

@@ -3,12 +3,9 @@
  *
  * A collection of routines for general purpose for yao
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: yao_util.i,v 1.6 2010/07/02 21:26:51 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -22,47 +19,12 @@
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
  *
- * $Log: yao_util.i,v $
- * Revision 1.6  2010/07/02 21:26:51  frigaut
- * - merged Aurea Garcia-Rissmann disk harmonic code
- * - implemented parallel extension (sim.svipc and wfs.svipc)
- * - a few bug fixes (and many more bug introduction with these major
- *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
- *
- * Revision 1.5  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.4  2009/03/25 14:38:33  frigaut
- * - sync
- * - fixed a couple of bugs
- *
- * Revision 1.3  2008/05/12 17:59:35  frigaut
- * restored (fixed) round in yao_util.i
- *
- * Revision 1.2  2008/05/11 14:03:56  frigaut
- * - implemented zernike wfs
- * - gotten rid of faulty round function in yao_util
- *
- * Revision 1.1.1.1  2007/12/12 23:29:11  frigaut
- * Initial Import - yorick-yao
- *
- *
  */
 
 require,"style.i";
 require,"pkg_mngr.i"; // kinput
 require,"util_fr.i"; // nprint, wheremin, wheremax, typeReturn, exist
 require,"linalg.i";
-
-// func rdfile(file)
-// {
-//   f = open(file,"r");
-//   fcontent = [];
-//   while (line=rdline(f)) grow,fcontent,line;
-//   return fcontent;
-// }
 
 func escapechar(s)
 {

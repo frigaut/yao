@@ -1,6 +1,27 @@
+/*
+ * yao_structures.i
+ *
+ * Definitions of yao structures
+ *
+ * This file is part of the yao package, an adaptive optics simulation tool.
+ *
+ * Copyright (c) 2002-2012, Francois Rigaut
+ *
+ * This program is free software; you can redistribute it and/or  modify it
+ * under the terms of the GNU General Public License  as  published  by the
+ * Free Software Foundation; either version 2 of the License,  or  (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope  that  it  will  be  useful, but
+ * WITHOUT  ANY   WARRANTY;   without   even   the   implied   warranty  of
+ * MERCHANTABILITY or  FITNESS  FOR  A  PARTICULAR  PURPOSE.   See  the GNU
+ * General Public License for more details (to receive a  copy  of  the GNU
+ * General Public License, write to the Free Software Foundation, Inc., 675
+ * Mass Ave, Cambridge, MA 02139, USA).
+ *
+ */
 
-//----------------------------------------------------
-
+local yao_structures;
 /* DOCUMENT wfs, dm, atmospheric, etc.. structures:
    Main structures for the AO simul package parameters
    If additional parameters are needed, they should be entered in these
@@ -248,6 +269,7 @@ struct wfs_struct
   pointer _tiltrefvn;     // internal: tilt reference meas. vector. normalized.
   int     _npixels;       // internal: final # of pixels in subaperture
   int     _npb;           // internal: number of pad pixel for extended field option (on each side)
+  int     _sdim;          // dimension of simage in shwfs fast code
   int     _nx;            // dimension of extended array image
   int     _nx4fft;        // dimension of extended array image (for fft)
   pointer _istart;        //

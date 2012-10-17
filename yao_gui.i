@@ -3,12 +3,9 @@
  *
  * Routines for a quick and dirty GUI to report on progress for yao
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: yao_gui.i,v 1.2 2010/04/15 02:36:53 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -22,22 +19,6 @@
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
  *
- * $Log: yao_gui.i,v $
- * Revision 1.2  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.1.1.1  2007/12/12 23:29:10  frigaut
- * Initial Import - yorick-yao
- *
- *
- * all of these functions need to be issued in an already existing
- * window, example:
- * // create window with graphic style with no box:
- * window,2,width=390,height=350,style="letter.gs",wait=1,dpi=70;
- * // define limits for future use of progress_bar or draw_status:
- * limits,0.,1.,0.,1.;
  */
 
 func progress_bar(percent,&id,init=)

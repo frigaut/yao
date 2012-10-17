@@ -7,16 +7,16 @@ sim.verbose        = 1;
 
 //-------------------------------
 atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
-atm.screen	       = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
-atm.screen	       = &(Y_USER+"data/screengen2048_"+["1","2","3","4"]+".fits");
+atm.screen         = &(Y_USER+"data/verywide"+["1","2","3","4"]+".fits");
+atm.screen         = &(Y_USER+"data/screengen2048_"+["1","2","3","4"]+".fits");
 atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
 atm.layerspeed     = &([11.,20,29,35]);
-atm.layeralt	     = &([0.,400,6000,9000]);
+atm.layeralt       = &([0.,400,6000,9000]);
 atm.winddir        = &([0,0,0,0]);
 
 //-------------------------------
-tel.diam	   = 16.;
-tel.cobs	   = 0.1125;
+tel.diam           = 16.;
+tel.cobs           = 0.1125;
 
 //-------------------------------
 nwfs               = 2; // number of WFSs (>1 if e.g. mcao)
@@ -25,50 +25,44 @@ wfs = array(wfss,nwfs);
 no_pad_simage = 1;
 n   = 1;
 wfs(n).subsystem   = 1;
-wfs(n).type	       = "hartmann";
-wfs(n).lambda	     = 0.65;
+wfs(n).type        = "hartmann";
+wfs(n).lambda      = 0.65;
 wfs(n).gspos       = [0.,0.];
 wfs(n).gsalt       = 90000.;
 wfs(n).gsdepth     = 10000.;
 wfs(n).gsdepth     = 2000.;
-//~ wfs(n).gsdepth     = 0.;
 wfs(n).laserpower  = 30.;
 wfs(n).kernel      = 1.1;
-//~ wfs(n).kernel      = 0.;
 wfs(n).LLTxy       = [0.,0.];
 wfs(n).gsmag       = 7.;
-wfs(n).shmethod	   = 2;
-wfs(n).shnxsub	   = 12;
+wfs(n).shmethod    = 2;
+wfs(n).shnxsub     = 12;
 wfs(n).pixsize     = 0.25;
 wfs(n).npixels     = 8;
 wfs(n).extfield    = 4.;
 wfs(n).noise       = 1;
-//~ wfs(n).noise       = 0;
 wfs(n).ron         = 3.5;
 wfs(n).shthreshold = 0.;
 wfs(n).nintegcycles= 1;
 wfs(n).lgs_prof_amp= &float([0.6,1.2,0.9,0.9,0.5,0.2]);
 wfs(n).lgs_prof_alt= &float([92 ,94 ,96 ,98 ,100,102]*1e3);
-wfs(n).lgs_focus_alt = 94000.;
 wfs(n).fssize      = 4.;
 wfs(n).filtertilt  = 1;
 wfs(n).correctUpTT = 1;
 wfs(n).uplinkgain  = 0.2;
 
-wfs(1).lgs_prof_amp = &float([1.0,1.0]); 
+wfs(1).lgs_prof_amp = &float([1.0,1.0]);
 wfs(1).lgs_prof_alt = &float([90000,100000]);
 wfs(1).lgs_prof_alt = &float([90000,95000]);
-//~ wfs(1).lgs_prof_amp = &float([1.0]); 
-//~ wfs(1).lgs_prof_alt = &float([90000]);
-wfs(1).lgs_focus_alt=0; 
+wfs(1).lgs_focus_alt=0;
 shwfs_comp_lgs_defocuses,1;
 
 func one_layer(void)
 {
   extern wfs;
-  wfs(1).lgs_prof_amp = &float([1.0]); 
+  wfs(1).lgs_prof_amp = &float([1.0]);
   wfs(1).lgs_prof_alt = &float([94000]);
-  wfs(1).lgs_focus_alt=94000; 
+  wfs(1).lgs_focus_alt=94000;
   shwfs_comp_lgs_defocuses,1;
 }
 
@@ -84,7 +78,7 @@ func all_layers(void)
   //~ (*wfs(1).lgs_prof_amp)(8) = 3;
   wfs(1).lgs_prof_alt= &float((89+indgen(21)*1)*1e3); // that should be fwhm=10km
   wfs(1).lgs_focus_alt = 0.; // will be set by shwfs_comp_lgs_defocuses()
-  shwfs_comp_lgs_defocuses,1;  
+  shwfs_comp_lgs_defocuses,1;
 }
 
 func all_layers2(ns,npt,fwhm)
@@ -121,15 +115,15 @@ func ubc_profile(bin2)
 
 
 all_layers2,1,11,10.;
- 
+
 n   = 2;
 wfs(n).subsystem   = 2;
-wfs(n).type	       = "hartmann";
-wfs(n).lambda	     = 0.65;
+wfs(n).type        = "hartmann";
+wfs(n).lambda      = 0.65;
 wfs(n).gspos       = [0.,0.];
 wfs(n).gsmag       = 7.;
-wfs(n).shmethod	   = 1;
-wfs(n).shnxsub	   = 1;
+wfs(n).shmethod    = 1;
+wfs(n).shnxsub     = 1;
 wfs(n).pixsize     = 0.1;
 wfs(n).npixels     = 20;
 wfs(n).noise       = 1;
@@ -142,11 +136,11 @@ dm = array(dms,ndm);
 
 n  =1;
 dm(n).subsystem    = 1;
-dm(n).type	       = "diskharmonic";
-//~ dm(n).type	       = "stackarray";
-dm(n).iffile	     = "";
-dm(n).nxact	       = wfs(n).shnxsub+1;
-dm(n).pitch	       = sim.pupildiam/wfs(n).shnxsub;
+dm(n).type         = "diskharmonic";
+//~ dm(n).type         = "stackarray";
+dm(n).iffile       = "";
+dm(n).nxact        = wfs(n).shnxsub+1;
+dm(n).pitch        = sim.pupildiam/wfs(n).shnxsub;
 dm(n).ndh          = 40;
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.01;
@@ -155,35 +149,31 @@ dm(n).elt          = 0;
 
 n  =2;
 dm(n).subsystem    = 2;
-dm(n).type	       = "tiptilt";
-dm(n).iffile	     = "";
+dm(n).type         = "tiptilt";
+dm(n).iffile       = "";
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.0005;
 dm(n).push4imat    = 400;
 
 //-------------------------------
-mat.condition      = &([15.,15.]);
-mat.file	   = "";
-mat.method = "mmse";
+mat.method         = "mmse";
 
 //-------------------------------
-target.lambda	   = &([1.65]);
+target.lambda      = &([1.65]);
 target.xposition   = &([0.]);
 target.yposition   = &([0]);
 target.dispzoom    = &([1.]);
 
 //-------------------------------
-gs.zeropoint	   = 1e11;
+gs.zeropoint       = 1e11;
 
 //-------------------------------
-loop.gain	   = 0.6;
+loop.gain          = 0.6;
 loop.framedelay    = 1;
-loop.niter	   = 20000;
-loop.ittime	   = 2e-3;
-//loop.stats_every = 100;
+loop.niter         = 20000;
+loop.ittime        = 2e-3;
 loop.startskip     = 10;
 loop.skipevery     = 10000;
 loop.skipby        = 10000;
-loop.modalgainfile = "simulModeGains.fits";
 
 //-------------------------------

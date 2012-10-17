@@ -1,13 +1,11 @@
 /*
- * TURBULENCE.I
+ * turbulence.i
+ *
  * A collection of routines about turbulence.
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: turbulence.i,v 1.3 2010/04/15 02:36:53 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -20,21 +18,6 @@
  * General Public License for more details (to receive a  copy  of  the GNU
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
- *
- * $Log: turbulence.i,v $
- * Revision 1.3  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.2  2007/12/19 13:18:59  frigaut
- * - explicit message when screens are not present/found
- * - more messages in statusbar
- * - added statusbar1 (that can hide/show) for strehl status header
- *
- * Revision 1.1.1.1  2007/12/12 23:29:13  frigaut
- * Initial Import - yorick-yao
- *
  *
  */
 

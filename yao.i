@@ -1,12 +1,9 @@
 /*
  * yao.i
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: yao.i,v 1.18 2010/07/02 21:26:51 frigaut Exp $
- *
- * Copyright (c) 2002-2009, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -19,178 +16,6 @@
  * General Public License for more details (to receive a  copy  of  the GNU
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
- *
- * Initial release F.Rigaut, June 2002.
- * see Release notes in README
- * all documentation at http://www.maumae.net/yao/aosimul.html
- *
- * $Log: yao.i,v $
- * Revision 1.18  2010/07/02 21:26:51  frigaut
- * - merged Aurea Garcia-Rissmann disk harmonic code
- * - implemented parallel extension (sim.svipc and wfs.svipc)
- * - a few bug fixes (and many more bug introduction with these major
- *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
- *
- * Revision 1.17  2010/06/09 16:42:30  frigaut
- * - changed "least-squares" -> "mmse"
- * - changed "sparse" -> "mmse-sparse"
- * - updated documentation with input from Marcos Van Dam
- *
- * Revision 1.16  2010/06/09 15:03:42  frigaut
- * - Merged changes of Marcos Van Dam: This implements new reconstructors
- *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
- *   using sparse matrices, very fast). This adds a dependency on soy.
- *   There's now a few more elements in the dm and mat structures
- *
- * - added thback and cleaned up indentation in yao_fast.c
- *
- * Revision 1.15  2010/04/15 18:11:24  frigaut
- *
- * - strlower -> strcase
- *
- * Revision 1.14  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.13  2008/11/19 00:53:19  frigaut
- * - fixed memory leak in yao_fast.c (thanks Damien for reporting that)
- * - fixed comments in newfits.i
- * - upped version to 4.2.6
- *
- * Revision 1.12  2008/05/12 18:23:48  frigaut
- * version change
- *
- * Revision 1.11  2008/05/11 14:03:56  frigaut
- * - implemented zernike wfs
- * - gotten rid of faulty round function in yao_util
- *
- * Revision 1.10  2007/12/27 09:06:28  frigaut
- * - bumped to version 4.2.3
- * - corrected problem with glade path (python does not like ~, so
- * replaced by expansion)
- *
- * Revision 1.9  2007/12/20 13:35:55  frigaut
- * bumped to v4.2.2
- *
- * Revision 1.8  2007/12/20 13:34:53  frigaut
- * - various bug fixes
- * - better handlng of default parfile path
- * - better handling of options menu (WFS and DM)
- *
- * Revision 1.7  2007/12/19 20:00:08  frigaut
- * - statusbar updated to indicates where the results are saved when done
- * - bumped to 4.2.1
- *
- * Revision 1.6  2007/12/19 19:44:19  frigaut
- * - solved a number of bugs and inconsistencies between regular yao call and
- *   GUI calls.
- * - fixed misregistration for curvature systems
- * - change: misregistration entry from the GUI is now in pupil diameter unit,
- *   not in subaperture unit!
- * - changed default efd in c188-bench.par
- *
- * Revision 1.5  2007/12/19 15:45:32  frigaut
- * - implemented yao.conf which defines the YAO_SAVEPATH directory where
- * all temporary files and result files will be saved
- * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
- * - bumped version to 4.2.0
- * - slight changes to GUI (edit conf file)
- *
- *
- * version 4.1.1: 2007dec13:
- *  - upgrade/update of Makefile
- *
- * version 4.1: 2007dec12:
- *  - cleaned up all things for the debian release and a fresh pkg_mngr
- *    release
- *  - cleaned up the LICENSE issue (GPLv2)
- *  - suppressed warning message if fftw_wisdom.dat not found. In my
- *    experience, on modern hardware and for fftw3, this does not improve
- *    speed. One can still generate and use one if wanted (run
- *    init_fftw_wisdom)
- *  - produced man page (doc/yao.1)
- *
- * version 4.0: 2007jun03:
- *  - Added all GTK GUI. No further modifs in yao,
- *    hence yao can still be used safely without a gui (scripts,
- *    scripts).
- *  - migrated to a flat directory structure for yao. There is no
- *    more yao_fftw subdirectory
- *  - This is now meant to be installed in i0, so the path to the yao
- *    required functions has been changed from yao/file.i to file.i
- *
- * version 3.81, 2007jun02: added gui_message
- *
- * version 3.80, 2007apr19: now 64 bits safe !
- *
- * version 3.75, 2007feb22: added angle offset for curvature wfs and dms
- *
- * 2006mar01: corrected bug. reset put command to 0,
- * while it needed to zero dm._command
- *
- * Old CVS Log: aosimul.i
- * Revision 1.26  2004/10/19 00:18:04  frigaut
- * replaced strJoin -> strjoin and the like for compat with new string_ops.i
- *
- * Revision 1.25  2004/10/18 21:57:02  frigaut
- * fixed the mess that I had the swap screen update committed from lono
- * and I just committed the coupling update with a version that did
- * not contain the swap screen update.
- * Now I believe this version contains both.
- *
- * Revision 1.23  2004/09/29 03:59:37  frigaut
- * aosimul modified to accomodate screen swaps
- * turbulence.i modified for outer scale
- * aoutil.i modified to not impose the gain value, allowing 0.
- * it prints out a simple warning if loop.gain=0 (allow open
- * loop runs).
- *
- * Revision 1.22  2004/09/14 04:32:56  frigaut
- * several modifs to do with the creation of turbulent phase screens
- * - implemented cosf and sinf which take and return floats to save space
- * - started coding generate_phase_with_L0 in turbulence.i, not finished
- * - modif YORICKEXE in makefiles, just "yorick" did not do it on osx
- * - modifs ok for both veclib and fftw implementations
- *
- * Revision 1.21  2004/09/14 00:27:34  frigaut
- * refresh/update from web site files
- *
- * Revision 1.20  2004/09/11 01:28:17  frigaut
- * - added a printout of the yao version used in yao_fast.i's
- * - added a make check-plug in Makefiles
- * - updated version and date in aosimul.i
- *
- * Revision 1.19  2004/09/11 00:21:37  frigaut
- * modified to include yao and yao_fast.i at parse
- * This is the first version compatible with plugins.
- *
- * Revision 1.18  2004/08/02 22:58:02  frigaut
- * modified tic and tac to accomodate multiple counters
- * modified aoloop to use it.
- * now the "Time Left" functionality works again.
- *
- * Revision 1.17  2004/08/02 08:19:18  frigaut
- * global update to be sure I did not forget a file
- *
- * Revision 1.16  2004/08/02 07:59:05  frigaut
- * Updated version number and date in file header.
- *
- * Revision 1.15  2004/08/02 07:54:11  frigaut
- * Fixed a bug in shwfs_init noted by Miska when running odd number of
- * subaperture shack-hartmann systems. There was a division by zero
- * in the call to atan to determine the angle of the kernel. fixed
- * by calling atan(y,x) instead of atan(y/x)
- *
- * Revision 1.14  2004/08/02 07:21:25  frigaut
- * Corrected a nasty bug in the final adjustment of yposvec in
- * get_turb_phase_init (used xmargin instead of ymargin)
- *
- * Revision 1.13  2004/08/02 07:11:13  frigaut
- * Added call to get_turb_phase_initCheckOverflow in get_turb_phase_init
- *
- * Revision 1.12  2004/07/29 04:06:50  frigaut
- * added cvs dollar Log in header
  *
 */
 
@@ -1841,11 +1666,11 @@ func aoread(parfile)
   sim  = sim_struct();
   wfss = wfs_struct(dispzoom=1,_bckgrdsub=1);
   dms  = dm_struct();
-  mat  = mat_struct();
+  mat  = mat_struct(file="");
   tel  = tel_struct();
   target = target_struct();
   gs   = gs_struct();
-  loop = loop_struct();
+  loop = loop_struct(modalgainfile="",stats_every=4,startskip=10);
   paramfile = parfile;
 
   if (!fileExist(parfile)) {

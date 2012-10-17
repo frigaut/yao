@@ -1,9 +1,7 @@
 /*
  * YAO_NEWFITS.I
  *
- * $Id: newfits.i,v 1.3 2009/03/25 14:38:31 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -27,8 +25,11 @@
  *
  * Fits Standard:
  * ftp://nssdcftp.gsfc.nasa.gov/standard/fits/fits_standard.pdf
- *
- * yao_newfits.i,v 0.1 2002/09/27 rigaut
+ */
+
+local yao_newfits;
+/* DOCUMENT
+ * yao_newfits.i
  *
  * Routines included:
  * yao_fitsread(name,&phdr,&ehdr,extension=,onlyheader=) Reads a fits file

@@ -1,4 +1,51 @@
-/* libkl
+/*
+ * yaokl.i
+ *
+ * A collection of routines related to Karhuenen Loeve modes.
+ *
+ * This file is part of the yao package, an adaptive optics simulation tool.
+ *
+ * Copyright (c) 2002-2012, Francois Rigaut
+ * Copyright (c) 2006, Damien Gratadour
+ *
+ * This program is free software; you can redistribute it and/or  modify it
+ * under the terms of the GNU General Public License  as  published  by the
+ * Free Software Foundation; either version 2 of the License,  or  (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope  that  it  will  be  useful, but
+ * WITHOUT  ANY   WARRANTY;   without   even   the   implied   warranty  of
+ * MERCHANTABILITY or  FITNESS  FOR  A  PARTICULAR  PURPOSE.   See  the GNU
+ * General Public License for more details (to receive a  copy  of  the GNU
+ * General Public License, write to the Free Software Foundation, Inc., 675
+ * Mass Ave, Cambridge, MA 02139, USA).
+ *
+ */
+
+
+local yaokl;
+/* yaokl
+
+  Collection of routines for building the KL of a Kolmogorov statistics
+  Derived from a collection of routines developped both at ESO and ONERA
+  The main routine is the last one ...
+
+  for a Kolmogorov statistics :
+  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64);
+  or
+  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="kolmo");
+  
+
+  for a Von Karman statistics :
+  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman");
+  or
+  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman",outscl=3);
+  default is : an outter scale of 3 times the size of the telescope
+  
+  res is a 128x128x150 array containing the 150 first KL
+  of a kolmogorov or Von Karman stat
+
+  D. Gratadour Feb 2006
 
    Available functions:
    func dblindgen(n)
@@ -22,32 +69,6 @@
    func kl_basis_in_dm_space_4extrap(nm, n_rm_modes);
    func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val);
 
-*/
-
-
-
-
-/*
-  Collection of routines for building the KL of a Kolmogorov statistics
-  Derived from a collection of routines developped both at ESO and ONERA
-  The main routine is the last one ...
-
-  for a Kolmogorov statistics :
-  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64);
-  or
-  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="kolmo");
-  
-
-  for a Von Karman statistics :
-  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman");
-  or
-  res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman",outscl=3);
-  default is : an outter scale of 3 times the size of the telescope
-  
-  res is a 128x128x150 array containing the 150 first KL
-  of a kolmogorov or Von Karman stat
-
-  D. Gratadour Feb 2006
  */
 
 //require,mcao_i_dir+"lib/libgenutil.i";

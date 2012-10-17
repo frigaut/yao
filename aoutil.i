@@ -2,12 +2,9 @@
  *
  * A collection of utility routines to go with yao.i
  *
- * This file is part of the yao package, an adaptive optics
- * simulation tool.
+ * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * $Id: aoutil.i,v 1.10 2010/07/02 21:26:51 frigaut Exp $
- *
- * Copyright (c) 2002-2007, Francois Rigaut
+ * Copyright (c) 2002-2012, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -21,118 +18,9 @@
  * General Public License, write to the Free Software Foundation, Inc., 675
  * Mass Ave, Cambridge, MA 02139, USA).
  *
- * $Log: aoutil.i,v $
- * Revision 1.10  2010/07/02 21:26:51  frigaut
- * - merged Aurea Garcia-Rissmann disk harmonic code
- * - implemented parallel extension (sim.svipc and wfs.svipc)
- * - a few bug fixes (and many more bug introduction with these major
- *   parallel changes (!). Fortunately, the svipc=0 behavior should be unchanged.
- *
- * Revision 1.9  2010/06/09 15:03:42  frigaut
- * - Merged changes of Marcos Van Dam: This implements new reconstructors
- *   methods "least-squares" (in fact a MMSE-like) and "sparse" (same but
- *   using sparse matrices, very fast). This adds a dependency on soy.
- *   There's now a few more elements in the dm and mat structures
- *
- * - added thback and cleaned up indentation in yao_fast.c
- *
- * Revision 1.8  2010/04/15 02:36:53  frigaut
- *
- *
- * final commit to upgrade this repo to yao 4.5.1
- *
- * Revision 1.7  2008/05/12 18:00:53  frigaut
- * fixed problem with zernike diameter for altitude DMs.
- *
- * Revision 1.6  2008/05/11 14:03:56  frigaut
- * - implemented zernike wfs
- * - gotten rid of faulty round function in yao_util
- *
- * Revision 1.5  2007/12/20 13:34:52  frigaut
- * - various bug fixes
- * - better handlng of default parfile path
- * - better handling of options menu (WFS and DM)
- *
- * Revision 1.4  2007/12/19 19:44:19  frigaut
- * - solved a number of bugs and inconsistencies between regular yao call and
- *   GUI calls.
- * - fixed misregistration for curvature systems
- * - change: misregistration entry from the GUI is now in pupil diameter unit,
- *   not in subaperture unit!
- * - changed default efd in c188-bench.par
- *
- * Revision 1.3  2007/12/19 15:45:32  frigaut
- * - implemented yao.conf which defines the YAO_SAVEPATH directory where
- * all temporary files and result files will be saved
- * - modified yao.i and aoutil.i to save in YAO_SAVEPATH
- * - bumped version to 4.2.0
- * - slight changes to GUI (edit conf file)
- *
- * Revision 1.2  2007/12/19 13:18:59  frigaut
- * - explicit message when screens are not present/found
- * - more messages in statusbar
- * - added statusbar1 (that can hide/show) for strehl status header
- *
- * Revision 1.1.1.1  2007/12/12 23:29:12  frigaut
- * Initial Import - yorick-yao
- *
- * Revision 1.9  2004/10/18 21:30:43  frigaut
- * added things relative to inter actuator coupling (make_pzt_dm),
- * for regular and elt configs.
- * added tests relative to that in checkparameters
- *
- * Revision 1.7  2004/09/14 04:32:56  frigaut
- * several modifs to do with the creation of turbulent phase screens
- * - implemented cosf and sinf which take and return floats to save space
- * - started coding generate_phase_with_L0 in turbulence.i, not finished
- * - modif YORICKEXE in makefiles, just "yorick" did not do it on osx
- * - modifs ok for both veclib and fftw implementations
- *
- * Revision 1.6  2004/08/02 07:10:53  frigaut
- * Added routine get_turb_phase_initCheckOverflow, which checks for Y
- * interpolation indices larger than the max Y dimension, which would
- * cause problem in get_turb_phase.
- *
- * Revision 1.5  2004/07/29 04:06:50  frigaut
- * added cvs dollar Log in header
- *
- *
- * func graphic_config(subsystemnum,dmnum)
- * func check_parameters(void)
- * func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
- * func hysteresis(v,n,first=)
- * func modal_gain_optimization(disp=,update=)
- * func ft_cb_ao_simul(FrameDelay,gain,dim)
- * func build_dm_modes(disp=)
- * func wfs_check_pixel_size(ns,&binindices,&centroidw,printheader=,silent=)
- * func make_pzt_dm(nm,&def,disp=)
- * func make_pzt_dm_elt(nm,&def,disp=)
- * func make_zernike_dm(nm,&def,disp=)
- * func make_dh_dm(nm,&def,disp=)
- * func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
- * func make_aniso_dm(nm,&def,disp=)
- * func make_tiptilt_dm(nm,&def,disp=)
- * func make_curvature_dm(nm,&def,disp=,cobs=)
- * func make_curv_wfs_subs(ns,dim,pupd,disp=,cobs=)
- * func _map2d(t,dim,cent)
- * func noll(ord)
- * func nollmat(ord)
- * func rotby90(image,rot)
- * func make_pupil(dim,pupd,xc=,yc=,real=,cobs=)
- * func fwhmStrehl(image,ps,lambda,teldiam,cobs,&strehl,&fwhm,&strehlab,&airy,&psf0,
- * func telftoh1(f,u,v)
- * func telftoh2(f,u)
- * func telftog(f,u)
- * func telftot0(f,cobs)
- * func telfto(lambda,dlambda,teldiam,cobs,pixsize,dim,freqc=,npt=,silent=,returnpsf=)
- * func ftcb(te,tcal,tmir,gain,dim,x=)
- * func encircled_energy(image,&ee50,xc=,yc=)
- * func findfwhm(image,psize)
- *
  */
 
 
-//----------------------------------------------------
 func create_yao_window(dpi)
 /* DOCUMENT create_yao_window(dpi)
    Open or re-open (e.g. after a fork() ) the main and only yao graphical
@@ -2053,3 +1941,4 @@ func prime_factors(n,upper_limit=)
   grow,factors,n;
   return factors;
 }
+
