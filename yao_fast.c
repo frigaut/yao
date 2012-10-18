@@ -198,6 +198,8 @@ int _init_fftw_plan(int size)
   fftwf_complex *outf;
   fftwf_plan p1,p2,p3;
   float *rinf;
+  float *ptr;
+  int i;
   int plan_mode;
 
   plan_mode = FFTWOPTMODE;
@@ -207,6 +209,12 @@ int _init_fftw_plan(int size)
   rinf = fftwf_malloc(size*size*sizeof(float));
   inf  = fftwf_malloc(size*size*sizeof(fftwf_complex));
   outf = fftwf_malloc(size*size*sizeof(fftwf_complex));
+
+  ptr = (void *)rinf;
+  for (i=0;i<size*size;i++) *(ptr++) = 0.0f;
+  ptr = (void *)inf;
+  for (i=0;i<2*size*size;i++) *(ptr++) = 0.0f;
+
   p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
   p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
   p3 = fftwf_plan_dft_r2c_2d(size, size, rinf, outf, plan_mode);
