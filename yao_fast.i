@@ -125,6 +125,25 @@ extern _export_wisdom
    int _export_wisdom(string wisdom_file)
 */
 
+extern _set_sincos_approx
+/* PROTOTYPE
+   void _set_sincos_approx(int flag)
+*/
+
+extern _get_sincos_approx;
+
+func use_sincos_approx(use_it)
+{
+  if (use_it!=[]) _set_sincos_approx,use_it;
+  else return _get_sincos_approx();
+}
+
+extern _sinecosinef
+/* PROTOTYPE
+   void _sinecosinef(float x, pointer s, pointer c)
+*/
+
+
 func fftVE(realp,imagp,dir)
 {
   if (typeof(realp) != "float") {realp=float(realp);}

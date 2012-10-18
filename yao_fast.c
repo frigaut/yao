@@ -39,6 +39,8 @@
 
 // static int n_threads = 1;
 
+int use_sincos_approx_flag = 1;
+
 void _eclat_float(float *ar, int nx, int ny);
 void _poidev(float *xmv, long n);
 void _gaussdev(float *xmv, long n);
@@ -63,6 +65,16 @@ void _gaussdev(float *xmv, long n);
 // }
 
 
+void _set_sincos_approx(int flag)
+{
+  use_sincos_approx_flag = flag;
+}
+
+void Y__get_sincos_approx(int nargs)
+{
+  ypush_int(use_sincos_approx_flag);
+}
+
 float sine(float x)
 {
   const float pi = 3.141592653589793f;
@@ -75,7 +87,7 @@ float sine(float x)
   
   float y = B * x + C * x * fabsf(x);
   
-  y = P * (y * abs(y) - y) + y;
+  y = P * (y * fabsf(y) - y) + y;
   
   return y;
 }
@@ -89,7 +101,7 @@ float cosine(float x)
   return y;
 }
 
-void sinecosinef(float x, float *s, float *c)
+void _sinecosinef(float x, float *s, float *c)
 {
   float sc;
   *s = sine(x);
@@ -263,7 +275,8 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
         //~ *(ptr+1) = pupil[i] * sinf( phase[koff+i] * scal );
         //~ *(ptr)   = pupil[i] * cosine( phase[koff+i] * scal );
         //~ *(ptr+1) = pupil[i] * sine( phase[koff+i] * scal );
-        sinecosinef(phase[koff+i] * scal, &ppsin, &ppcos);
+        if (use_sincos_approx_flag) _sinecosinef(phase[koff+i] * scal, &ppsin, &ppcos);
+        else sincosf(phase[koff+i] * scal, &ppsin, &ppcos);
         *(ptr)   = pupil[i] * ppcos;
         *(ptr+1) = pupil[i] * ppsin;
       } else {
@@ -800,13 +813,15 @@ int _shwfs_phase2spots(
       ptr = (void *)A;
       if (dynrange) {
         
+        if (debug>1) if (l==10) printf("here, dynrange enabled\n");
         for ( j=0; j<nsy ; j++ ) {
           for ( i=0; i<nsx ; i++ ) {
             k = koff + i + j*dim;
             kk = i + j*nsx;
             pp = phase_scaled[k] + lgsdef * unit_defocus[k] \
                      - dx * unittip[kk] - dy * unittilt[kk];
-            sinecosinef(pp,&ppsin,&ppcos);
+            if (use_sincos_approx_flag) _sinecosinef(pp,&ppsin,&ppcos);
+            else sincosf(pp,&ppsin,&ppcos);
             *(ptr + 2*(i+j*ns))   = pupil[k] * ppcos;
             *(ptr + 2*(i+j*ns)+1) = pupil[k] * ppsin;
           }
@@ -814,11 +829,13 @@ int _shwfs_phase2spots(
 
       } else {
 
+        if (debug>1) if (l==10) printf("here, dynrange disabled\n");
         for ( j=0; j<nsy ; j++ ) {
           for ( i=0; i<nsx ; i++ ) {
             k = koff + i + j*dim;
             pp = phase_scaled[k];
-            sinecosinef(pp,&ppsin,&ppcos);
+            if (use_sincos_approx_flag) _sinecosinef(pp,&ppsin,&ppcos);
+            else sincosf(pp,&ppsin,&ppcos);
             *(ptr + 2*(i+j*ns))   = pupil[k] * ppcos;
             *(ptr + 2*(i+j*ns)+1) = pupil[k] * ppsin;
           }
@@ -1503,7 +1520,8 @@ int _cwfs (float *pupil,      // input pupil
   for ( i=0; i<n ; i++ ) {
     if (pupil[i] != 0.0f) {
       pp = phasescale*(phase[i]+phaseoffset[i]);
-      sinecosinef(pp,&ppsin,&ppcos);
+      if (use_sincos_approx_flag) _sinecosinef(pp,&ppsin,&ppcos);
+      else sincosf(pp,&ppsin,&ppcos);
       *(ptr)   = pupil[i]*ppcos;
       *(ptr+1) = pupil[i]*ppsin;
     } else {

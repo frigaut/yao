@@ -936,7 +936,7 @@ func sh_wfs(pupsh,phase,ns)
             int(wfs(ns).rayleighflag),
             *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
             wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
-        
+            
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
       sem_take,semkey,20+4*(ns-1)+1,count=wfs(ns).svipc-1;
@@ -950,7 +950,7 @@ func sh_wfs(pupsh,phase,ns)
       err = _shwfs_spots2slopes( ffimage,
                   *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
                   wfs(ns)._nsub4disp, wfs(ns)._npixels,
-                  wfs(ns)._fimnx , wfs(ns)._fimny, yoffset,
+                  wfs(ns)._fimnx , fimny, yoffset,
                   *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
                   *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise,
                   *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,

@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.0.2";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct17";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.0.3";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct18";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -525,18 +525,18 @@ func do_imat(disp=)
       command(i) = float(dm(nm).push4imat);
       mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
 
-        if (mat.method != "mmse-sparse"){
-          if (!dm(nm).ncp){
-            // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
-            iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
-          }
-        } else {
-          if (!dm(nm).ncp){
-            rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat), mat.sparse_thresh;
-          } else {
-            rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0.), mat.sparse_thresh;
-          }
+      if (mat.method != "mmse-sparse"){
+        if (!dm(nm).ncp){
+          // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
+          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
         }
+      } else {
+        if (!dm(nm).ncp){
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat), mat.sparse_thresh;
+        } else {
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0.), mat.sparse_thresh;
+        }
+      }
       
       // display, if requested:
       // WFS spots:
