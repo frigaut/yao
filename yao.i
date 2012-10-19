@@ -504,7 +504,7 @@ func do_imat(disp=)
   // when doing the iMat:
   store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
               skyfluxpersub_orig, bckgrdcalib_orig, bias_orig, \
-              flat_orig,use_sincos_approx_orig;
+              flat_orig,darkcurrent_orig,use_sincos_approx_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -630,7 +630,7 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
   noise_orig = cycle_orig = kconv_orig = array(0n,nwfs);
   darkcurrent_orig = array(float,nwfs);
   skyfluxpersub_orig = bckgrdcalib_orig = bias_orig = flat_orig = array(pointer,nwfs);
-  use_sincos_approx_orig = use_sincos_approx();
+  use_sincos_approx_orig = [use_sincos_approx()]; // & need a vector
   use_sincos_approx,0;
 
   for (ns=1;ns<=nwfs;ns++) {
@@ -674,8 +674,7 @@ func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
                                 use_sincos_approx_orig)
 {
   extern wfs;
-
-  use_sincos_approx,use_sincos_approx_orig;
+  use_sincos_approx,use_sincos_approx_orig(1);
 
   for (ns=1;ns<=nwfs;ns++) {
 
