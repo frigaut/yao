@@ -142,29 +142,22 @@ int _export_wisdom(char *wisdom_file)
 
 int _init_fftw_plans(int nlimit)
 {
-  int n;
-  int size;
-  fftwf_complex *inf;
-  fftwf_complex *outf;
-  float *rinf;
+  int n, size;
+  fftwf_complex *inf,*outf;
+  fftwf_plan p1, p2;
   int plan_mode;
-
-
-  size=1;
 
   plan_mode = FFTWOPTMODE;
 
-  for (n=0;n<nlimit;n++) {
+  size=1;
+  for (n=0;n<nlimit+1;n++) {
     printf("Optimizing 2D FFT - size = %d\n",size);
-    fflush(stdout);
-    rinf = fftwf_malloc(size*size*sizeof(float));
     inf  = fftwf_malloc(size*size*sizeof(fftwf_complex));
     outf = fftwf_malloc(size*size*sizeof(fftwf_complex));
-    fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
-    fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
-    fftwf_plan_dft_r2c_2d(size, size, rinf, outf, plan_mode);
-
-    fftwf_free(rinf);
+    p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
+    p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
+    fftwf_destroy_plan(p1);
+    fftwf_destroy_plan(p2);
     fftwf_free(inf);
     fftwf_free(outf);
 
@@ -172,17 +165,14 @@ int _init_fftw_plans(int nlimit)
   }
 
   size = 1;
-  for (n=0;n<nlimit;n++) {
+  for (n=0;n<nlimit+1;n++) {
     printf("Optimizing 1D FFT - size = %d\n",size);
-    fflush(stdout);
-    rinf = fftwf_malloc(size*sizeof(float));
     inf  = fftwf_malloc(size*sizeof(fftwf_complex));
     outf = fftwf_malloc(size*sizeof(fftwf_complex));
-    fftwf_plan_dft_1d(size, inf, outf, FFTW_FORWARD, plan_mode);
-    fftwf_plan_dft_1d(size, inf, outf, FFTW_BACKWARD, plan_mode);
-    fftwf_plan_dft_r2c_1d(size, rinf, outf, plan_mode);
-
-    fftwf_free(rinf);
+    p1 = fftwf_plan_dft_1d(size, inf, outf, FFTW_FORWARD, plan_mode);
+    p2 = fftwf_plan_dft_1d(size, inf, outf, FFTW_BACKWARD, plan_mode);
+    fftwf_destroy_plan(p1);
+    fftwf_destroy_plan(p2);
     fftwf_free(inf);
     fftwf_free(outf);
 
@@ -196,8 +186,7 @@ int _init_fftw_plan(int size)
 {
   fftwf_complex *inf;
   fftwf_complex *outf;
-  fftwf_plan p1,p2,p3;
-  float *rinf;
+  fftwf_plan p1,p2;
   float *ptr;
   int i;
   int plan_mode;
@@ -205,26 +194,19 @@ int _init_fftw_plan(int size)
   plan_mode = FFTWOPTMODE;
 
   printf("Optimizing 2D FFT - size = %d\n",size);
-  fflush(stdout);
-  rinf = fftwf_malloc(size*size*sizeof(float));
   inf  = fftwf_malloc(size*size*sizeof(fftwf_complex));
   outf = fftwf_malloc(size*size*sizeof(fftwf_complex));
 
-  ptr = (void *)rinf;
-  for (i=0;i<size*size;i++) *(ptr++) = 0.0f;
   ptr = (void *)inf;
   for (i=0;i<2*size*size;i++) *(ptr++) = 0.0f;
 
   p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
   p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
-  p3 = fftwf_plan_dft_r2c_2d(size, size, rinf, outf, plan_mode);
 
-  fftwf_free(rinf);
-  fftwf_free(inf);
-  fftwf_free(outf);
   fftwf_destroy_plan(p1);
   fftwf_destroy_plan(p2);
-  fftwf_destroy_plan(p3);
+  fftwf_free(inf);
+  fftwf_free(outf);
 
   return(0);
 }
