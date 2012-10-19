@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.0.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct18";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.0.4";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct19";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -47,7 +47,6 @@ if (!is_void(path2conf)) {
 //if ( (rep=="darwin") || (rep=="linux") ) os_env = rep; else os_env="unknown";
 os_env="unknown";
 
-
 plug_in,"yao";
 
 require,"yao_utils.i";
@@ -67,6 +66,20 @@ require,"yaodh.i";
 
 // compatibility with GUI (yaopy.i)
 func null (arg,..) { return 0; }
+
+
+// set up for notify. Disabled by default. Set "use_notify" to enable
+// we have to do that as soon as possible to avoid forking large a process
+// this spawned bash session can actually be used for other purposes if
+// needed.
+func on_bash_out(msg) { write,msg; }
+func notify(msg) {
+  if (!use_notify) return; // allows to turn off/on notify within the session
+  bash,swrite(format="notify-send -i %s \"%s\"\n",icon,msg);
+}
+icon = "/home/frigaut/Pictures/logos/yao_64_inv.png";
+if (use_notify) bash = spawn("/bin/bash",on_bash_out); else bash=null;
+
 
 func parse_yao_version(ver)
 {
@@ -489,8 +502,9 @@ func do_imat(disp=)
   if (disp) { plsys,1; animate,1; }
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
-  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig, 
-                                       bckgrdcalib_orig, bias_orig, flat_orig;
+  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
+              skyfluxpersub_orig, bckgrdcalib_orig, bias_orig, \
+              flat_orig,use_sincos_approx_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -586,7 +600,9 @@ func do_imat(disp=)
   }
 
   // restore original values to WFS structure:
-  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig,darkcurrent_orig;
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
+                 skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, \
+                 flat_orig,darkcurrent_orig,use_sincos_approx_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -604,14 +620,18 @@ func do_imat(disp=)
 }
 
 
-func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, &skyfluxpersub_orig, 
-                              &bckgrdcalib_orig,&bias_orig, &flat_orig, &darkcurrent_orig)
+func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, 
+                              &skyfluxpersub_orig, &bckgrdcalib_orig,
+                              &bias_orig, &flat_orig, &darkcurrent_orig,
+                              &use_sincos_approx_orig)
 {
   extern wfs;
 
   noise_orig = cycle_orig = kconv_orig = array(0n,nwfs);
   darkcurrent_orig = array(float,nwfs);
   skyfluxpersub_orig = bckgrdcalib_orig = bias_orig = flat_orig = array(pointer,nwfs);
+  use_sincos_approx_orig = use_sincos_approx();
+  use_sincos_approx,0;
 
   for (ns=1;ns<=nwfs;ns++) {
 
@@ -650,9 +670,13 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, &skyfluxper
 
 func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
                                 skyfluxpersub_orig,bckgrdcalib_orig,
-                                bias_orig, flat_orig, darkcurrent_orig)
+                                bias_orig, flat_orig, darkcurrent_orig,
+                                use_sincos_approx_orig)
 {
   extern wfs;
+
+  use_sincos_approx,use_sincos_approx_orig;
+
   for (ns=1;ns<=nwfs;ns++) {
 
     wfs(ns).noise = noise_orig(ns);
@@ -1977,8 +2001,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // save state of noise/nintegcycle/etc: everything that is not desired
   // when doing the iMat:
-  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,
-    skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig,darkcurrent_orig;
+  store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
+               skyfluxpersub_orig, bckgrdcalib_orig, bias_orig, \
+               flat_orig, darkcurrent_orig, use_sincos_approx_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -2034,7 +2059,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   wfs.filtertilt = mem;
 
   // restore original values to WFS structure:
-  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig,skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, flat_orig, darkcurrent_orig;
+  restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
+                 skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, \
+                 flat_orig, darkcurrent_orig, use_sincos_approx_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -3243,10 +3270,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
 
   gui_message,"aoinit done: click on aoloop";
-  yicon = Y_HOME+"icons/yicon48.png";
-  //  system,swrite(format=                                             \
-  //      "growlnotify yao --image '%s' -m '%s: aoinit done'",yicon,parprefix);
-
+  notify,swrite(format="%s: aoinit done",parprefix);
 }
 
 //---------------------------------------------------------------
@@ -4064,10 +4088,7 @@ func go(nshot,all=)
     }
     if ((sim.svipc>>0)&1) sem_take,semkey,1;
     after_loop;
-    //    yicon = Y_HOME+"icons/yicon48.png";
-    //    system,swrite(format=                                         \
-    //        "growlnotify yao --image '%s' -m '%s: %d iterations completed'", \
-    //        yicon,parprefix,loop.niter);
+    notify,swrite(format="%s: %d iterations completed",parprefix,loopCounter)
   }
 }
 

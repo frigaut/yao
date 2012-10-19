@@ -39,7 +39,7 @@
 
 // static int n_threads = 1;
 
-int use_sincos_approx_flag = 1;
+int use_sincos_approx_flag = 0;
 
 void _eclat_float(float *ar, int nx, int ny);
 void _poidev(float *xmv, long n);
