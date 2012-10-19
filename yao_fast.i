@@ -134,7 +134,7 @@ extern _get_sincos_approx;
 
 func use_sincos_approx(use_it)
 {
-  if (use_it!=[]) _set_sincos_approx,use_it;
+  if (use_it!=[]) _set_sincos_approx,int(use_it(1));
   else return _get_sincos_approx();
 }
 
