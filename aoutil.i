@@ -470,8 +470,9 @@ func check_parameters(void)
     if (dm(nm).ecmatfile == string()) {dm(nm).ecmatfile = "";}
     if (dm(nm).push4imat == 0) {dm(nm).push4imat = 20;}
     if (dm(nm).thresholdresp == 0) {dm(nm).thresholdresp = 0.3;}
-    if (dm(nm).gain == 0) {dm(nm).gain = 1.;}
+    if (dm(nm).gain == 0) {write,format="  WARNING: dm(%d).gain set to 0\n",nm;}      
     if (dm(nm).unitpervolt == 0) {
+      write,format="  WARNING: dm(%d).unitpervolt set to 0\n",nm;
       // below: this is stupid. but I don't dare to change it now (2011mar16)
       if ( (dm(nm).type == "tiptilt") || (dm(nm).type == "zernike")) {
         dm(nm).unitpervolt = 0.0005;
@@ -480,6 +481,7 @@ func check_parameters(void)
       } else {
         dm(nm).unitpervolt = 0.01;
       }
+      write,format="  WARNING: dm(%d).unitpervolt overwritten to %f\n",nm,dm(nm).unitpervolt;
     }
     if ( (dm(nm).type == "bimorph") && ((*dm(nm).nelperring) == []) ) {
       write,format="dm(%d).nelperring has not been set.\n",nm;
@@ -1800,7 +1802,7 @@ func generate_vib_time_serie(sampling_time,length,white_rms,one_over_f_rms,peak,
   if ((normts=sum(ts^2))!=0.) ts = ts * sqrt(norm/normts);
   ts = ts*sqrt(length)/sqrt(2.); // don't ask, but it works and kinda make sense
 
-  write,format="rms of time serie = %.3f milliarcsec\n",ts(rms)*1000.;
+  write,format="rms of time series = %.3f milliarcsec\n",ts(rms)*1000.;
 
   if (sim.debug>=2) {
     fma;
