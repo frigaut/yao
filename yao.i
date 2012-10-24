@@ -64,6 +64,9 @@ require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
 require,"yaodh.i";
 
+// can't call use_sincos_approx directly in yao.conf, as not defined, work around:
+if (use_sincos_approx_default!=[]) use_sincos_approx,use_sincos_approx_default;
+
 // compatibility with GUI (yaopy.i)
 func null (arg,..) { return 0; }
 
