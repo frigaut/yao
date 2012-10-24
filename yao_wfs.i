@@ -103,6 +103,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   }
 
 
+
   //==================================
   // COMPUTE ISTART AND JSTART VECTORS
   //==================================
@@ -588,8 +589,10 @@ func shwfs_init_common_kernel(ns,imat=)
     // factor 1.5 to crudely compensate for the fact that the spot is
     // tilt compensated at the focus of the lenslet
     dr0 = atm.dr0at05mic*(0.5/wfs(ns).lambda)^1.2/cos(gs.zenithangle*dtor)^0.6;
+
     fwhmseeing = wfs(ns).lambda/
-      (tel.diam/sqrt(wfs(ns).shnxsub^2.+(dr0/1.5)^2.))/4.848;
+      (tel.diam/sqrt(wfs(ns).shnxsub^2.+(dr0*wfs(ns).shcalibseeing)^2.))/4.848;
+
     kernelfwhm = sqrt(fwhmseeing^2.+wfs(ns).kernel^2.);
 
   } else {

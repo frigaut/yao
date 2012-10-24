@@ -206,6 +206,7 @@ struct wfs_struct
                           // allow misregistration w.r.t tel pupil and funky configurations
   long    shthmethod;     // 1: yao default, 2: podium, 3: brightest pixels. Required [1]
   float   shthreshold;    // Threshold in computation of subaperture signal, >=0. Optional [0]
+  float   shcalibseeing;  // fraction of the seeing FWHM to be used in the iMat calibration 
   float   biasrmserror;   // rms error on WFS bias in electron. Optional [0]
   float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]
                           // Typical value can be 0.01

@@ -1694,8 +1694,8 @@ func aoread(parfile)
   atm  = atm_struct();
   opts = opt_struct();
   sim  = sim_struct();
-  wfss = wfs_struct(dispzoom=1,_bckgrdsub=1);
-  dms  = dm_struct();
+  wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667);
+  dms  = dm_struct(gain=1.);
   mat  = mat_struct(file="");
   tel  = tel_struct();
   target = target_struct();
