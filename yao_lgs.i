@@ -193,7 +193,7 @@ func comp_turb_lgs_kernel(ns,init=)
     pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));
     pscreen = transpose(pscreen);
     pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));      
-    write,"TODO: Check normalization of llt phase screen !";
+    // write,"TODO: Check normalization of llt phase screen !";
     wfs(1)._LLT_pscreen = &float(pscreen);
 
     if (!wfs(ns)._nx4fft) {
