@@ -504,7 +504,8 @@ func do_imat(disp=)
   // when doing the iMat:
   store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
               skyfluxpersub_orig, bckgrdcalib_orig, bias_orig, \
-              flat_orig,darkcurrent_orig,use_sincos_approx_orig;
+              flat_orig,darkcurrent_orig,use_sincos_approx_orig,\
+              rayleigh_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -602,7 +603,8 @@ func do_imat(disp=)
   // restore original values to WFS structure:
   restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
                  skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, \
-                 flat_orig,darkcurrent_orig,use_sincos_approx_orig;
+                 flat_orig,darkcurrent_orig,use_sincos_approx_orig,\
+                 rayleigh_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -623,12 +625,12 @@ func do_imat(disp=)
 func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig, 
                               &skyfluxpersub_orig, &bckgrdcalib_orig,
                               &bias_orig, &flat_orig, &darkcurrent_orig,
-                              &use_sincos_approx_orig)
+                              &use_sincos_approx_orig,&rayleigh_orig)
 {
   extern wfs;
 
   noise_orig = cycle_orig = kconv_orig = array(0n,nwfs);
-  darkcurrent_orig = array(float,nwfs);
+  darkcurrent_orig = rayleigh_orig = array(float,nwfs);
   skyfluxpersub_orig = bckgrdcalib_orig = bias_orig = flat_orig = array(pointer,nwfs);
   use_sincos_approx_orig = [use_sincos_approx()]; // & need a vector
   use_sincos_approx,0;
@@ -644,6 +646,9 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
 
     darkcurrent_orig(ns) = wfs(ns).darkcurrent;
     wfs(ns).darkcurrent = float(0.);
+
+    rayleigh_orig(ns) = wfs(ns).rayleighflag;
+    wfs(ns).rayleighflag = 0n;
 
     if (*wfs(ns)._skyfluxpersub!=[]) {
       skyfluxpersub_orig(ns) = &(*wfs(ns)._skyfluxpersub);
@@ -671,7 +676,7 @@ func store_noise_etc_for_imat(&noise_orig, &cycle_orig, &kconv_orig,
 func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
                                 skyfluxpersub_orig,bckgrdcalib_orig,
                                 bias_orig, flat_orig, darkcurrent_orig,
-                                use_sincos_approx_orig)
+                                use_sincos_approx_orig,rayleigh_orig)
 {
   extern wfs;
   use_sincos_approx,use_sincos_approx_orig(1);
@@ -680,6 +685,7 @@ func restore_noise_etc_for_imat(noise_orig, cycle_orig, kconv_orig,
 
     wfs(ns).noise = noise_orig(ns);
     wfs(ns).darkcurrent = darkcurrent_orig(ns);
+    wfs(ns).rayleighflag = rayleigh_orig(ns);
     wfs(ns).nintegcycles = cycle_orig(ns);
 
     if (*wfs(ns)._skyfluxpersub!=[])                    \
@@ -2002,7 +2008,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // when doing the iMat:
   store_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
                skyfluxpersub_orig, bckgrdcalib_orig, bias_orig, \
-               flat_orig, darkcurrent_orig, use_sincos_approx_orig;
+               flat_orig, darkcurrent_orig, use_sincos_approx_orig,\
+               rayleigh_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -2060,7 +2067,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // restore original values to WFS structure:
   restore_noise_etc_for_imat,noise_orig, cycle_orig, kconv_orig, \
                  skyfluxpersub_orig,bckgrdcalib_orig, bias_orig, \
-                 flat_orig, darkcurrent_orig, use_sincos_approx_orig;
+                 flat_orig, darkcurrent_orig, use_sincos_approx_orig,\
+                 rayleigh_orig;
 
   // sync forks if needed:
   if ( (anyof(wfs.type=="hartmann"))&&(anyof(wfs.svipc>1))) s = sync_wfs_forks();
@@ -3907,8 +3915,8 @@ func go(nshot,all=)
           // vibration already added to dm1
         }
         // compute image cube from phase cube
-        status = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
-                                target._ntarget,float(2*pi/(*target.lambda)(jl)));
+        status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
+                                target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
 
         // Accumulate statistics:
         imav(,,,jl) = imav(,,,jl) + im;

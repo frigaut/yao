@@ -34,7 +34,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 {
   if (silent==[]) silent = (sim.verbose==0);
 
-  wfs._initkernels = array(1n,nwfs);
+  // wfs._initkernels = array(1n,nwfs);
 
   if (is_void(ns)) {ns=1;} // default to wfs#1 for one WFS work.
 
@@ -102,50 +102,6 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     wfs(ns)._unittilt = &(tmp(,,2)*dyn_range_correct);
   }
 
-
-  //=============================================================
-  // COMPUTE KERNEL TO CONVOLVE _SHWFS IMAGE FOR IMAT CALIBRATION
-  //=============================================================
-
-  // if there is no explicit request for an extended kernel
-  // and we are not using LGS (or the depth = 0) then we disable
-  // the kernel convolution is _shwfs to gain time (and accuracy)
-  // this behavior is overriden in MultWfsIntMat anyway for the purpose
-  // of computing the iMat with the correct kernel (to simulate for
-  // the extended "seeing" spot
-  if ((wfs(ns).kernel == 0) && (wfs(ns)._gsdepth == 0) && (!is_set(imat))) {
-    wfs(ns)._kernelconv = 0n;
-  } else {
-    wfs(ns)._kernelconv = 1n;
-  }
-  if (wfs(ns).shmethod ==1 ) wfs(ns)._kernelconv = 0n;
-
-  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-
-  // factor 1.5 to crudely compensate for the fact that the spot is
-  // tilt compensated at the focus of the lenslet
-
-  if (is_set(imat)) { // we are in iMat computation. we want
-    // the kernel FWHM = seeing + requested kernel fwhm (quadratically)
-
-    dr0 = atm.dr0at05mic*(0.5/wfs(ns).lambda)^1.2/cos(gs.zenithangle*dtor)^0.6;
-    fwhmseeing = wfs(ns).lambda/
-      (tel.diam/sqrt(wfs(ns).shnxsub^2.+(dr0/1.5)^2.))/4.848;
-    kernelfwhm = sqrt(fwhmseeing^2.+wfs(ns).kernel^2.);
-
-  } else { // we are in regular aoloop. no further convolution to account
-           // for seeing. However, we want to avoid dividing by zero
-           // in makegaussian, so we floor fwhm:
-
-    kernelfwhm = clip(wfs(ns).kernel,1e-8,);
-
-  }
-
-  if ( (sim.verbose >= 1) && (!is_set(silent)) ) {
-    write,format="Kernel FWHM for the iMat calibration = %f\n",kernelfwhm;
-  }
-
-  // 2012oct11: we'll produce the kernel array later once we have computed _nx
 
   //==================================
   // COMPUTE ISTART AND JSTART VECTORS
@@ -367,90 +323,44 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     *wfs(ns)._tiltsh *= 0;
   }
 
-  //================================
-  // COMMON KERNEL: FOLLOW UP
-  //================================
-  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-  tmp = eclat(makegaussian(wfs(ns)._nx4fft,kernelfwhm/quantumPixelSize,
-                           xc=wfs(ns)._nx4fft/2.+1,yc=wfs(ns)._nx4fft/2.+1));
-  tmp(1,1) = 1.; // this insures that even with fwhm=0, the kernel is a dirac
-  tmp = tmp/sum(tmp);
-  wfs(ns)._kernel = &(float(tmp));
+  //=====================================
+  // CONVOLUTION KERNELS INITIALIZATIONS:
+  //=====================================
+  // if there is no explicit request for an extended kernel
+  // and we are not using LGS (or the depth = 0) then we disable
+  // the kernel convolution is _shwfs to gain time (and accuracy)
+  // this behavior is overriden in MultWfsIntMat anyway for the purpose
+  // of computing the iMat with the correct kernel (to simulate for
+  // the extended "seeing" spot
+  wfs(ns)._kernelconv = 1n;
+  if ((wfs(ns).kernel==0) && (wfs(ns)._gsdepth==0)) wfs(ns)._kernelconv = 0n;
+  if (wfs(ns).shmethod==1) wfs(ns)._kernelconv = 0n;
 
-  //==========================================================================
-  // COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
-  //==========================================================================
+  //=======================================================================
+  // INITIALIZE COMMON KERNEL TO CONVOLVE _SHWFS IMAGE FOR IMAT CALIBRATION
+  //=======================================================================
+
+  shwfs_init_common_kernel,ns,imat=imat;
+
+  //==============================
+  // UPLINK SEEING INITIALIZATIONS
+  //==============================
+
+  if (wfs(ns).LLT_uplink_turb) comp_turb_lgs_kernel,ns,init=1;
+
+  //=============================================================================
+  // INITIALIZE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. USED FOR LGS ELONGATION
+  //=============================================================================
 
   // if kernelconv is 0, then the _shwfs routine does not use wfs._kernels:
-  if (wfs(ns)._kernelconv != 0n) shwfs_init_lgs_kernels,ns;
+  shwfs_init_lgs_kernels,ns;
 
-  //==============================================
-  // COMPUTE RAYLEIGH STUFF: SUBAPERTURE DEPENDENT
-  //==============================================
+  //=================================================
+  // INITIALIZE RAYLEIGH STUFF: SUBAPERTURE DEPENDENT
+  //=================================================
 
-  rayleighflux = array(0.0f,wfs(ns)._nsub4disp);
-  sodiumflux   = array(1.0f,wfs(ns)._nsub4disp);
-
-  if (wfs(ns).rayleighflag == 1n) {
-
-    if (sim.verbose > 0) {write,format="%s\n","Pre-computing Rayleigh for the SH WFS";}
-
-    quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/sdim;
-    xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;  // coordinate array in arcsec
-
-    kall = [];
-
-    rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
-      swrite(format="%d",long(gs.zenithangle))+".fits";
-    isthere = fileExist(YAO_SAVEPATH+rayfname);
-    fov    = quantumPixelSize*wfs(ns)._nx;
-    aspp   = quantumPixelSize;
-
-
-    if ( (isthere) && (!clean) ) {
-
-      kall         = yao_fitsread(YAO_SAVEPATH+rayfname)*1e6;
-      rayleighflux = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=1);
-      sodiumflux   = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=2);
-
-    } else {
-
-      for (l=1; l<=wfs(ns)._nsub4disp; l++) {
-
-        xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-        tmp = mcao_rayleigh(ns,ysub,xsub,fov=fov,aspp=aspp,zenith=gs.zenithangle);
-        rayleighflux(l) = sum(tmp(,,1));
-        sodiumflux(l)   = sum(tmp(,,2));
-        tmp = transpose(tmp(,,1));
-        // the switch of xsub <-> ysub and transpose are to accomodate the
-        // C vs yorick 0 vs 1 start array index.
-        //        tmp = tmp/sum(tmp);
-        grow,kall,(eclat(tmp))(*);
-
-      }
-
-      yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
-      yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
-      yao_fitswrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
-
-    }
-
-    if (sim.verbose > 0) {
-      write,"From Rayleigh calculations:";
-      write,format="Rayleigh / Sodium ratio in worse/best subapertures: %f, %f\n",
-        max(rayleighflux/sodiumflux),min(rayleighflux/sodiumflux);
-      write,format="Rayleigh flux varies between %f and %f /cm2/looptime\n",
-        min(rayleighflux),max(rayleighflux);
-      write,format="Sodium   flux varies between %f and %f /cm2/looptime\n",
-        min(sodiumflux),max(sodiumflux);
-    }
-
-    wfs(ns)._rayleigh = &(float(kall));
-    kall = [];
-  } else wfs(ns)._rayleigh = &([0.0f]); // to avoid type conversion error in _shwfs call
-
-
-
+  if (wfs(ns).rayleighflag) shwfs_init_rayleigh,ns;
+  else wfs(ns)._rayleigh = &([0.0f]); // to avoid type conv. error in _shwfs
 
   //================================
   // FIELD STOP / AMPLITUDE MASK
@@ -535,7 +445,10 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   }
 
   // for rayleigh, if any:
-  wfs(ns)._raylfluxpersub  = &(*wfs(ns)._fluxpersub*float(rayleighflux/sodiumflux));
+  if (wfs(ns).rayleighflag) {
+    wfs(ns)._raylfluxpersub  = &(*wfs(ns)._fluxpersub* \
+                float(*wfs(ns)._rayleighflux / *wfs(ns)._sodiumflux));
+  } else wfs(ns)._raylfluxpersub  = &float(*wfs(ns)._fluxpersub*0.0f+1.0f);
 
   // for sky (see above, in photon/subap/it/rebinned pixel)
   wfs(ns)._skyfluxpersub  = &(float(fluxPerSub*wfs(ns)._skynphotons));
@@ -663,6 +576,45 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   return 1;
 }
 
+
+//----------------------------------------------------
+func shwfs_init_common_kernel(ns,imat=)
+{
+  extern wfs;
+
+  if (is_set(imat)) { // we are in iMat computation. we want
+
+    // the kernel FWHM = seeing + requested kernel fwhm (quadratically)
+    // factor 1.5 to crudely compensate for the fact that the spot is
+    // tilt compensated at the focus of the lenslet
+    dr0 = atm.dr0at05mic*(0.5/wfs(ns).lambda)^1.2/cos(gs.zenithangle*dtor)^0.6;
+    fwhmseeing = wfs(ns).lambda/
+      (tel.diam/sqrt(wfs(ns).shnxsub^2.+(dr0/1.5)^2.))/4.848;
+    kernelfwhm = sqrt(fwhmseeing^2.+wfs(ns).kernel^2.);
+
+  } else {
+
+    // we are in regular aoloop. no further convolution to account for seeing. 
+    // However, we want to avoid dividing by zero in makegaussian, 
+    // so we floor fwhm:
+    kernelfwhm = clip(wfs(ns).kernel,1e-8,);
+
+  }
+
+  if ( (sim.verbose >= 1) && (!is_set(silent)) ) {
+    write,format="Kernel FWHM for the iMat calibration = %f\n",kernelfwhm;
+  }
+
+  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/wfs(ns)._sdim;
+  tmp = eclat(makegaussian(wfs(ns)._nx4fft,kernelfwhm/quantumPixelSize,
+                           xc=wfs(ns)._nx4fft/2.+1,yc=wfs(ns)._nx4fft/2.+1));
+  tmp(1,1) = 1.; // this insures that even with fwhm=0, the kernel is a dirac
+  tmp = tmp/sum(tmp);
+  wfs(ns)._kernel = &(float(tmp));
+  wfs(ns)._nkernels = 1;
+}
+
+
 //----------------------------------------------------
 func shwfs_init_lgs_kernels(ns)
 /* DOCUMENT shwfs_init_lgs_kernels(ns)
@@ -670,6 +622,8 @@ func shwfs_init_lgs_kernels(ns)
  * USED FOR LGS ELONGATION
  */
 {
+  extern wfs;
+
   quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/wfs(ns)._sdim;
   // coordinate array in arcsec:
   xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;
@@ -715,6 +669,68 @@ func shwfs_init_lgs_kernels(ns)
   wfs(ns)._kernels = &(float(kall));
   wfs(ns)._kerfftr = &(float(kall*0.0f));
   wfs(ns)._kerffti = &(float(kall*0.0f));
+  kall = [];
+  wfs(ns)._initkernels = 1n;
+}
+
+
+//----------------------------------------------------
+func shwfs_init_rayleigh(ns)
+{
+  extern wfs;
+
+  if (sim.verbose > 0) {write,format="%s\n","Pre-computing Rayleigh for the SH WFS";}
+
+  rayleighflux = array(0.0f,wfs(ns)._nsub4disp);
+  sodiumflux   = array(1.0f,wfs(ns)._nsub4disp);
+
+  quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/wfs(ns)._sdim;
+  // coordinate array in arcsec
+  xy = (indices(wfs(ns)._nx4fft)-wfs(ns)._nx4fft/2.-1)*quantumPixelSize;
+
+  kall = [];
+
+  rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
+    swrite(format="%d",long(gs.zenithangle))+".fits";
+  isthere = fileExist(YAO_SAVEPATH+rayfname);
+  fov    = quantumPixelSize*wfs(ns)._nx;
+  aspp   = quantumPixelSize;
+
+
+  if ( (isthere) && (!clean) ) {
+    kall         = yao_fitsread(YAO_SAVEPATH+rayfname)*1e6;
+    rayleighflux = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=1);
+    sodiumflux   = yao_fitsread(YAO_SAVEPATH+rayfname,hdu=2);
+  } else {
+    for (l=1; l<=wfs(ns)._nsub4disp; l++) {
+      xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
+      tmp = mcao_rayleigh(ns,ysub,xsub,fov=fov,aspp=aspp,zenith=gs.zenithangle);
+      rayleighflux(l) = sum(tmp(,,1));
+      sodiumflux(l)   = sum(tmp(,,2));
+      tmp = transpose(tmp(,,1));
+      // the switch of xsub <-> ysub and transpose are to accomodate the
+      // C vs yorick 0 vs 1 start array index.
+      //        tmp = tmp/sum(tmp);
+      grow,kall,(eclat(tmp))(*);
+    }
+    yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
+    yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
+    yao_fitswrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
+  }
+  
+  if (sim.verbose > 0) {
+    write,"From Rayleigh calculations:";
+    write,format="Rayleigh / Sodium ratio in worse/best subapertures: %f, %f\n",
+      max(rayleighflux/sodiumflux),min(rayleighflux/sodiumflux);
+    write,format="Rayleigh flux varies between %f and %f /cm2/looptime\n",
+      min(rayleighflux),max(rayleighflux);
+    write,format="Sodium   flux varies between %f and %f /cm2/looptime\n",
+      min(sodiumflux),max(sodiumflux);
+  }
+  
+  wfs(ns)._rayleigh = &(float(kall));
+  wfs(ns)._rayleighflux = &float(rayleighflux);
+  wfs(ns)._sodiumflux = &float(sodiumflux);
   kall = [];
 }
 
@@ -916,13 +932,14 @@ func sh_wfs(pupsh,phase,ns)
     }
 
     if (stop_at==42) error;
+
     // C function calls
     // phase to spot image (returned in ffimage)
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
             *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
             *wfs(ns)._jstart, int(subsize), int(subsize),
             wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
-            *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
+            *wfs(ns)._kernel, wfs(ns)._nkernels, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
             *wfs(ns)._binindices, wfs(ns)._binxy, wfs(ns)._rebinfactor, 
             wfs(ns)._nx4fft, *wfs(ns)._unittip, 
@@ -1583,7 +1600,8 @@ func mult_wfs_int_mat(disp=,subsys=)
     phase   = get_phase2d_from_dms(ns,"wfs");
     // uncomment if needed:
     //    phase  += get_phase2d_from_optics(ns,"wfs");
-
+    wfs(ns)._nkernels = 1;
+    
     // do the wavefront sensing:
     if (wfs(ns).type == "hartmann" ) {
       if (wfs(ns).disjointpup) {
@@ -1651,6 +1669,12 @@ func mult_wfs(iter,disp=)
     if (wfs(ns).correctUpTT) {
       phase = correct_uplink_tt(phase,ns);
     }
+
+    if (wfs(ns).LLT_uplink_turb) {
+      tmp = comp_turb_lgs_kernel(ns);
+      wfs(ns)._kernel = &float([(*wfs(ns)._kernel)(,,1),tmp]);
+      wfs(ns)._nkernels = 2;
+    } else wfs(ns)._nkernels = 1;
 
     // get the measurements:
     if (wfs(ns).type == "hartmann" ) {

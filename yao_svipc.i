@@ -276,7 +276,7 @@ func wfs_fork_listen(ns,nf)
             *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
             *wfs(ns)._jstart, int(subsize), int(subsize),
             wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
-            *wfs(ns)._kernel, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
+            *wfs(ns)._kernel, wfs(1)._nkernels, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
             *wfs(ns)._binindices, wfs(ns)._binxy,
             wfs(ns)._rebinfactor, wfs(ns)._nx4fft, *wfs(ns)._unittip, 
@@ -674,8 +674,8 @@ func psf_listen(void)
           get_turb_phase(loopCounter,jt,"target");
       }
       // compute image cube from phase cube
-      err = _calc_psf_fast(&pupil,&cubphase,&im,dimpow2,
-                           target._ntarget,float(2*pi/(*target.lambda)(jl)));
+      err = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
+                           target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
 
       // Accumulate statistics:
       imav(,,,jl) = imav(,,,jl) + im;

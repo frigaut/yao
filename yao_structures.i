@@ -218,13 +218,19 @@ struct wfs_struct
                           // Default is computed as a function of D/r0
   int     nintegcycles;   // # of cycles/iterations over which to integrate. Optional [1]
   float   fracIllum;      // fraction illuminated to be valid. Optional [0.5]
-  float   LLTxy(2);       // 2 element vector with (x,y) of laser projector [m]
   long    centGainOpt;    // Centroid Gain optimization flag. only for LGS (correctupTT and
                           // filtertilt must be set). Optional [0]
+  // SHWFS, LGS/LLT related parameters:
+  float   LLTxy(2);       // 2 element vector with (x,y) of laser projector [m]
+  int     LLT_uplink_turb;// boolean. Set to 1 to model uplink seeing.
+  float   LLTr0;          // r0 @ LLT @ laser wavelength [m]
+  float   LLTdiam;        // LLT diameter [m].
+  float   LLT1overe2diam; // LLT 1/e2 diameter [m]
+  float   LLTlaserM2;     // laser M2. Setting this will overwrite wfs.kernel to model M2
   int     rayleighflag;   // set to one to take rayleigh into account
+  float   lgs_focus_alt;  // LGS WFS current focusing altitude [m]
   pointer lgs_prof_amp;   // vector of lgs profile (intensity, Arbitrary, renormlaized later using laserpower), same # as lgs_prof_alt
   pointer lgs_prof_alt;   // vector of lgs profile (altitudes [m]), same # as lgs_prof_amp
-  float   lgs_focus_alt;  // LGS WFS current focusing altitude [m]
 
   // zernike wfs only
   int     nzer;           // # of zernike sensed
@@ -255,6 +261,8 @@ struct wfs_struct
   pointer _tiltsh;        // Internal: see sh_wfs
   pointer _masks;         // Internal: see sh_wfs
   pointer _fluxpersub;    // Internal: see sh_wfs
+  pointer _rayleighflux;  // internal
+  pointer _sodiumflux;    // internal
   pointer _raylfluxpersub;// Internal: see sh_wfs
   pointer _skyfluxpersub; // Internal: see sh_wfs
   float   _nphotons;      // Internal: see WFS routines
@@ -314,6 +322,18 @@ struct wfs_struct
   pointer _pha2dhc;       // projection matrix phase to DH coefs for this wfs
   pointer _wpha2dhc;      // valid phase points indices
   int     _n12(2);        //
+  int     _LLT_use;       // internal: don't duplicate turbulent kernel def, use # instead
+  string  _LLT_pscreen_name;// phase screen for the LLT uplink seeing. Will be created
+                          // if it is not found. Should be transparent to user. has
+                          // to be square for wrapping in both X and Y. Can be rather small,
+                          // say 256x256, as we're dealing with D/r0 of 2-3, and thus
+                          // we won't use a lot of pixels.
+  pointer _LLT_pscreen;   // pointer to the phase screen array
+  float   _LLT_pos(2);    // current lower left position of phase to be extracted from _LLT_pscreen
+  pointer _LLT_pupil;     // LLT gaussian pupil
+  pointer _LLT_phase;     // actual phase
+  pointer _LLT_kernel;    // pointer to actual LLT spot image
+  int     _nkernels;      // number of kernels in *wfs._kernel
 };
 
 struct dm_struct

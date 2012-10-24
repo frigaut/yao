@@ -124,3 +124,122 @@ func shwfs_comp_lgs_defocuses(ns)
     wfs(ns(i))._lgs_defocuses = &float(a4s);
   }
 }  
+
+//----------------------------------------------------
+func comp_turb_lgs_kernel(ns,init=)
+/* DOCUMENT comp_turb_lgs_kernel(ns,init=)
+   Compute the LGS object kernel correspoding to uplink seeing.
+   takes 120 microsecond like this, probably not worth xferring to C.
+ */
+{
+  extern wfs;
+
+  llt_pscreen_dim = 256;
+
+  if (init) {
+
+    // first look up if this is not already an existing LLT:
+    if (ns>1) {
+      for (i=1;i<ns;i++) {
+        if (i==ns) continue;
+        if (allof(wfs(ns).LLTxy==wfs(i).LLTxy)&&(wfs(ns).LLTr0==wfs(i).LLTr0)) {
+          wfs(ns)._LLT_use = i;
+          return;
+        }
+      }
+    } else wfs(ns)._LLT_use = ns;
+    // we didn't find a matching existing LLT. Let's init this one
+
+    // Find out how to scale pixel size etc for the LLT:
+    // first, the created turbulent kernel will be used in 
+    // _shwfs_phase2spots to convolve an ximage array of size _nx4fft.
+    // however, the pixel size in this array is set by:
+    // quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/wfs(ns)._sdim;
+    // now if f1 is size in physical units [m] of input phase array,
+    // p1 the pixels size [m], NxN the size of the array,
+    // and f2 and p2 the corresponding field size and pixel size in the
+    // image plane, we have: f2 = lambda/p1 and p2=f2/N, thus p2 = lambda/(p1*N)
+    // thus p1 = lambda/(p2*N)
+    // ps = wfs(ns).lambda/wfs(ns)._nx4fft/quantumPixelSize/4.848;
+    // which means, by the way:
+    // ps = wfs(ns).lambda/wfs(ns)._nx4fft/quantumPixelSize/4.848;
+    //    = wfs(ns).lambda/wfs(ns)._nx4fft/4.848/wfs(ns).lambda*(tel.diam/sim.pupildiam)*4.848*sdim
+    //    = (tel.diam/sim.pupildiam)*(wfs(ns)._sdim/wfs(ns)._nx4fft)
+    ps = (tel.diam/sim.pupildiam)*(float(wfs(ns)._sdim)/wfs(ns)._nx4fft);
+    // now build up the "pupil":
+    xy = dist(wfs(ns)._nx4fft)*ps;
+    pup = exp(-8*(xy/wfs(ns).LLT1overe2diam)^2.);
+    pup *= (xy<(wfs(ns).LLTdiam/2.));
+    wfs(ns)._LLT_pupil = &float(pup);
+
+    wfs(ns)._LLT_phase = &float(pup*0.0f); // just allocate space
+
+    // do we have a phase screen?
+    if (!wfs(1)._LLT_pscreen_name) { // we don't, let's look for it
+      llt_pscreen = YAO_SAVEPATH+parprefix+"_llt_screen";
+      if (noneof(findfiles(llt_pscreen+".fits"))) {
+        // then we have to create it:
+        if (sim.verbose) write,format="Creating %s.fits\n",llt_pscreen;
+        create_phase_screens,llt_pscreen_dim,llt_pscreen_dim, \
+                       prefix=llt_pscreen,no_ipart=1,silent=1;
+      }
+      wfs(1)._LLT_pscreen_name = llt_pscreen+".fits";
+    }
+    // now we can read it:
+    pscreen = yao_fitsread(wfs(1)._LLT_pscreen_name);
+    // scale it (done below)
+    // pscreen *= (ps/wfs(ns).LLTr0)^(5./6.);
+    // pad it:
+    pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));
+    pscreen = transpose(pscreen);
+    pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));      
+    write,"TODO: Check normalization of llt phase screen !";
+    wfs(1)._LLT_pscreen = &float(pscreen);
+
+    if (!wfs(ns)._nx4fft) {
+      // then the WFS has likely not been initialize.
+      // we can't do anything until it is:
+      error,swrite(format="WFS#%d has not been initialized",ns);
+    }
+
+    // this is the starting position for lower left phase to be extracted
+    wfs(ns)._LLT_pos = float([1.,1 + (ns-1)*llt_pscreen_dim/nwfs]);
+
+    return;
+  } // end init
+  // Compute turbulent kernel:
+  // again, check that we have to:
+  // below, assumes that the other one has already been computed, but
+  // it should be if the user is following the ns order.
+  if (wfs(ns)._LLT_use!=ns) return wfs(wfs(ns)._LLT_use)._LLT_kernel;
+
+  // we'll do the scaling here, so that the user can change the r0 on the fly
+  ps = (tel.diam/sim.pupildiam)*(float(wfs(ns)._sdim)/wfs(ns)._nx4fft);
+  scal = (ps/wfs(ns).LLTr0)^(5./6.);
+
+  // Else we need to compute it:
+  // v bar:
+  wspeed = sum((*atm.layerfrac)*(*atm.layerspeed));
+  // displacements w.r.t. last time we were called:
+  wfs(ns)._LLT_pos += wspeed*loop.ittime*[1,float(wfs(ns)._nx4fft)/llt_pscreen_dim];
+
+  // wrap if needed:
+  wfs(ns)._LLT_pos = wfs(ns)._LLT_pos % llt_pscreen_dim;
+
+  xshifts = float(wfs(ns)._LLT_pos(1)+indgen(wfs(ns)._nx4fft)-1);
+  ishifts = int(xshifts); xshifts -= ishifts;
+  yshifts = float(wfs(ns)._LLT_pos(2)+indgen(wfs(ns)._nx4fft)-1);
+  jshifts = int(yshifts); yshifts -= jshifts;
+  d = int(dimsof(*wfs(ns)._LLT_pscreen));
+
+  *wfs(1)._LLT_phase *= 0.0f;
+
+  err = _get2dPhase(wfs(ns)._LLT_pscreen,d(2),d(3),1,
+                    wfs(ns)._LLT_phase,wfs(ns)._nx4fft,wfs(ns)._nx4fft,
+                    &ishifts,&xshifts,
+                    &jshifts,&yshifts);
+
+  psf = calc_psf_fast(*wfs(ns)._LLT_pupil,*wfs(ns)._LLT_phase,scale=scal,noswap=1);
+
+  return psf;
+}

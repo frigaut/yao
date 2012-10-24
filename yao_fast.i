@@ -24,7 +24,7 @@
 
 //require,"svipc.i";
 
-func calc_psf_fast(pupil,phase,scale=)
+func calc_psf_fast(pupil,phase,scale=,noswap=)
 /* DOCUMENT func calc_psf_fast(pupil,phase,scale=)
    Similar to calcpsf, but way faster.
    This function calls the C routine _calc_psf_fast that uses the vectorial
@@ -44,23 +44,26 @@ func calc_psf_fast(pupil,phase,scale=)
   if (typeof(pupil) != "float") {pupil=float(pupil);}
   if (typeof(phase) != "float") {phase=float(phase);}
   if (is_set(scale)) {scale = float(scale);} else {scale=1.0f;}
+  if (is_set(noswap)) noswap=1n; else noswap=0n; 
   
   dims = dimsof(phase);
   if (dims(2) != dims(3)) { error,"X and Y dimension have to be the same"; }
   
   outimage = array(float,dims);
-  n2       = int(log(dims(2))/log(2));
-  if ((2^n2) != dims(2)) { error," Dimension has to be a power of 2"; }
+  n = dims(2);
+  // n2       = int(log(dims(2))/log(2));
+  // if ((2^n2) != dims(2)) { error," Dimension has to be a power of 2"; }
 
   if (dims(1) == 3) {nplans = int(dims(4));} else {nplans = 1n;}
   
-  err = _calc_psf_fast(&pupil,&phase,&outimage,n2,nplans,scale);
+  err = _calc_psf_fast(&pupil,&phase,&outimage,n,nplans,scale,1n-noswap);
 
   return outimage;
 }
 extern _calc_psf_fast
 /* PROTOTYPE
-   int _calc_psf_fast(pointer pupil, pointer phase, pointer image, int n2, int nplans, float scale)
+   int _calc_psf_fast(pointer pupil, pointer phase, pointer image, int n,
+                      int nplans, float scale, int swap)
 */
 
 func fftw_wisdom(void)
@@ -200,7 +203,7 @@ extern _shwfs_phase2spots
    float phasescale, float array phaseoffset, int dim,
    int array istart, int array jstart, int nsx, int nsy,
    int nsubs, int sdimpow2, long domask, float array submask, 
-   float array kernel, float array kernels, float array kerfftr,
+   float array kernel, int nkernels, float array kernels, float array kerfftr,
    float array kerffti, int initkernels, int kernelconv,
    int array binindices, int binxy, int rebinfactor, int nx,
    float array unittip, float array unittilt,

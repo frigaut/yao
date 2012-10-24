@@ -421,6 +421,21 @@ func check_parameters(void)
       }
     }
 
+    if ((wfs(ns).type != "hartmann")&&(wfs(ns).LLT_uplink_turb)) {
+      write,format="WARNING, wfs#%d: LLT_uplink_turb only implemented for SHWFS, ignoring.\n",ns;
+    }
+
+    if (wfs(ns).LLT_uplink_turb) {
+      if ((wfs(ns).LLTr0==0)) {
+        write,format="WARNING, wfs(%d).LLTr0 undefined, Using atm-defined r0\n",ns;
+        wfs(ns).LLTr0 = tel.diam/atm.dr0at05mic * (wfs(ns).lambda/0.5)^1.2;
+      }
+      if ((wfs(ns).LLTdiam==0)) \
+        error,swrite(format="wfs#%d: LLT_uplink_turb set but LLTdiam not defined",ns);
+      if ((wfs(ns).LLT1overe2diam==0)) \
+        error,swrite(format="wfs#%d: LLT_uplink_turb set but LLT1overe2diam not defined",ns);
+    }
+
     if (wfs(ns).nintegcycles == 0) {wfs(ns).nintegcycles = 1;}
 
     if (wfs(ns).fracIllum == 0) {wfs(ns).fracIllum = 0.5;}

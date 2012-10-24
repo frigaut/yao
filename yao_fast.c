@@ -113,6 +113,17 @@ void _sinecosinef(float x, float *s, float *c)
   *c = *c * sc;
 }
 
+#ifdef __APPLE__
+extern float sinf(float x);
+extern float cosf(float x);
+void
+sincosf(float x, float *s, float *c)
+{
+        *s = sinf(x);
+        *c = cosf(x);
+}
+#endif
+
 int _import_wisdom(char *wisdom_file)
 {
   FILE *fp;
@@ -222,25 +233,23 @@ int _init_fftw_plan(int size)
  * modified 2004apr3 to adapt FFTW from apple veclib          *
  **************************************************************/
 
-int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
-                   float *phase, /* phase cube,  dim [ 2^n2 , 2^n2 , nplans ] */
-                   float *image, /* output images, dim [ 2^n2 , 2^n2 , nplans ] */
-                   int n2,       /* log2 of side linear dimension (e.g. 6 for 64x64 arrays) */
+int _calc_psf_fast(float *pupil, /* pupil image, dim [ n , n ] */
+                   float *phase, /* phase cube,  dim [ n , n , nplans ] */
+                   float *image, /* output images, dim [ n , n , nplans ] */
+                   int n,        /* side linear dimension */
                    int nplans,   /* number of plans (min 1, mostly to spped up calculations */
                                  /* by avoiding multiple setups and mallocs */
-                   float scal)   /* phase scaling factor */
+                   float scal,   /* phase scaling factor */
+                   int swap)
 {
   /* Declarations */
 
   fftwf_complex *in, *out;
   float         *ptr;
-  long          i,k,koff,n;
+  long          i,k,koff;
   fftwf_plan     p;
   float         ppsin,ppcos;
       
-  /* Set the size of 2d FFT. */
-  n = 1 << n2;
-
   // fftwf_plan_with_nthreads(n_threads);
 
   /* Allocate memory for the input operands and check its availability. */
@@ -288,7 +297,7 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ 2^n2 , 2^n2 ] */
       ptr +=2;
     }
     /* swap quadrants. */
-    _eclat_float(&(image[koff]),n,n);
+    if (swap) _eclat_float(&(image[koff]),n,n);
   }
 
   /* Free allocated memory. */
@@ -526,8 +535,9 @@ int _shwfs_phase2spots(
    long  domask,        // go through amplitude mask loop (0/1).
    float *submask,      // subaperture mask. Corresponds/applied to simage.
    
-   float *kernel,       // to convolve the (s)image with. dim 2^sdimpow2
+   float *kernel,       // to convolve the (s)image with. dim nx*nx*nkernels
                         // compute dynamically at each call, i.e. can change 
+   int   nkernels,      // number of plans in *kernel
    float *kernels,      // to convolve the (s)image with, one per subaperture
                         // dimension: 2^sdimpow2 * 2 * nsubs. FFTs precomputed
                         // at init call.
@@ -572,7 +582,7 @@ int _shwfs_phase2spots(
 {
   /* Declarations */
 
-  fftwf_complex *A, *result, *Ax, *Kx, *resultx;
+  fftwf_complex *A, *result, *Ax, *Kx, *Ker, *resultx;
   fftwf_plan    fftps,fftpx,fftpxi;
   float         *ptr,*ptr1,*ptr2;
   float         *phase_scaled;
@@ -622,6 +632,7 @@ int _shwfs_phase2spots(
   result       = fftwf_malloc ( n * sizeof ( fftwf_complex ) );
   Ax           = fftwf_malloc ( nx *nx * sizeof ( fftwf_complex ) );
   Kx           = fftwf_malloc ( nx *nx * sizeof ( fftwf_complex ) );
+  Ker          = fftwf_malloc ( nx *nx * sizeof ( fftwf_complex ) );
   resultx      = fftwf_malloc ( nx *nx * sizeof ( fftwf_complex ) );
   phase_scaled = ( float* ) malloc ( dim * dim * sizeof ( float ) );
   simage       = ( float* ) malloc ( ns * ns * sizeof ( float ) );
@@ -632,7 +643,7 @@ int _shwfs_phase2spots(
   
   
   if ( A == NULL || result == NULL || Ax == NULL || \
-       Kx == NULL || resultx == NULL || phase_scaled == NULL || 
+       Kx == NULL || Ker == NULL || resultx == NULL || phase_scaled == NULL || 
        bimage == NULL || simage == NULL || ximage == NULL || 
        brayleigh == NULL || bsubmask == NULL ) { return (1); }
 
@@ -700,14 +711,39 @@ int _shwfs_phase2spots(
   if (debug>1) printf("here2\n");
 
   if (kernconv == 1) {
-    // Transform kernel
-    ptr = (void *)Ax;
-    for ( i = 0; i < nx*nx; i++ ) {
-      *(ptr)   = kernel[i];
+    // init resultx
+    ptr = (void *)resultx;
+    for ( i=0; i<nx*nx ; i++ ) {
+      *(ptr) = 1.0f;
       *(ptr+1) = 0.0f;
-      ptr +=2;
+      ptr += 2;
     }
-    fftwf_execute(fftpx);
+    for ( k=0 ; k<nkernels ; k++ ) {
+      koff = k*nx*nx;
+      // Transform kernel
+      ptr = (void *)Ax;
+      for ( i=koff; i<koff+nx*nx; i++ ) {
+        *(ptr)   = kernel[i];
+        *(ptr+1) = 0.0f;
+        ptr +=2;
+      }
+      fftwf_execute(fftpx);
+      // result in in Kx
+      // Kx * resultx -> Ker:
+      ptr1 = (void *)Kx;
+      ptr2 = (void *)resultx;
+      ptr = (void *)Ker;
+      for ( i=0; i<nx*nx; i++ ) {
+        *(ptr)     = *(ptr1) * *(ptr2) - *(ptr1+1) * *(ptr2+1);
+        *(ptr+1)   = *(ptr1) * *(ptr2+1) + *(ptr1+1) * *(ptr2);
+        ptr +=2; ptr1 +=2; ptr2 +=2;
+      }
+      if (k==(nkernels-1)) break;
+      // copy in resultx for next one:
+      ptr1 = (void *)Ker;
+      ptr2 = (void *)resultx;
+      for ( i=0; i<2*nx*nx; i++ ) *(ptr2++) = *(ptr1++);
+    }
   }
   fftwf_destroy_plan(fftpx);
 
@@ -884,7 +920,7 @@ int _shwfs_phase2spots(
       fftwf_execute(fftpx);
   
       // multiply by kernel transform:
-      ptr  = (void *)Kx;
+      ptr  = (void *)Ker;
       ptr1 = (void *)Ax;
       ptr2 = (void *)resultx;
       for ( i=0 ; i<nx*nx ; i++ ) {
@@ -958,12 +994,12 @@ int _shwfs_phase2spots(
       fclose(fp);
       fp=fopen("kre.dat", "w");
       fprintf(fp, "%d\n",nx);
-      ptr  = (void *)Kx;
+      ptr  = (void *)Ker;
       for ( i=0 ; i<nx*nx ; i++ ) { fprintf(fp, "%f\n",*ptr); ptr+=2; }
       fclose(fp);
       fp=fopen("kim.dat", "w");
       fprintf(fp, "%d\n",nx);
-      ptr  = (void *)Kx; ptr++;
+      ptr  = (void *)Ker; ptr++;
       for ( i=0 ; i<nx*nx ; i++ ) { fprintf(fp, "%f\n",*ptr); ptr+=2; }
       fclose(fp);
     }
@@ -1045,6 +1081,7 @@ int _shwfs_phase2spots(
   fftwf_free ( result );
   fftwf_free ( Ax );
   fftwf_free ( Kx );
+  fftwf_free ( Ker );
   fftwf_free ( resultx );
   free ( phase_scaled );
   free ( simage );
