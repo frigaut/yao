@@ -14,7 +14,7 @@ atm.layeralt       = &([0.,400,6000,9000]);
 atm.winddir        = &([0,0,0,0]);
 
 //-------------------------------
-tel.diam           = 16.;
+tel.diam           = 12.;
 tel.cobs           = 0.1125;
 
 //-------------------------------
@@ -38,7 +38,7 @@ wfs(n).shmethod    = 2;
 wfs(n).shnxsub     = 12;
 wfs(n).pixsize     = 0.25;
 wfs(n).npixels     = 8;
-wfs(n).extfield    = 4.;
+wfs(n).extfield    = 5.;
 wfs(n).noise       = 1;
 wfs(n).ron         = 3.5;
 wfs(n).shthreshold = 0.;
@@ -136,7 +136,7 @@ dm = array(dms,ndm);
 n  =1;
 dm(n).subsystem    = 1;
 dm(n).type         = "diskharmonic";
-//~ dm(n).type         = "stackarray";
+dm(n).type         = "stackarray";
 dm(n).iffile       = "";
 dm(n).nxact        = wfs(n).shnxsub+1;
 dm(n).pitch        = sim.pupildiam/wfs(n).shnxsub;
