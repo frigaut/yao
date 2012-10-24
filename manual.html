@@ -591,6 +591,9 @@ observed object, etc...). </p>
   subaperture images (probably less so in the final image if it is estimated
   in the Near Infrared and the WFS works in the visible).
   This is bad and will bias your results. You have been warned.</p>
+  <p>That said, yao 5.0 has introduced a new feature for Shack-Hartmann WFS: 
+    extended field of view. When using this feature (control it with 
+    <code>wfs.extfield</code>), the individual subaperture imagelets are embedded into larger intermediate images before being binned and embedded into the final SHWFS spot image. This allows extending the field of view of subapertures without the prohibite cost of using a very large number of pixels in your pupil diameter (as outlined above). It is of particular interest for large LGS elongations, e.g. for ELTs. The whole process, describing the steps used to compute the SHWFS final spot image, is somewhat detailled in <a href="shwfs_extended_field.html">this page</a>.
 
 
 <a name="pupil"></a>
