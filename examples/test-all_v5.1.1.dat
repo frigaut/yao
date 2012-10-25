@@ -1,0 +1,63 @@
+----------------------------------------------------------
+Wed Oct 24 16:11:16 2012
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 128.3   ON        0.45@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 149.4   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 55.3    ON        0.60@1.65mic
+test1        Simili Altair LGS, full diffrac... 63.8    OFF       0.59@1.65mic
+test2        SH 12x12, quick method, with se... 290.8   ON        0.79@1.65mic
+test2        SH 12x12, quick method, with se... 347.3   OFF       0.79@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 36.6    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 45.3    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 428.2   ON        0.58@2.20mic
+test4        Simple Curvature 36 actuators w... 548.3   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 58.9    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 63.9    OFF       0.84@2.20mic
+test6        DH WFS & DM                        571.6   ON        0.50@1.65mic
+test6        DH WFS & DM                        994.1   OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 15.3    ON        0.62@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 15.7    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1029.6  ON        0.47@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1947.6  OFF       0.47@1.65mic
+----------------------------------------------------------
+Wed Oct 24 16:16:55 2012
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 145.1   ON        0.45@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 169.8   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 67.1    ON        0.60@1.65mic
+test1        Simili Altair LGS, full diffrac... 80.2    OFF       0.58@1.65mic
+test2        SH 12x12, quick method, with se... 391.6   ON        0.80@1.65mic
+test2        SH 12x12, quick method, with se... 507.1   OFF       0.80@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 48.0    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 61.2    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 588.9   ON        0.58@2.20mic
+test4        Simple Curvature 36 actuators w... 881.6   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 61.0    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 64.2    OFF       0.84@2.20mic
+test6        DH WFS & DM                        576.4   ON        0.50@1.65mic
+test6        DH WFS & DM                        1007.0  OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 25.6    ON        0.62@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 26.5    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1000.9  ON        0.47@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1920.8  OFF       0.47@1.65mic
+----------------------------------------------------------
+Thu Oct 25 14:04:24 2012
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 143.3   ON        0.45@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 170.8   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 67.5    ON        0.60@1.65mic
+test1        Simili Altair LGS, full diffrac... 81.4    OFF       0.58@1.65mic
+test2        SH 12x12, quick method, with se... 398.6   ON        0.80@1.65mic
+test2        SH 12x12, quick method, with se... 518.3   OFF       0.80@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 48.6    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 62.4    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 589.2   ON        0.58@2.20mic
+test4        Simple Curvature 36 actuators w... 887.1   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 61.9    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 65.0    OFF       0.84@2.20mic
+test6        DH WFS & DM                        582.8   ON        0.50@1.65mic
+test6        DH WFS & DM                        1039.0  OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 26.0    ON        0.62@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 26.8    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1033.7  ON        0.47@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 2005.0  OFF       0.47@1.65mic
