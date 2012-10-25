@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.1.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct24";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.1.9";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012oct25";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1033,7 +1033,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   // Define a few variables:
 
   nscreens = numberof(*atm.screen);
-  if (opt!=[]) noptics = numberof(opt.phasemaps); else noptics=0;
+  if (opt!=[]) noptics = numberof(opt); else noptics=0;
 
   wfsxposcub = wfsyposcub = array(float,[3,_n,nscreens,nwfs]);
   gsxposcub = gsyposcub = array(float,[3,_n,nscreens,target._ntarget]);
@@ -1153,14 +1153,12 @@ func get_turb_phase_init(skipReadPhaseScreens=)
     // altitude.
     //=============================================
     if (noptics) {
+      psize  = tel.diam/sim.pupildiam;
       if (sim.verbose) {
-        psize  = tel.diam/sim.pupildiam;
         write,"Reading optics. I am expecting phase maps with a pixel";
         write,format=" size of %fm/pixel, as projected in the entrance\n",psize;
         write,"pupil plane. It is also your responsibility to provide phase";
         write,"maps of adequate dimension, i.e. large enough";
-      }
-      if (sim.verbose) {
         write,format="Reading phase map for optics \"%s\"\n",opt(1).phasemaps;
       }
       tmp = yao_fitsread(YAO_SAVEPATH+opt(1).phasemaps);
@@ -1537,32 +1535,66 @@ func get_phase2d_from_optics(nn,type)
 {
   if (opt==[]) return 0.0f;
 
+  // select optics in path that apply to type:
+  // there are noptics = numberof(opt)
+  if (type=="wfs") {
+    w = where(opt.path!="science");
+    // no common or wfs optics, return:
+    if (numberof(w)==0) return 0.0f;
+    // now for each ok optics, check this wfs has not been excluded
+    for (no=1;no<=numberof(w);no++) {
+      if (opt(w(no)).path=="common") continue;
+      else { // necessarily, this is a "wfs" optics 
+        if (noneof(*opt(no).pathwhich==nn)) w(no)=-1;
+      }
+    }
+    w = w(where(w>=0));
+    if (numberof(w)==0) return 0.0f;
+  }
+
+  if (type=="target") {
+    w = where(opt.path!="wfs");
+    // no common or science optics, return:
+    if (numberof(w)==0) return 0.0f;
+    // now for each ok optics, check this target has not been excluded
+    for (no=1;no<=numberof(w);no++) {
+      if (opt(w(no)).path=="common") continue;
+      else { // necessarily, this is a "science" optics 
+        if (noneof(*opt(no).pathwhich==nn)) w(no)=-1;
+      }
+    }
+    w = w(where(w>=0));
+    if (numberof(w)==0) return 0.0f;
+  }
+  
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
+
+  thisphasemaps = optphasemaps(,,w);
 
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
   // there are a few things to do to get ready
-  psnx  = dimsof(optphasemaps)(2);
-  psny  = dimsof(optphasemaps)(3);
-  nopts = dimsof(optphasemaps)(4);
+  psnx  = dimsof(thisphasemaps)(2);
+  psny  = dimsof(thisphasemaps)(3);
+  nopts = dimsof(thisphasemaps)(4);
 
   // here we have a branch to be able to process wfs and targets with the same
   // subroutine, this one.
   if (type == "wfs") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
-    xshifts = optwfsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,);
-    yshifts = optwfsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,);
+    xshifts = optwfsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
+    yshifts = optwfsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
   } else if ( type == "target") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
-    xshifts = optgsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,);
-    yshifts = optgsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,);
+    xshifts = optgsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
+    yshifts = optgsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
   }
 
   ishifts = int(xshifts); xshifts = float(xshifts - ishifts);
   jshifts = int(yshifts); yshifts = float(yshifts - jshifts);
 
-  err = _get2dPhase(&optphasemaps,psnx,psny,nopts,
+  err = _get2dPhase(&thisphasemaps,psnx,psny,nopts,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
@@ -1695,7 +1727,7 @@ func aoread(parfile)
 
   // INIT STRUCTURES:
   atm  = atm_struct();
-  opts = opt_struct();
+  opts  = opt_struct();
   sim  = sim_struct();
   wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667);
   dms  = dm_struct(gain=1.);
@@ -3873,9 +3905,12 @@ func go(nshot,all=)
   if (savephase||okdisp) {
     // get the residual phase; initially for the first target
     // display and save the residual wavefront
-    residual_phase=get_phase2d_from_dms(1,"target") +
-                   get_phase2d_from_optics(1,"target") +
-                   get_turb_phase(i,1,"target");
+    if (residual_phase_what==[]) residual_phase_what="target";
+    if (residual_phase_which==[]) residual_phase_which=1;
+   
+    residual_phase=get_phase2d_from_dms(residual_phase_which,residual_phase_what) +
+                   get_phase2d_from_optics(residual_phase_which,residual_phase_what) +
+                   get_turb_phase(i,residual_phase_which,residual_phase_what);
 
     residual_phase1d = residual_phase(where(pupil > 0));
     residual_phase1d -= min(residual_phase1d);
@@ -4007,7 +4042,8 @@ func go(nshot,all=)
     // Display residual wavefront
     plsys,5;
     pli, (pupil*residual_phase)(n1:n2,n1:n2);
-    mypltitle,"Residual wavefront on target #1",[0.,-0.0],height=12;
+    mypltitle,swrite(format="Residual wavefront on %s #%d",residual_phase_what,\
+                     residual_phase_which),[0.,-0.0],height=12;
 
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
     if (animFlag && (nshots!=0) && (loopCounter<loop.niter-disp) ) fma;

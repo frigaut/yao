@@ -131,6 +131,14 @@ struct atm_struct
 struct opt_struct
 {
   string   phasemaps;      // filename of phasemap. Z scale should be in microns
+  string   path;           // "common", "wfs" or "science", self explanatory I assume.
+  pointer  pathwhich;      // pointer to vector containing index of affected objects in "path"
+                           // path="wfs" and pathwhich=&([1,3]) means only wfs1 and 3 see this optic
+                           // obviously, this works only if path is either "wfs" or "target".
+                           // if you want to apply the optic to some wfs *and* some target,
+                           // then you'll have to create 2 opt structures with the same optic,
+                           // one with path="wfs" and pathwhich, and the other path="target"
+                           // and pathwhich.
   float    alt;            // float. equivalent altitude in m.
   float    misreg(2);      // float vector. misreg. (similar to DM, see below)
   float    _cent;          // center of the phase maps arrays (similar to sim._cent)

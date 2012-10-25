@@ -288,8 +288,11 @@ func check_parameters(void)
   // BASIC EXISTENCE AND CONSISTENCY CHECKINGS AND DEFAULT ASSIGNMENTS
   //==================================================================
 
-  if (nwfs == []) {exit,"nwfs has not been set";}
-  if (ndm == []) {exit,"ndm has not been set";}
+  extern nwfs,ndm,ntarget,noptics;
+  nwfs = numberof(wfs);
+  ndm = numberof(dm);
+  ntarget = numberof(*target.lambda);
+  noptics = numberof(opt);
 
   // SIM STRUCTURE
   if (sim.pupildiam == 0) {exit,"sim.pupildiam has not been set";}
@@ -737,11 +740,19 @@ func check_parameters(void)
 
 
   if (opt!=[]) {
-    if (opt.misreg==[]) {
-      noptics = numberof(opt.phasemaps);
-      for (i=1;i<=noptics;i++) opt.misreg = [0.,0.];
+    for (no=1;no<=noptics;no++) {
+      if (opt(no).misreg==[]) {
+        noptics = numberof(opt(no).phasemaps);
+        for (i=1;i<=noptics;i++) opt(no).misreg = [0.,0.];
+      }
+      opt(no).misreg= float(opt(no).misreg);
+      if ((opt(no).path=="wfs")&&(opt.pathwhich==[])) opt.pathwhich = &indgen(nwfs);
+      if ((opt(no).path=="science")&&(opt.pathwhich==[])) opt.pathwhich = &indgen(ntarget);
+      if ((opt(no).path)&&(opt(no).path=="")) opt(no).path="common";
+      if ((opt(no).path)&&(opt(no).path!="wfs")&&\
+          (opt(no).path!="science")&&(opt(no).path!="common")) \
+        error,swrite(format="Unknown optics path \"%s\".\n It should be \"common\", \"wfs\" or \"science\" (default=\"common\")",opt(no).path);
     }
-    opt.misreg= float(opt.misreg);
   }
 
   write,format="%s\n","Check parameters: OK";

@@ -141,13 +141,14 @@ func comp_turb_lgs_kernel(ns,init=)
     // first look up if this is not already an existing LLT:
     if (ns>1) {
       for (i=1;i<ns;i++) {
-        if (i==ns) continue;
+        // if (i==ns) continue;
         if (allof(wfs(ns).LLTxy==wfs(i).LLTxy)&&(wfs(ns).LLTr0==wfs(i).LLTr0)) {
           wfs(ns)._LLT_use = i;
           return;
         }
       }
-    } else wfs(ns)._LLT_use = ns;
+    } 
+    wfs(ns)._LLT_use = ns;
     // we didn't find a matching existing LLT. Let's init this one
 
     // Find out how to scale pixel size etc for the LLT:
@@ -211,7 +212,7 @@ func comp_turb_lgs_kernel(ns,init=)
   // again, check that we have to:
   // below, assumes that the other one has already been computed, but
   // it should be if the user is following the ns order.
-  if (wfs(ns)._LLT_use!=ns) return wfs(wfs(ns)._LLT_use)._LLT_kernel;
+  if (wfs(ns)._LLT_use!=ns) return *wfs(wfs(ns)._LLT_use)._LLT_kernel;
 
   // we'll do the scaling here, so that the user can change the r0 on the fly
   ps = (tel.diam/sim.pupildiam)*(float(wfs(ns)._sdim)/wfs(ns)._nx4fft);
@@ -230,16 +231,18 @@ func comp_turb_lgs_kernel(ns,init=)
   ishifts = int(xshifts); xshifts -= ishifts;
   yshifts = float(wfs(ns)._LLT_pos(2)+indgen(wfs(ns)._nx4fft)-1);
   jshifts = int(yshifts); yshifts -= jshifts;
-  d = int(dimsof(*wfs(ns)._LLT_pscreen));
+  d = int(dimsof(*wfs(1)._LLT_pscreen));
 
-  *wfs(1)._LLT_phase *= 0.0f;
+  *wfs(ns)._LLT_phase *= 0.0f;
 
-  err = _get2dPhase(wfs(ns)._LLT_pscreen,d(2),d(3),1,
+  err = _get2dPhase(wfs(1)._LLT_pscreen,d(2),d(3),1,
                     wfs(ns)._LLT_phase,wfs(ns)._nx4fft,wfs(ns)._nx4fft,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
 
   psf = calc_psf_fast(*wfs(ns)._LLT_pupil,*wfs(ns)._LLT_phase,scale=scal,noswap=1);
+
+  wfs(ns)._LLT_kernel = &psf;
 
   return psf;
 }
