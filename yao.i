@@ -1538,29 +1538,28 @@ func get_phase2d_from_optics(nn,type)
   // select optics in path that apply to type:
   // there are noptics = numberof(opt)
   if (type=="wfs") {
-    w = where(opt.path!="science");
+    w = where(opt.path_type!="target");
     // no common or wfs optics, return:
     if (numberof(w)==0) return 0.0f;
     // now for each ok optics, check this wfs has not been excluded
     for (no=1;no<=numberof(w);no++) {
-      if (opt(w(no)).path=="common") continue;
+      if (opt(w(no)).path_type=="common") continue;
       else { // necessarily, this is a "wfs" optics 
-        if (noneof(*opt(no).pathwhich==nn)) w(no)=-1;
+        if (noneof(*opt(no).path_which==nn)) w(no)=-1;
       }
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
   }
-
   if (type=="target") {
-    w = where(opt.path!="wfs");
+    w = where(opt.path_type!="wfs");
     // no common or science optics, return:
     if (numberof(w)==0) return 0.0f;
     // now for each ok optics, check this target has not been excluded
     for (no=1;no<=numberof(w);no++) {
-      if (opt(w(no)).path=="common") continue;
+      if (opt(w(no)).path_type=="common") continue;
       else { // necessarily, this is a "science" optics 
-        if (noneof(*opt(no).pathwhich==nn)) w(no)=-1;
+        if (noneof(*opt(no).path_which==nn)) w(no)=-1;
       }
     }
     w = w(where(w>=0));
@@ -1727,11 +1726,11 @@ func aoread(parfile)
 
   // INIT STRUCTURES:
   atm  = atm_struct();
-  opts  = opt_struct();
+  opts  = opt_struct(path_type="common");
   sim  = sim_struct();
   wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667);
   dms  = dm_struct(gain=1.);
-  mat  = mat_struct(file="");
+  mat  = mat_struct(file="",fit_type="target",fit_which=1);
   tel  = tel_struct();
   target = target_struct();
   gs   = gs_struct();
@@ -2332,7 +2331,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
 
     // measure interaction matrix:
-    estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront
+    estDMs = where(!dm.dmfit_which); // DMs used to estimate wavefront
     if ( sum(dm(estDMs)._nact) > sum(wfs._nmes) ) {
       write,format="\n\nWarning: Underconstrained problem: nact (%d) > nmes (%d)\n",sum(dm._nact),sum(wfs._nmes);
       if (mat.method == "svd"){
@@ -2606,7 +2605,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       iMat = tmp(,,1);
       cMat = transpose(tmp(,,2));
       tmp = [];
-      if (anyof(dm.fitvirtualdm)){
+      if (anyof(dm.dmfit_which)){
         if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
           dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
         } else {
@@ -2618,7 +2617,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           svd = 1;
         }
         for (nm=1;nm<=numberof(dm);nm++){
-          if (dm(nm).fitvirtualdm){
+          if (dm(nm).dmfit_which){
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
             if (fileExist(filename)){
               dm(nm)._fMat = &yao_fitsread(filename);
@@ -2641,14 +2640,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       } else {
         svd = 1;  // need to recreate reconstructors
       }
-      if (anyof(dm.fitvirtualdm)) {
+      if (anyof(dm.dmfit_which)) {
         if (fileExist(YAO_SAVEPATH+parprefix+"-polcMat.rco")){
           polcMatSP = restore_rco(YAO_SAVEPATH+parprefix+"-polcMat.rco");
         } else {
           svd = 1;  // need to recreate reconstructors
         }
         for (nm=1;nm<=numberof(dm);nm++){
-          if (dm(nm).fitvirtualdm){
+          if (dm(nm).dmfit_which){
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".rco");
             if (fileExist(filename)){
               dm(nm)._fMat = &restore_rco(filename);
@@ -2725,9 +2724,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // create the fitting matrices for tomography
     if (mat.fit_simple == 1){
       for (nm=1;nm<=numberof(dm);nm++){
-        if (dm(nm).fitvirtualdm){
+        if (dm(nm).dmfit_which){
 
-          virtualDMs = int(*dm(nm).fitvirtualdm);
+          virtualDMs = int(*dm(nm).dmfit_which);
           nVirtualDMs = numberof(virtualDMs);
           
           if (dm(nm).type == "stackarray"){
@@ -2783,9 +2782,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       npix = numberof(wpupil_sub);
 
       for (nm=1;nm<=numberof(dm);nm++){
-        if (dm(nm).fitvirtualdm){
+        if (dm(nm).dmfit_which){
 
-          virtualDMs = int(*dm(nm).fitvirtualdm);
+          virtualDMs = int(*dm(nm).dmfit_which);
           nVirtualDMs = numberof(virtualDMs);
 
           // calculate the matrix that shows how the tomographic DM affects the phase
@@ -2808,9 +2807,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             command(i) = float(1.);
             mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&command);
             if (dm(nm).ncp){ // DM on WFS path only 
-              phase = get_phase2d_from_dms(dm(nm).ncpnumber,dm(nm).ncptype)-get_phase2d_from_dms(mat.fit_target,"target");
+              phase = get_phase2d_from_dms(dm(nm).ncpfit_which,dm(nm).ncpfit_type)-get_phase2d_from_dms(mat.fit_which,mat.fit_type);
             } else {
-              phase = get_phase2d_from_dms(mat.fit_target,"target");
+              phase = get_phase2d_from_dms(mat.fit_which,mat.fit_type);
             }
             
             phase = phase(idx,idx);
@@ -2853,9 +2852,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
               command(i) = 1.;
               mircube(n1:n2,n1:n2,nv) = comp_dm_shape(nv,&command);
               if (dm(nm).ncp){ // DM on WFS path only 
-                phase = get_phase2d_from_dms(dm(nm).ncpnumber,dm(nm).ncptype)-get_phase2d_from_dms(mat.fit_target,"target");
+                phase = get_phase2d_from_dms(dm(nm).ncpfit_which,dm(nm).ncpfit_type)-get_phase2d_from_dms(mat.fit_which,mat.fit_type);
               } else {
-                phase = get_phase2d_from_dms(mat.fit_target,"target");
+                phase = get_phase2d_from_dms(mat.fit_which,mat.fit_type);
               }
 
               phase = phase(idx,idx);
@@ -2916,13 +2915,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
     } else if (mat.method == "mmse") {
-      if (anyof(dm.fitvirtualdm)){
+      if (anyof(dm.dmfit_which)){
         estAct = []; // actuators used to estimate wavefront
         realAct = []; // real (non virtual) actuators used to compensate the wavefront
         actno = 0;
 
         for (nm=1;nm<=ndm;nm++){
-          if (!dm(nm).fitvirtualdm){
+          if (!dm(nm).dmfit_which){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           if (!dm(nm).virtual & !dm(nm).ncp){
@@ -2942,7 +2941,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
         mc = 0;
         for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).fitvirtualdm){
+          if (!dm(nm).dmfit_which){
             Cphi(mc+1:mc+dm(nm)._nact,mc+1:mc+dm(nm)._nact) = \
                           dm(nm).regparam*(*dm(nm)._regmatrix);
             mc += dm(nm)._nact;
@@ -2953,7 +2952,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
 
         realDMs = where(!dm.virtual & !dm.ncp); // DMs used to compensate wavefront
-        estDMs = where(!dm.fitvirtualdm); // DMs used to estimate wavefront
+        estDMs = where(!dm.dmfit_which); // DMs used to estimate wavefront
 
         nRealAct = sum(dm(realDMs)._nact);
         nEstAct = sum(dm(estDMs)._nact);
@@ -2972,14 +2971,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
             startIdx +=  dm(nm)._nact;
 
-            if (!dm(nm).fitvirtualdm) {
+            if (!dm(nm).dmfit_which) {
               // real (ordinary) DM
               vidx = indgen(indexDm(1,nm):indexDm(2,nm));
               fMat(idx,vidx) = float(unit(dm(nm)._nact));
             } else {
               // tomographic DM
               vidx = [];
-              virtualDMs = int(*dm(nm).fitvirtualdm);
+              virtualDMs = int(*dm(nm).dmfit_which);
               for (c1=1;c1<= numberof(virtualDMs);c1++){
                 grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1)));
               }
@@ -2999,7 +2998,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         mc = 0; // matrix counter
         nDMs = numberof(dm);
         for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).fitvirtualdm){
+          if (!dm(nm).dmfit_which){
             Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = \
                                   (*dm(nm)._regmatrix)*dm(nm).regparam;
             mc += dm(nm)._nact;
@@ -3020,7 +3019,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         regmatrix = *dm(nm)._regmatrix;
         ruox, regmatrix, dm(nm).regparam; // multiply the matrix by a constant
 
-        if (!dm(nm).fitvirtualdm){
+        if (!dm(nm).dmfit_which){
         if (CphiSP == []) {
           CphiSP = regmatrix;
           } else {
@@ -3029,14 +3028,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         }
       }
 
-      if (anyof(dm.fitvirtualdm)) {
+      if (anyof(dm.dmfit_which)) {
         estAct = [];  // actuators used to estimate wavefront
         realAct = []; // real (non virtual) actuators used to compensate 
                       // the wavefront
         actno = 0;
 
         for (nm=1;nm<=ndm;nm++){
-          if (!dm(nm).fitvirtualdm){
+          if (!dm(nm).dmfit_which){
             grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
           }
           if (!dm(nm).virtual & !dm(nm).ncp){
@@ -3080,19 +3079,19 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
         }
 
-        nEstAct =sum(dm(where(!dm.fitvirtualdm))._nact);
-        nEstDMs = numberof(where(!dm.fitvirtualdm));
+        nEstAct =sum(dm(where(!dm.dmfit_which))._nact);
+        nEstDMs = numberof(where(!dm.dmfit_which));
         nRealAct = sum(dm(where(!dm.virtual & !dm.ncp))._nact);
             
         for (nm=1;nm<=numberof(dm);nm++) {
           if (dm(nm).virtual){ continue; } // no virtual DMs in the rows
           if (dm(nm).ncp){ continue; } // no non-common path DMs in the rows
 
-          if (dm(nm).fitvirtualdm) {
+          if (dm(nm).dmfit_which) {
             dmfMat = rcotr(*dm(nm)._fMat);
             vdmidx = [];
             for (mm=1;mm<=nEstDMs;mm++){
-              if (anyof(mm == *dm(nm).fitvirtualdm)){
+              if (anyof(mm == *dm(nm).dmfit_which)){
                 grow, vdmidx, indgen(indexDm(1,mm):indexDm(2,mm));
               }
             }
@@ -3170,7 +3169,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       // save the results:
-      if (noneof(dm.fitvirtualdm)){
+      if (noneof(dm.dmfit_which)){
       yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
       } else { // just save the iMat and force the recreation of cMat on reload
         yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
@@ -3415,7 +3414,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   for (nm=1;nm<=ndm;nm++){
     if (dm(nm).virtual == 0) nComm += dm(nm)._nact;
-    if (*dm(nm).fitvirtualdm == []) nAct += dm(nm)._nact;
+    if (*dm(nm).dmfit_which == []) nAct += dm(nm)._nact;
   }
 
   commb          = array(float,[2,nComm,10]);
@@ -3724,7 +3723,7 @@ func go(nshot,all=)
           // Check to see which DMs have updated; only non tomographic DMs
           mc = 0; // counter
           for (nm=1;nm<=numberof(dm);nm++){
-            if (!dm(nm).fitvirtualdm){
+            if (!dm(nm).dmfit_which){
               comms = Ats(mc+1:mc+dm(nm)._nact);
               if (comms(rms) == 0){ // has not updated
                 polccorr(mc+1:mc+dm(nm)._nact) = 0;
@@ -3748,7 +3747,7 @@ func go(nshot,all=)
         // Check to see which DMs have updated; only non tomographic DMs
         mc = 0; // counter
         for (nm=1;nm<=numberof(dm);nm++){
-          if (!dm(nm).fitvirtualdm){
+          if (!dm(nm).dmfit_which){
             comms = err(mc+1:mc+dm(nm)._nact);
             if (comms(rms) == 0){ // has not updated
               polccorr(mc+1:mc+dm(nm)._nact) = 0;
@@ -3784,7 +3783,7 @@ func go(nshot,all=)
 
     n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
 
-    if (*dm(nm).fitvirtualdm == []){ // not a tomographic DM
+    if (*dm(nm).dmfit_which == []){ // not a tomographic DM
     // this DM error:
     dmerr = err(indexDm(1,nm):indexDm(2,nm));
 
@@ -3810,7 +3809,7 @@ func go(nshot,all=)
         (*loop.gainho)(order-1) * dm(nm).gain * errmb(indexDm(1,nm):indexDm(2,nm),imb);
     }
     } else { // tomographic DM; DM commands from virtual DMs
-      virtualDMs = int(*dm(nm).fitvirtualdm);
+      virtualDMs = int(*dm(nm).dmfit_which);
       virtualdmcommand = [];
       for (idx=1;idx<= numberof(virtualDMs);idx++){
         grow, virtualdmcommand, *dm(virtualDMs(idx))._command;
@@ -3845,7 +3844,7 @@ func go(nshot,all=)
 
     estdmcommand = [];
     for (idx=1;idx<=ndm;idx++){
-      if (!dm(idx).fitvirtualdm){
+      if (!dm(idx).dmfit_which){
         grow, estdmcommand, *dm(idx)._command;
       }
     }

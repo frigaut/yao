@@ -547,9 +547,9 @@ func check_parameters(void)
       dm(nm).regparam = 1e-5;
     }
     // check that any virtual DMs have a lower DM number than a DM that uses it
-    if (*dm(nm).fitvirtualdm != []){
-      if (max(*dm(nm).fitvirtualdm) > nm){
-        write,format="Virtual DMs (%d) must have a lower numbering than the DM (%d) that uses them\n",max(*dm(nm).fitvirtualdm),nm;
+    if (*dm(nm).dmfit_which != []){
+      if (max(*dm(nm).dmfit_which) > nm){
+        write,format="Virtual DMs (%d) must have a lower numbering than the DM (%d) that fits to them\n",max(*dm(nm).dmfit_which),nm;
         exit, "Exiting";
       }
     }
@@ -569,7 +569,6 @@ func check_parameters(void)
   if (mat.sparse_thresh == float()){mat.sparse_thresh = 1e-8;}
   if (mat.sparse_pcgtol == float()){mat.sparse_pcgtol = 1e-6;}
   if (mat.fit_subsamp == long()){mat.fit_subsamp = 1;}
-  if (mat.fit_target == long()){mat.fit_target = 1;}
   if (mat.fit_minval == float()){mat.fit_minval = 1e-2;}
 
   // TEL STRUCTURE
@@ -746,12 +745,12 @@ func check_parameters(void)
         for (i=1;i<=noptics;i++) opt(no).misreg = [0.,0.];
       }
       opt(no).misreg= float(opt(no).misreg);
-      if ((opt(no).path=="wfs")&&(opt.pathwhich==[])) opt.pathwhich = &indgen(nwfs);
-      if ((opt(no).path=="science")&&(opt.pathwhich==[])) opt.pathwhich = &indgen(ntarget);
-      if ((opt(no).path)&&(opt(no).path=="")) opt(no).path="common";
-      if ((opt(no).path)&&(opt(no).path!="wfs")&&\
-          (opt(no).path!="science")&&(opt(no).path!="common")) \
-        error,swrite(format="Unknown optics path \"%s\".\n It should be \"common\", \"wfs\" or \"science\" (default=\"common\")",opt(no).path);
+      if ((opt(no).path_type=="wfs")&&(opt.path_which==[])) opt.path_which = &indgen(nwfs);
+      if ((opt(no).path_type=="target")&&(opt.path_which==[])) opt.path_which = &indgen(ntarget);
+      if ((opt(no).path_type)&&(opt(no).path_type=="")) opt(no).path_type="common";
+      if ((opt(no).path_type)&&(opt(no).path_type!="wfs")&&\
+          (opt(no).path_type!="target")&&(opt(no).path_type!="common")) \
+        error,swrite(format="Unknown optics path \"%s\".\n It should be \"common\", \"wfs\" or \"target\" (default=\"common\")",opt(no).path_type);
     }
   }
 
