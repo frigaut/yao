@@ -1729,13 +1729,12 @@ func aoread(parfile)
   opts  = opt_struct(path_type="common");
   sim  = sim_struct();
   wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667);
-  dms  = dm_struct(gain=1.);
+  dms  = dm_struct(gain=1.,coupling=0.2);
   mat  = mat_struct(file="",fit_type="target",fit_which=1);
   tel  = tel_struct();
   target = target_struct();
   gs   = gs_struct();
   loop = loop_struct(modalgainfile="",stats_every=4,startskip=10);
-  paramfile = parfile;
 
   if (!fileExist(parfile)) {
     exit,swrite(format="Can not find parameter file %s !",parfile);}

@@ -481,10 +481,6 @@ func check_parameters(void)
     if (dm(nm).type == "diskharmonic") dm(nm).type = "dh";
     if (dm(nm).subsystem == 0) {dm(nm).subsystem = 1;}
     if (dm(nm).iffile == string()) {dm(nm).iffile = "";}
-    if ((dm(nm).type=="stackarray") && (dm(nm).coupling==0)) {
-      dm(nm).coupling = 0.2;
-      write,format="dm(%d).coupling set to %f\n",nm,dm(nm).coupling;
-    }
     if (dm(nm).ecmatfile == string()) {dm(nm).ecmatfile = "";}
     if (dm(nm).push4imat == 0) {dm(nm).push4imat = 20;}
     if (dm(nm).thresholdresp == 0) {dm(nm).thresholdresp = 0.3;}
@@ -512,10 +508,10 @@ func check_parameters(void)
     if ( (dm(nm).type == "stackarray") && (dm(nm).pitch == 0) ) {
       exit,swrite(format="dm(%d).pitch has not been set",nm);
     }
-    if (dm(nm).type=="stackarray") {
-      if ((dm(nm).coupling<0.04) || (dm(nm).coupling>0.8)) {
+    if (dm(nm).type=="stackarray") {      
+      if ((dm(nm).coupling<0.0) || (dm(nm).coupling>0.8)) {
         write,format="Invalid value for dm(%d).coupling -> %f\n",nm,dm(nm).coupling;
-        exit,"Valid values from 0.04 to 0.80";
+        exit,"Valid values from 0 to 0.80";
       }
     }
     if ( (dm(nm).type == "zernike") && (dm(nm).nzer == 0) ) {

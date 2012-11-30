@@ -138,18 +138,25 @@ func make_pzt_dm(nm,&def,disp=)
 
       // make sure which sinc we're using:
       if (abs(sinc(1.))<1e-10) fact=1.; else fact=pi;
-
+      
       def(,,i)= (sinc(fact * sqrt((x-cubval(i,1))^2.)/a_had(1))* \
                  sinc(fact * sqrt((y-cubval(i,2))^2.)/a_had(1))* \
                  exp(-((x-cubval(i,1))/a_had(2))^2.              \
                      -((y-cubval(i,2))/a_had(2))^2. ));
-                     
+      
+    } else {
+      if (coupling == 0){
+        tmpx = pitch - abs(abs(x)-cubval(i,1));
+        tmpy = pitch - abs(abs(y)-cubval(i,2));
+        tmp = tmpx*tmpy;
+        def(,,i) = tmp*(tmpx > 0)*(tmpy > 0.);
       } else {
         tmpx       = clip(abs((x-cubval(i,1))/ir),1e-8,2.);
         tmpy       = clip(abs((y-cubval(i,2))/ir),1e-8,2.);
-        tmp        = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*        \
-                     (1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
+        tmp        = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*  \
+          (1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
         def(,,i)   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
+      }
     }
 
     if ((disp == 1) && (sim.debug == 2)) {fma; pli,def(,,i);}
@@ -217,34 +224,33 @@ func make_pzt_dm_elt(nm,&def,disp=)
   nxact = dm(nm).nxact;
   cent  = sim._cent;
   pitch = dm(nm).pitch;
-  ir = irc*pitch;
 
-  tmp=pitch/abs(ir);
-  c = (coupling - 1.+ tmp^p1)/(log(tmp)*tmp^p2);
-
-  // compute IF on partial (local) support:
-  smallsize = long(ceil(2*ir+10));
-  dm(nm)._eltdefsize = smallsize;
-  xy    = indices(smallsize)-smallsize/2-0.5;
-  x     = xy(,,1); y = xy(,,2);
-  tmpx  = clip(abs(x/ir),1e-8,2.);
-  tmpy  = clip(abs(y/ir),1e-8,2.);
-  tmp   = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*(1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
-  def   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
-
-  /*
-  //smooth out the edges
-  mask = def > 0;
-  w = where(mask);
-  k=makegaussian(5,1.);
-  k=k/sum(k);
-  cdef=def;
-  //  for (i=1;i<=3;i++) {cdef=convVE(cdef,k);cdef(w)=def(w);}
-  // 2004jun07: changed convVE -> convol for compat with yao_fftw
-  for (i=1;i<=3;i++) {cdef=convol2d(cdef,k);cdef(w)=def(w);}
-  def = cdef;
-  */
-
+  if (dm(nm).coupling == 0){
+    smallsize = long(2*pitch);
+    dm(nm)._eltdefsize = smallsize;
+    xy    = indices(smallsize)-smallsize/2-0.5;
+    x     = xy(,,1); y = xy(,,2);
+    tmpx  = abs(abs(x)-pitch)/pitch;
+    tmpy  = abs(abs(y)-pitch)/pitch;
+    
+    def   = tmpx*tmpy;
+  } else {
+    ir = irc*pitch;
+    
+    tmp=pitch/abs(ir);
+    c = (coupling - 1.+ tmp^p1)/(log(tmp)*tmp^p2);
+    
+    // compute IF on partial (local) support:
+    smallsize = long(ceil(2*ir+10));
+    dm(nm)._eltdefsize = smallsize;
+    xy    = indices(smallsize)-smallsize/2-0.5;
+    x     = xy(,,1); y = xy(,,2);
+    tmpx  = clip(abs(x/ir),1e-8,2.);
+    tmpy  = clip(abs(y/ir),1e-8,2.);
+    tmp   = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*(1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
+    def   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
+  }
+  
   // compute location (x,y and i,j) of each actuator:
   cub   = array(float,nxact,nxact,2);
   // make X and Y indices array:
