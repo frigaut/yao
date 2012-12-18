@@ -135,7 +135,6 @@ dm = array(dms,ndm);
 
 n  =1;
 dm(n).subsystem    = 1;
-dm(n).type         = "diskharmonic";
 dm(n).type         = "stackarray";
 dm(n).iffile       = "";
 dm(n).nxact        = wfs(n).shnxsub+1;
