@@ -347,7 +347,7 @@ func check_parameters(void)
       exit,swrite(format="wfs(%d).type has not been set",ns);
     }
 
-    if (wfs(ns).subsystem == 0) {wfs(ns).subsystem = 1;}
+    // if (wfs(ns).subsystem == 0) {wfs(ns).subsystem = 1;}
 
     if (wfs(ns).lambda == 0) {
       exit,swrite(format="wfs(%d).lambda has not been set",ns);
