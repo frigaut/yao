@@ -153,7 +153,7 @@ struct wfs_struct
   long    subsystem;      // Subsystem this WFS belongs to. Optional [1]
   float   lambda;         // WFS wavelength in microns. Required [none]
   long    noise;          // Enable noise (photon noise/read out noise). Optional [0=no].
-  float   ron;            // Read out noise in electrons. Optional [0]
+  float   ron;            // Read out noise in electrons. If wfs.shmethod=1, this is the noise in arcseconds. Optional [0]
   float   darkcurrent;    // dark current in e-/sec/pixel or APD. Optional [0]
   float   gspos(2);       // This WFS guide star position (x<y) in arcsec. Optional [0,0]
   float   gsalt;          // This WFS guide star altitude in meter. 0 for infinity.

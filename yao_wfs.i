@@ -865,13 +865,41 @@ func sh_wfs(pupsh,phase,ns)
     toarcsec = float(wfs(ns).lambda/2.0/pi/(tel.diam/sim.pupildiam)/4.848);
 
     // define mesvec (alloc space for C function)
-    mesvec = array(float,2*wfs(ns)._nsub);
+    current_mes = array(float,2*wfs(ns)._nsub);
 
     err = _shwfs_simple(pupsh, phase, phasescale, *wfs(ns)._tiltsh,
                         int(size), int(size),
                         *wfs(ns)._istart, *wfs(ns)._jstart, int(subsize),
-                        int(subsize), wfs(ns)._nsub, toarcsec, mesvec);
+                        int(subsize), wfs(ns)._nsub, toarcsec, current_mes);
 
+    if (wfs(ns).nintegcycles == 1){
+      mesvec = current_mes;
+      if ((wfs(ns).noise == 1) && (wfs(ns).ron > 0)){
+        mesvec += random_n(wfs(ns)._nmes)*wfs(ns).ron;
+      }
+    } else {
+      // here we implement the averaging over a larger number of cycles
+      // we use wfs._meashist to keep track of previous values of the measurement
+      if (wfs(ns)._cyclecounter == 1){
+        wfs(ns)._meashist = &array(0.0f,dimsof(current_mes));
+      }
+      
+      *wfs(ns)._meashist += current_mes/wfs(ns).nintegcycles;
+      
+      if (wfs(ns)._cyclecounter == wfs(ns).nintegcycles){
+        wfs(ns)._cyclecounter = 1;
+        mesvec = *wfs(ns)._meashist;
+        // add noise
+        if ((wfs(ns).noise == 1) && (wfs(ns).ron > 0)){
+          mesvec += random_n(wfs(ns)._nmes)*wfs(ns).ron;
+        }
+      }      
+      else {
+        wfs(ns)._cyclecounter += 1;
+        mesvec = array(0.0f, dimsof(current_mes));
+      }
+    }
+    //if (ns == 2){print, current_mes(10), mesvec(10);}
   // Full diffraction SHWFS
   } else {
 
