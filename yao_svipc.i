@@ -398,7 +398,7 @@ func svipc_start_forks(void)
     sim.svipc_wfs_forknb = &tmp;
   }
 
-  shm_write,shmkey,"pscreens",&pscreens;
+  if (!pscreens_no_shm) shm_write,shmkey,"pscreens",&pscreens;
 
 
   // WFS CHILD
@@ -418,8 +418,10 @@ func svipc_start_forks(void)
       // get rid of what we don't need
       iMat = cMat = [];
       for (i=1;i<=ndm;i++) dm(i)._def = &[];
-      pscreens = [];
-      shm_var,shmkey,"pscreens",pscreens;
+      if (!pscreens_no_shm) {
+        pscreens = [];
+        shm_var,shmkey,"pscreens",pscreens;
+      }
 
       // start listening
       //set_idler,topwfs_listen;
@@ -439,9 +441,11 @@ func svipc_start_forks(void)
       write,format="PSFs child fork()ed with PID %d\n",getpid();
       // get rid of what we don't need
       iMat = cMat = [];
-      pscreens = [];
-      shm_var,shmkey,"pscreens",pscreens;
-     //
+      if (!pscreens_no_shm) {
+        pscreens = [];
+        shm_var,shmkey,"pscreens",pscreens;
+      }
+
       // start listening
       // set_idler,psf_listen;
       status = psf_listen();
@@ -452,9 +456,7 @@ func svipc_start_forks(void)
 
   // WFSs children
   if ((sim.svipc>>2)&1) {
-
     // sim.svipc_wfs_nfork -= 1; // the main WFS thread will take its share.
-
     for (nf=1;nf<=sim.svipc_wfs_nfork;nf++) {
       svipc_procname = swrite(format="WFSs fork %d",nf);
       grow,all_svipc_procname,svipc_procname;
@@ -463,8 +465,10 @@ func svipc_start_forks(void)
         // get rid of what we don't need
         iMat = cMat = [];
         for (i=1;i<=ndm;i++) dm(i)._def = &[];
-        pscreens = [];
-        shm_var,shmkey,"pscreens",pscreens;
+        if (!pscreens_no_shm) {
+          pscreens = [];
+          shm_var,shmkey,"pscreens",pscreens;
+        }
         // start listening
         ns = where(*sim.svipc_wfs_forknb==nf);
         status = wfs_listen(nf,ns);
