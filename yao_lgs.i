@@ -55,14 +55,21 @@ func fit_lgs_profile(amp,alt,npt,&fitamp,&fitalt,&fitdepth)
   delta = max(alt)-min(alt);
   a = _(1,array(1.0,npt),span(min(alt)+0.3*delta,max(alt)-0.3*delta,npt));
   r= lmfit(foo_lgs_profile,alt,a,amp,tol=1e-12);
-  plot,amp,alt;
-  plg,foo_lgs_profile(alt,a),alt,color="red";
-  write,format="depth = %f\n",a(1)*2.35;
+  if (sim.debug) {
+    plot,amp,alt;
+    plg,foo_lgs_profile(alt,a),alt,color="red";
+    pltitle_vp,"LGS profile (fg) and fit (red)";
+    xytitles_vp,"Altitude [km]","Na density [fraction total]",[0.010,0.015];
+  }
   fitamp = abs(a(2:npt+1));
   fitalt = clip(a(npt+2:),min(alt),max(alt))*1e3;
   fitdepth = a(1)*2.35*1e3;
-  fitamp;
-  fitalt;
+  if (sim.verbose>1) {
+    write,"Na profile fit results:";
+    write,format="Depth = %f\n",a(1)*2.35;
+    write,format="%s: ","altitudes"; fitalt;
+    write,format="%s: ","amplitudes"; fitamp;
+  }
 }
 
 //----------------------------------------------------

@@ -2728,7 +2728,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
             lvec = array(float,dm(nm)._nact);
             lvec(ii) = -1.;
-            lvec(where(dist2 == pitch2)) = 0.25;
+            ww = where(dist2 == pitch2);
+            if (numberof(ww)) lvec(ww) = 0.25;
 
             rcobuild,laplacian_mat,lvec,mat.sparse_thresh;
           }
@@ -3596,7 +3597,7 @@ func go(nshot,all=)
  */
 
 {
-  extern niterok, starttime, endtime, endtime_str, now2, nshots;
+  extern niterok, starttime, endtime, endtime_str, tottime, now2, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag;
   extern nographinitFlag,savephaseFlag;
   extern cbmes, cbcom, cberr;
@@ -3624,6 +3625,7 @@ func go(nshot,all=)
     // initialize timers
     tic,2; 
     starttime = _nowtime(2);
+    tottime = 0.;
   }
 
   go_start:  now = tac(2);
@@ -3646,7 +3648,7 @@ func go(nshot,all=)
     exit,"Can't continue: loopCounter > loop.niter !";
   }
 
-  i=loopCounter;
+  i = loopCounter;
   tic; time(1) = tac();
 
 
@@ -4086,19 +4088,22 @@ func go(nshot,all=)
   glt      = 0.02;
   if (i==1) {glt=1.;}
 
-  looptime = (tac(2)-now)*glt + looptime*(1.-glt);
+  nowend = tac(2);
+  looptime = (nowend-now)*glt + looptime*(1.-glt);
+  tottime += (nowend-now);
   remainingTime = float(loop.niter-i)*looptime;
   remainingTimestring = secToHMS(remainingTime);
+  iter_per_sec = loopCounter/tottime;
 
   // Prints out some results:
 
   if (((looptime <= 2) && ((i % 500) == 1)) ||
       ((looptime > 2) && ((i % 20) == 1)) || (nshots>=0)) {
     if (numberof(*target.xposition)==1) {
-      write,"Iter#  Inst.Strehl  Long expo.Strehl  Time Left";
+      write,"Iter#  Inst.Strehl  Long expo.Strehl  Time Left  it/s";
     } else {
       write,"       Short expo. image  Long expos. image ";
-      write,"Iter#  Max.S/Min.S/Avg.S  Max.S/Min.S/Avg.S  Time Left";
+      write,"Iter#  Max.S/Min.S/Avg.S  Max.S/Min.S/Avg.S  Time Left  it/s";
     }
   }
 
@@ -4108,7 +4113,8 @@ func go(nshot,all=)
                    i,im(max,max,max)/sairy,
                    imav(max,max,max,0)/sairy/(niterok+1e-5),
                    remainingTimestring);
-      write,msg;
+      msg1 = swrite(format=" %.1f",iter_per_sec);
+      write,msg+msg1;
       header = "Iter#  Inst.Strehl  Long expo.Strehl  Time Left";
       msg = swrite(format="%5i  %5.3f          %5.3f             %s",
                    i,im(max,max,max)/sairy,
@@ -4122,7 +4128,8 @@ func go(nshot,all=)
                    avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
                    min(imav(max,max,,0))/sairy/(niterok+1e-5),
                    avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
-      write,msg;
+      msg1 = swrite(format=" %.1f",iter_per_sec);
+      write,msg+msg1;
       header = "Iter#  Inst:Max.S/Min.S/Avg.S  Avg:Max.S/Min.S/Avg.S  Time Left";
       msg = swrite(format="%5i         %5.3f %5.3f %5.3f        %5.3f %5.3f %5.3f  %s",
                    i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
@@ -4272,7 +4279,7 @@ func after_loop(void)
     write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time2(i)*1e3,timeComments(i-1);}
 
   write,format="Finished on %s\n",endtime_str;
-  tottime = (endtime - starttime);
+  // tottime = (endtime - starttime);
   iter_per_sec = loopCounter/tottime;
   write,format="%f iterations/second on average\n",iter_per_sec;
 
