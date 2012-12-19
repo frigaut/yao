@@ -131,14 +131,14 @@ struct atm_struct
 struct opt_struct
 {
   string   phasemaps;      // filename of phasemap. Z scale should be in microns
-  string   path;           // "common", "wfs" or "science", self explanatory I assume.
-  pointer  pathwhich;      // pointer to vector containing index of affected objects in "path"
-                           // path="wfs" and pathwhich=&([1,3]) means only wfs1 and 3 see this optic
-                           // obviously, this works only if path is either "wfs" or "target".
+  string   path_type;           // "common", "wfs" or "target", self explanatory I assume.
+  pointer  path_which;      // pointer to vector containing index of affected objects in "path"
+                           // path_type="wfs" and path_which=&([1,3]) means only wfs1 and 3 see this optic
+                           // obviously, this works only if path_type is either "wfs" or "target".
                            // if you want to apply the optic to some wfs *and* some target,
                            // then you'll have to create 2 opt structures with the same optic,
-                           // one with path="wfs" and pathwhich, and the other path="target"
-                           // and pathwhich.
+                           // one with path_type="wfs" and path_which, and the other path_type="target"
+                           // and path_which.
   float    alt;            // float. equivalent altitude in m.
   float    misreg(2);      // float vector. misreg. (similar to DM, see below)
   float    _cent;          // center of the phase maps arrays (similar to sim._cent)
@@ -353,7 +353,7 @@ struct dm_struct
                           // a function provided by the user. Required [none]
   long    subsystem;      // Subsystem this DM belongs to. Optional [1]
   long    virtual;        // virtual DMs for tomography, don't correct wavefront
-  pointer fitvirtualdm;   // which tomographic virtual DMs are used to drive this DM
+  pointer dmfit_which;    // which tomographic virtual DMs are used to drive this DM
   string  iffile;         // Influence function file name. Leave it alone.
   long    pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
   float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
@@ -376,8 +376,8 @@ struct dm_struct
                           // that is, dead actuators (index in valid numbering)
   pointer epegged;        // same for extrapolated actuators (index in extrap numbering)
   long    ncp;            // boolean. if set, the mirror is on the non-common path for MOAO type correction 
-  string  ncptype  ;      // whether to fit to a wfs or target to non-common path
-  long    ncpnumber;      // which target or wfs to fit to for non-common path
+  string  ncpfit_type;    // whether to fit to a wfs or target to non-common path
+  long    ncpfit_which;   // which target or wfs to fit to for non-common path
   long    use_def_of;     // don't compute defs but use the one computed for dm# use_def_of
   
   // Bimorph-only keywords:
@@ -466,10 +466,11 @@ struct mat_struct
   float   sparse_pcgtol;  // tolerance for reconstruction, default = 1e-3
   string  file;           // iMat and cMat filename. Leave it alone.
   // fitting parameters for tomographic reconstruction
-  long  fit_simple;            // 0 or 1, default = 0. Simple optimizes on the optical axis and only works if the tomographic DM is the same as the corresponding virtual DMs, but is faster.
+  long    fit_simple;     // 0 or 1, default = 0. Simple optimizes on the optical axis and only works if the tomographic DM is the same as the corresponding virtual DMs, but is faster.
   // the following parameters only apply to "mmse" fitting
   long    fit_subsamp;    // subsampling the phase for fitting matrix (set to larger than 1 for speed), default = 1
-  long    fit_target;     // which target to optimize fitting for, default = 1
+  string  fit_type;       // optimize for a target or wfs location
+  long    fit_which;      // which target or wfs to optimize fitting for, default = 1
   float   fit_minval;     // minimum value for sparse fitting matrix, default = 1e-2
 };
 
