@@ -28,7 +28,7 @@ wfs(n).shnxsub      = 6;
 wfs(n).pixsize      = 0.1;
 wfs(n).npixels      = 10;
 wfs(n).noise        = 1;
-wfs(n).ron          = 3.5;
+wfs(n).ron          = 0.05;
 wfs(n).shthreshold  = 0.;
 wfs(n).nintegcycles = 1;
 wfs(n).optthroughput= 0.5;
@@ -71,7 +71,7 @@ gs.zeropoint        = 2e11;
 gs.zenithangle      = 0.;
 
 //-------------------------------
-loop.gain    = 0.6;
+loop.gain    = 0.15;
 loop.framedelay     = 1;
 loop.niter          = 2000;
 loop.ittime         = 2e-3;

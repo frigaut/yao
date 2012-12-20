@@ -123,15 +123,14 @@ wfs(n).gspos       = [0.,0.];
 wfs(n).gsmag       = 7.;
 wfs(n).shmethod    = 1;
 wfs(n).shnxsub     = 1;
-wfs(n).pixsize     = 0.1;
-wfs(n).npixels     = 20;
-wfs(n).noise       = 1;
+wfs(n).noise       = 0;
 wfs(n).ron         = 3.5;
 wfs(n).shthreshold = 0.;
 wfs(n).dispzoom    = 0.0;
 //-------------------------------
 ndm                = 2;
 dm = array(dms,ndm);
+mergedms4disp = 1;
 
 n  =1;
 dm(n).subsystem    = 1;
