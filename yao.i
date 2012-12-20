@@ -3603,6 +3603,7 @@ func go(nshot,all=)
   extern iMatSP, AtAregSP
   extern commb,errmb; // minibuffers (last 10 iterations)
   extern im,imav;
+  extern iter_per_sec;
 
   gui_show_statusbar1;
 
