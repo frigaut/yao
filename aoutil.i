@@ -1555,7 +1555,7 @@ func encircled_energy(image,&ee50,xc=,yc=)
   ee  = rv*0.;
   for (i=1;i<=npt;i++)
     {
-      fil   = make_pupil(dim,rv(i),xc=xc,yc=yc,real=1);
+      fil   = make_pupil(dim,rv(i),xc=xc,yc=yc,real=0);
       rv(i) = sqrt(sum(fil)*4/pi); // that's a diameter
       ee(i) = sum(fil*im);
     }
