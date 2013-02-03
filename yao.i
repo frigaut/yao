@@ -4315,8 +4315,8 @@ func after_loop(void)
     if (target._ntarget > 1){
       write,format="Field Avg % 5.2f                   %6.1f   %.3f     %6.1f\n",
       (*target.lambda)(jl),fwhm(avg,jl),strehl(avg,jl),e50(avg,jl);
-      write,format="Field rms                         %6.1f   %.3f     %6.1f\n",
-        fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
+      write,format="Field rms % 5.2f                   %6.1f   %.3f     %6.1f\n",
+      (*target.lambda)(jl),fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
     }
   }
 
@@ -4333,8 +4333,8 @@ func after_loop(void)
     }
     write,f,format="Field Avg % 5.2f                   %6.1f   %.3f     %6.1f\n",
       (*target.lambda)(jl),fwhm(avg,jl),strehl(avg,jl),e50(avg,jl);
-    write,f,format="Field rms                         %6.1f   %.3f     %6.1f\n",
-      fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
+    write,f,format="Field rms % 5.2f                   %6.1f   %.3f     %6.1f\n",
+      (*target.lambda)(jl),fwhm(rms,jl),strehl(rms,jl),e50(rms,jl);
   }
   write,f,format="\nAverage images written in %s\n",parprefix+"-imav.fits";
   write,f,format="Some other graphics in %s\n",parprefix+".ps";
