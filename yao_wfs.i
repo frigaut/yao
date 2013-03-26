@@ -73,8 +73,8 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   } else {  // we are dealing with a LGS
 
-    wfs(ns)._nphotons = gs.lgsreturnperwatt*  // detected by WFS
-      wfs(ns).laserpower*                     // ... for given power
+    wfs(ns)._nphotons = gs.lgsreturnperwatt*cos(dtor*gs.zenithangle)* // detected by WFS
+      wfs(ns).laserpower* // ... for given power
       wfs(ns).optthroughput*                  // include throughput to WFS
       (tel.diam/wfs(ns).shnxsub)^2.*1e4*      // for unobstructed subaperture
       loop.ittime;                            // per iteration
@@ -1089,9 +1089,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
 
       // modified to use the actual telescope surface area
       telsurface = sum(pupil)*(tel.diam/sim.pupildiam)^2*1e4;
-      wfs(ns)._nphotons = gs.lgsreturnperwatt*wfs(ns).laserpower*
-        telsurface*loop.ittime;
-
+      wfs(ns)._nphotons = gs.lgsreturnperwatt*cos(dtor*gs.zenithangle)*wfs(ns).laserpower*telsurface*loop.ittime;
     }
     // from sky, over field stop
     wfs(ns)._skynphotons = wfs(ns)._zeropoint*10^(-0.4*wfs(ns).skymag)*

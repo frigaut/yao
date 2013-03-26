@@ -575,7 +575,7 @@ func check_parameters(void)
   if ((*target.xposition) == []) exit,"target.xposition has not been set";
   if ((*target.yposition) == []) exit,"target.yposition has not been set";
   if ((*target.dispzoom) == []) {
-    target.dispzoom = &(array(1.,numberof(*target.lambda)));
+    target.dispzoom = &(array(1.,numberof(*target.xposition)));
   }
   if (nallof(_(numberof(*target.xposition), \
                numberof(*target.yposition)) == numberof(*target.dispzoom) )) {
@@ -584,6 +584,8 @@ func check_parameters(void)
   }
 
   // GS STRUCTURE
+  if (gs.zenithangle > 0 && anyof(wfs.gsalt > 0)){write,"WARNING: The return from the LGS is assumed to vary as cos(gs.zenithangle).";}
+    
   if (anyof(wfs.gsalt != 0) && (gs.lgsreturnperwatt == 0)) {
     gs.lgsreturnperwatt = 22.;
     write,format="gs.lgsreturnperwatt set to %f\n",gs.lgsreturnperwatt;
