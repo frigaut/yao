@@ -726,6 +726,10 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   else {
     def = (*dm(nmlow)._def)(*,)(w,);
   }
+
+  // remove piston from the definition
+  for (c1=1;c1<=(dimsof(def))(3);c1++)def(:,c1) -= def(avg,c1);
+  
   // compute the IF covariance matrix
   defcov = def(+,)*def(+,);
 
@@ -737,11 +741,16 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   // this transform def into a #spatial_point x nact array and retains only
   // the spatial points inside the pupil
   defa = -(*dm(nmaniso)._def)(*,)(w,);
+  // remove piston from the definition
+  for (c1=1;c1<=(dimsof(defa))(3);c1++)defa(:,c1) -= def(avg,c1);
+
   // compute the product act * mode:
   anisoproj = def(+,)*defa(+,);
 
   // command vector (matrices, 3 modes) to apply to DM to get a given mode
-  alow = LUsolve(defcov,anisoproj);
+  piston_pen = max(defcov)*1e3; // need to penalize piston
+  act_pen = unit(dimsof(defcov)(3))*max(diag(defcov))/1000.;
+  alow = LUsolve(defcov+piston_pen+act_pen,anisoproj); // remove all piston
 
   // display:
   if (disp) {
@@ -784,6 +793,8 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
     w = where(puphigh);
     def = (*dm(nmhigh)._def)(*,)(w,);
   }
+  // remove piston from the definition
+  for (c1=1;c1<=(dimsof(def))(3);c1++)def(:,c1) -= def(avg,c1);
 
   defcov = def(+,)*def(+,);
 
@@ -793,9 +804,13 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
                       dm(nmaniso)._n1:dm(nmaniso)._n2);
   w = where(pupaniso);
   defa = (*dm(nmaniso)._def)(*,)(w,);
+  // remove piston from the definition
+  for (c1=1;c1<=(dimsof(defa))(3);c1++)defa(:,c1) -= defa(avg,c1);
+
   anisoproj = def(+,)*defa(+,);
 
-  ahigh = LUsolve(defcov,anisoproj);
+  act_pen = unit(dimsof(defcov)(3))*max(diag(defcov))/1000.;
+  ahigh = LUsolve(defcov+piston_pen+act_pen,anisoproj); 
 
   if (disp || (sim.debug == 2)) {
     for (i=1;i<=3;i++) {
@@ -822,64 +837,56 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
 
 //--------------------------------------------------------------------------
 
-func hysteresis(v,n,first=)
+func hysteresis(x,nm)
 {
+  // Uses the method developed by Luc Gilles for TMT in MAOS
+  // YAO implementation by Marcos van Dam, April 2013
+  
+  // x = voltage commands; 
+  // n is the DM number
 
-  // utilisation :
-  // appel : pos = hysteresis(v) pour avoir la position des actuateurs
-  // pour un vecteur de controle v, pris en compte l"hysteresis
-  //
-  // v = vecteur des voltages
-  // hyst = fraction hysteresis (e.g. 0.05 = 5%)
-  // first = vecteur v de depart
-  //
-  // a bit cumbersome. borrowed from IDL routine of same name in simullgs.pro
+  output = array(float, dimsof(x)); // this is the output vector
+  
+  for (k=1;k<=dm(nm)._nact;k++){ // loop over all the actuators
+  
+    if ((*dm(nm)._signus)(k) == 0){  
+      if ((x(k) - (*dm(nm)._x0)(k)) < 0){
+        (*dm(nm)._signus)(k) = -1;
+      } else {
+        (*dm(nm)._signus)(k) = 1;
+      }
+    }
+    
+    if ((*dm(nm)._signus)(k) == 1){
+      if ((x(k) - (*dm(nm)._x0)(k)) < 0){
+        (*dm(nm)._signus)(k) = -1;
+      }
+    }
 
-  if (!is_void(first)) {
-    dm(n)._vold = &(first*1.f);
-    dm(n)._posold = &(first*1.f);
-    dm(n)._chpos = &(first*1.f);
-    dm(n)._chv = &(first*1.f);
-    dm(n)._dir = &(first*0.f);
-    dm(n)._delta = &(first*0.f);
-    return first;
-  } else {
-    vold = *dm(n)._vold;
-    posold = *dm(n)._posold;
-    chpos = *dm(n)._chpos;
-    chv = *dm(n)._chv;
-    dir = *dm(n)._dir;
-    delta = *dm(n)._delta;
-    hyst = dm(n).hyst;
+    if ((*dm(nm)._signus)(k) == -1){
+      if ((x(k) - (*dm(nm)._x0)(k)) > 0){
+        (*dm(nm)._signus)(k) = 1;
+      }
+    }
+
+    alpha = dm(nm)._alpha * (*dm(nm)._signus)(k);
+    beta = dm(nm)._beta;
+    y0 = (*dm(nm)._y0)(k,:);
+    x0 = (*dm(nm)._x0)(k);
+      
+    y = array(float,3);
+    for (i=1;i<=3;i++){  
+      y(i) = x(k) - alpha(i)*beta(i) + (y0(i) - x0 + alpha(i)*beta(i))*exp(-(x(k)-x0)/alpha(i));
+    }
+    
+    (*dm(nm)._x0)(k) = x(k);
+    (*dm(nm)._y0)(k,:) = y(:);
+
+    // scale to the desired hysteresis level
+    output(k) = dm(nm).hyst/0.17*1.5*sum(dm(nm)._w*y) + (1-dm(nm).hyst/0.17)*x(k);
   }
-
-  chdir  = ((v-vold)*dir) <= 0;  // change direction ?
-  wchd  = where(chdir);  // indices of which that changed dir
-  if (anyof(chdir)) {
-    delta(wchd) = -chv(wchd)+vold(wchd);  // delta v since last direction change
-    chpos(wchd) = posold(wchd);  // new position where direction change occured
-    chv(wchd) = vold(wchd);
-  }
-
-  pos = v;
-  w = where(delta > 0.);  // was going up
-  if (anyof(delta > 0.)) {pos(w) = min(v(w)+hyst/2.*delta(w),chpos(w));}
-  w = where(delta < 0.);
-  if (anyof(delta < 0.)) {pos(w) = max(v(w)+hyst/2.*delta(w),chpos(w));}
-
-
-  dir = v-vold;
-  vold = v;
-  posold = pos;
-
-  dm(n)._vold = &(vold);
-  dm(n)._posold = &(posold);
-  dm(n)._chpos = &(chpos);
-  dm(n)._chv = &(chv);
-  dm(n)._dir = &(dir);
-  dm(n)._delta = &(delta);
-
-  return pos;
+  
+  return float(output);
 }
 
 

@@ -549,6 +549,8 @@ func check_parameters(void)
         exit, "Exiting";
       }
     }
+    if ((dm(nm).hyst < 0.)+(dm(nm).hyst > 0.25)){exit,"DM hysteresis must be between 0 and 0.25";}
+    if (dm(nm).hyst > 0.){write,"WARNING: DM hysteresis implementation assumes that voltages are of the order of 0.1 to 10. If not, do not use hysteresis.";}
   }
 
   // MAT STRUCTURE

@@ -1810,6 +1810,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   svd = ( (svd==[])? (aoinit_svd==[]? 0:aoinit_svd):svd );
   keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
 
+  // initialize DM hysteresis parameters
+  for (nm=1;nm<=ndm;nm++){
+    dm(nm)._alpha = [0.01,0.2,4];
+    dm(nm)._beta = [0.4,0.63,0.89];
+    dm(nm)._w = [0.2,0.35,0.45];
+  }
+  
   if (mat.method == "mmse-sparse"){
 
     require,"soy.i";
@@ -3209,7 +3216,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
 
     // finds which DM is at altitude 0
-    w0 = where(dm.alt == 0);
+    w0 = where((dm.alt == 0)*(dm.virtual == 0));
     nmlow = where( (dm(w0).type == "stackarray") | (dm(w0).type == "bimorph") |
                    (dm(w0).type == "zernike") | (dm(w0).type == "dh")  );
     nmlow = w0(nmlow);
@@ -3384,7 +3391,15 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   gui_message,"Initializing loop";
 
-
+  // Initialize hysteresis parameters
+  for (nm=1;nm<=ndm;nm++){
+    dm(nm)._x0 = &array(float,dm(nm)._nact);
+    dm(nm)._y0 = &array(float,[2,dm(nm)._nact,3]);
+    dm(nm)._xlast = &array(float,dm(nm)._nact);
+    dm(nm)._ylast =  &array(float,[2,dm(nm)._nact,3]);
+    dm(nm)._signus = &array(long,dm(nm)._nact); 
+  }
+  
   // Initialize displays:
   if (!is_set(disp)) {disp = 0;}
   if (!is_set(controlscreen)) {controlscreen = 0;}
@@ -3488,12 +3503,9 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   for (nm=2;nm<=ndm;nm++) {
     indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
   }
-  // initialize hysteresis if needed:
+
   for (nm=1;nm<=ndm;nm++) {
     dm(nm)._command = &(array(float,dm(nm)._nact));
-    if (dm(nm).hyst > 0.) {
-      *dm(nm)._command = hysteresis(*dm(nm)._command,nm,first=*dm(nm)._command);
-    }
   }
 
   // Set up for anisoplatism modes
@@ -3875,8 +3887,6 @@ func go(nshot,all=)
       }
     }
 
-    if (dm(nm).hyst > 0.) {*dm(nm)._command = hysteresis(*dm(nm)._command,nm);}
-
     if (dm(nm).maxvolt != 0) {
       dm(nm)._command=&(float(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt)));
     }
@@ -3884,20 +3894,21 @@ func go(nshot,all=)
     if (user_loop_command!=[]) user_loop_command,nm;
 
     if (dm(nm).virtual == 0){
-
-    grow,comvec,*dm(nm)._command;
-
-    mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
-    if ( (nm==1) && (add_dm0_shape!=[]) ) mircube(,,1) += add_dm0_shape;
-
-    // extrapolated actuators:
-    if ((dm(nm)._enact != 0) && (dm(nm).noextrap == 0)) {
-      ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
-      mircube(n1:n2,n1:n2,nm) += comp_dm_shape(nm,&ecom,extrap=1);
+      grow,comvec,*dm(nm)._command;
+      if (dm(nm).hyst > 0){
+        mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&(hysteresis(*dm(nm)._command,nm)));
+      } else {
+        mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
+      }
+      // extrapolated actuators:
+      if ((dm(nm)._enact != 0) && (dm(nm).noextrap == 0)) {
+        ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
+        mircube(n1:n2,n1:n2,nm) += comp_dm_shape(nm,&ecom,extrap=1);
       }
     } else {
       mircube(n1:n2,n1:n2,nm) = 0.; //virtual DM, does not produce a shape
     }
+    
   }
 
   // fill minibuffers
@@ -4183,10 +4194,6 @@ func reset(void,nmv=)
   for (i=1;i<=numberof(nmv);i++) {
     nm = nmv(i);
     *dm(nm)._command *=0.0f;
-    if (dm(nm).hyst) {       // < take care of hysteresis
-      *dm(nm)._vold *=0.0f;
-      *dm(nm)._posold *=0.0f;
-    }
   }
   mircube *=0.0f; wfsMesHistory *=0.0f;
 }

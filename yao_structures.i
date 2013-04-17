@@ -357,7 +357,7 @@ struct dm_struct
   string  iffile;         // Influence function file name. Leave it alone.
   long    pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
   float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
-  float   hyst;           // DM actuator hysteresis (0. to 1.). Optional [0]
+  float   hyst;           // DM actuator hysteresis (0. to 0.25). Optional [0]
   float   push4imat;      // Voltage to apply for imat calibration. Optional [20].
                           // Note: the default is not OK for many configs. Change at will.
   float   thresholdresp;  // Normalized response threshold for an act. to be valid. Optional [0.3]
@@ -424,9 +424,19 @@ struct dm_struct
   float   regparam;       // regularization parameter
   string  regtype;        // regulatization matrix generation method.
   pointer regmatrix;      // matrix used in the regularization
+
+  // Hysteresis variables
+  float _alpha(3);
+  float _beta(3);
+  float _w(3);
+  pointer _x0;
+  pointer _xlast;
+  pointer _ylast(3);
+  pointer _y0;
+  pointer _signus;
+  
   // Internal keywords:
   long    _puppixoffset(2);
-  float   _alt;           // Actual conjugation altitude in meter, from dm.alt and zen.
   long    _nact;          // Internal. Tot # of actuators.
   pointer _def;           // Internal: Pointer to IF data
   pointer _x;             // Internal: x position of actuator in pixels
@@ -443,12 +453,6 @@ struct dm_struct
   long    _n1;            // Internal: position of leftmost pixel in ao._size^2 array
   long    _n2;            // Internal: position of leftmost pixel in ao._size^2 array
   pointer _pupil;         // Internal. Mask for display.
-  pointer _vold;          // internal: hysteresis
-  pointer _posold;        // internal: hysteresis
-  pointer _chpos;         // internal: hysteresis
-  pointer _chv;           // internal: hysteresis
-  pointer _dir;           // internal: hysteresis
-  pointer _delta;         // internal: hysteresis
   pointer _command;       // pointer to command vector
   pointer _extrapcmat;    // extrapolation matrix: extrap_com = extrapmat(,+)*valid_com(+)
   int     _eltdefsize;    // size of def in case elt=1
