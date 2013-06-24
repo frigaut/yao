@@ -96,11 +96,11 @@ func init_fftw_wisdom(nlimit)
 {
   if (nlimit == []) nlimit=11;
   
-  wisdom_file = Y_USER+"/fftw_wisdom.dat";
+  wisdom_file = expand_path(Y_USER)+"fftw_wisdom_file.dat";
   if (open(wisdom_file,"r",1)) { //file exists
-    write,format="%s\n","fftw wisdow file already exist!";
+    write,format="%s\n","fftw wisdom file already exist!";
     write,format="%s\n","If you wish to re-run init_fftw_wisdom,";
-    write,format="%s\n","delete the existing fftw_wisdom.dat";
+    write,format="%s\n","delete the existing fftw_wisdom_file.dat";
   } else { //file does not exist
     _init_fftw_plans,int(nlimit);
     _export_wisdom,wisdom_file;

@@ -101,9 +101,10 @@ parse_yao_version,yao_version;
 
 // import fftw wisdom file:
 if (fftw_wisdom_file==[]) fftw_wisdom_file=Y_USER+"fftw_wisdom_file.dat";
-if (_import_wisdom(expand_path(fftw_wisdom_file))) \
-  write,format=" Warning: Can't read FFTW wisdom from %s\n", \
-                         expand_path(fftw_wisdom_file);
+if (_import_wisdom(expand_path(fftw_wisdom_file))){
+  write,format=" Warning: Can't read FFTW wisdom from %s\n",expand_path(fftw_wisdom_file);
+  write, "Run init_fftw_wisdom to create a new file";
+ }
 
 // All below is designed to be overwritten by appropriate values
 // in yaopy.i when using yao through the GUI
