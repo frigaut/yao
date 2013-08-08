@@ -53,18 +53,19 @@ func fit_lgs_profile(amp,alt,npt,&fitamp,&fitalt,&fitdepth)
 {
   alt = alt/1e3;
   delta = max(alt)-min(alt);
-  a = _(1,array(1.0,npt),span(min(alt)+0.3*delta,max(alt)-0.3*delta,npt));
-  r= lmfit(foo_lgs_profile,alt,a,amp,tol=1e-12);
+  a = _(1,array(1.0,npt),span(min(alt)+0.2*delta,max(alt)-0.2*delta,npt));
+  r= lmfit(foo_lgs_profile,alt,a,amp,tol=1e-14);
   if (sim.debug) {
     plot,amp,alt;
     plg,foo_lgs_profile(alt,a),alt,color="red";
+    limits,square=0;
     pltitle_vp,"LGS profile (fg) and fit (red)";
     xytitles_vp,"Altitude [km]","Na density [fraction total]",[0.010,0.015];
   }
   fitamp = abs(a(2:npt+1));
   fitalt = clip(a(npt+2:),min(alt),max(alt))*1e3;
   fitdepth = a(1)*2.35*1e3;
-  if (sim.verbose>1) {
+  if (sim.verbose>3) {
     write,"Na profile fit results:";
     write,format="Depth = %f\n",a(1)*2.35;
     write,format="%s: ","altitudes"; fitalt;
@@ -146,7 +147,7 @@ func comp_turb_lgs_kernel(ns,init=)
   if (init) {
 
     // first look up if this is not already an existing LLT:
-    if (ns>1) {
+    if ((ns>1)&&(sim.svipc==0)) {
       for (i=1;i<ns;i++) {
         // if (i==ns) continue;
         if (allof(wfs(ns).LLTxy==wfs(i).LLTxy)&&(wfs(ns).LLTr0==wfs(i).LLTr0)) {

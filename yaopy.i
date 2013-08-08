@@ -219,11 +219,12 @@ func set_aoinit_flags(disp,clean,forcemat,svd,keepdmconfig)
   aoinit_keepdmconfig=keepdmconfig;
 }
 
-func set_aoloop_flags(disp,savecb)
+func set_aoloop_flags(disp,savecb,reinit)
 {
-  extern aoloop_disp,aoloop_savecb;
+  extern aoloop_disp,aoloop_savecb,aoloop_no_reinit_wfs;
   aoloop_disp=disp;
   aoloop_savecb=savecb;
+  aoloop_no_reinit_wfs=reinit;
 }
 
 func set_loop_gain(gain)

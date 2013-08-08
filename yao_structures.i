@@ -141,6 +141,7 @@ struct opt_struct
                            // and path_which.
   float    alt;            // float. equivalent altitude in m.
   float    misreg(2);      // float vector. misreg. (similar to DM, see below)
+  float    scale;          // convenient to scale the aberration, default=1.0
   float    _cent;          // center of the phase maps arrays (similar to sim._cent)
 };
 

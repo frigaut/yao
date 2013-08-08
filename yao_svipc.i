@@ -673,9 +673,9 @@ func psf_listen(void)
 
     for (jl=1;jl<=target._nlambda;jl++) {
       for (jt=1;jt<=target._ntarget;jt++) {
-        cubphase(,,jt)  = getPhase2dFromDms(jt,"target") +    \
-          getPhase2dFromOptics(jt,"target") +                 \
-          get_turb_phase(loopCounter,jt,"target");
+        cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +    \
+                          get_phase2d_from_optics(jt,"target") + \
+                          get_turb_phase(loopCounter,jt,"target");
       }
       // compute image cube from phase cube
       err = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
@@ -801,27 +801,44 @@ func svipc_single_wfs(iter,ns)
   extern wfs;
 
   offsets = wfs(ns).gspos;
-  phase   = getPhase2dFromDms(ns,"wfs");
-  phase  += getPhase2dFromOptics(ns,"wfs");
+  phase   = get_phase2d_from_optics(ns,"wfs");
   phase  += get_turb_phase(iter,ns,"wfs");
-
-  if (wfs(ns).correctUpTT) {
-    phase = correctUpLinkTT(phase,ns);
+  if (loop.method != "open-loop") {
+    phase  += get_phase2d_from_dms(ns,"wfs");
   }
 
+  if (wfs(ns).correctUpTT) {
+    phase = correct_uplink_tt(phase,ns);
+  }
+
+  if (wfs(ns).LLT_uplink_turb) {
+    tmp = comp_turb_lgs_kernel(ns);
+    wfs(ns)._kernel = &float([(*wfs(ns)._kernel)(,,1),tmp]);
+    wfs(ns)._nkernels = 2;
+  } else wfs(ns)._nkernels = 1;
+
   // get the measurements:
-  if (wfs(ns).type == "curvature")       smes = curv_wfs(pupil,phase,ns);
-  else if (wfs(ns).type == "hartmann" )  smes = sh_wfs(ipupil,phase,ns);
-  else if (wfs(ns).type == "pyramid")    smes = pyramid_wfs(pupil,phase,ns);
-  else if (wfs(ns).type == "zernike")    smes = zernike_wfs(ipupil,phase,ns);
-  else if (wfs(ns).type == "dh")         smes = dh_wfs(ipupil,phase,ns);
-  // else if (wfs(ns).type == "kl")         smes = kl_wfs(ipupil,phase,ns);
-  else {
+  if (wfs(ns).type == "hartmann" ) {
+    if (wfs(ns).disjointpup) {
+      smes = sh_wfs(disjointpup(,,ns),phase,ns);
+    } else {
+      smes = sh_wfs(ipupil,phase,ns);
+    }
+  } else if (wfs(ns).type == "curvature") {
+    smes = curv_wfs(pupil,phase,ns);
+  } else if (wfs(ns).type == "pyramid") {
+    smes = pyramid_wfs(pupil,phase,ns);
+  } else if (wfs(ns).type == "zernike") {
+    smes = zernike_wfs(ipupil,phase,ns);
+  } else if (wfs(ns).type == "dh") {
+    smes = dh_wfs(ipupil,phase,ns);
+  } else {
     // assign user_wfs to requested function/type:
     cmd = swrite(format="user_wfs = %s",wfs(ns).type);
     include,[cmd],1;
     smes = user_wfs(ipupil,phase,ns);
   }
+
 
   // subtract the reference vector for this sensor:
   if (wfs(ns)._cyclecounter == 1) {

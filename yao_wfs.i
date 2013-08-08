@@ -1692,8 +1692,8 @@ func mult_wfs(iter,disp=)
     phase  += get_turb_phase(iter,ns,"wfs");
     // only look at DMs if not running in open loop
     if (loop.method != "open-loop") {
-        phase  += get_phase2d_from_dms(ns,"wfs");
-      }
+      phase  += get_phase2d_from_dms(ns,"wfs");
+    }
 
     if (wfs(ns).correctUpTT) {
       phase = correct_uplink_tt(phase,ns);

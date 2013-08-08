@@ -457,7 +457,7 @@ func check_parameters(void)
 
     if (wfs(ns).type == "pyramid") {
       if ((wfs(ns).pyr_mod_loc!="after") && (wfs(ns).pyr_mod_loc!="before")) {
-        write,format="wfs(%d).pyr_mod_loc is not set, setting to \"after\"",ns;
+        write,format="wfs(%d).pyr_mod_loc is not set, setting to \"after\"\n",ns;
       }
     }
 

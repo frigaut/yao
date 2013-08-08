@@ -1563,8 +1563,9 @@ func get_phase2d_from_optics(nn,type)
     for (no=1;no<=numberof(w);no++) {
       if (opt(w(no)).path_type=="common") continue;
       else { // necessarily, this is a "wfs" optics 
-        if (noneof(*opt(no).path_which==nn)) w(no)=-1;
+        if (noneof(*opt(w(no)).path_which==nn)) w(no)=-1;
       }
+      if (opt(w(no)).scale==0) w(no)=-1;
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
@@ -1577,9 +1578,10 @@ func get_phase2d_from_optics(nn,type)
     // now for each ok optics, check this target has not been excluded
     for (no=1;no<=numberof(w);no++) {
       if (opt(w(no)).path_type=="common") continue;
-      else { // necessarily, this is a "science" optics 
-        if (noneof(*opt(no).path_which==nn)) w(no)=-1;
+      else { // necessarily, this is a "target" optics 
+        if (noneof(*opt(w(no)).path_which==nn)) w(no)=-1;
       }
+      if (opt(w(no)).scale==0) w(no)=-1;
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
@@ -1588,7 +1590,7 @@ func get_phase2d_from_optics(nn,type)
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
-  thisphasemaps = optphasemaps(,,w);
+  thisphasemaps = optphasemaps(,,w)*opt(w).scale(-,-,);
 
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
@@ -1745,7 +1747,7 @@ func aoread(parfile)
 
   // INIT STRUCTURES:
   atm  = atm_struct();
-  opts  = opt_struct(path_type="common");
+  opts  = opt_struct(path_type="common",scale=1.0);
   sim  = sim_struct();
   wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1);
   dms  = dm_struct(gain=1.,coupling=0.2);
@@ -3335,6 +3337,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // basic initialization in case of svipc use:
   if (sim.svipc) require,"yao_svipc.i";
 
+  if (aoinit_user_func!=[]) status = aoinit_user_func();
 
   gui_message,"aoinit done: click on aoloop";
   notify,swrite(format="%s: aoinit done",parprefix);
@@ -3373,13 +3376,14 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   extern loopCounter, nshots, statsokvec;
   extern savecbFlag, dpiFlag, controlscreenFlag;
   extern dispFlag, nographinitFlag, animFlag;
-  extern aoloop_disp,aoloop_savecb;
+  extern aoloop_disp,aoloop_savecb,aoloop_no_reinit_wfs;
   extern commb,errmb; // minibuffers
   extern default_dpi;
   extern savephaseFlag;
 
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
+  if ((no_reinit_wfs==[])&&(aoloop_no_reinit_wfs!=[])) no_reinit_wfs=aoloop_no_reinit_wfs;
   if (anim==[]) anim=1; // let's make it the default
 
   dispFlag = disp;
@@ -3400,7 +3404,9 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
     dm(nm)._ylast =  &array(float,[2,dm(nm)._nact,3]);
     dm(nm)._signus = &array(long,dm(nm)._nact); 
   }
-  
+
+  if (aoloop_user_func!=[]) status = aoloop_user_func();
+
   // Initialize displays:
   if (!is_set(disp)) {disp = 0;}
   if (!is_set(controlscreen)) {controlscreen = 0;}
@@ -3473,6 +3479,9 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   // and might be unnecessary, so the user might want to skip it. Use
   // no_reinit_wfs=1 to do so.
   for (ns=1;ns<=nwfs;ns++) {
+    // zero fsm! got burn by this one!
+    wfs(ns)._tt *= 0;
+    wfs(ns)._upttcommand *= 0;
     // define _dispimage
     if (wfs(ns).type=="zernike") continue;
     if (wfs(ns).type=="dh") continue;
@@ -3619,6 +3628,8 @@ func go(nshot,all=)
   extern iter_per_sec;
 
   gui_show_statusbar1;
+
+  if (go_user_func!=[]) status = go_user_func();
 
   if (nshot!=[]) {
     if (animFlag&&dispFlag) {
@@ -3901,6 +3912,7 @@ func go(nshot,all=)
       } else {
         mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
       }
+      if ( (nm==1) && (add_dm0_shape!=[]) ) mircube(,,1) += add_dm0_shape;
       // extrapolated actuators:
       if ((dm(nm)._enact != 0) && (dm(nm).noextrap == 0)) {
         ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
@@ -3953,7 +3965,34 @@ func go(nshot,all=)
     residual_phase1d -= min(residual_phase1d);
     residual_phase(where(pupil > 0)) = residual_phase1d;
 
-    if (savephase){result=yao_fitswrite(YAO_SAVEPATH+"/"+parprefix+"_rwf"+swrite(loopCounter,format="%i")+".fits",float(residual_phase*pupil));}
+    if (savephase){
+      fname = swrite(format="%s/%s_rwf%d.fits",YAO_SAVEPATH,parprefix,loopCounter);
+      yao_fitswrite,fname,float(residual_phase*pupil);
+    }
+
+    if (residual_phase_zcontent) {
+      // project residual phase on zernike
+      // init zernikes:
+      extern rp_zerns,rp_nzerns,rp_w,rp_rms,rp_z;
+      if (rp_zerns==[]) {
+        if (!rp_nzerns) rp_nzerns = 45;
+        rp_zerns = array(float,[3,_n,_n,rp_nzerns]);
+        // I've done the zernike thingy in a very stupid way.
+        // it might have been used/initialized elsewhere and I can
+        // mess up this initialisation here. To avoid this, temporarily:
+        if (zrmod!=[]) error,"zernike have already been initialized, can't do!";
+        prepzernike,_n,sim.pupildiam;
+        for (nz=1;nz<=rp_nzerns;nz++) rp_zerns(,,nz) = zernike(nz);
+        rp_zerns = rp_zerns(*,)(where(pupil(_n1:_n2,_n1:_n2)),);
+        rp_zerns = QRsolve(transpose(rp_zerns),unit(rp_nzerns));
+        rp_w = where(pupil);
+      }
+      rp1d = residual_phase(rp_w);
+      rp_rms = rp1d(rms)*1000.; // in nm
+      rp_z = rp1d(+)*rp_zerns(+,)*1000.; // in nm
+    }
+
+
   }
 
   // Computes the instantaneous PSF:
@@ -3984,9 +4023,9 @@ func go(nshot,all=)
       // compute integrated phases and fill phase cube
       for (jl=1;jl<=target._nlambda;jl++) {
         for (jt=1;jt<=target._ntarget;jt++) {
-          cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") + \
-            get_phase2d_from_optics(jt,"target") +              \
-            get_turb_phase(i,jt,"target");
+          cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +    \
+                            get_phase2d_from_optics(jt,"target") + \
+                            get_turb_phase(i,jt,"target");
           // vibration already added to dm1
         }
         // compute image cube from phase cube
@@ -4070,15 +4109,33 @@ func go(nshot,all=)
     // Strehl plots
     if (anyof(itv)) {
       plsys,4;
-      plg,strehlsp,itv,marks=0;
-      plg,strehllp,itv,marks=0,color="red";
-      myxytitles,"",swrite(format="Strehl @ %.2f mic",        \
-                                     (*target.lambda)(0)),[0.005,-0.005],height=12;
-      range,0;
+      if (plot_rps) {
+        extern plot_rps_limit_done;
+        if (rp_z!=[]) {
+          plh,rp_z(2:),indgen(2:rp_nzerns);
+          myxytitles,"Z#","Z value [nm]",[0.005,0.008],height=12;
+          if (!plot_rps_limit_done) {
+            range,-600,600;
+            plot_rps_limit_done=1;
+          }
+        }
+      } else {
+        if (rolling_strehl_disp_length) {
+          ii = clip(numberof(itv)-rolling_strehl_disp_length/clip(loop.stats_every,1,),1,);
+        } else ii=1;
+        plg,strehlsp(ii:),itv(ii:),marks=0;
+        plg,strehllp(ii:),itv(ii:),marks=0,color="red";
+        myxytitles,"",swrite(format="Strehl @ %.2f mic",        \
+                                       (*target.lambda)(0)),[0.005,-0.005],height=12;
+        range,0.,1.;
+      }
     }
     // Display residual wavefront
     plsys,5;
     pli, (pupil*residual_phase)(n1:n2,n1:n2);
+    if (rp_rms!=[]) \
+      plt,swrite(format="rms=%dnm",long(rp_rms)),0.450,0.579,\
+      tosys=0,height=10,justify="LA";
     mypltitle,swrite(format="Residual wavefront on %s #%d",residual_phase_what,\
                      residual_phase_which),[0.,-0.0],height=12;
 
@@ -4161,6 +4218,8 @@ func go(nshot,all=)
     }
     return;
   }
+
+  if (user_end_go != []) status = user_end_go();  // execute user's routine if it exists.
 
   tic,2; endtime=_nowtime(2); endtime_str = gettime();
 //  if (loopCounter<loop.niter) after, 0.001, go;

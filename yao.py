@@ -88,7 +88,30 @@ class yao:
       dsy = int(650.*dpi/75)+25
       self.glade.get_widget('drawingarea1').set_size_request(dsx,dsy)
       # self.drawingarea_size_allocate(dpi)
-      
+
+      try:
+         with open('user1.py') as f:
+            sys.path.append('.')
+            from user1 import user1
+            self.py2yo('write \"user1.py found and included\"')
+            parent = self.glade.get_widget('user1_vbox')
+            self.user1 = user1(os.getcwd(),parent=parent,py2yo=self.py2yo)
+            self.glade.get_widget('user1_label').set_text(self.user1.label())
+      except IOError as e:
+         self.py2yo('write \"No user GUI (user1.py) found\"')
+
+      try:
+         with open('user2.py') as f:
+            sys.path.append('.')
+            from user2 import user2
+            self.py2yo('write \"user2.py found and included\"')
+            parent = self.glade.get_widget('user2_vbox')
+            self.user2 = user1(os.getcwd(),parent=parent,py2yo=self.py2yo)
+            self.glade.get_widget('user2_label').set_text(self.user2.label())
+      except IOError as e:
+         pass
+         # self.py2yo('write \"No user GUI (user2.py) found\"')
+
       # run
       gtk.main()
 
@@ -119,13 +142,13 @@ class yao:
          except:
             s = 0
          self.size = self.window.get_size()
-         self.glade.get_widget('wfs_and_dms').show()
+         self.glade.get_widget('notebook1').show()
          if (s):
             self.window.resize(s[0],s[1])
       else:
          s = self.size
          self.size = self.window.get_size()
-         self.glade.get_widget('wfs_and_dms').hide()
+         self.glade.get_widget('notebook1').hide()
          self.window.resize(s[0],s[1])
          
    def  on_create_phase_screens_activate(self,wdg):
@@ -332,7 +355,8 @@ class yao:
    def set_aoloop_flags(self):
       disp = self.glade.get_widget('aoloop_disp').get_active()
       savecb = self.glade.get_widget('aoloop_savecb').get_active()
-      self.py2yo('set_aoloop_flags %d %d' % (disp,savecb))
+      reinit = self.glade.get_widget('aoloop_no_reinit_wfs').get_active()
+      self.py2yo('set_aoloop_flags %d %d %d' % (disp,savecb,reinit))
    
    def on_aoloop_popup_button_clicked(self,wdg,event):
       if event.type == gtk.gdk.BUTTON_PRESS:

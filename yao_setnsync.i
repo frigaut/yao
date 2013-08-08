@@ -450,3 +450,32 @@ func child_sync_wfs(void)
   write,format="WFS structure sync'ed on child %s\n",svipc_procname;
 }
 
+
+func sync_opt(void)
+{
+  if (opt==[]) return;
+  if (!sim.svipc) return;
+
+  targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
+  grow,targets,all_svipc_procname(where(strmatch(all_svipc_procname,"PSFs")));
+  // save the opt structures
+  var = vsave(opt);
+  // write in shm
+  shm_free,shmkey,"opt_structs";
+  shm_write,shmkey,"opt_structs",&var;      
+  // broadcast message to children
+  broadcast_sync,targets,"child_sync_opt";
+}
+  
+func child_sync_opt(void)
+{
+  extern opt;
+
+  if (opt==[]) return;
+  if (!sim.svipc) return;
+  
+  var = shm_read(shmkey,"opt_structs");
+  restore,openb(var);
+  write,format="OPT structure sync'ed on child %s\n",svipc_procname;
+}
+
