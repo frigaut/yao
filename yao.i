@@ -3,7 +3,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2012, Francois Rigaut
+ * Copyright (c) 2002-2013, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.2.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2012dec19";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.3.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2013aug12";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 

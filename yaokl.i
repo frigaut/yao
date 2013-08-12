@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2012, Francois Rigaut
+ * Copyright (c) 2002-2013, Francois Rigaut
  * Copyright (c) 2006, Damien Gratadour
  *
  * This program is free software; you can redistribute it and/or  modify it

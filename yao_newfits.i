@@ -1,7 +1,7 @@
 /*
  * YAO_NEWFITS.I
  *
- * Copyright (c) 2002-2012, Francois Rigaut
+ * Copyright (c) 2002-2013, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the

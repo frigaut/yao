@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2012, Francois Rigaut
+ * Copyright (c) 2002-2013, Francois Rigaut
  * Original in MatLab: Norman Mark Milton (August 25, 2005)
  * Adapted to Yorick by Aurea Garcia Rissmann (May 23, 2010)
  *
