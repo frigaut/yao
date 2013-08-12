@@ -149,6 +149,12 @@ func comp_dm_shape(nm,command,extrap=)
       command = &com; // this way this does not go up in integrated commands
     }
 
+    if (dm(nm)._flat_command) {
+      com = *command;
+      com -= float(*dm(nm)._flat_command);
+      command = &com;
+    }
+
     if (dm(nm).elt == 1) { //use fast dm shape computation
       _dmsumelt, dm(nm)._def, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._nact),
         dm(nm)._i1, dm(nm)._j1, command, &sphase,nxy,nxy;
@@ -2253,7 +2259,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           include,[cmd],1;
           user_dm, n;
         }
-      
+      }
+      if (dm(n).ifunrot) {
+        for (i=1;i<=dm(n)._nact;i++) (*dm(n)._def)(,,i) = rotate2((*dm(n)._def)(,,i),dm(n).ifunrot);
+        
       }
       if (disp) { plsys,1; animate,0; }
 
@@ -2436,7 +2445,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           } else {          
             ok = where(tmp >  dm(nm).thresholdresp*max(tmp));
             nok= where(tmp <= dm(nm).thresholdresp*max(tmp));
+            if (numberof(nok)==0) nok=[];
           }
+          
+          dm(nm)._indval = &ok;
+          dm(nm)._indext = &nok;
          
           dm(nm)._x = &(dmx(ok));
           dm(nm)._y = &(dmy(ok));
@@ -4166,6 +4179,8 @@ func go(nshot,all=)
 
   // Prints out some results:
 
+  if (!go_quiet) {
+
   if (((looptime <= 2) && ((i % 500) == 1)) ||
       ((looptime > 2) && ((i % 20) == 1)) || (nshots>=0)) {
     if (numberof(*target.xposition)==1) {
@@ -4209,6 +4224,7 @@ func go(nshot,all=)
       gui_message,msg;
     }
   }
+  }
   time(8) += tac();
 
   if (nshots==0) {
@@ -4237,6 +4253,7 @@ func go(nshot,all=)
     after_loop;
     notify,swrite(format="%s: %d iterations completed",parprefix,loopCounter)
   }
+  maybe_prompt;
 }
 
 func reset(void,nmv=)
@@ -4245,7 +4262,7 @@ func reset(void,nmv=)
    SEE ALSO:
  */
 {
-  extern command,mircube,wfsMeshistory,dm,ndm;
+  extern command,mircube,wfsMesHistory,dm,ndm;
 
   if (nmv==[]) nmv=indgen(ndm);
 

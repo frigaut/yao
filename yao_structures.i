@@ -131,8 +131,8 @@ struct atm_struct
 struct opt_struct
 {
   string   phasemaps;      // filename of phasemap. Z scale should be in microns
-  string   path_type;           // "common", "wfs" or "target", self explanatory I assume.
-  pointer  path_which;      // pointer to vector containing index of affected objects in "path"
+  string   path_type;      // "common", "wfs" or "target", self explanatory I assume.
+  pointer  path_which;     // pointer to vector containing index of affected objects in "path"
                            // path_type="wfs" and path_which=&([1,3]) means only wfs1 and 3 see this optic
                            // obviously, this works only if path_type is either "wfs" or "target".
                            // if you want to apply the optic to some wfs *and* some target,
@@ -285,6 +285,8 @@ struct wfs_struct
   pointer _tiltrefv;      // internal: tilt reference meas. vector
   pointer _tiprefvn;      // internal: tip reference meas. vector. normalized (norm=1)
   pointer _tiltrefvn;     // internal: tilt reference meas. vector. normalized.
+  pointer _reordervec;    // To match with actual systems, one might want to re-order
+                          // at the lowest yao level. *wfs(n)._reorder contains a vector of indices
   int     _npixels;       // internal: final # of pixels in subaperture
   int     _npb;           // internal: number of pad pixel for extended field option (on each side)
   int     _sdim;          // dimension of simage in shwfs fast code
@@ -356,7 +358,7 @@ struct dm_struct
   long    virtual;        // virtual DMs for tomography, don't correct wavefront
   pointer dmfit_which;    // which tomographic virtual DMs are used to drive this DM
   string  iffile;         // Influence function file name. Leave it alone.
-  long    pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
+  float   pitch;          // Actuator pitch (pixel). stackarray/segmented only. Required [none]
   float   alt;            // Conjugation altitude in meter. Specified @ zenith! Optional [0]
   float   hyst;           // DM actuator hysteresis (0. to 0.25). Optional [0]
   float   push4imat;      // Voltage to apply for imat calibration. Optional [20].
@@ -380,6 +382,7 @@ struct dm_struct
   string  ncpfit_type;    // whether to fit to a wfs or target to non-common path
   long    ncpfit_which;   // which target or wfs to fit to for non-common path
   long    use_def_of;     // don't compute defs but use the one computed for dm# use_def_of
+  float   ifunrot;        // rotation of influence functions (degrees)
   
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
@@ -446,6 +449,8 @@ struct dm_struct
   pointer _j1;            //
   pointer _ei1;           //
   pointer _ej1;           //
+  pointer _indval;        // indices of valid actuators in pre-filtered DM vector
+  pointer _indext;        // indices of extrapolated actuators in pre-filtered DM vector
   string  _eiffile;       // Influence function file name for extrap. actuators
   pointer _edef;          // Internal: Pointer to IF data for extrap. actuators
   pointer _ex;            // Internal: x position of extrap. actuator in pixels
@@ -455,6 +460,7 @@ struct dm_struct
   long    _n2;            // Internal: position of leftmost pixel in ao._size^2 array
   pointer _pupil;         // Internal. Mask for display.
   pointer _command;       // pointer to command vector
+  pointer _flat_command;  // pointer to command vector
   pointer _extrapcmat;    // extrapolation matrix: extrap_com = extrapmat(,+)*valid_com(+)
   int     _eltdefsize;    // size of def in case elt=1
   pointer _regmatrix;     // regularization matrix used, if any

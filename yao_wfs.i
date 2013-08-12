@@ -1046,6 +1046,8 @@ func sh_wfs(pupsh,phase,ns)
 
   if (stop_at==45) hitReturn;
 
+  if (*wfs(ns)._reordervec!=[]) mesvec2 = mesvec2(*wfs(ns)._reordervec);
+
   // return measurement vector in arcsec (thanks to centroiw):
   return mesvec2;
 }
@@ -1120,6 +1122,8 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
                float(wfs(ns).ron), float(wfs(ns).darkcurrent*loop.ittime),
                int(wfs(ns).noise), mesvec);
 
+  if (*wfs(ns)._reordervec!=[]) mesvec = mesvec(*wfs(ns)._reordervec);
+  
   return mesvec;
 }
 
@@ -1495,7 +1499,11 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/denom;
   sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/denom;
 
-  return _(sigx,sigy);
+  mesvec = _(sigx,sigy);
+
+  if (*wfs(ns)._reordervec!=[]) mesvec = mesvec(*wfs(ns)._reordervec);
+
+  return mesvec;
 }
 
 
@@ -1549,11 +1557,14 @@ func zernike_wfs(pupsh,phase,ns,init=)
 
   wfs(ns)._fimage = wfs(ns)._dispimage = \
           &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
-  mes = wfs_zer(,+)*phase(*)(wfs_wzer)(+);
+  
+  mesvec = wfs_zer(,+)*phase(*)(wfs_wzer)(+);
 
   // returns microns rms (checked 2008apr10) ??? see above comment
 
-  return mes;
+  if (*wfs(ns)._reordervec!=[]) mesvec = mesvec(*wfs(ns)._reordervec);
+
+  return mesvec;
 }
 
 
@@ -1603,10 +1614,14 @@ func dh_wfs(pupsh,phase,ns,init=)
   wfs(ns)._fimage = wfs(ns)._dispimage = &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
   mes = (*wfs(ns)._pha2dhc)(,+)*phase(*)(*wfs(ns)._wpha2dhc)(+);
 
-  if (wfs(ns).ndhfiltered) mes(1:wfs(ns).ndhfiltered) *=0; // shouldn't it be ndhf + 1?
+  mesvec = (*wfs(ns)._pha2dhc)(,+)*phase(*)(*wfs(ns)._wpha2dhc)(+);
+
+  if (wfs(ns).ndhfiltered) mesvec(1:wfs(ns).ndhfiltered) *=0; // shouldn't it be ndhf + 1?
+
+  if (*wfs(ns)._reordervec!=[]) mesvec = mesvec(*wfs(ns)._reordervec);
 
   // returns microns rms (checked 2008apr10)
-  return mes;
+  return mesvec;
 }
 
 

@@ -282,7 +282,7 @@ func check_parameters(void)
  */
 {
   extern sim,atm,wfs,dm,mat,tel,target,gs,loop;
-  write,format="Checking parameters ... %s\n","";
+  if (sim.verbose) write,format="Checking parameters ... %s\n","";
 
   //==================================================================
   // BASIC EXISTENCE AND CONSISTENCY CHECKINGS AND DEFAULT ASSIGNMENTS
@@ -754,7 +754,7 @@ func check_parameters(void)
     }
   }
 
-  write,format="%s\n","Check parameters: OK";
+  if (sim.verbose) write,format="%s\n","Check parameters: OK";
 }
 //----------------------------------------------------
 func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)

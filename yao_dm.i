@@ -75,7 +75,7 @@ func make_pzt_dm(nm,&def,disp=)
   cub(,,1) = xy(,,1); cub(,,2) = xy(,,2);
 
   if (dm(nm).xflip) cub(,,1) = cub(::-1,,1);
-  if (dm(nm).yflip) cub(,,2) = cub(,::-1,1);
+  if (dm(nm).yflip) cub(,,2) = cub(,::-1,2);
 
   dis      = sqrt(cub(,,1)^2.+cub(,,2)^2.);
   if (dm(nm).pitchMargin == 0) {
@@ -262,7 +262,7 @@ func make_pzt_dm_elt(nm,&def,disp=)
   // fill cub (X coord  and Y coord):
   cub(,,1) = xy(,,1); cub(,,2) = xy(,,2);
   if (dm(nm).xflip) cub(,,1) = cub(::-1,,1);
-  if (dm(nm).yflip) cub(,,1) = cub(,::-1,1);
+  if (dm(nm).yflip) cub(,,2) = cub(,::-1,2);
 
   // the following determine if an actuator is to be considered or not
   // relative to the pitchmargin parameter.
