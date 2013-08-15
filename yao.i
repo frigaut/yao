@@ -3409,6 +3409,41 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   gui_message,"Initializing loop";
 
+  // first, convert the controllers into what is implemented
+  gainho = *loop.gainho;
+  leakho = *loop.leakho;
+  for (nm=1;nm<=ndm;nm++){
+    ctrlnum = *dm(nm).ctrlnum;
+    ctrlden = *dm(nm).ctrlden;
+
+    if (numberof(ctrlnum) > 10){
+      write, format = "dm(%d).ctrlnum must have 10 or fewer values \n",nm;
+      exit;
+    }
+
+    if (numberof(ctrlden) > 10){
+      write, format = "dm(%d).ctrlden must have 10 or fewer values \n",nm;
+      exit;
+    }
+
+    if ((ctrlnum != []) && (ctrlden != [])){
+      // ctrlnum and ctrlden are defined
+     if (sim.verbose){write, format = "Using dm.ctrlden and dm.ctrlnum for DM %d \n",nm;}
+    } else {
+      ctrlnum = [loop.gain*dm(nm).gain];
+      if (gainho != []){
+        grow, ctrlnum, dm(nm).gain*gainho;
+      }
+      
+      ctrlden = [1,-1+loop.leak];      
+      if (leakho != []){
+        grow, ctrlden, -1+leakho;
+      }
+    }
+    dm(nm)._ctrlnum = &(ctrlnum);
+    dm(nm)._ctrlden = &(ctrlden); 
+  }
+  
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._x0 = &array(float,dm(nm)._nact);
@@ -3838,39 +3873,35 @@ func go(nshot,all=)
 
   // Computes the mirror shape using influence functions:
   for (nm=1; nm<=ndm; nm++) {
-
+    
     if (dm(nm).type == "aniso") {
       grow,comvec,*dm(nm)._command;
       continue;
     }
-
+    
     n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
-
+    
     if (*dm(nm).dmfit_which == []){ // not a tomographic DM
-    // this DM error:
-    dmerr = err(indexDm(1,nm):indexDm(2,nm));
+      // update the command vector for this DM:
+      // this DM error:
+      ctrlden = *dm(nm)._ctrlden;      
+      ctrlnum = *dm(nm)._ctrlnum;
 
-    // update the command vector for this DM:
-    // CONTROL LAW
-    // leak term:
-    *dm(nm)._command *= (1-loop.leak(1));
-    // integrator
-    *dm(nm)._command -= loop.gain * dm(nm).gain * dmerr;
+      command = *dm(nm)._command*(-ctrlden(2));
+      for (order=3;order<=numberof(ctrlden);order++){
+        imb = (i-order+1)%10;
+        command -= commb(indexDm(1,nm):indexDm(2,nm),imb)*ctrlden(order);
+      }
 
-    // higher order (up to 9!):
-    maxorder = clip(numberof(*loop.gainho)+1,,10);
-    for (order=2;order<=maxorder;order++) {
-      // deal with first iterations:
-      if ((i-order)<=0) break;
-      // which element should we fetch in mini buffer?
-      imb = (i-order)%10;
-      // leak term of orderth order
-      *dm(nm)._command += \
-          (1-(*loop.leakho)(order-1)) * commb(indexDm(1,nm):indexDm(2,nm),imb);
-      // integrator term of orderth order
-      *dm(nm)._command -= \
-        (*loop.gainho)(order-1) * dm(nm).gain * errmb(indexDm(1,nm):indexDm(2,nm),imb);
-    }
+      dmerr = err(indexDm(1,nm):indexDm(2,nm));
+      command -= dmerr*ctrlnum(1);
+      for (order=2;order<=numberof(ctrlnum);order++){
+        imb = (i-order+1)%10;
+        command -=errmb(indexDm(1,nm):indexDm(2,nm),imb)*ctrlnum(order);
+      }
+      
+      *dm(nm)._command = command;
+            
     } else { // tomographic DM; DM commands from virtual DMs
       virtualDMs = int(*dm(nm).dmfit_which);
       virtualdmcommand = [];

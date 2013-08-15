@@ -368,6 +368,14 @@ struct dm_struct
                           // Stackarray: mic/volt, Tip-tilt: arcsec/volt.
   float   maxvolt;        // Saturation voltage (- and +) in volt. Optional [none if not set]
   float   gain;           // loop gain for this DM (total = this x loop.gain). Optional [1]
+  // alternatively, use numerator AND denominator to specify the controller
+  // an integral controller with a loop gain of 0.5 and a leak of 0.01 is
+  // numerator = &([0.5]); denominator = ([1.,-0.99]);
+  pointer ctrlnum;       // control law numerator, [z^0, z^-1, ...]
+  pointer ctrlden;       // control law denominator, [z^0, z^-1, ...]
+  pointer _ctrlnum;      // where to store the used values
+  pointer _ctrlden;      // where to store the used values
+
   float   misreg(2);      // dm misregistration (pixels). optional [0,0]
   long    xflip;          // flip influence functions left/right
   long    yflip;          // flip influence functions up/down
@@ -541,6 +549,7 @@ struct loop_struct
   float   leak;            // leak term (0 means no leak) [0]
   pointer gainho;          // vector of higher order gains (starting at 2nd order)
   pointer leakho;          // vector of higher order leaks (starting at 2nd order)
+
   long    framedelay;      // loop delay (# of frames). Optional [0]
                            // Regular CCD 1 frame integration -> framedelay=1
                            // + readout & Calculation -> framedelay=2
