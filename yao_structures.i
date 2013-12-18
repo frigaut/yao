@@ -383,6 +383,7 @@ struct dm_struct
   long    ncpfit_which;   // which target or wfs to fit to for non-common path
   long    use_def_of;     // don't compute defs but use the one computed for dm# use_def_of
   float   ifunrot;        // rotation of influence functions (degrees)
+  float   xscale;        // rotation of influence functions (degrees)
   
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]

@@ -2260,10 +2260,18 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           user_dm, n;
         }
       }
+
       if (dm(n).ifunrot) {
         for (i=1;i<=dm(n)._nact;i++) (*dm(n)._def)(,,i) = rotate2((*dm(n)._def)(,,i),dm(n).ifunrot);
-        
       }
+
+      if (dm(n).xscale) {
+        dd = dimsof(*dm(n)._def)(2);
+        xx = yy = indgen(dd);
+        xx = (xx-dd/2.)*(1.+dm(n).xscale)+dd/2.;
+        for (i=1;i<=dm(n)._nact;i++) (*dm(n)._def)(,,i) = bilinear((*dm(n)._def)(,,i),xx,yy,grid=1);
+      }
+
       if (disp) { plsys,1; animate,0; }
 
       // the IF are in microns/volt
