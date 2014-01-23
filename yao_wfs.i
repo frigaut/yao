@@ -1393,21 +1393,23 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     }
   }
 
-  // spatial filtering by the pixel extent:
-  // *2/2 intended. min should be 0.40 = sinc(0.5)^2.
-  xy2 = xy/(pyr_npix-1)*2/2;
-  // sinc usual issue: sinc is defined both in yeti and yutils, but not
-  // with the same def. yeti defines sinc(1.)=0., while yutils defines
-  // sinc(pi)=0. Use yutils definition.
-  //~ require,"util_fr.i";
-  //~ sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
-  // above: that's bad. require does not necessarily do it if it has
-  // already been included. Instead, do:
-  extern __sincar;
-  if (__sincar==[]) {
-    include,"util_fr.i",1;
+  if (aoinit){
+    // spatial filtering by the pixel extent:
+    // *2/2 intended. min should be 0.40 = sinc(0.5)^2.
+    xy2 = xy/(pyr_npix-1)*2/2;
+    // sinc usual issue: sinc is defined both in yeti and yutils, but not
+    // with the same def. yeti defines sinc(1.)=0., while yutils defines
+    // sinc(pi)=0. Use yutils definition.
+    //~ require,"util_fr.i";
+    //~ sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
+    // above: that's bad. require does not necessarily do it if it has
+    // already been included. Instead, do:
+    
+    include,"util_fr.i",1;  
+    extern __sincar;
     __sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
   }
+
   if (pyr_disp) { plsys,4; pli,__sincar; limits; limits,square=1;}
 
   // perform the actual spatial filtering:
