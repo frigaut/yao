@@ -76,6 +76,7 @@ func make_pzt_dm(nm,&def,disp=)
 
   if (dm(nm).xflip) cub(,,1) = cub(::-1,,1);
   if (dm(nm).yflip) cub(,,2) = cub(,::-1,2);
+  // check on 2014feb07 that coordinates are updated too (somehow).
 
   dis      = sqrt(cub(,,1)^2.+cub(,,2)^2.);
   if (dm(nm).pitchMargin == 0) {

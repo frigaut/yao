@@ -869,51 +869,57 @@ func apod(length,degree)
 //---------------------------------------------------------
 
 func psd(s, length, step=, filter=, samp=, db=,noplot=,overplot=,
-         sqroot=,roddier=,xtitre=,ytitre=,silent=)
+         sqroot=,roddier=,xtitre=,ytitre=,silent=,color=,type=,hist=)
 /* DOCUMENT psd(s, length, step=, filter=, samp=, db=,noplot=,overplot=,
  *    sqrt=,roddier=,xtitre=,ytitre=)
  * Procedure PSD : Compute the Power Spectral Density of a vector
- * s	      : variable on which the PSD has to be computed
- * length   : length of the subsample for FFTs
- * step	    = shift in pixels between subsamples
- * filter   = apodization function as in apod.pro (usually 6)
- * samp	    = sampling time
- * db       = plots in dB :10*alog10(dsp)
- * noplot   = do not plot
- * overplot = over plot
- * sqroot   = returns the sqrt of the dsp
- * roddier  = plots the psd roddier style
- * xtitre   = X axis title
- * ytitre   = Y axis title
- * silent   = be quiet
+ * s       = variable on which the PSD has to be computed
+ * length  = length of the subsample for FFTs
+ * step    = shift in pixels between subsamples
+ * filter  = apodization function as in apod.pro (usually 6)
+ * samp    = sampling time
+ * db      = plots in dB :10*alog10(dsp)
+ * noplot  = do not plot
+ * overplot= over plot
+ * sqroot  = returns the sqrt of the dsp
+ * roddier = plots the psd roddier style
  * SEE ALSO:
  */
 {
   extern psdnumberofoverplots;
-  
-  if (is_void(s)) error,"No data";
-  if (is_void(step)) { step = length/2; } 
+  if (is_void(s)) {
+    write,"psd,data,fftlength,step=,filter=,samp=,db=,noplot=,overplot=,sqrt=,roddier=,xtitre=,ytitre=,silent=";
+    return;
+  }
+  if (is_void(step)) { step = length/2; }
   if (is_void(filter)) { filter = 0; }
   if (is_void(samp)) { samp = 1; }
   if (is_void(noplot)) { noplot = 0; }
-  if (is_void(xtitre)) { xtitre	= "Frequency"; }
+  if (is_void(xtitre)) { xtitre = "Frequency"; }
   if (is_void(ytitre)) { ytitre = ""; }
-  if (is_set(roddier)) { ytitre = ytitre+"[freq * PSD]"; } else { ytitle = ytitre+"[PSD]"; }
+  if (is_set(roddier)) { ytitre = ytitre+"[freq * PSD]";} else {ytitle = ytitre+"[PSD]"; }
 
-  if (length > numberof(s)) error,"length > number of element in vector!!!";
+  if (length > numberof(s)) {
+    error,"length > number of element in vector!!!";
+  }
 
-  if (!is_set(silent)) write,format="Stdev of input PSD vector : %f\n",s(rms);
+  if (!is_set(silent)) {
+    print,"Stdev of input PSD vector (in psd.i) : ",s(rms);
+  }
 
   nb = long((numberof(s) - length)/step)+1;
 
   if (!is_set(silent)) {
-    write,format="Averaging %2d sample of length %5d shifted by %5d\n",
+    write,format="Averaging %2d sample of length %5d shifted by %5d\n", \
               nb,length,step;
   }
 
   dsp  = array(double,length);
-  if (filter == -1) fil = array(1.,length); \
-  else fil  = apod(length,filter);
+  if (filter == -1) {
+    fil = array(1.,length);
+  } else {
+    fil = apod(length,filter);
+  }
   fn   = sum(abs(fft(fil,1))^2.)/length^2.;
 
   for (i=0;i<=nb-1;i++) {
@@ -922,41 +928,46 @@ func psd(s, length, step=, filter=, samp=, db=,noplot=,overplot=,
     dsp  = dsp + abs(fft(tmp*fil,1))^2./length/fn;
   }
 
-  dsp	= dsp/nb;
-  dsp	= dsp(1:length/2);
+  dsp = dsp/nb;
+  dsp = dsp(1:length/2);
 
-  f	= (indgen(length/2)-1.)/samp/2./(length/2-1.);
-  f	= (indgen(length/2)-1.)/samp/2./(length/2);
+  f = (indgen(length/2)-1.)/samp/2./(length/2-1.);
+  f = (indgen(length/2)-1.)/samp/2./(length/2);
 
-  if (!is_set(silent)) write,format="Freq. Max = %8.6e\n",max(f);
+  if (!is_set(silent)) {
+    write,format="Freq. Max = %8.6e\n",max(f);
+  }
 
-  dsp	= dsp*2.;                        // x2 because negative part omitted
-  dsp	= dsp/length*(length/2./max(f)); // to get in unit^2/Hz
+  dsp = dsp*2.; // _x2 because negative part omitted
+  dsp = dsp/length*(length/2./max(f)); // to get in unit^2/Hz
 
-  if (!is_void(sqroot)) dsp = sqrt(dsp);
+  if (!is_void(sqroot)) { dsp = sqrt(dsp); }
 
-  if (db)      dsp = 10.*log10(dsp); \
-  else if (roddier) dsp = f*dsp;
+  if (db) dsp = 10.*log10(dsp);
+  if (roddier) dsp = f*dsp;
 
   if (!noplot) {
-
     if (!overplot) {
-      fma;
-      plg,dsp(2:),f(2:);
+      if (hist) plh,dsp(2:),f(2:),color=color,type=type;
+      else plg,dsp(2:),f(2:),color=color,type=type;
       psdnumberofoverplots=0;
     }
-      
+
     if (overplot) {
       psdnumberofoverplots++;
-      cols = ["red","blue","green","magenta","yellow"];
-      plg,dsp(2:),f(2:),color=cols(psdnumberofoverplots);
-    }  
+      cols = ["red","blue","green","magenta"];
+      if (hist) {
+        plh,dsp(2:),f(2:),color=cols(psdnumberofoverplots),color=color,type=type;
+      } else {
+        plg,dsp(2:),f(2:),color=cols(psdnumberofoverplots),color=color,type=type;
+      }
+    }
     myxytitles,xtitre,ytitre;
 
     limits;
-    if (roddier) logxy,1,0;
-    else if (db) logxy,1,0;
-    else logxy,1,1;
+    if (roddier) { logxy,1,0; }
+    else if (db) { logxy,1,0; }
+    else { logxy,1,1; }
   }
 
   return [f,dsp];

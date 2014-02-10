@@ -813,6 +813,12 @@ func prep_svd(imat,subsystem,svd=,disp=)
 }
 
 //----------------------------------------------------
+// func svdmodes_variance(void)
+// {
+//   prepzernike,sim._size,sim.pupildiam,sim._size/2.+0.5,sim._size/2.+0.5; 
+//   fma; pli,zernike(1)+ipupil
+// }
+//----------------------------------------------------
 
 func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
 /* DOCUMENT build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
@@ -857,6 +863,8 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
   mev   = array(float,neigen,neigen);
 
   mask = ((eigenvalues/max(eigenvalues)) > (1./condition));
+
+  if (numberof(ev_user_mask)==numberof(mask)) mask = (mask|ev_user_mask);
 
   if (is_set(nomodalgain)) {
     ev = eigenvalues;
@@ -2262,7 +2270,18 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       if (dm(n).ifunrot) {
-        for (i=1;i<=dm(n)._nact;i++) (*dm(n)._def)(,,i) = rotate2((*dm(n)._def)(,,i),dm(n).ifunrot);
+        hxy = dimsof(*dm(n)._def)(2)/2.+0.5;
+        for (i=1;i<=dm(n)._nact;i++) {
+          (*dm(n)._def)(,,i) = rotate2((*dm(n)._def)(,,i),dm(n).ifunrot,xc=hxy,yc=hxy);
+        }
+        xy = (*dm(n)._x)(,-);
+        grow,xy,(*dm(n)._y)(,-);
+        xy -= sim._cent;
+        xy = transpose(xy);
+        xy = mrot(dm(n).ifunrot)(+,) * xy(+,);
+        xy += sim._cent;
+        (*dm(n)._x) = xy(1,);
+        (*dm(n)._y) = xy(2,);
       }
 
       if (dm(n).xscale) {
@@ -2385,8 +2404,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
 
-
-    do_imat,disp=disp;
+    if (use_user_imat) iMat = user_imat;
+    else do_imat,disp=disp;
 
     // select valid actuators by their response, only if
     // 1. at least one of the DM is a stackarray (otherwise it does not make sense)
