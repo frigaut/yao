@@ -108,7 +108,17 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
     f0 = 1./l0;
     c = (24./5.*gamma(6/5.))^(5/6.);
     r = float(indgen(off(2)));
-    theo = sqrt(2*c*gamma(11./6.)/(2^(5./6)*pi^(8./3))*(f0)^(-5./3)*(gamma(5./6.)/2^(1./6.) - (2*pi*r*f0)^(5./6.)*gsl_sf_bessel_Knu(5./6., 2*pi*r*f0)));
+
+    include, "gsl.i", 3; // loads the Bessel functions, but does not crash if function does not exist
+    if (gsl_sf_bessel_Knu == []){ // function does not exist, use an approximation
+      write, "*** WARNING: gsl_sf_bessel_Knu is not defined ***";
+      write, "Normalization might be wrong with finite outer scale";
+      write, "Please install gsl (https://github.com/emmt/ygsl)";
+      write, "*************************************************";
+      theo = psfunc; // do not renormalize
+    } else { // bessel function is defined
+      theo = sqrt(2*c*gamma(11./6.)/(2^(5./6)*pi^(8./3))*(f0)^(-5./3)*(gamma(5./6.)/2^(1./6.) - (2*pi*r*f0)^(5./6.)*gsl_sf_bessel_Knu(5./6., 2*pi*r*f0)));
+    }
   }
   nfact = avg(psfunc(off(1):off(2))/theo(off(1):off(2)));
   if (!silent) write,format="normalization factor (actual/theo)= %f\n",
