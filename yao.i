@@ -1703,6 +1703,49 @@ func split_dm_vector(v)
 }
 
 //----------------------------------------------------
+func check_control_parameters(void){
+/* DOCUMENT check_control_parameters(void)
+   Check the control parameters and update them
+   SEE ALSO: 
+ */
+  
+// first, convert the controllers into what is implemented
+  gainho = *loop.gainho;
+  leakho = *loop.leakho;
+  for (nm=1;nm<=ndm;nm++){
+    ctrlnum = *dm(nm).ctrlnum;
+    ctrlden = *dm(nm).ctrlden;
+
+    if (numberof(ctrlnum) > 10){
+      write, format = "dm(%d).ctrlnum must have 10 or fewer values \n",nm;
+      exit;
+    }
+
+    if (numberof(ctrlden) > 10){
+      write, format = "dm(%d).ctrlden must have 10 or fewer values \n",nm;
+      exit;
+    }
+
+    if ((ctrlnum != []) && (ctrlden != [])){
+      // ctrlnum and ctrlden are defined
+     if (sim.verbose){write, format = "Using dm.ctrlden and dm.ctrlnum for DM %d \n",nm;}
+    } else {
+      ctrlnum = [loop.gain*dm(nm).gain];
+      if (gainho != []){
+        grow, ctrlnum, dm(nm).gain*gainho;
+      }
+      
+      ctrlden = [1,-1+loop.leak];      
+      if (leakho != []){
+        grow, ctrlden, -1+leakho;
+      }
+    }
+    dm(nm)._ctrlnum = &(ctrlnum);
+    dm(nm)._ctrlden = &(ctrlden);
+  }
+}
+
+//----------------------------------------------------
 func aoall(parfile,disp=,dpi=,clean=,controlscreen=)
 /* DOCUMENT aoall(parfile,disp=,dpi=,clean=,controlscreen=)
    Shorthand for aoread, aoinit, aoloop and go
@@ -1819,6 +1862,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   extern aoinit_disp,aoinit_clean,aoinit_forcemat;
   extern aoinit_svd,aoinit_keepdmconfig;
   extern tipvib, tiltvib;
+  extern segmenttiptiltvib,segmentpistonvib;
   extern default_dpi;
 
   disp = ( (disp==[])? (aoinit_disp==[]? 0:aoinit_disp):disp );
@@ -3436,41 +3480,8 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   gui_message,"Initializing loop";
 
-  // first, convert the controllers into what is implemented
-  gainho = *loop.gainho;
-  leakho = *loop.leakho;
-  for (nm=1;nm<=ndm;nm++){
-    ctrlnum = *dm(nm).ctrlnum;
-    ctrlden = *dm(nm).ctrlden;
-
-    if (numberof(ctrlnum) > 10){
-      write, format = "dm(%d).ctrlnum must have 10 or fewer values \n",nm;
-      exit;
-    }
-
-    if (numberof(ctrlden) > 10){
-      write, format = "dm(%d).ctrlden must have 10 or fewer values \n",nm;
-      exit;
-    }
-
-    if ((ctrlnum != []) && (ctrlden != [])){
-      // ctrlnum and ctrlden are defined
-     if (sim.verbose){write, format = "Using dm.ctrlden and dm.ctrlnum for DM %d \n",nm;}
-    } else {
-      ctrlnum = [loop.gain*dm(nm).gain];
-      if (gainho != []){
-        grow, ctrlnum, dm(nm).gain*gainho;
-      }
-      
-      ctrlden = [1,-1+loop.leak];      
-      if (leakho != []){
-        grow, ctrlden, -1+leakho;
-      }
-    }
-    dm(nm)._ctrlnum = &(ctrlnum);
-    dm(nm)._ctrlden = &(ctrlden); 
-  }
-  
+  check_control_parameters; // update the control laws
+   
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._x0 = &array(float,dm(nm)._nact);
@@ -3753,6 +3764,8 @@ func go(nshot,all=)
 
   prevOK  = ok;
 
+  check_control_parameters; // update the control laws
+    
   //==========================
   // DITHERING
   // act on wfs._upttcommand
@@ -4013,6 +4026,18 @@ func go(nshot,all=)
     mircube(,,nmvib) += tiltvib(i)*tilt1arcsec;
   }
 
+  if (segmenttiptiltvib!=[]) { // add tiptilt vibrations on a segment by segment basis, designed primarily for GMT but could be used for any telescope
+    // if there is a TTM, add it there
+    if (anyof(dm.type=="tiptilt")) nmvib=where(dm.type=="tiptilt")(1);
+    else nmvib=1; // otherwise put it to 1.
+    mircube(,,nmvib) += make_segment_tiptilt(segmenttiptiltvib(,i));
+  }
+
+  if (segmentpistonvib!=[]) { // add piston vibrations on a segment by segment basis, designed primarily for GMT but could be used for any telescope
+    nmvib=1; 
+    mircube(,,nmvib) += make_segment_piston(segmentpistonvib(,i));
+  }
+  
   time(5) += tac();
 
   ok = ok*((i % loop.stats_every) == 0); // accumulate stats only every 4 iter.

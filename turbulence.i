@@ -113,7 +113,7 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
     if (gsl_sf_bessel_Knu == []){ // function does not exist, use an approximation
       write, "*** WARNING: gsl_sf_bessel_Knu is not defined ***";
       write, "Normalization might be wrong with finite outer scale";
-      write, "Please install gsl (https://github.com/emmt/ygsl)";
+      write, "Please install ygsl (https://github.com/emmt/ygsl)";
       write, "*************************************************";
       theo = psfunc; // do not renormalize
     } else { // bessel function is defined
