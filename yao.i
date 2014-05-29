@@ -3580,6 +3580,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       } else if (wfs(ns).type == "curvature") {
         curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
       }
+    } else { // even if no_reinit asked, we need to do at least
+      // the following as it may have been left in an imat state.
+      if (wfs(ns).type == "hartmann") \
+        shwfs_init_common_kernel,ns,imat=0;
     }
   }
 
