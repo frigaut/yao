@@ -4469,6 +4469,7 @@ func after_loop(void)
 
 
   psize  = (float(sim.pupildiam)/sim._size)*(*target.lambda)/tel.diam/4.848e-3;
+  write,format="\nPixel size in images (e.g. imav) = %.1f mas/pixel\n",psize;
 
   write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {

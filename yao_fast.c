@@ -33,7 +33,8 @@
 
 #include "play.h"  // for p_wall_secs() and p_cpu_secs()
 
-#define FFTWOPTMODE FFTW_EXHAUSTIVE
+//#define FFTWOPTMODE FFTW_ESTIMATE
+#define FFTWOPTMODE FFTW_MEASURE
 // use FFTW_PATIENT for thread optimization (see below):
 //#define FFTWOPTMODE FFTW_PATIENT
 
@@ -156,17 +157,14 @@ int _init_fftw_plans(int nlimit)
   int n, size;
   fftwf_complex *inf,*outf;
   fftwf_plan p1, p2;
-  int plan_mode;
-
-  plan_mode = FFTWOPTMODE;
 
   size=1;
   for (n=0;n<nlimit+1;n++) {
     printf("Optimizing 2D FFT - size = %d\n",size);
     inf  = fftwf_malloc(size*size*sizeof(fftwf_complex));
     outf = fftwf_malloc(size*size*sizeof(fftwf_complex));
-    p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
-    p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
+    p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, FFTWOPTMODE);
+    p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, FFTWOPTMODE);
     fftwf_destroy_plan(p1);
     fftwf_destroy_plan(p2);
     fftwf_free(inf);
@@ -180,8 +178,8 @@ int _init_fftw_plans(int nlimit)
     printf("Optimizing 1D FFT - size = %d\n",size);
     inf  = fftwf_malloc(size*sizeof(fftwf_complex));
     outf = fftwf_malloc(size*sizeof(fftwf_complex));
-    p1 = fftwf_plan_dft_1d(size, inf, outf, FFTW_FORWARD, plan_mode);
-    p2 = fftwf_plan_dft_1d(size, inf, outf, FFTW_BACKWARD, plan_mode);
+    p1 = fftwf_plan_dft_1d(size, inf, outf, FFTW_FORWARD, FFTWOPTMODE);
+    p2 = fftwf_plan_dft_1d(size, inf, outf, FFTW_BACKWARD, FFTWOPTMODE);
     fftwf_destroy_plan(p1);
     fftwf_destroy_plan(p2);
     fftwf_free(inf);
@@ -200,9 +198,6 @@ int _init_fftw_plan(int size)
   fftwf_plan p1,p2;
   float *ptr;
   int i;
-  int plan_mode;
-
-  plan_mode = FFTWOPTMODE;
 
   printf("Optimizing 2D FFT - size = %d\n",size);
   inf  = fftwf_malloc(size*size*sizeof(fftwf_complex));
@@ -211,8 +206,8 @@ int _init_fftw_plan(int size)
   ptr = (void *)inf;
   for (i=0;i<2*size*size;i++) *(ptr++) = 0.0f;
 
-  p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, plan_mode);
-  p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, plan_mode);
+  p1 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_FORWARD, FFTWOPTMODE);
+  p2 = fftwf_plan_dft_2d(size, size, inf, outf, FFTW_BACKWARD, FFTWOPTMODE);
 
   fftwf_destroy_plan(p1);
   fftwf_destroy_plan(p2);
@@ -259,7 +254,7 @@ int _calc_psf_fast(float *pupil, /* pupil image, dim [ n , n ] */
   if ( in == NULL || out == NULL ) { return (-1); }
   
   /* Set up the required memory for the FFT routines */
-  p = fftwf_plan_dft_2d(n, n, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+  p = fftwf_plan_dft_2d(n, n, in, out, FFTW_FORWARD, FFTWOPTMODE);
   
   /* Main loop on plan #, in case several phases are input to the routine */
   for ( k=0; k<nplans; k++ ) {
@@ -330,9 +325,9 @@ int _fftVE(float *rp,
   
   /* Set up the required memory for the FFT routines */
   if (dir == 1) {
-    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_FORWARD, FFTWOPTMODE);
   } else {
-    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_BACKWARD, FFTWOPTMODE);
   }
 
   /* fill input */
@@ -375,9 +370,9 @@ void _fftVE2(fftwf_complex *in,
       
   /* Set up the required memory for the FFT routines */
   if (dir == 1) {
-    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_FORWARD, FFTWOPTMODE);
   } else {
-    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+    p = fftwf_plan_dft_2d(n, n, in, out, FFTW_BACKWARD, FFTWOPTMODE);
   }
   
   /* Carry out a Forward 2d FFT transform, check for errors. */
@@ -606,6 +601,7 @@ int _shwfs_phase2spots(
   const float   twopi = 2*pi;
   
   cpu10=0.0;cpu21=0.0;cpu32=0.0;cpu43=0.0;cpu54=0.0;cpu65=0.0;
+  cpu0=0.0;cpu1=0.0;cpu2=0.0;cpu3=0.0;cpu4=0.0;cpu5=0.0;cpu6=0.0;
   
   //======================
   // Global setup for FFTs:
@@ -625,7 +621,7 @@ int _shwfs_phase2spots(
   // integrate = 1; // force to pass by the end (subap overlap upgrade)
   // if (niter > 1) {integrate = 1;}  // we are in "integrating mode"
 
-  if (debug>1) printf("here1\n");
+  if (debug>1) printf("here1 nx=%d ns=%d dynrange=%d\n",(int)nx,(int)ns,(int)dynrange);
 
   // Allocate memory for the input operands and check its availability.
   A            = fftwf_malloc ( n * sizeof ( fftwf_complex ) );
@@ -686,7 +682,7 @@ int _shwfs_phase2spots(
   
   // Set up the required memory for the FFT routines and 
   // check its availability.
-  fftpx = fftwf_plan_dft_2d(nx, nx, Ax, Kx, FFTW_FORWARD, FFTW_ESTIMATE);
+  fftpx = fftwf_plan_dft_2d(nx, nx, Ax, Kx, FFTW_FORWARD, FFTWOPTMODE);
 
   if (initkernels == 1) {
     // Transform kernels, store and return for future use
@@ -711,13 +707,17 @@ int _shwfs_phase2spots(
   if (debug>1) printf("here2\n");
 
   if (kernconv == 1) {
-    // init resultx
+    // init resultx to (1,0)
+    // we're starting from a non-filter.
     ptr = (void *)resultx;
     for ( i=0; i<nx*nx ; i++ ) {
       *(ptr) = 1.0f;
       *(ptr+1) = 0.0f;
       ptr += 2;
     }
+    // nkernels is in case we have several effects
+    // that we want to cumulate, e.g. laser beam, 
+    // uplink seeing, etc...
     for ( k=0 ; k<nkernels ; k++ ) {
       koff = k*nx*nx;
       // Transform kernel
@@ -727,7 +727,7 @@ int _shwfs_phase2spots(
         *(ptr+1) = 0.0f;
         ptr +=2;
       }
-      fftwf_execute(fftpx);
+      fftwf_execute(fftpx); // Ax -> Kx
       // result in in Kx
       // Kx * resultx -> Ker:
       ptr1 = (void *)Kx;
@@ -746,10 +746,12 @@ int _shwfs_phase2spots(
     }
   }
   fftwf_destroy_plan(fftpx);
+  // at this point, Ker contains the Fourier transform of
+  // all kernels comulated. Just one however for all subapertures.
 
-  fftps  = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_FORWARD, FFTW_ESTIMATE);
-  fftpx  = fftwf_plan_dft_2d(nx, nx, Ax, resultx, FFTW_FORWARD, FFTW_ESTIMATE);
-  fftpxi = fftwf_plan_dft_2d(nx, nx, Ax, resultx, FFTW_BACKWARD, FFTW_ESTIMATE);
+  fftps  = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_FORWARD, FFTWOPTMODE);
+  fftpx  = fftwf_plan_dft_2d(nx, nx, Ax, resultx, FFTW_FORWARD, FFTWOPTMODE);
+  fftpxi = fftwf_plan_dft_2d(nx, nx, Ax, resultx, FFTW_BACKWARD, FFTWOPTMODE);
 
   //=====================
   // LOOP ON SUBAPERTURES
@@ -839,7 +841,7 @@ int _shwfs_phase2spots(
       ptr = (void *)A;
       if (dynrange) {
         
-        if (debug>1) if (l==10) printf("here, dynrange enabled\n");
+        if (debug>1) printf("here, dynrange enabled\n");
         for ( j=0; j<nsy ; j++ ) {
           for ( i=0; i<nsx ; i++ ) {
             k = koff + i + j*dim;
@@ -855,7 +857,7 @@ int _shwfs_phase2spots(
 
       } else {
 
-        if (debug>1) if (l==10) printf("here, dynrange disabled\n");
+        if (debug>1) printf("here, dynrange disabled\n");
         for ( j=0; j<nsy ; j++ ) {
           for ( i=0; i<nsx ; i++ ) {
             k = koff + i + j*dim;
@@ -869,20 +871,22 @@ int _shwfs_phase2spots(
 
       }
 
-      if (debug>1) printf("here3 ");
+      if (debug>1) printf("here3\n");
 
       cpu2  = p_cpu_secs(&sys);
       cpu21 += cpu2-cpu1;
 
       // Carry out a Forward 2d FFT transform, check for errors.
-      fftwf_execute(fftps);
+      fftwf_execute(fftps); // A -> result
+      // at this point result should contain the diffraction
+      // of the subaperture + turbulence, but not kernel yet
   
       // compute image from complex image object:
       ptr = (void *)result;
       for ( i=0; i<n; i++ ) {
         simage[i] = (*(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
         simage[i] *= lgsamp;
-        if ( (debug>10) && ( l==10 ) ) printf("%f ",simage[i]);
+        if ( (debug>20) && ( l==10 ) ) printf("%f ",simage[i]);
         ptr +=2;
       }
       
@@ -925,8 +929,8 @@ int _shwfs_phase2spots(
       ptr2 = (void *)resultx;
       for ( i=0 ; i<nx*nx ; i++ ) {
         // this is FFT(kernel) * FFT(kernelS)
-        krp = *(ptr)*kerfftr[i+l*nx*nx]- *(ptr+1)*kerffti[i+l*nx*nx];
-        kip = *(ptr)*kerffti[i+l*nx*nx]+ *(ptr+1)*kerfftr[i+l*nx*nx];
+        krp = *(ptr)*kerfftr[i+l*nx*nx] - *(ptr+1)*kerffti[i+l*nx*nx];
+        kip = *(ptr)*kerffti[i+l*nx*nx] + *(ptr+1)*kerfftr[i+l*nx*nx];
         // and next we multiply by FFT(image):
         *(ptr1)   = *(ptr2)*krp   - *(ptr2+1)*kip;
         *(ptr1+1) = *(ptr2+1)*krp + *(ptr2)*kip;
@@ -937,7 +941,7 @@ int _shwfs_phase2spots(
   
       ptr = (void *)resultx;
       for ( i=0 ; i<nx*nx ; i++ ) {
-        ximage[i] = ( *(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
+        ximage[i] = sqrt ( *(ptr) * *(ptr) + *(ptr+1) * *(ptr+1) );
         ptr +=2;
       }
     }
@@ -1537,8 +1541,8 @@ int _cwfs (float *pupil,      // input pupil
       
   // Set up the required memory for the FFT routines and 
   // check its availability.
-  p  = fftwf_plan_dft_2d(ns, ns, A, B, FFTW_FORWARD, FFTW_ESTIMATE);
-  p1 = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_BACKWARD, FFTW_ESTIMATE);
+  p  = fftwf_plan_dft_2d(ns, ns, A, B, FFTW_FORWARD, FFTWOPTMODE);
+  p1 = fftwf_plan_dft_2d(ns, ns, A, result, FFTW_BACKWARD, FFTWOPTMODE);
 
 
   // intermediate FFT, to find intermediate complex amplitude
