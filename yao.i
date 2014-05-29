@@ -544,8 +544,8 @@ func do_imat(disp=)
   for (nm=1;nm<=ndm;nm++) {
     n1 = dm(nm)._n1;
     n2 = dm(nm)._n2;
-    //    if (sim.verbose==2) {write,format="\rDoing DM# %d, actuator %s",nm," ";}
-    if (sim.verbose==1) write,"";
+    //    if (sim.verbose>1) {write,format="\rDoing DM# %d, actuator %s",nm," ";}
+    if (sim.verbose) write,"";
     subsys = dm(nm).subsystem;
     // Loop on each actuator:
     command = array(float,dm(nm)._nact);
@@ -561,7 +561,7 @@ func do_imat(disp=)
         write,format="\rDoing DM# %d, actuator %d/%d, ETA %.1fs",\
           nm,i,dm(nm)._nact,eta;
       }
-      //      if (sim.verbose==2) {write,format="%d ",i;}
+      //      if (sim.verbose>1) {write,format="%d ",i;}
 
       mircube  *= 0.0f; command *= 0.0f;
       command(i) = float(dm(nm).push4imat);
@@ -758,16 +758,16 @@ func prep_svd(imat,subsystem,svd=,disp=)
   extern modToAct,mesToMod,eigenvalues;
 
   // Decompose to prepare inversion:
-  if (sim.verbose>=2) {write,"Doing SVD\n";}
+  if (sim.verbose>1) {write,"Doing SVD\n";}
   eigenvalues   = SVdec(imat,u,vt);
 
   // Some debug output if needed:
-  if (sim.verbose >= 1) {
+  if (sim.verbose) {
     write,format="Smallests 2 normalized eigenvalues = %f",
       eigenvalues(-1)/max(eigenvalues),eigenvalues(0)/max(eigenvalues);
   }
 
-  if (sim.verbose>=2) {
+  if (sim.verbose>1) {
     write,"Normalized eigenvalues:";
     write,eigenvalues/max(eigenvalues);
     th = 1.0f/(*mat.condition)(subsystem);
@@ -885,7 +885,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
   // Compute the Command matrix:
   cmat = (modToAct(,+)*mev(+,))(,+) * mesToMod(+,);
 
-  if (sim.verbose>=1) {
+  if (sim.verbose) {
     write,long(clip(sum(mask == 0),1-long(is_set(all)),)),
       format="%i modes discarded in the inversion\n";
   }
@@ -1107,7 +1107,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       r0(i) = r0tot / f(i)^(3./5)
       =====================================================*/
 
-    if (sim.verbose>=1) {
+    if (sim.verbose) {
       write,format="Reading phase screen \"%s\"\n",(*atm.screen)(1);
     }
 
@@ -1128,7 +1128,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
       // Now read all the other screens and put in pscreens
       for (i=2;i<=nscreens;i++) {
-        if (sim.verbose>=1) {
+        if (sim.verbose) {
           write,format="Reading phase screen \"%s\"\n",(*atm.screen)(i);
         }
         pscreens(1:dimx,1:dimy,i) = yao_fitsread((*atm.screen)(i));
@@ -1148,7 +1148,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
       // Now read all the other screens and put in pscreens
       for (i=2;i<=nscreens;i++) {
-        if (sim.verbose>=1) {
+        if (sim.verbose) {
           write,format="Reading phase screen \"%s\"\n",(*atm.screen)(i);
         }
         pscreens(1:dimx,,i) = yao_fitsread((*atm.screen)(i));
@@ -1206,7 +1206,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
       optphasemaps(,,1) = float(tmp);
 
       for (i=2;i<=noptics;i++) {
-        if (sim.verbose>=1) {
+        if (sim.verbose) {
           write,format="Reading phase map for optics \"%s\"\n",opt(i).phasemaps;
         }
         tmp = yao_fitsread(YAO_SAVEPATH+opt(i).phasemaps);
@@ -1923,7 +1923,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE OUTPUT RESULT FILE YAO_SAVEPATH+parprefix.RES
 
   if (!fileExist(YAO_SAVEPATH+parprefix+".res")) {
-    if (sim.verbose>=1) {
+    if (sim.verbose) {
       write,">> File "+parprefix+".res not found, creating one...\n";
     }
     f = open(YAO_SAVEPATH+parprefix+".res","w");
@@ -2051,7 +2051,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE PHASE SCREENS
   //==================================
 
-  if (sim.verbose>=1) {write,"\n> INITIALIZING PHASE SCREENS";}
+  if (sim.verbose) {write,"\n> INITIALIZING PHASE SCREENS";}
   gui_message,"Initializing phase screens";
   get_turb_phase_init;
 
@@ -2059,7 +2059,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE SENSOR
   //==================================
 
-  if (sim.verbose>=1) {write,"\n> INITIALIZING SENSOR GEOMETRY";}
+  if (sim.verbose) {write,"\n> INITIALIZING SENSOR GEOMETRY";}
   gui_message,"Initializing sensor geometry";
 
   for (n=1;n<=nwfs;n++) {
@@ -2195,7 +2195,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   //==================================
   // INITIALIZE DM INFLUENCE FUNCTIONS
   //==================================
-  if (sim.verbose>=1) {write,"\n> Initializing DM influence functions";}
+  if (sim.verbose) {write,"\n> Initializing DM influence functions";}
   gui_message,"Initializing DMs";
 
   // loop over DMs:
@@ -2229,7 +2229,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     // If file exist, read it out:
     if ( (fileExist(YAO_SAVEPATH+dm(n).iffile)) && (!is_set(clean)) ) {
 
-      if (sim.verbose>=1) {
+      if (sim.verbose) {
         write,format=">> Reading file %s\n",dm(n).iffile;
       }
       if (dm(n).use_def_of) {
@@ -2250,7 +2250,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
 
       if ( (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) && (!is_set(clean)) ) {
-        if (sim.verbose>=1) {
+        if (sim.verbose) {
           write,format=">> Reading extrapolated actuators file %s\n",dm(n)._eiffile;
         }
         dm(n)._edef = &(float(yao_fitsread(YAO_SAVEPATH+dm(n)._eiffile)));
@@ -2267,7 +2267,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     } else { // else compute the influence functions:
 
-      if (sim.verbose>=1) {
+      if (sim.verbose) {
         write,format=">> Computing Influence functions for mirror # %d\n",n;
       }
 
@@ -2338,12 +2338,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (disp) { plsys,1; animate,0; }
 
       // the IF are in microns/volt
-      if (sim.verbose>=1) {
+      if (sim.verbose) {
         write,format="\n>> Storing influence functions in %s...",dm(n).iffile;
       }
       if (dm(n).use_def_of) yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,[0.];
       else yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._def);
-      if (sim.verbose>=1) write,"Done";
+      if (sim.verbose) write,"Done";
       if ( dm(n).type == "stackarray" ) {
         yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._x),exttype="IMAGE",append=1;
         yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,*(dm(n)._y),exttype="IMAGE",append=1;
@@ -2425,13 +2425,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
 
-    if (sim.verbose >= 1) {write,"\n> DOING INTERACTION MATRIX";}
+    if (sim.verbose) {write,"\n> DOING INTERACTION MATRIX";}
     gui_message,"Doing interaction matrix";
     if (mat.method != "mmse-sparse"){
       iMat = array(double,sum(wfs._nmes),sum(dm._nact));
       cMat = array(double,sum(dm._nact),sum(wfs._nmes));
 
-      if (sim.verbose>=2) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
+      if (sim.verbose>1) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
       pause,100;
     } else {
       iMatSP = rco();
@@ -2541,7 +2541,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           dm(nm)._edef = &((*(dm(nm)._def))(,,nok));
           dm(nm)._def = &((*(dm(nm)._def))(,,ok));
 
-          if (sim.verbose>=1) {
+          if (sim.verbose) {
             write,format="DM #%d: # of valid actuators: %d. "+
               "(I got rid of %d actuators after iMat)\n",
               nm,numberof(ok),numberof(nok);
@@ -2627,7 +2627,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if (fileExist(YAO_SAVEPATH+dm(nm).ecmatfile)) {
 
       // if defined and exist, we read it and proceed
-      if (sim.verbose >= 1) {
+      if (sim.verbose) {
         write,format="Reading valid to extrap. matrix %s\n",dm(nm).ecmatfile;
       }
       dm(nm)._extrapcmat = yao_fitsread(YAO_SAVEPATH+dm(nm).ecmatfile);
@@ -2635,7 +2635,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else {
 
       // we compute the valid to extrap matrix:
-      if (sim.verbose >= 1) {
+      if (sim.verbose) {
         write,format="Computing valid to extrap. matrix for DM#%d\n",nm;
       }
       tx = *dm(nm)._x;
@@ -2675,21 +2675,21 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE MODAL GAINS:
 
   if (mat.method == "svd"){
-    if (sim.verbose>=1) {write,"\n> INITIALIZING MODAL GAINS";}
+    if (sim.verbose) {write,"\n> INITIALIZING MODAL GAINS";}
     gui_message,"Initializing modal gains";
 
     modalgain = [];
 
     if (strlen(loop.modalgainfile)&&(fileExist(YAO_SAVEPATH+loop.modalgainfile))) {
 
-      if (sim.verbose>=1) {write,format=">> Reading file %s\n\n",loop.modalgainfile;}
+      if (sim.verbose) {write,format=">> Reading file %s\n\n",loop.modalgainfile;}
       modalgain = yao_fitsread(YAO_SAVEPATH+loop.modalgainfile);
 
     }
 
     if (numberof(modalgain) != sum(dm._nact)) {
 
-      if (sim.verbose>=1) {
+      if (sim.verbose) {
         write,format="I did not find %s or it did not have the right\n ",
           loop.modalgainfile;
         write,format="  number of elements (should be %i), so I have generated\n",
@@ -2704,12 +2704,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
   // INITIALIZE COMMAND MATRIX:
 
-  if (sim.verbose>=1) {write,"\n> INTERACTION AND COMMAND MATRICES";}
+  if (sim.verbose) {write,"\n> INTERACTION AND COMMAND MATRICES";}
   gui_message,"Initializing control matrix";
 
   if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
-    if (sim.verbose>=1) {write,format=">> Reading file %s\n",mat.file;}
+    if (sim.verbose) {write,format=">> Reading file %s\n",mat.file;}
     if (mat.method != "mmse-sparse") {
       // read out mat file and stuff iMat and cMat:
       tmp = yao_fitsread(YAO_SAVEPATH+mat.file);
@@ -3004,7 +3004,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // in the opposite case, plus if svd=1 (request re-do SVD):
   if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
     if (mat.method == "svd") {
-      if (sim.verbose>=1) {
+      if (sim.verbose) {
         write,">> Preparing SVD and computing command matrices";
       }
       // do the SVD and build the command matrix:
@@ -3609,7 +3609,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   if (aniso) {
     waniso = indexDm(1,where(dm.type == "aniso"))+[0,1,2];
     wdmaniso = where(dm.type == "aniso")(0);
-    if (sim.verbose >=2) {
+    if (sim.verbose>1) {
       print,"index of anisoplatism modes in command vector:",waniso;
     }
   }
@@ -3628,7 +3628,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   //}
 
   // verbose
-  if (sim.verbose>=1) {
+  if (sim.verbose) {
     write,format="\n> Starting loop with %i iterations\n",loop.niter;
   }
 
@@ -4041,6 +4041,7 @@ func go(nshot,all=)
   time(5) += tac();
 
   ok = ok*((i % loop.stats_every) == 0); // accumulate stats only every 4 iter.
+  if (user_go_ok) ok = user_go_ok();
 
   okdisp = ( is_set(disp) && (((i-1) % disp) == 0) );
   if (nshots>0) okdisp=is_set(disp);
@@ -4146,7 +4147,9 @@ func go(nshot,all=)
     for (ns=1;ns<=nwfs;ns++ ) {
       // if cyclecounter = 1, a final image just got computed
       if (wfs(ns).type=="zernike") continue;
-      if (wfs(ns)._cyclecounter == 1) {*wfs(ns)._dispimage = *wfs(ns)._fimage;}
+      if (wfs(ns)._cyclecounter == wfs(ns).nintegcycles) {
+        *wfs(ns)._dispimage = *wfs(ns)._fimage;
+      }
     }
   }
 
