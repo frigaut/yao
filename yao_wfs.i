@@ -360,8 +360,17 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // INITIALIZE RAYLEIGH STUFF: SUBAPERTURE DEPENDENT
   //=================================================
 
-  if (wfs(ns).rayleighflag) shwfs_init_rayleigh,ns;
-  else wfs(ns)._rayleigh = &([0.0f]); // to avoid type conv. error in _shwfs
+  if (wfs(ns).rayleighflag) {
+    shwfs_init_rayleigh,ns;
+    if (filter_rayleigh_sub) {
+      mrf = max(*wfs(ns)._rayleighflux);
+      if (mrf>0.) {
+        *wfs(ns)._validsubs *= ((*wfs(ns)._rayleighflux/mrf)<filter_rayleigh_sub);
+        wfs(ns)._nsub = int(sum(*wfs(ns)._validsubs));
+      }
+    }
+  } else wfs(ns)._rayleigh = &([0.0f]); // to avoid type conv. error in _shwfs
+
 
   //================================
   // FIELD STOP / AMPLITUDE MASK
