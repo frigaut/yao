@@ -64,11 +64,11 @@ require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
 require,"yaodh.i";
 
-if (_has_lapack) {
-  require,"lapack.i";
+include, "lapack.i",3; // optional
+if (lpk_gesv != []){
+  write, "Using ylapack to do matrix inversions: LUSolve = lpk_gesv";
   LUsolve = lpk_gesv; // that simple
 }
-
 
 // can't call use_sincos_approx directly in yao.conf, as not defined, work around:
 if (use_sincos_approx_default!=[]) use_sincos_approx,use_sincos_approx_default;
@@ -159,19 +159,9 @@ func comp_dm_shape(nm,command,extrap=)
       _dmsumelt, dm(nm)._def, dm(nm)._eltdefsize, dm(nm)._eltdefsize, int(dm(nm)._nact),
         dm(nm)._i1, dm(nm)._j1, command, &sphase,nxy,nxy;
     } else { // use standard
-      // if (_has_lapack) {
-      //   if (structof(*dm(nm)._def)==float) dm(nm)._def = &double(*dm(nm)._def);
-      //   _com = double(*command);
-      //   _tmp = array(0.0,nxy*nxy);
-      //   eq_nocopy,_def,*dm(nm)._def;
-      //   dd = dimsof(_def);
-      //   reshape,_def,double,[2,dd(2)*dd(3),dd(4)];
-      //   sphase = float(lpk_gemv(LPK_NO_TRANS, 1.0, _def, _com, 0.0, _tmp));
-      //   reshape,sphase,float,[2,dd(2),dd(3)];
-      // } else {
-        if (dmsum_use_new) _dmsum2, dm(nm)._def, wpupil(nm), \
-          numberof(*wpupil(nm)), dm(nm)._nact, command, &sphase, numberof(sphase);
-        else _dmsum, dm(nm)._def, nxy, nxy, dm(nm)._nact, command, &sphase;        
+      if (dmsum_use_new) _dmsum2, dm(nm)._def, wpupil(nm),              \
+                           numberof(*wpupil(nm)), dm(nm)._nact, command, &sphase, numberof(sphase);
+      else _dmsum, dm(nm)._def, nxy, nxy, dm(nm)._nact, command, &sphase;        
       // }
     }
 
@@ -3873,13 +3863,7 @@ func go(nshot,all=)
       err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
     }
   } else {
-    if (_has_lapack) {
-      if (structof(cMat)==float) cMat = double(cMat);
-      _mes = double(usedMes);
-      tmp = array(0.,dimsof(cMat)(2));
-      err = lpk_gemv(LPK_NO_TRANS, 1.0, cMat, _mes, 0.0, tmp);
-      err = float(err);
-    } else err = cMat(,+) * usedMes(+);
+    err = cMat(,+) * usedMes(+);
     if ((loop.method == "pseudo open-loop") && (i > 1) && (dMat != [])){
       polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
       if (anyof(wfs.nintegcycles > 1)){
