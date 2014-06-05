@@ -577,10 +577,10 @@ func do_imat(disp=)
         plt,sim.name,0.01,0.227,tosys=0;
         if (!allof(wfs.shmethod ==1)) {
           if (wfs_display_mode=="spatial") {
-            disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
+            disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
             mypltitle,"WFSs spots (spatial mode)",[0.,-0.005],height=12;
           } else {
-            disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2;
+            disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2;
             mypltitle,"WFSs spots",[0.,-0.005],height=12;
           }
         }
@@ -2030,10 +2030,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       status = create_yao_window();
     }
     if (wfs_display_mode=="spatial") {
-      disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
+      disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
                     zoom=wfs.dispzoom,init=1;
     } else {
-      disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,init=1;
+      disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,init=1;
     }
   }
 
@@ -3637,10 +3637,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
     disp2d,im,*target.xposition,*target.yposition,1,
       zoom=*target.dispzoom,init=1;
       if (wfs_display_mode=="spatial") {
-        disp2d,wfs._fimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
+        disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
            zoom=wfs.dispzoom,init=1;
       } else {
-        disp2d,wfs._fimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,\
+        disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,\
            init=1;
       }
   }
@@ -4136,7 +4136,8 @@ func go(nshot,all=)
       // if cyclecounter = 1, a final image just got computed
       if (wfs(ns).type=="zernike") continue;
       if (wfs(ns)._cyclecounter == wfs(ns).nintegcycles) {
-        *wfs(ns)._dispimage = *wfs(ns)._fimage;
+        if (wfs(ns).type!="hartmann") *wfs(ns)._dispimage = *wfs(ns)._fimage;
+        // for hartmann, done within shwfs()
       }
     }
   }
@@ -4340,7 +4341,7 @@ func reset(void,nmv=)
 
   if (nmv==[]) nmv=indgen(ndm);
 
-  command *=0.0f;
+  if (command!=[]) command *=0.0f;
 
   for (i=1;i<=numberof(nmv);i++) {
     nm = nmv(i);

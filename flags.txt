@@ -1,0 +1,3 @@
+wfs_disp_crop_edges: if set to one, will crop the edges of SH WFS spot image in WFS display (wfs._dispimage) to 50% of spot pitch. Otherwise, will display the whole SHWFS image, that may include larger edges due for instance to a wfs.extfield > wfs.spotpitch.
+
+

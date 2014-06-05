@@ -201,7 +201,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns).extfield = wfs(ns)._npixels*wfs(ns).pixsize;
   
   // now let's find if there are better dimension for the fft:
-  if ((wfs(ns)._npb>0)&&(wfs(ns).shmethod==2)) {
+  if ((wfs(ns)._npb>0)&&(wfs(ns).shmethod==2)&&(optimize_nx)) {
     // determine prime factors for _nx and above. take first integer which
     // prime factors are all <= 7:
     _nx = wfs(ns)._nx-1;
@@ -296,6 +296,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   //~ fimdim = long(nxsub*wfs(ns)._npixels+(nbigpixels-wfs(ns)._npixels)+wfs(ns)._npb);
   fimdim = long((nxsub-1)*wfs(ns).spotpitch+wfs(ns)._npixels);
   wfs(ns)._fimage = &(array(float,[2,fimdim,fimdim]));
+  wfs(ns)._dispimage = &(array(float,[2,fimdim,fimdim]));
   wfs(ns)._fimnx = int(fimdim);
   wfs(ns)._fimny = int(fimdim);
 
@@ -517,14 +518,15 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     fma;
     plsys,2;
     pli,*wfs(ns)._fimage;
-    limits;
+    // limits;
+    cn = 80;
     for (i=1;i<=wfs(ns)._nsub4disp;i++) {
       if ((*wfs(ns)._validsubs)(i)==0) continue;
-      x1 = (*wfs(ns)._imistart2)(i);
-      y1 = (*wfs(ns)._imjstart2)(i);
+      x1 = (*wfs(ns)._imistart2)(i)+wfs(ns)._npb/2;
+      y1 = (*wfs(ns)._imjstart2)(i)+wfs(ns)._npb/2;
       l1 = wfs(ns).npixels;
-      plg,_(y1,y1,y1+l1,y1+l1,y1),_(x1,x1+l1,x1+l1,x1,x1),color=[80,80,80],marks=0;
-      plt,swrite(format="%d",i),x1,y1,tosys=1,color=[80,80,80],height=lround(pltitle_height*0.75);
+      plg,_(y1,y1,y1+l1,y1+l1,y1),_(x1,x1+l1,x1+l1,x1,x1),color=[cn,cn,cn],marks=0;
+      plt,swrite(format="%d",i),x1,y1,tosys=1,color=[cn,cn,cn],height=lround(pltitle_height*0.75);
     }
     // display the full extent of this example subap FoV
     // to show the user how it overlaps with neightbors
@@ -534,18 +536,19 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     y1 = (*wfs(ns)._imjstart2)(i);
     l1 = wfs(ns)._npixels;
     plg,_(y1,y1,y1+l1,y1+l1,y1),_(x1,x1+l1,x1+l1,x1,x1),color="green",width=3;
-    // then fisplay the whole subaperture field of view
+    // then display the whole subaperture field of view
     x1 = (*wfs(ns)._imistart)(i);
     y1 = (*wfs(ns)._imjstart)(i);
     l1 = wfs(ns)._binxy; //*wfs(ns)._rebinfactor;
     plg,_(y1,y1,y1+l1,y1+l1,y1),_(x1,x1+l1,x1+l1,x1,x1),color="red";
     // field stop:
     if (*wfs(ns)._submask!=[]) {
-      fs = roll(*wfs(ns)._submask);
+      // fs = roll(*wfs(ns)._submask);
+      fs = *wfs(ns)._submask;
       xyc = indices(dimsof(fs));
       xyc = (xyc-1.)/(dimsof(fs)(2)-1)*(wfs(ns)._binxy)+0.;
-      xyc(,,1) += x1;
-      xyc(,,2) += y1;
+      xyc(,,1) += x1+0.5;
+      xyc(,,2) += y1+0.5;
       plc,fs,xyc(,,2),xyc(,,1),levs=[0.001],color="magenta",width=3;
 
     }
@@ -553,31 +556,35 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     plmargin;
     xytitles_vp,"pixels","pixels",[0.015,0.015];
     pltitle_vp,escapechar(swrite(format="wfs(%d)._fimage",ns)),0.005;
+    limits;
     plsys,0;
-    ybase = 0.72;
+    ybase = 0.90;
     deltay = 0.03;
     deltayt = 0.005;
-    x1 = 0.16;
+    x1 = 0.04;
     x2 = x1 + 0.03;
     x3 = x2 + 0.01;
-    plg,_(ybase,ybase),_(x1,x2),color=[80,80,80],width=3;
+    plg,_(ybase,ybase),_(x1,x2),color=[cn,cn,cn],width=3;
     plt,"Valid subapertures",x3,ybase-deltayt,tosys=0
     ybase -= deltay;
     plg,_(ybase,ybase),_(x1,x2),color="green",width=3;
-    plt,"Highlighted subaperture",x3,ybase-deltayt,tosys=0
+    plt,"Highlighted subap.",x3,ybase-deltayt,tosys=0
     ybase -= deltay;
     plg,_(ybase,ybase),_(x1,x2),color="red",width=3;
-    plt,"Highlighted subaperture total FoV (overlap)",x3,ybase-deltayt,tosys=0
+    plt,"Highlighted subap. total FoV (overlap)",x3,ybase-deltayt,tosys=0
     ybase -= deltay;
     if (*wfs(ns)._submask!=[]) {
       plg,_(ybase,ybase),_(x1,x2),color="magenta",width=3;
-      plt,"Highlighted subaperture field stop",x3,ybase-deltayt,tosys=0;
+      plt,"Highlighted subap. field stop",x3,ybase-deltayt,tosys=0;
     } else {
       plt,"NO field stop defined",x3,ybase-deltayt,tosys=0
     }
-    hitReturn;
     plsys,2;
-    limits;
+    redraw;
+    if (sim.debug>1) {
+      write,"Hit return to continue...";
+      hitReturn;
+    }
   }
 
   // and let's just re-sync for good measure:
@@ -705,7 +712,7 @@ func shwfs_init_rayleigh(ns)
   rayfname = parprefix+"-rayleigh-wfs"+swrite(format="%d",ns)+"-zen"+
     swrite(format="%d",long(gs.zenithangle))+".fits";
   isthere = fileExist(YAO_SAVEPATH+rayfname);
-  fov    = quantumPixelSize*wfs(ns)._nx;
+  fov    = quantumPixelSize*wfs(ns)._nx4fft;
   aspp   = quantumPixelSize;
 
 
@@ -1004,9 +1011,15 @@ func sh_wfs(pupsh,phase,ns)
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
       ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
       
-      err = _shwfs_spots2slopes( ffimage,
-                  *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
-                  wfs(ns)._nsub4disp, wfs(ns)._npixels,
+      xysof = (wfs(ns)._npixels-wfs(ns).npixels-wfs(ns)._npb/2);
+      xtmp = int(*wfs(ns)._imistart2+xysof);
+      ytmp = int(*wfs(ns)._imjstart2+xysof);
+      // write,format="imistart, x=%d y=%d\n",xtmp(1),ytmp(1);
+
+      if (stop_at==421) error;
+
+      err = _shwfs_spots2slopes( ffimage, xtmp, ytmp,
+                  wfs(ns)._nsub4disp, wfs(ns).npixels,
                   wfs(ns)._fimnx , fimny, yoffset,
                   *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
                   *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise,
@@ -1031,6 +1044,13 @@ func sh_wfs(pupsh,phase,ns)
     //    else write,mesvec;
 
     wfs(ns)._fimage = &ffimage;
+
+    if (wfs_disp_crop_edges) {
+      xysof = long(wfs(ns)._npixels-wfs(ns).spotpitch)/2;
+      tmp = ffimage(1+xysof:-xysof,1+xysof:-xysof);
+    } else tmp = ffimage;
+
+    wfs(ns)._dispimage = &tmp;
 
     wfs(ns)._initkernels = 0n;
 
@@ -1130,6 +1150,8 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
                float(wfs(ns)._nphotons), float(wfs(ns)._skynphotons),
                float(wfs(ns).ron), float(wfs(ns).darkcurrent*loop.ittime),
                int(wfs(ns).noise), mesvec);
+
+  wfs(ns)._dispimage = wfs(ns)._fimage;
 
   if (*wfs(ns)._reordervec!=[]) mesvec = mesvec(*wfs(ns)._reordervec);
   
@@ -1491,6 +1513,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   tmp(ii2,ii2) = reimaged_pupil(,,4);
 
   wfs(ns)._fimage = &tmp; // save this to display
+  wfs(ns)._dispimage = &tmp; // save this to display
   if (pyr_disp) { plsys,4; pli,tmp; limits; limits,square=1;}
 
   // extract the illuminated pixels:
@@ -1842,6 +1865,7 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   sim.verbose   = 1;
   dpi = (dpi?dpi:(default_dpi?default_dpi:90));
   if (quit_forks) quit_forks();
+  if (clean==[]) clean=1;
   aoinit,dpi=dpi,clean=clean;
   winkill;
   window,0,wait=1,dpi=dpi,width=0,height=0;

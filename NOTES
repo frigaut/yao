@@ -1,0 +1,85 @@
+//==============================================================================
+yao 4.9.1 (2012sep06), before extended field and various optimizations:
+
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 121.7   ON        0.43@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 139.0   OFF       0.43@1.65mic
+test1        Simili Altair LGS, full diffrac... 35.8    ON        0.53@1.65mic
+test1        Simili Altair LGS, full diffrac... 38.9    OFF       0.56@1.65mic
+test2        SH 12x12, quick method, with se... 233.3   ON        0.78@1.65mic
+test2        SH 12x12, quick method, with se... 293.9   OFF       0.78@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 22.8    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 25.5    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 313.2   ON        0.58@2.20mic
+test4        Simple Curvature 36 actuators w... 419.8   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 59.8    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 62.2    OFF       0.84@2.20mic
+test6        DH WFS & DM                        380.4   ON        0.50@1.65mic
+test6        DH WFS & DM                        798.8   OFF       0.50@1.65mic
+
+//==============================================================================
+yao 4.9.5 (2012oct07, first extended field method), october 12:
+(faster than next, but remember this had a number of things commented
+in yao_fast.c)
+Performance Summary:
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 142.6   ON        0.42@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 168.1   OFF       0.43@1.65mic
+test1        Simili Altair LGS, full diffrac... 57.1    ON        0.52@1.65mic
+test1        Simili Altair LGS, full diffrac... 65.2    OFF       0.53@1.65mic
+test2        SH 12x12, quick method, with se... 327.8   ON        0.78@1.65mic
+test2        SH 12x12, quick method, with se... 479.5   OFF       0.78@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 45.4    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 56.3    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 526.5   ON        0.56@2.20mic
+test4        Simple Curvature 36 actuators w... 881.4   OFF       0.56@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 60.9    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 63.5    OFF       0.84@2.20mic
+test6        DH WFS & DM                        406.2   ON        0.49@1.65mic
+test6        DH WFS & DM                        1016.9  OFF       0.49@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 33.5    ON        0.19@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 34.8    OFF       0.19@1.65mic
+
+//==============================================================================
+yao 4.10.0 (2012oct12, new extended field method):
+
+Performance Summary:
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 125.2   ON        0.32@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 144.3   OFF       0.32@1.65mic
+test1        Simili Altair LGS, full diffrac... 58.5    ON        0.47@1.65mic
+test1        Simili Altair LGS, full diffrac... 68.3    OFF       0.48@1.65mic
+test2        SH 12x12, quick method, with se... 318.5   ON        0.79@1.65mic
+test2        SH 12x12, quick method, with se... 424.9   OFF       0.79@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 43.7    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 54.6    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 518.1   ON        0.56@2.20mic
+test4        Simple Curvature 36 actuators w... 897.5   OFF       0.56@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 61.2    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 62.8    OFF       0.84@2.20mic
+test6        DH WFS & DM                        432.3   ON        0.49@1.65mic
+test6        DH WFS & DM                        1064.1  OFF       0.49@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 27.0    ON        0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 27.9    OFF       0.50@1.65mic
+
+//==============================================================================
+yao 4.10.4 (2012oct13, new extended field method + optimize fft size and fftw):
+test now w/ extfield w.r.t. before.
+test         Simple SH6x6 w/ TT mirror, full... 118.7   ON        0.34@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 129.6   OFF       0.34@1.65mic
+test1        Simili Altair LGS, full diffrac... 69.9    ON        0.58@1.65mic
+test1        Simili Altair LGS, full diffrac... 82.2    OFF       0.58@1.65mic
+test2        SH 12x12, quick method, with se... 368.0   ON        0.79@1.65mic
+test2        SH 12x12, quick method, with se... 524.9   OFF       0.79@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 49.4    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 62.9    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 590.8   ON        0.56@2.20mic
+test4        Simple Curvature 36 actuators w... 903.4   OFF       0.56@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 61.9    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 64.2    OFF       0.84@2.20mic
+test6        DH WFS & DM                        547.9   ON        0.49@1.65mic
+test6        DH WFS & DM                        1035.9  OFF       0.49@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 27.2    ON        0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 28.2    OFF       0.50@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 986.1   ON        0.47@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1955.7  OFF       0.47@1.65mic

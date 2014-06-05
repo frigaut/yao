@@ -1,0 +1,68 @@
+----------------------------------------------------------
+Fri Oct 26 13:49:04 2012, has_lapack=0
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 172.9   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 83.1    OFF       0.58@1.65mic
+test2        SH 12x12, quick method, with se... 521.5   OFF       0.80@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 63.0    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 842.5   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 65.9    OFF       0.84@2.20mic
+test6        DH WFS & DM                        1042.9  OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 27.0    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1999.1  OFF       0.47@1.65mic
+
+has_lapack=1
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 165.5   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 65.8    OFF       0.59@1.65mic
+test2        SH 12x12, quick method, with se... 459.7   OFF       0.80@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 59.5    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 767.7   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 75.0    OFF       0.84@2.20mic
+test6        DH WFS & DM                        1137.6  OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 31.7    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1567.1  OFF       0.47@1.65mic
+----------------------------------------------------------
+Fri Oct 26 13:57:34 2012, _has_lapack=0, sim.svipc=7
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 115.3   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 82.8    OFF       0.60@1.65mic
+test2        SH 12x12, quick method, with se... 210.1   OFF       0.76@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 57.4    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 255.3   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 61.3    OFF       0.84@2.20mic
+test6        DH WFS & DM                        250.0   OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 25.4    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 434.1   OFF       0.46@1.65mic
+----------------------------------------------------------
+Fri Oct 26 14:02:06 2012
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 149.2   ON        0.45@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 173.0   OFF       0.45@1.65mic
+test1        Simili Altair LGS, full diffrac... 71.0    ON        0.60@1.65mic
+test1        Simili Altair LGS, full diffrac... 81.9    OFF       0.58@1.65mic
+test2        SH 12x12, quick method, with se... 368.6   ON        0.80@1.65mic
+test2        SH 12x12, quick method, with se... 522.7   OFF       0.80@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 49.9    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 63.8    OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 548.3   ON        0.58@2.20mic
+test4        Simple Curvature 36 actuators w... 897.3   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 63.2    ON        0.84@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 66.1    OFF       0.84@2.20mic
+test6        DH WFS & DM                        465.6   ON        0.50@1.65mic
+test6        DH WFS & DM                        1020.5  OFF       0.50@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 26.6    ON        0.62@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 27.3    OFF       0.62@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 778.3   ON        0.47@1.65mic
+test8        Simple SH6x6 w/ TT mirror, full... 1950.6  OFF       0.47@1.65mic
+----------------------------------------------------------
+Thu May 23 06:26:39 2013
+Parfile      Name                               iter/s  Display?  Strehl    
+ashfast-benc Simple SH6x6 w/ TT mirror, full... 1847.6  OFF       0.50@1.65mic
+ashfast-benc Simple SH6x6 w/ TT mirror, full... 1838.0  OFF       0.50@1.65mic
+c188-bench   Simple Curvature 36 actuators w... 101.1   ON        0.64@1.65mic
+c188-bench   Simple Curvature 36 actuators w... 117.3   OFF       0.64@1.65mic
+mcao2-bench  Gemini MCAO system                 7.1     ON        0.74@2.20mic
+mcao2-bench  Gemini MCAO system                 7.3     OFF       0.74@2.20mic
+sh6m2-bench  Simple SH6x6 w/ TT mirror, full... 317.5   ON        0.45@1.65mic
+sh6m2-bench  Simple SH6x6 w/ TT mirror, full... 391.1   OFF       0.45@1.65mic

@@ -810,14 +810,14 @@ func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
       for (i=1;i<=nim;i++) {
         if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(*ar(1))(2));
-        pli,*ar(i),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
+        pli,bytscl(*ar(i),cmin=0),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
       }
     } else {
       for (i=1;i<=nim;i++) {
         if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(*ar(1))(2));
-        pli,*ar(i)^power,xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
+        pli,bytscl(*ar(i)^power,cmin=0),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
       }
     }
@@ -826,20 +826,20 @@ func disp2d(ar,xpos,ypos,area,zoom=,power=,init=,nolimits=)
       for (i=1;i<=nim;i++) {
         if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(ar(,,1))(2));
-        pli,ar(,,i),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
+        pli,bytscl(ar(,,i),cmin=0),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
       }
     } else {
       for (i=1;i<=nim;i++) {
         if (basezoom(i)==0) continue;
         off = basezoom(i)/(dimsof(ar(,,1))(2));
-        pli,ar(,,i)^power,xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
+        pli,bytscl(ar(,,i)^power,cmin=0),xpos(i)-basezoom(i)-off,ypos(i)-basezoom(i)-off,
           xpos(i)+basezoom(i)-off,ypos(i)+basezoom(i)-off;
       }
     }
   }
 
-  if ((is_set(init)) & (!is_set(nolimits))) {
+  if ((is_set(init)) && (!is_set(nolimits))) {
     limits,square=1;
     limits;
   }
