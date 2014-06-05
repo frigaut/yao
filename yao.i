@@ -4455,11 +4455,15 @@ func after_loop(void)
   fairy  = findfwhm(airy,saveram=1);
   if (!no_ee) e50airy= encircled_energy(airy,ee50); else e50airy=0.;
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
-
-
+  
   psize  = (float(sim.pupildiam)/sim._size)*(*target.lambda)/tel.diam/4.848e-3;
-  write,format="\nPixel size in images (e.g. imav) = %.1f mas/pixel\n",psize;
-
+  tmp = "Pixel size in images (e.g., imav):";
+  for (nl=1;nl<=numberof(psize);nl++){
+    grow, tmp, swrite(format="%.3f",psize(nl));
+  }
+  grow, tmp, "mas";
+  write, tmp;
+ 
   write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
     for (jt=1;jt<=target._ntarget;jt++) {
