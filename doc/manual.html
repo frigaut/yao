@@ -897,10 +897,9 @@ where
 
 <h4>Photometry and noise</h4>
 
-<p>Photometry and noise are only relevant (and implemented) for Shack-Hartmann and 
-Curvature WFS.</p>
+<p>Photometry and noise are only relevant (and implemented) for Shack-Hartmann, Curvature and Pyramid WFSs.</p>
 <p>All the photometry is controlled with the <code>wfs.gsmag, wfs.skymag</code>
-  and <code>wfs.zeropoint</code>. <code>wfs.zeropoint</code> is defined in 
+  and <code>wfs.zeropoint</code> (preferably) or <code>gs.zeropoint</code>. <code>wfs.zeropoint</code> is defined in 
   photons/second/full_aperture (incident on the telescope aperture, i.e. after
   crossing the atmosphere). Note that this depends on the telescope diameter 
   (may be it was a bad choice to define it like that, but now it's done). It is
@@ -910,7 +909,7 @@ Curvature WFS.</p>
 <p>yao doesn't have a concept of ADU. Or rather, I am assuming one electron/ADU
   across the board. So the signal in in electrons, and the noise is also in 
   electrons.</p>
-
+<p>The excess noise factor (e.g., for EMCCDs) is now modeled by setting <code>wfs.excessnoise</code>. For a regular detector, this defaults to 1, for an EMCCD, set to 1.41.</p>
 
 <a name="deformable_mirrors"></a>
 
@@ -1490,6 +1489,7 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">skymag            </td><td>float    </td><td>Unitless   </td><td>0 (no sky) </td><td>no  </td><td>WFS sky magnitude/arcsec^2. [0 means no sky]                                        </td></tr>
   <tr><td class="varname">noise             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Enable noise (photon noise & read out noise)                                        </td></tr>
   <tr><td class="varname">ron               </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>Read out noise                                                                      </td></tr>
+  <tr><td class="varname">excessnoise        </td><td>float    </td><td>Unitless         </td><td>1          </td><td>no  </td><td>Excess noise factor. 
   <tr><td class="varname">darkcurrent       </td><td>float    </td><td>e-/s/pixel </td><td>0          </td><td>no  </td><td>Dark current                                                                        </td></tr>
   <tr><td class="varname">gspos(2)          </td><td>float    </td><td>arcsec     </td><td>[0,0]      </td><td>no  </td><td>WFS guide star position [x,y]                                                       </td></tr>
   <tr><td class="varname">gsalt             </td><td>float    </td><td>meter      </td><td>0          </td><td>no  </td><td>WFS guide star altitude, at zenith. 0 for infinity.                                 </td></tr>
