@@ -3481,6 +3481,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
     dm(nm)._signus = &array(long,dm(nm)._nact); 
   }
 
+  if (anyof(wfs.excessnoise < 1.)){
+     error, "wfs.excessnoise must be set to be greater than or equal to 1";
+  }
+
   if (aoloop_user_func!=[]) status = aoloop_user_func();
 
   // Initialize displays:
