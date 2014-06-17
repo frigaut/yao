@@ -1018,6 +1018,10 @@ func sh_wfs(pupsh,phase,ns)
 
       if (stop_at==421) error;
 
+      if (anyof(wfs.excessnoise < 1.)){
+        error, "wfs.excessnoise must be set to be greater than or equal to 1";
+      }
+
       err = _shwfs_spots2slopes(ffimage, xtmp, ytmp,wfs(ns)._nsub4disp,wfs(ns).npixels, wfs(ns)._fimnx, fimny,yoffset,*wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias, *wfs(ns)._flat, wfs(ns).ron, wfs(ns).excessnoise, wfs(ns).noise, *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub, *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles, mesvec);
     } else mesvec *= 0;
 
@@ -1134,6 +1138,9 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
 
   phasescale = float(2*pi/wfs(ns).lambda);   // wfs.lambda in microns
 
+  if (anyof(wfs.excessnoise < 1.)){
+    error, "wfs.excessnoise must be set to be greater than or equal to 1";
+  }
   err = _cwfs( ipupil, phase, phasescale, *wfs(ns)._tiltsh, *wfs(ns)._cxdef,
                *wfs(ns)._sxdef, dimpow2, *wfs(ns)._sind, *wfs(ns)._nsind,
                wfs(ns)._nsub, *wfs(ns)._fimage, *wfs(ns)._fimage2,
@@ -1480,6 +1487,9 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   }
 
   if (wfs(ns).noise) {
+    if (anyof(wfs.excessnoise < 1.)){
+      error, "wfs.excessnoise must be set to be greater than or equal to 1";
+    }
     // poisson distribution of star flux
     ex2 =  wfs(ns).excessnoise^2;
     reimaged_pupil = ex2*poidev(reimaged_pupil/ex2);
