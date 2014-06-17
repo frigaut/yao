@@ -1126,6 +1126,7 @@ int _shwfs_spots2slopes(
     float    *bias,         // bias array, dim = nsubs*binxy*binxy, in e-
     float    *flat,         // flat array, dim = nsubs*binxy*binxy, normalized @ 1.
     float    ron,           // read-out noise
+    float    excessnoise,   // excess noise factor
     long     noise,         // compute noise
     float    *bckgrdcalib,  // background calib array, binxy*binxy*nsubs
     int      bckgrdinit,    // init background processing. fill bckgrdcalib
@@ -1151,6 +1152,8 @@ int _shwfs_spots2slopes(
   int           ind[sizeThArray];
   int           ii, kk, minind;
   int           met3threshold;
+  const float   excess_noise_sqr = pow(excessnoise,2.0f);
+  const float   one_over_excess_noise_sqr = 1.0f/excess_noise_sqr;
   
   // Set the size of 2d FFT.
   nb2 = binxy2 * binxy2;
@@ -1193,7 +1196,9 @@ int _shwfs_spots2slopes(
   // Then apply photon and gaussian (read-out) noise
   if ( noise==1 ) {
     // poisson noise
-    _poidev(fimage+xyoff,fimnx*fimny);
+    for ( i=0; i<(fimnx*fimny); i++ ) fnoise[i] = fimage[i+xyoff] * one_over_excess_noise_sqr ;
+    _poidev(fnoise,fimnx*fimny);
+    for ( i=0; i<(fimnx*fimny); i++ ) fimage[i+xyoff] = fnoise[i] * excess_noise_sqr ;
     // add gaussian noise
     _gaussdev(fnoise,fimnx*fimny);
     for ( i=xyoff; i<(xyoff+fimnx*fimny); i++ ) fimage[i] += ron*fnoise[i-xyoff];
@@ -1491,6 +1496,7 @@ int _cwfs (float *pupil,      // input pupil
            float nphotons,    // total number of photons, for noise
            float skynphotons, // total number of photons from sky, for noise
            float ron,         // read-out noise, in case.
+           float excessnoise, // excess noise factor
            float darkcurrent, // dark current, per detector/full sample
                               // note it will be 1/2 of given value per image
                               // ron and darkcurrent are only added if noise = 1
@@ -1506,6 +1512,8 @@ int _cwfs (float *pupil,      // input pupil
   long          log2nr, log2nc, n, ns;
   int           i,k,sindstride,koff;
   float         pp,ppsin,ppcos;
+  const float   excess_noise_sqr = pow(excessnoise,2.0f);
+  const float   one_over_excess_noise_sqr = 1.0f/excess_noise_sqr;
 
   /*
     Global setup for FFTs:
@@ -1625,7 +1633,9 @@ int _cwfs (float *pupil,      // input pupil
       // add sky:
       for ( i=0 ; i<nsubs ; i++ ) { x1[i] += skynphotons/2.0f ; }
       // apply poisson noise
+      for ( i=0 ; i<nsubs ; i++ ) { x1[i] *= one_over_excess_noise_sqr; }
       _poidev(x1,nsubs);
+      for ( i=0 ; i<nsubs ; i++ ) { x1[i] *= excess_noise_sqr; }
     }
     if (ron > 0.0f) {
       // set up gaussian noise vector
@@ -1644,7 +1654,9 @@ int _cwfs (float *pupil,      // input pupil
       for ( i=0 ; i<nsubs ; i++ ) { x2[i] = x2[i]*tot ; }
       for ( i=0 ; i<nsubs ; i++ ) { x2[i] += darkcurrent/2.0f ; }
       for ( i=0 ; i<nsubs ; i++ ) { x2[i] += skynphotons/2.0f ; }
+      for ( i=0 ; i<nsubs ; i++ ) { x2[i] *= one_over_excess_noise_sqr; }
       _poidev(x2,nsubs);
+      for ( i=0 ; i<nsubs ; i++ ) { x2[i] *= excess_noise_sqr; }
     }
     if (ron > 0.0f) {
       for ( i=0 ; i<nsubs ; i++ ) { gnoise[i] = ron; }

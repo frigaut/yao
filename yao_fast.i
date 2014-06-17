@@ -221,7 +221,7 @@ extern _shwfs_spots2slopes
    int array imjstart2, int nsubs, int binxy2, int fimnx, int fimny,
    int yoffset, float array centroidw, long shthmethod, float array threshold,
    float array bias, float array flat,
-   float ron, long noise, float array bckgrdcalib,
+   float ron, float excessnoise, long noise, float array bckgrdcalib,
    int bckgrdinit, int bckgrdsub, int array validsubs, int array svipc_subok,
    int niter, float array mesvec)
 */
@@ -240,7 +240,7 @@ extern _cwfs
    float array phaseoffset, float array cxdef, float array sxdef,
    int dimpow2, int array sind, int array nsind, int nsubs,
    float array fimage, float array fimage2, float nphotons, float skynphotons,
-   float ron, float darkcurrent, int noise, float array mesvec)
+   float ron, float excessnoise, float darkcurrent, int noise, float array mesvec)
 */
 
 // _fftw_init_threads;

@@ -1018,18 +1018,8 @@ func sh_wfs(pupsh,phase,ns)
 
       if (stop_at==421) error;
 
-      err = _shwfs_spots2slopes( ffimage, xtmp, ytmp,
-                  wfs(ns)._nsub4disp, wfs(ns).npixels,
-                  wfs(ns)._fimnx , fimny, yoffset,
-                  *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
-                  *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise,
-                  *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
-                  *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles,
-                  mesvec);
+      err = _shwfs_spots2slopes(ffimage, xtmp, ytmp,wfs(ns)._nsub4disp,wfs(ns).npixels, wfs(ns)._fimnx, fimny,yoffset,*wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias, *wfs(ns)._flat, wfs(ns).ron, wfs(ns).excessnoise, wfs(ns).noise, *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub, *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles, mesvec);
     } else mesvec *= 0;
-
-    
-    //write,format="%d %f ",wfs(ns)._cyclecounter,sum(*wfs(ns)._fimage),mesvec(ptp);
 
     if ( wfs(ns).svipc>1 ) {
       sem_take,semkey,20+4*(ns-1)+3,count=wfs(ns).svipc-1;
@@ -1148,7 +1138,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
                *wfs(ns)._sxdef, dimpow2, *wfs(ns)._sind, *wfs(ns)._nsind,
                wfs(ns)._nsub, *wfs(ns)._fimage, *wfs(ns)._fimage2,
                float(wfs(ns)._nphotons), float(wfs(ns)._skynphotons),
-               float(wfs(ns).ron), float(wfs(ns).darkcurrent*loop.ittime),
+               float(wfs(ns).ron), float(wfs(ns).excessnoise), float(wfs(ns).darkcurrent*loop.ittime),
                int(wfs(ns).noise), mesvec);
 
   wfs(ns)._dispimage = wfs(ns)._fimage;
@@ -1491,16 +1481,17 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
   if (wfs(ns).noise) {
     // poisson distribution of star flux
-    reimaged_pupil = poidev(reimaged_pupil);
-    // add CCD RON
-    reimaged_pupil += wfs(ns).ron*random_n(dimsof(reimaged_pupil));
-    // add sky noise
-    for (i=1;i<=4;i++) reimaged_pupil(,,i) += poidev(array(sky_frame)*wfs(ns)._skynphotons*nintegcycles);
-    // add dark current
-    reimaged_pupil += poidev(array(wfs(ns).darkcurrent*loop.ittime*nintegcycles, dimsof(reimaged_pupil)));
-
+    ex2 =  wfs(ns).excessnoise^2;
+    reimaged_pupil = ex2*poidev(reimaged_pupil/ex2);
+    // add sky and dark current
+    for (i=1;i<=4;i++){
+      tmp = ex2*poidev(*wfs(ns)._bckgrdcalib*nintegcycles/ex2);
+      reimaged_pupil(,,i) += tmp;
+    }
     // subtract the calibrated frame from each subimage
     reimaged_pupil -= *wfs(ns)._bckgrdcalib*nintegcycles;
+    // add CCD RON
+    reimaged_pupil += wfs(ns).ron*random_n(dimsof(reimaged_pupil));
   }
 
   // Put the re-imaged pupil into a single array for display:

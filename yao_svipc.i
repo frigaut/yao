@@ -300,15 +300,7 @@ func wfs_fork_listen(ns,nf)
 
     threshold   = array(float,wfs(ns)._nsub4disp+1)+wfs(ns).shthreshold;
 
-    err = _shwfs_spots2slopes( ffimage,
-                *wfs(ns)._imistart2, *wfs(ns)._imjstart2,
-                wfs(ns)._nsub4disp, wfs(ns).npixels,
-                wfs(ns)._fimnx, fimny2, yoffset,
-                *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias,
-                *wfs(ns)._flat, wfs(ns).ron, wfs(ns).noise,
-                *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub,
-                *wfs(ns)._validsubs, svipc_subok2, wfs(ns).nintegcycles,
-                mesvec);
+    err = _shwfs_spots2slopes(ffimage, *wfs(ns)._imistart2, *wfs(ns)._imjstart2, wfs(ns)._nsub4disp, wfs(ns).npixels, wfs(ns)._fimnx, fimny2, yoffset, *wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias, *wfs(ns)._flat, wfs(ns).ron, wfs(ns).excessnoise, wfs(ns).noise, *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub, *wfs(ns)._validsubs, svipc_subok2, wfs(ns).nintegcycles, mesvec);
 
 
     sem_give,semkey,20+4*(ns-1)+3;
