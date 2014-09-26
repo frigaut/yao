@@ -58,11 +58,11 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // WORK OUT THE NUMBER OF PHOTONS COLLECTED PER SUBAPERTURE AND SAMPLE
   //====================================================================
 
-  // this is modified to take into account the actual surface area of the 
-  // telescope, rather than the telescope area for a circular telescope with 
+  // this is modified to take into account the actual surface area of the
+  // telescope, rather than the telescope area for a circular telescope with
   // no central obscuration
   telSurf = sum(pupil)*(tel.diam/sim.pupildiam)^2;
-		    
+
   // from the guide star (computed here as used in wfs_check_pixel_size):
   if (wfs(ns).gsalt == 0) {
 
@@ -81,7 +81,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
 
   }
   // see below for # of photons from sky
-  
+
   //=============================================================
   // LGS ELONGATION FROM DEFOCUS METHOD (NOT KERNEL CONVOLUTION)
   //=============================================================
@@ -95,7 +95,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     xyc += wfs(ns).LLTxy*sim.pupildiam/tel.diam;
     wfs(ns)._unitdefocus = &float(2*sqrt(3.)*(dist(sim._size,xc=xyc(1),\
                                   yc=xyc(2))/(sim.pupildiam/2.))^2.);
-  
+
     dyn_range_correct = (numberof(*wfs(ns).lgs_prof_amp)>0);
     tmp = float(indices(subsize));
     wfs(ns)._unittip = &(tmp(,,1)*dyn_range_correct);
@@ -199,7 +199,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // note that nx can actually be smaller than sdim, as we are xfering into the
   // ximage and the xfer is bound checked.
   wfs(ns).extfield = wfs(ns)._npixels*wfs(ns).pixsize;
-  
+
   // now let's find if there are better dimension for the fft:
   if ((wfs(ns)._npb>0)&&(wfs(ns).shmethod==2)&&(optimize_nx)) {
     // determine prime factors for _nx and above. take first integer which
@@ -265,7 +265,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   wfs(ns)._binindices = &(int(binindices));
   // checked, it seems to work.
   wfs(ns)._binxy = nbigpixels;
-  
+
   if (stop_at==43) error;
 
   // centroid reference vector, after final extraction of subimage:
@@ -613,8 +613,8 @@ func shwfs_init_common_kernel(ns,imat=)
 
   } else {
 
-    // we are in regular aoloop. no further convolution to account for seeing. 
-    // However, we want to avoid dividing by zero in makegaussian, 
+    // we are in regular aoloop. no further convolution to account for seeing.
+    // However, we want to avoid dividing by zero in makegaussian,
     // so we floor fwhm:
     kernelfwhm = clip(wfs(ns).kernel,1e-8,);
 
@@ -637,7 +637,7 @@ func shwfs_init_common_kernel(ns,imat=)
 //----------------------------------------------------
 func shwfs_init_lgs_kernels(ns)
 /* DOCUMENT shwfs_init_lgs_kernels(ns)
- * COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT. 
+ * COMPUTE WFS IMAGE KERNELS: SUBAPERTURE DEPENDENT.
  * USED FOR LGS ELONGATION
  */
 {
@@ -736,7 +736,7 @@ func shwfs_init_rayleigh(ns)
     yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
     yao_fitswrite,YAO_SAVEPATH+rayfname,sodiumflux,append=1,exttype="image";
   }
-  
+
   if (sim.verbose > 0) {
     write,"From Rayleigh calculations:";
     write,format="Rayleigh / Sodium ratio in worse/best subapertures: %f, %f\n",
@@ -746,7 +746,7 @@ func shwfs_init_rayleigh(ns)
     write,format="Sodium   flux varies between %f and %f /cm2/looptime\n",
       min(sodiumflux),max(sodiumflux);
   }
-  
+
   wfs(ns)._rayleigh = &(float(kall));
   wfs(ns)._rayleighflux = &float(rayleighflux);
   wfs(ns)._sodiumflux = &float(sodiumflux);
@@ -899,9 +899,9 @@ func sh_wfs(pupsh,phase,ns)
       if (wfs(ns)._cyclecounter == 1){
         wfs(ns)._meashist = &array(0.0f,dimsof(current_mes));
       }
-      
+
       *wfs(ns)._meashist += current_mes/wfs(ns).nintegcycles;
-      
+
       if (wfs(ns)._cyclecounter == wfs(ns).nintegcycles){
         wfs(ns)._cyclecounter = 1;
         mesvec = *wfs(ns)._meashist;
@@ -909,7 +909,7 @@ func sh_wfs(pupsh,phase,ns)
         if ((wfs(ns).noise == 1) && (wfs(ns).ron > 0)){
           mesvec += random_n(wfs(ns)._nmes)*wfs(ns).ron;
         }
-      }      
+      }
       else {
         wfs(ns)._cyclecounter += 1;
         mesvec = array(0.0f, dimsof(current_mes));
@@ -988,8 +988,8 @@ func sh_wfs(pupsh,phase,ns)
             wfs(ns)._nsub4disp, sdimpow2, wfs(ns)._domask, *wfs(ns)._submask,
             *wfs(ns)._kernel, wfs(ns)._nkernels, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
-            *wfs(ns)._binindices, wfs(ns)._binxy, wfs(ns)._rebinfactor, 
-            wfs(ns)._nx4fft, *wfs(ns)._unittip, 
+            *wfs(ns)._binindices, wfs(ns)._binxy, wfs(ns)._rebinfactor,
+            wfs(ns)._nx4fft, *wfs(ns)._unittip,
             *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
             *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
             *wfs(ns)._unitdefocus, ffimage, *wfs(ns)._svipc_subok,
@@ -1000,7 +1000,7 @@ func sh_wfs(pupsh,phase,ns)
             int(wfs(ns).rayleighflag),
             *wfs(ns)._rayleigh, wfs(ns)._bckgrdinit,
             wfs(ns)._cyclecounter, wfs(ns).nintegcycles);
-            
+
     if ( wfs(ns).svipc>1 ) {
       if (sim.debug>20) write,format="main: waiting fork ready sem %d\n",2*ns+1;
       sem_take,semkey,20+4*(ns-1)+1,count=wfs(ns).svipc-1;
@@ -1010,7 +1010,7 @@ func sh_wfs(pupsh,phase,ns)
     // spot image to slopes:
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
       ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
-      
+
       xysof = (wfs(ns)._npixels-wfs(ns).npixels-wfs(ns)._npb/2);
       xtmp = int(*wfs(ns)._imistart2+xysof);
       ytmp = int(*wfs(ns)._imjstart2+xysof);
@@ -1018,7 +1018,13 @@ func sh_wfs(pupsh,phase,ns)
 
       if (stop_at==421) error;
 
-      err = _shwfs_spots2slopes(ffimage, xtmp, ytmp,wfs(ns)._nsub4disp,wfs(ns).npixels, wfs(ns)._fimnx, fimny,yoffset,*wfs(ns)._centroidw, wfs(ns).shthmethod, threshold, *wfs(ns)._bias, *wfs(ns)._flat, wfs(ns).ron, wfs(ns).excessnoise, wfs(ns).noise, *wfs(ns)._bckgrdcalib, wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub, *wfs(ns)._validsubs, subok2, wfs(ns).nintegcycles, mesvec);
+      err = _shwfs_spots2slopes(ffimage, xtmp, ytmp, wfs(ns)._nsub4disp,
+        wfs(ns).npixels, wfs(ns)._fimnx, fimny,yoffset,*wfs(ns)._centroidw,
+        wfs(ns).shthmethod, threshold, *wfs(ns)._bias, *wfs(ns)._flat,
+        wfs(ns).ron, wfs(ns).excessnoise, wfs(ns).noise, *wfs(ns)._bckgrdcalib,
+        wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub, *wfs(ns)._validsubs, subok2,
+        wfs(ns).nintegcycles, mesvec);
+
     } else mesvec *= 0;
 
     if ( wfs(ns).svipc>1 ) {
@@ -1144,7 +1150,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
   wfs(ns)._dispimage = wfs(ns)._fimage;
 
   if (*wfs(ns)._reordervec!=[]) mesvec = mesvec(*wfs(ns)._reordervec);
-  
+
   return mesvec;
 }
 
@@ -1344,7 +1350,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
   // apply field stop if needed:
   if (wfs(ns).pyr_mod_loc=="after") complex_amplitude *= *wfs(ns)._submask;
-  
+
   reimaged_pupil = array(double,[3,pyr_npix,pyr_npix,4]);
 
   // prepare arrays to shift re-imaged pupil
@@ -1425,8 +1431,8 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     //~ sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
     // above: that's bad. require does not necessarily do it if it has
     // already been included. Instead, do:
-    
-    include,"util_fr.i",1;  
+
+    include,"util_fr.i",1;
     extern __sincar;
     __sincar = roll(__sinc(pi*xy2(,,1))*__sinc(pi*xy2(,,2)));
   }
@@ -1455,11 +1461,11 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
   if (init){
     subapint = reimaged_pupil(,,sum); // sum of all the subaperture intensities
-    medianint = median(subapint(*)); 
+    medianint = median(subapint(*));
     wfs(ns)._validsubs = &(where(subapint>=wfs(ns).fracIllum*medianint));
     wfs(ns)._nmes = 2*numberof(*wfs(ns)._validsubs);
   }
-    
+
   // photometry and noise:
   totflux = sum(reimaged_pupil);
   reimaged_pupil *= phot_norm_factor*wfs(ns)._nphotons/totflux;
@@ -1519,7 +1525,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   } else {
     denom = pixels(,sum)+1e-6;
   }
-    
+
   // compute the final signal, using quadcell formula:
   sigx = (pixels(,[2,4])(,sum)-pixels(,[1,3])(,sum))/denom;
   sigy = (pixels(,[3,4])(,sum)-pixels(,[1,2])(,sum))/denom;
@@ -1582,7 +1588,7 @@ func zernike_wfs(pupsh,phase,ns,init=)
 
   wfs(ns)._fimage = wfs(ns)._dispimage = \
           &((phase*pupsh)(zn12(1):zn12(2),zn12(1):zn12(2)));
-  
+
   mesvec = wfs_zer(,+)*phase(*)(wfs_wzer)(+);
 
   // returns microns rms (checked 2008apr10) ??? see above comment
@@ -1670,7 +1676,7 @@ func mult_wfs_int_mat(disp=,subsys=)
     // uncomment if needed:
     //    phase  += get_phase2d_from_optics(ns,"wfs");
     wfs(ns)._nkernels = 1;
-    
+
     // do the wavefront sensing:
     if (wfs(ns).type == "hartmann" ) {
       if (wfs(ns).disjointpup) {
@@ -1812,7 +1818,7 @@ func slope_offset_defocus(arcsec_per_meter,ns)
   for (i=1;i<=numberof(ns);i++) {
     valid = where(*wfs(ns(i))._validsubs);
     x = (*wfs(ns(i))._x)(valid); // in [m]
-    y = (*wfs(ns(i))._y)(valid); 
+    y = (*wfs(ns(i))._y)(valid);
     ref = _(x,y)*arcsec_per_meter;
     *wfs(ns(i))._refmes += float(ref);
   }
@@ -1893,14 +1899,14 @@ func shwfs_tests(name, clean=, wfs_svipc=, debug=, dpi=, verbose=, batch=)
   sim.debug = 0;
   if (quit_forks) quit_forks();
   aoinit;
-  
+
   wfs(1).noise=0;
   shwfs_tests_plots,"(almost) NO NGS w/ sky, no noise",batch=batch;
-  
+
   wfs(1).noise=1;
   wfs(1).ron=0;
   shwfs_tests_plots,"(almost) NO NGS w/ sky, w/ noise but no RON",batch=batch;
-  
+
   wfs(1).ron=4;
   shwfs_tests_plots,"(almost) NO NGS w/ sky, w/ noise",batch=batch;
 
@@ -2076,7 +2082,7 @@ func sh_wfs_speed_tests(case,png=)
     }
     return;
   }
-  
+
   if (case==1) {
     // first dependency on pupildiam:
     cname = "pupildiam"; cunit = "pixels";
@@ -2236,7 +2242,7 @@ func sh_wfs_speed_tests(case,png=)
   }
   winkill,0;
   window,0,dpi=120,wait=1;
-  plot,tim,in; 
+  plot,tim,in;
   plmargin;
   plp,tim,in,symbol=20,size=0.3;
   limits,0.,,0.;
@@ -2303,7 +2309,7 @@ func svipc_shwfs_tests(parfile,nfork_max=,nit=,doplot=)
  */
 {
   require,"svipc.i";
-  
+
   if (nfork_max==[]) {
     if (catch(0x10)) {
       nfork_max=4;

@@ -4154,14 +4154,15 @@ func go(nshot,all=)
     plt,sim.name,0.01,0.227,tosys=0;
     if (dispImImav) {
       disp2d,imav,*target.xposition,*target.yposition,1,power=0.5;
+      mypltitle,"Average PSFs",[0.,-0.00],height=12;
     } else {
       disp2d,im,*target.xposition,*target.yposition,1,power=0.5;
+      mypltitle,"Instantaneous PSFs",[0.,-0.00],height=12;
     }
     for (j=1;j<=nwfs;j++) {
       plg,wfs(j).gspos(2),wfs(j).gspos(1),marker='\2',
         type="none",marks=1,color="red";
     }
-    mypltitle,"Instantaneous PSFs",[0.,-0.00],height=12;
     myxytitles,"","arcsec",[0.005,0.01],height=12;
 
     // WFS spots

@@ -139,12 +139,12 @@ func make_pzt_dm(nm,&def,disp=)
 
       // make sure which sinc we're using:
       if (abs(sinc(1.))<1e-10) fact=1.; else fact=pi;
-      
+
       def(,,i)= (sinc(fact * sqrt((x-cubval(i,1))^2.)/a_had(1))* \
                  sinc(fact * sqrt((y-cubval(i,2))^2.)/a_had(1))* \
                  exp(-((x-cubval(i,1))/a_had(2))^2.              \
                      -((y-cubval(i,2))/a_had(2))^2. ));
-      
+
     } else {
       if (coupling == 0){
         tmpx = pitch - abs(abs(x)-cubval(i,1));
@@ -233,14 +233,14 @@ func make_pzt_dm_elt(nm,&def,disp=)
     x     = xy(,,1); y = xy(,,2);
     tmpx  = abs(abs(x)-pitch)/pitch;
     tmpy  = abs(abs(y)-pitch)/pitch;
-    
+
     def   = tmpx*tmpy;
   } else {
     ir = irc*pitch;
-    
+
     tmp=pitch/abs(ir);
     c = (coupling - 1.+ tmp^p1)/(log(tmp)*tmp^p2);
-    
+
     // compute IF on partial (local) support:
     smallsize = long(ceil(2*ir+10));
     dm(nm)._eltdefsize = smallsize;
@@ -251,7 +251,7 @@ func make_pzt_dm_elt(nm,&def,disp=)
     tmp   = (1.-tmpx^p1+c*log(tmpx)*tmpx^p2)*(1.-tmpy^p1+c*log(tmpy)*tmpy^p2);
     def   = tmp*(tmpx <= 1.)*(tmpy <= 1.);
   }
-  
+
   // compute location (x,y and i,j) of each actuator:
   cub   = array(float,nxact,nxact,2);
   // make X and Y indices array:
@@ -730,7 +730,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
 
   // remove piston from the definition
   for (c1=1;c1<=(dimsof(def))(3);c1++)def(:,c1) -= def(avg,c1);
-  
+
   // compute the IF covariance matrix
   defcov = def(+,)*def(+,);
 
@@ -811,7 +811,7 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
   anisoproj = def(+,)*defa(+,);
 
   act_pen = unit(dimsof(defcov)(3))*max(diag(defcov))/1000.;
-  ahigh = LUsolve(defcov+piston_pen+act_pen,anisoproj); 
+  ahigh = LUsolve(defcov+piston_pen+act_pen,anisoproj);
 
   if (disp || (sim.debug == 2)) {
     for (i=1;i<=3;i++) {
@@ -842,22 +842,22 @@ func hysteresis(x,nm)
 {
   // Uses the method developed by Luc Gilles for TMT in MAOS
   // YAO implementation by Marcos van Dam, April 2013
-  
-  // x = voltage commands; 
+
+  // x = voltage commands;
   // n is the DM number
 
   output = array(float, dimsof(x)); // this is the output vector
-  
+
   for (k=1;k<=dm(nm)._nact;k++){ // loop over all the actuators
-  
-    if ((*dm(nm)._signus)(k) == 0){  
+
+    if ((*dm(nm)._signus)(k) == 0){
       if ((x(k) - (*dm(nm)._x0)(k)) < 0){
         (*dm(nm)._signus)(k) = -1;
       } else {
         (*dm(nm)._signus)(k) = 1;
       }
     }
-    
+
     if ((*dm(nm)._signus)(k) == 1){
       if ((x(k) - (*dm(nm)._x0)(k)) < 0){
         (*dm(nm)._signus)(k) = -1;
@@ -874,19 +874,19 @@ func hysteresis(x,nm)
     beta = dm(nm)._beta;
     y0 = (*dm(nm)._y0)(k,:);
     x0 = (*dm(nm)._x0)(k);
-      
+
     y = array(float,3);
-    for (i=1;i<=3;i++){  
+    for (i=1;i<=3;i++){
       y(i) = x(k) - alpha(i)*beta(i) + (y0(i) - x0 + alpha(i)*beta(i))*exp(-(x(k)-x0)/alpha(i));
     }
-    
+
     (*dm(nm)._x0)(k) = x(k);
     (*dm(nm)._y0)(k,:) = y(:);
 
     // scale to the desired hysteresis level
     output(k) = dm(nm).hyst/0.17*1.5*sum(dm(nm)._w*y) + (1-dm(nm).hyst/0.17)*x(k);
   }
-  
+
   return float(output);
 }
 
@@ -1064,6 +1064,24 @@ func make_seg_hexa_grid(pitch,nxseg,dim,&x,&y,cent=,rotby=)
   return map;
 }
 
+/* to make a keck pupil:
+map=make_seg_hexa_grid(1800/7,7,2000,x,y);
+map=filt_seg_hexa_grid(map,x,y,200*2000/512.);
+map=renum_int_array(map);
+tv,map;
+pup=map*0.; p1=0.5; p2=0.95;
+for (i=1;i<=37;i++) {pup+=(gaussm((map==i),p1)>p2); tv,pup;}
+
+or (faster, but not equivalent):
+
+map=make_seg_hexa_grid(5*180/7,7,5*200,x,y);
+map=filt_seg_hexa_grid(map,x,y,5*200*200/512.);
+map=renum_int_array(map);
+edges=((abs(map(:-1,dif))!=0)+(abs(map(dif,:-1))!=0))>0.;
+pup=(map!=0); pup(1:-1,1:-1)*=(1-edges); 
+tv,pup
+
+*/
 
 
 func filt_seg_hexa_grid(map,&x,&y,filter_radius,cent=)
