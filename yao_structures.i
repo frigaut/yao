@@ -179,7 +179,7 @@ struct wfs_struct
                           // (0 or 1: don't parallelize)
   float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
   long    ncpdm;          // DM on the path of the WFS, if any
-  
+
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first subaperture of ring.
@@ -198,8 +198,8 @@ struct wfs_struct
                           // on each side of the pupil image. Typical 0 to 4.
   string  pyr_mod_loc;    // Location of modulation (before/after the field stop.
                           // valid value are "before" or "after"
-  string  pyr_denom;      // what to use as the denominator, "subap" (default, like a SH quad cell) or "median" (median subaperture intensity)      
-  
+  string  pyr_denom;      // what to use as the denominator, "subap" (default, like a SH quad cell) or "median" (median subaperture intensity)
+
   // Shack-Hartmann WFS only keywords:
   long    shmethod;       // 1 = simple gradient average, 2=full propagation. Required [none]
   long    shnxsub;        // # of subaperture in telescope diameter. Required [none]
@@ -216,7 +216,7 @@ struct wfs_struct
                           // allow misregistration w.r.t tel pupil and funky configurations
   long    shthmethod;     // 1: yao default, 2: podium, 3: brightest pixels. Required [1]
   float   shthreshold;    // Threshold in computation of subaperture signal, >=0. Optional [0]
-  float   shcalibseeing;  // fraction of the seeing FWHM to be used in the iMat calibration 
+  float   shcalibseeing;  // fraction of the seeing FWHM to be used in the iMat calibration
   float   biasrmserror;   // rms error on WFS bias in electron. Optional [0]
   float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]
                           // Typical value can be 0.01
@@ -387,13 +387,14 @@ struct dm_struct
   pointer pegged;         // pointer to a vector that contains index of pegged actuators
                           // that is, dead actuators (index in valid numbering)
   pointer epegged;        // same for extrapolated actuators (index in extrap numbering)
-  long    ncp;            // boolean. if set, the mirror is on the non-common path for MOAO type correction 
+  long    ncp;            // boolean. if set, the mirror is on the non-common path for MOAO type correction
   string  ncpfit_type;    // whether to fit to a wfs or target to non-common path
   long    ncpfit_which;   // which target or wfs to fit to for non-common path
   long    use_def_of;     // don't compute defs but use the one computed for dm# use_def_of
   float   ifunrot;        // rotation of influence functions (degrees)
-  float   xscale;        // rotation of influence functions (degrees)
-  
+  float   xscale;         // scale fractional difference x vs y. 0 [default] would be no scale 
+                          // difference. 0.1 would mean X pitch is 10% smaller than Y pitch.
+
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first electrode in ring.
@@ -448,7 +449,7 @@ struct dm_struct
   pointer _ylast(3);
   pointer _y0;
   pointer _signus;
-  
+
   // Internal keywords:
   long    _puppixoffset(2);
   long    _nact;          // Internal. Tot # of actuators.
