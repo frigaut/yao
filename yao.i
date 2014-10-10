@@ -2150,7 +2150,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   wfs._tiprefv = split_wfs_vector(mes);
 
   for (ns=1;ns<=nwfs;ns++) {
-    wfs(ns)._tiprefvn = &(*wfs(ns)._tiprefv/sum(*wfs(ns)._tiprefv^2.));
+    sumtip2 = sum(*wfs(ns)._tiprefv^2.);
+    if (sumtip2 > 0.){wfs(ns)._tiprefvn = &(*wfs(ns)._tiprefv/sumtip2);}
   }
 
   // now the tip ref vector are normalized, so to compute the tip content
@@ -2167,7 +2168,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   wfs._tiltrefv = split_wfs_vector(mes);
 
   for (ns=1;ns<=nwfs;ns++) {
-    wfs(ns)._tiltrefvn = &(*wfs(ns)._tiltrefv/sum(*wfs(ns)._tiltrefv^2.));
+    sumtilt2 = sum(*wfs(ns)._tiltrefv^2.);
+    if (sumtilt2 > 0.){wfs(ns)._tiltrefvn = &(*wfs(ns)._tiltrefv/sumtilt2);}
   }
 
   // restore pre-operation filtertilt:
