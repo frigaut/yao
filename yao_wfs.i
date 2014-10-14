@@ -1679,7 +1679,12 @@ func mult_wfs_int_mat(disp=,subsys=)
   mes = [];
 
   for (ns=1;ns<=nwfs;ns++) {
-   filterTiltOrig = wfs(ns).filtertilt; wfs(ns).filtertilt = 0;
+    if ( (subsys!=[]) && (wfs(ns).subsystem!=subsys) ) {
+      smes = array(0.0,wfs(ns)._nmes);
+      grow,mes,smes;
+      continue;
+    }
+    filterTiltOrig = wfs(ns).filtertilt; wfs(ns).filtertilt = 0;
 
     phase   = get_phase2d_from_dms(ns,"wfs");
     // uncomment if needed:
