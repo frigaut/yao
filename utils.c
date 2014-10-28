@@ -68,3 +68,201 @@ int _sinf(float *x, long n)
   }
   return (0);
 }
+
+#ifdef __APPLE__
+
+/* This is supposed to patch the issue of linking to a dynamic lib
+in OsX. */
+
+void ran1init()
+{
+  long seed=0;
+  srandom(seed);  /* WARNING! this might be platform specific */
+}
+
+float ran1()
+{
+  float norm;
+  norm = 2147483647.f;
+
+  return random()/norm;
+}
+
+void _poidev(float *xmv, long n)
+/* all floats -> doubles on June 2010 to avoid SIGFPE
+   for too large input values */
+{
+  double gammln(double xx);
+  /*  float ran1(long *idum);*/
+  static double sq,alxm,g,oldm=(-1.0);
+  double xm,em,t,y;
+  long i;
+
+  for (i=0;i<n;i++) {
+    xm = (double)xmv[i];
+    if (xm == 0.0f) continue;
+    if (xm < 20.0) { /* Use direct method. */
+      if (xm != oldm) {
+  oldm=xm;
+  g=exp(-xm);  /* If xm is new, compute the exponential. */
+      }
+      em = -1;
+      t=1.0;
+      do {
+  ++em;
+  t *= ran1();
+      } while (t > g);
+    } else {  /* Use rejection method. */
+      if (xm != oldm) {
+  oldm=xm;
+  sq=sqrt(2.0*xm);
+  alxm=log(xm);
+  g=xm*alxm-gammln(xm+1.0);
+      }
+      do {
+  do {
+    y=tan(3.1415926535897932384626433832*ran1());
+    em=sq*y+xm;
+  } while (em < 0.0);
+  em=floor(em);
+  t=0.9*(1.0+y*y)*exp(em*alxm-gammln(em+1.0)-g);
+      } while (ran1() > t);
+    }
+    xmv[i] = (float)em;
+  }
+}
+
+
+double gammln(double xx)
+{
+  /* Returns the value ln[?(xx)] for xx>0. */
+  double x,y,tmp,ser;
+  static double cof[6]={76.18009172947146,-86.50532032941677,
+      24.01409824083091,-1.231739572450155,
+      0.1208650973866179e-2,-0.5395239384953e-5};
+  int j;
+
+  y=x=xx;
+  tmp=x+5.5;
+  tmp -= (x+0.5)*log(tmp);
+  ser=1.000000000190015;
+  for (j=0;j<=5;j++) ser += cof[j]/++y;
+  return -tmp+log(2.5066282746310005*ser/x);
+}
+
+
+void _gaussdev(float *xmv, long n)
+{
+  /* Returns a normally distributed deviate with zero mean and unit variance,
+     using ran1() as the source of uniform deviates. */
+
+  /*  float ran1(long *idum); */
+  static int iset=0;
+  static float gset;
+  float fac,rsq,v1,v2;
+  long i;
+
+  for (i=0;i<n;i++) {
+    if (iset == 0) {
+      do {
+  v1=2.0*ran1()-1.0;
+  v2=2.0*ran1()-1.0;
+  rsq=v1*v1+v2*v2;
+      } while (rsq >= 1.0 || rsq == 0.0);
+      fac=sqrt(-2.0*log(rsq)/rsq);
+      gset=v1*fac;
+      iset=1;
+      xmv[i] = v2*fac;
+    } else {
+      iset=0;
+      xmv[i] = gset;
+    }
+  }
+}
+
+
+/************************************************************************
+ * Function _eclat                                                      *
+ * Returns results identical to roll(), but faster, as it is dedicated  *
+ * to swapping quadrants, for use with FFTs.                            *
+ * Warning: In-place swapping.
+ * Last modified: December 15, 2003.                                    *
+ * Author: F.Rigaut                                                     *
+ ************************************************************************/
+
+void _eclat_long(long *ar, int nx, int ny)
+{
+  int i,j,k1,k2;
+  long a;
+
+  for ( i=0 ; i<(nx/2) ; ++i ) {
+    for ( j=0 ; j<(ny/2) ; ++j ) {
+      k1 = i+j*nx;
+      k2 = (i+nx/2)+(j+ny/2)*nx;
+      a = ar[k1];
+      ar[k1] = ar[k2];
+      ar[k2] = a;
+    }
+  }
+  for ( i=(nx/2) ; i<nx ; ++i ) {
+    for ( j=0 ; j<(ny/2) ; ++j ) {
+      k1 = i+j*nx;
+      k2 = (i-nx/2)+(j+ny/2)*nx;
+      a = ar[k1];
+      ar[k1] = ar[k2];
+      ar[k2] = a;
+    }
+  }
+}
+
+void _eclat_float(float *ar, int nx, int ny)
+{
+  int i,j,k1,k2;
+  float a;
+
+  for ( i=0 ; i<(nx/2) ; ++i ) {
+    for ( j=0 ; j<(ny/2) ; ++j ) {
+      k1 = i+j*nx;
+      k2 = (i+nx/2)+(j+ny/2)*nx;
+      a = ar[k1];
+      ar[k1] = ar[k2];
+      ar[k2] = a;
+    }
+  }
+  for ( i=(nx/2) ; i<nx ; ++i ) {
+    for ( j=0 ; j<(ny/2) ; ++j ) {
+      k1 = i+j*nx;
+      k2 = (i-nx/2)+(j+ny/2)*nx;
+      a = ar[k1];
+      ar[k1] = ar[k2];
+      ar[k2] = a;
+    }
+  }
+}
+
+void _eclat_double(double *ar, int nx, int ny)
+{
+  int i,j,k1,k2;
+  double a;
+
+  for ( i=0 ; i<(nx/2) ; ++i ) {
+    for ( j=0 ; j<(ny/2) ; ++j ) {
+      k1 = i+j*nx;
+      k2 = (i+nx/2)+(j+ny/2)*nx;
+      a = ar[k1];
+      ar[k1] = ar[k2];
+      ar[k2] = a;
+    }
+  }
+  for ( i=(nx/2) ; i<nx ; ++i ) {
+    for ( j=0 ; j<(ny/2) ; ++j ) {
+      k1 = i+j*nx;
+      k2 = (i-nx/2)+(j+ny/2)*nx;
+      a = ar[k1];
+      ar[k1] = ar[k2];
+      ar[k2] = a;
+    }
+  }
+}
+
+#endif
