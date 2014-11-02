@@ -394,7 +394,8 @@ struct dm_struct
   float   ifunrot;        // rotation of influence functions (degrees)
   float   xscale;         // scale fractional difference x vs y. 0 [default] would be no scale 
                           // difference. 0.1 would mean X pitch is 10% smaller than Y pitch.
-
+  string  actlocfile;     // fits file specifying the DM actuator locations. Only implemented for stackarray DMs.
+  
   // Bimorph-only keywords:
   pointer nelperring;     // long vectorptr. # of elec. per ring, e.g &([6,12,18]). Required [none]
   pointer angleoffset;    // float vectorptr. offset angle for first electrode in ring.

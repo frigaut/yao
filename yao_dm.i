@@ -102,16 +102,26 @@ func make_pzt_dm(nm,&def,disp=)
   cub      = cub(*,);
   // cub now has two indices: first one is actuator number (valid or extrap)
   // second one is: 1:Xcoord, 2:Ycoord, 3:valid?, 4:extrapolation actuator?
-
-  // filtering actuators outside of a disk radius = rad (see above)
-  cub      = cub(inbigcirc,);
+  
+  if (strlen(dm(nm).actlocfile) != 0){
+    tmp = findfiles(dm(nm).actlocfile);
+    if (tmp == []){error, "Unable to find file "+dm(nm).actlocfile;}
+    actmap = yao_fitsread(dm(nm).actlocfile);
+    if (!allof(dimsof(actmap) == [2,dm(nm).nxact,dm(nm).nxact])){
+      error, "File "+dm(nm).actlocfile+" does not have dimensions nxact by nxact";
+    }
+    if (sim.verbose){write, "Using actuator map from file "+dm(nm).actlocfile;}
+    cub      = cub(where(actmap),);
+  } else {   
+    // filtering actuators outside of a disk radius = rad (see above)
+    cub      = cub(inbigcirc,);
+  }
 
   cubval   = cub(where(cub(,3)),);
 
   nvalid   = int(sum(cubval(,3)));
 
   xy    = indices(size);
-//  x     = xy(,,2); y = xy(,,1);
   x     = xy(,,1); y = xy(,,2);
   def = array(float,dim,dim,nvalid);
 
@@ -284,8 +294,19 @@ func make_pzt_dm_elt(nm,&def,disp=)
   // cub now has two indices: first one is actuator number
   // second one is: 1:Xcoord, 2:Ycoord
 
-  // filtering actuators outside of a disk radius = rad (see above)
-  cubval   = cub(inbigcirc,);
+  if (strlen(dm(nm).actlocfile) != 0){
+    tmp = findfiles(dm(nm).actlocfile);
+    if (tmp == []){error, "Unable to find file "+dm(nm).actlocfile;}
+    actmap = yao_fitsread(dm(nm).actlocfile);
+    if (!allof(dimsof(actmap) == [2,dm(nm).nxact,dm(nm).nxact])){
+      error, "File "+dm(nm).actlocfile+" does not have dimensions nxact by nxact";
+    }
+    if (sim.verbose){write, "Using actuator map from file "+dm(nm).actlocfile;}
+    cubval      = cub(where(actmap),);
+  } else {   
+    // filtering actuators outside of a disk radius = rad (see above)
+    cubval   = cub(inbigcirc,);
+  }
 
   dm(nm)._nact = dimsof(cubval)(2);
   // following 4 lines changed on 2007apr19 to be consistent with order
@@ -302,7 +323,6 @@ func make_pzt_dm_elt(nm,&def,disp=)
     *dm(nm)._x += dm(nm)._puppixoffset(1)
     *dm(nm)._y += dm(nm)._puppixoffset(2)
   }
-
 
   // look for extrapolation actuator stuff in v1.0.8 if needed
 

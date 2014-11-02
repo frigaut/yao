@@ -1041,8 +1041,8 @@ are not recomputed in further calls to <code>aoinit()</code> unless the
 clean keyword is set (in which case <code>aoinit()</code> restart from scratch
 and recompute <em>everything</em>).</p>
 
-<p>Normalization??</p>
-
+<h5>Defining actuator locations</h5>
+Often you wish to simulate an actual DM with defined actuator locations. In this case, you can specify the actuator locations. First, create a 2D fits file for each DM with ones where there are actuators and 0s where the are none. Then set dm.actlocfile to be the filename (e.g., "Xinetics349.fits"). This feature only works for stackarray DMs.
 
 <h4>Bimorph (curvature) DM</h4>
 <p>Set <code>dm.type="bimorph"</code>. The other mandatory parameter
@@ -1555,6 +1555,9 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">yflip             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Flip DM up/down (0=no)                                                                                   </td></tr>
   <tr><td class="varname">pupoffset(2)      </td><td>float    </td><td>meter      </td><td>[0,0]      </td><td>no  </td><td>Global offset of whole actuator pattern w.r.t pupil                                                 </td></tr>
   <tr><td class="varname">disjointpup       </td><td>long     </td><td>M/A        </td><td>0          </td><td>no  </td><td>If set, dm(n) will be filtered by an array disjointpup(,,n) that has to be defined by the user. See user_pupil(). Allow for GMT-type topology.   </td></tr>
+  <tr><td class="varname">regparam          </td><td>float    </td><td>Unitless   </td><td>0.0        </td><td>no  </td><td>Parameter that determines the strength of the regularization. Set to zero for systems like tip-tilt mirrors and to a small positive value (e.g., 1e-4) for stackarray DMs. Experiment by trial an error to get the value that produces the highest Strehl. Experience shows that any value within a factor of four of optimal produces the same results.   </td></tr>
+  <tr><td class="varname">regmatrix         </td><td>&float   </td><td>Unitless   </td><td>none       </td><td>no  </td><td>Pointer to the regularization matrix to use instead of computing one of the two options. This is usually not necessary, but is left as an option for advanced users. A good choice would be the inverse covariance matrix of the turbulence, for example.</td></tr>
+
   <tr><td colspan="6" class="subth">Stackarray-only (SAM, PZT) keywords</td></tr>
   <tr><td class="varname">nxact             </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of actuator in pupil diameter                                                                </td></tr>
   <tr><td class="varname">elt               </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>ELT mode: allow to save huge amount of RAM and time for the computation of the DM shape. No drawback</td></tr>
@@ -1564,9 +1567,10 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">pitchMargin       </td><td>float    </td><td>Unitless   </td><td>1.44       </td><td>no  </td><td>Margin to include more corner actuators when creating inf.functions optional [1.44]                 </td></tr>
   <tr><td class="varname">irexp             </td><td>long     </td><td>N/A        </td><td>0          </td><td>no  </td><td>Use original functional form (irexp=0) or exp(-(d/irfact)^1.5) model (irexp=1) or sinc*gaussian (irexp=2) </td></tr>
   <tr><td class="varname">irfact            </td><td>float    </td><td>Unitless   </td><td>1.0        </td><td>no  </td><td>use when irexp=1 (see above)                                                                        </td></tr>
-  <tr><td class="varname">regparam          </td><td>float    </td><td>Unitless   </td><td>0.0        </td><td>no  </td><td>Parameter that determines the strength of the regularization. Set to zero for systems like tip-tilt mirrors and to a small positive value (e.g., 1e-4) for stackarray DMs. Experiment by trial an error to get the value that produces the highest Strehl. Experience shows that any value within a factor of four of optimal produces the same results.   </td></tr>
   <tr><td class="varname">regtype           </td><td>string   </td><td>N/A        </td><td>"identity" </td><td>no  </td><td>Regularization approach: "identity" (default) or "laplacian"                                       </td></tr>
-  <tr><td class="varname">regmatrix         </td><td>&float   </td><td>Unitless   </td><td>none       </td><td>no  </td><td>Pointer to the regularization matrix to use instead of computing one of the two options. This is usually not necessary, but is left as an option for advanced users. A good choice would be the inverse covariance matrix of the turbulence, for example.</td></tr>
+  <tr><td class="varname">actlocfile        </td><td>string   </td><td>N/A        </td><td>"" </td><td>no  </td><td>Fits file name of a 2D file with ones and zeros containing the actuator locations.</td></tr>
+
+
   <tr><td colspan="6" class="subth">Bimorph-only keywords</td></tr>
   <tr><td class="varname">nelperring        </td><td>&long    </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of electrodes per ring, e.g &([6,12,18])                                                     </td></tr>
   <tr><td class="varname">angleoffset       </td><td>&float   </td><td>degree     </td><td>0          </td><td>no  </td><td>Offset angle for first electrode in ring                                                            </td></tr>

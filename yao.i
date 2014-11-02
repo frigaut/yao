@@ -1861,6 +1861,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   svd = ( (svd==[])? (aoinit_svd==[]? 0:aoinit_svd):svd );
   keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
 
+  if (anyof(strlen(dm.actlocfile) > 0)){
+    if (sim.verbose){
+      write, "Using the specified actuator location file";
+      write, "WARNING: running aoinit with keepdmconfig = 1";
+    }
+    keepdmconfig  = 1;
+  }
+  
   // initialize DM hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._alpha = [0.01,0.2,4];
