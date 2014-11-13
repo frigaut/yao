@@ -1560,16 +1560,20 @@ func get_phase2d_from_optics(nn,type)
   // select optics in path that apply to type:
   // there are noptics = numberof(opt)
   if (type=="wfs") {
-    w = where(opt.path_type!="target");
-    // no common or wfs optics, return:
-    if (numberof(w)==0) return 0.0f;
-    // now for each ok optics, check this wfs has not been excluded
+    w = where(opt.path_type != "target");
+    if (numberof(w)==0) return 0.0f; // no common or wfs optics, return
+    
+    // now for each optics, check this wfs has not been excluded
     for (no=1;no<=numberof(w);no++) {
-      if (opt(w(no)).path_type=="common") continue;
-      else { // necessarily, this is a "wfs" optics
-        if (noneof(*opt(w(no)).path_which==nn)) w(no)=-1;
+      if (opt(w(no)).path_type=="common"){continue;}
+      if (noneof(*opt(w(no)).path_which==nn)){
+        w(no)=-1;
+        continue;
       }
-      if (opt(w(no)).scale==0) w(no)=-1;
+      if (opt(w(no)).scale==0){
+        w(no)=-1;
+        continue;
+      }      
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
@@ -1577,20 +1581,24 @@ func get_phase2d_from_optics(nn,type)
 
   if (type=="target") {
     w = where(opt.path_type!="wfs");
-    // no common or science optics, return:
-    if (numberof(w)==0) return 0.0f;
-    // now for each ok optics, check this target has not been excluded
+    if (numberof(w)==0) return 0.0f; // no common or target optics, return
+
+    // now for each optics, check this target has not been excluded
     for (no=1;no<=numberof(w);no++) {
-      if (opt(w(no)).path_type=="common") continue;
-      else { // necessarily, this is a "target" optics
-        if (noneof(*opt(w(no)).path_which==nn)) w(no)=-1;
+      if (opt(w(no)).path_type=="common"){continue;}
+      if (noneof(*opt(w(no)).path_which==nn)){
+        w(no)=-1;
+        continue;
       }
-      if (opt(w(no)).scale==0) w(no)=-1;
+      if (opt(w(no)).scale==0){
+        w(no)=-1;
+        continue;
+      }      
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
   }
-
+    
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
