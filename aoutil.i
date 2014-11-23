@@ -613,7 +613,6 @@ func check_parameters(void)
   if (loop.niter == 0) exit,"loop.niter has not been set";
   if (loop.ittime == 0) exit,"loop.ittime has not been set";
   if (loop.startskip == 0) loop.startskip = 10;
-  if (loop.skipevery == 0) loop.skipevery = loop.niter;
   if (loop.skipby == 0) loop.skipby = 10000;
   if (loop.modalgainfile == string()) loop.modalgainfile = "";
   if (loop.stats_every==0) loop.stats_every=4;

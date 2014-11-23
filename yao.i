@@ -1216,14 +1216,10 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   // Build a vector of position (integer position in equivalent
   // iterations:
   iposvec = indgen(loop.niter);
-  iposvec = iposvec+((iposvec-1)/loop.skipevery)*loop.skipby;
-
-  // build a vector of the iterations at which statistics
-  // should be accumulated. 1 if ok to accumulate statistics, 0 if not.
-  // 2012oct16: moved to aoloop()
-  //~ statsokvec   = (indgen(loop.niter)-1) % loop.skipevery;
-  //~ statsokvec   = (statsokvec >= loop.startskip);
-
+  if (loop.skipevery > 0){
+    iposvec = iposvec+((iposvec-1)/loop.skipevery)*loop.skipby;
+  }
+  
   // Build the position vector vs iteration by phase screen
   deltax  = sim.pupildiam/tel.diam*(*atm.layerspeed)*cos(dtor*gs.zenithangle)*loop.ittime;
   // has to start away from edge as this is the coordinate of the beam center
@@ -3596,8 +3592,11 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
     }
   }
 
-  statsokvec   = (indgen(loop.niter)-1) % loop.skipevery;
-  statsokvec   = (statsokvec >= loop.startskip);
+  statsokvec = (indgen(loop.niter)-1);
+  if (loop.skipevery > 0){
+    statsokvec = statsokvec % loop.skipevery;
+  }
+  statsokvec = (statsokvec >= loop.startskip);
 
   // special: re-init phase screens, as often we want to change the
   // number of iterations without re-doing the full aoinit
