@@ -63,11 +63,36 @@ require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
 require,"yaodh.i";
+include,"lapack.i",3; // optional
 
-include, "lapack.i",3; // optional
+func LUsolve2(A,b){
+/* DOCUMENT LUsolve(a, b)
+         or a_inverse= LUsolve(a)
+ 
+   returns the solution x of the matrix equation:
+   A(,+)*x(+) = B
+   If A is an n-by-n matrix then B must have length n, and the returned
+   x will also have length n.
+      
+   SEE ALSO: LUsolve, lpk_gesv
+*/
+  // use lapack for matrix inversions
+  local b;
+  // b can be a matrix or a vector. If it does not exist, make it the identity matrix
+  if (b == []){
+    nr = (dimsof(A))(2);
+    b = unit(nr);
+    if (typeof(A) != "double"){
+      b = float(unit(nr));
+    }
+  }
+      
+  return lpk_gesv(A,b);
+}
+
 if (lpk_gesv != []){
-  write, "Using ylapack to do matrix inversions: LUSolve = lpk_gesv";
-  LUsolve = lpk_gesv; // that simple
+  write, "Using ylapack to do matrix inversions: LUsolve=LUsolve2";
+  LUsolve = LUsolve2; 
 }
 
 // can't call use_sincos_approx directly in yao.conf, as not defined, work around:

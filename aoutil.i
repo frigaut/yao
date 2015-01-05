@@ -463,9 +463,9 @@ func check_parameters(void)
 
     wfs(ns).ron = float(wfs(ns).ron);
 
-    if ((wfs(ns).shmethod == 1) && (wfs(ns).noise == 1) && (wfs(ns).ron > 0.)){
+    if ((wfs(ns).type = "hartmann") && (wfs(ns).shmethod == 1) && (wfs(ns).noise == 1) && (wfs(ns).ron > 0.)){
       write, format = "WARNING: wfs(%d).shmethod = 1 and wfs(%d).noise = 1\n",ns,ns;
-      write, format = "This produces a measurement error in wfs(%d) of wfs(%d).ron arcsec\n",ns,ns;
+      write, format = "This feature produces a measurement error in wfs(%d) of wfs(%d).ron arcsec\n",ns,ns;
     }
     
     if (!wfs(ns).lgs_prof_amp) wfs(ns).lgs_prof_amp = &float([0.]);
