@@ -1722,7 +1722,7 @@ func split_dm_vector(v)
 }
 
 //----------------------------------------------------
-func check_control_parameters(void){
+func check_control_parameters(void,verbose=){
 /* DOCUMENT check_control_parameters(void)
    Check the control parameters and update them
    SEE ALSO:
@@ -1746,8 +1746,9 @@ func check_control_parameters(void){
     }
 
     if ((ctrlnum != []) && (ctrlden != [])){
+      
       // ctrlnum and ctrlden are defined
-     if (sim.verbose){write, format = "Using dm.ctrlden and dm.ctrlnum for DM %d \n",nm;}
+     if (verbose){write, format = "Using dm.ctrlden and dm.ctrlnum for DM %d \n",nm;}
     } else {
       ctrlnum = [loop.gain*dm(nm).gain];
       if (gainho != []){
@@ -3510,7 +3511,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   gui_message,"Initializing loop";
 
-  check_control_parameters; // update the control laws
+  check_control_parameters,verbose=1; // update the control laws
 
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
