@@ -101,24 +101,23 @@
        C. Yorick is thus used as a convenient "glue" between lower
        levels optimized C calls. Overall, this is rather efficient: A
        simple 6x6 Shack-Hartmann system (geometrical model, no
-       diffraction) runs at <font class="highlight">over 2000
-       iterations/seconds</font> on modern machines (about 250it/sec
-       for a full diffractive SHWFS). That's including turbulent phase
+       diffraction) runs at <font class="highlight">over 3300
+       iterations/seconds</font> on modern machines (about 530it/sec
+       for a full diffractive 6x6 SHWFS). That's including turbulent phase
        computation, wavefront sensing, reconstruction, calculation of
        the DM shape and PSF/performance estimation.  A 64x64
-       Shack-Hartmann (full diffraction model) system runs at about 10
+       Shack-Hartmann (full diffraction model) system runs at about 29
        iterations/s for an 30-m telescope. A 188 curvature system runs
-       at over 120 iterations/s (see
-       the <a href="news.html#yao_5.0">this
+       at over 269 iterations/s (see the <a href="news.html#yao_5.0">this
        entry</a> for more details). Medium-size AO systems for ELTs
        can also be simulated. It takes more time and RAM, but is still quite 
-       performant: On my macbook pro laptop, simulating the GMT LTAO system 
+       performant: On my 4GHz i7 iMac, simulating the GMT LTAO system 
        (6 LGS WFS each 60x60 subapertures, including spot elongation) runs at
-       6 iterations/seconds and take slightly over 1.5 GB or RAM.<br>
+       6 iterations/seconds and take slightly over 1.5 GB or RAM. 
        YAO can be used in parallel mode, using the yorick svipc plugin. 
        See <a href="news.html#Parallel_yao_released_with_improvements">this
        post</a> in the news. On modern hardware, it is now possible to
-       simulate up to 200x200 SHWFS (1 iteration/s). A 64x64SHWFS runs
+       simulate up to 200x200 SHWFS. A 64x64SHWFS runs
        at 23 iterations/s).
      </li>
      <li>Straightforward <font class="highlight">scriptability</font> to 
