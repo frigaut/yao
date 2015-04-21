@@ -31,7 +31,6 @@ func create_yao_window(dpi)
   // dpi is in fact already stored in extern (sigh)
   if (!dpi) dpi=default_dpi;
 
-  if (window_exists(0)) winkill,0;
   if (window_exists(2)) winkill,2;
 
   if (yao_pyk_parent_id) {
@@ -39,13 +38,37 @@ func create_yao_window(dpi)
     yao_win_init,yao_pyk_parent_id;
   } else {
     // there's no GUI, re-open normal graphical window:width=635,height=650
-    window,0,style="yao.gs",dpi=dpi,width=long(635*(dpi/75.)),     \
-      height=long(650*(dpi/75.)),wait=1;
-    if ( (xft!=[]) && (xft()) ) {
-      get_style, landscape, systems, legends, clegends;
-      systems.ticks.vert.textStyle.height(4)*=1.5;
-      systems.ticks.horiz.textStyle.height(4)*=1.5;
-      set_style, landscape, systems, legends, clegends;
+    // check if there's one existing of the right size. I'm fed up to see
+    // yao window pop up everywhere ;-(
+    need2open = 0;
+    // is there a window 0?
+    if (!window_exists(0)) {
+      need2open=1;
+      // write,"There is no window 0, need to create";
+    } else {
+      // is the size allright?
+      wg = long(window_geometry(0));
+      // write,wg(-1:0); 
+      // write,long([635*(dpi/75.),650*(dpi/75.)]);
+      if (nallof(wg(-1:0)==long([635*(dpi/75.),650*(dpi/75.)]))) {
+        need2open=1;
+      } else {
+        // is there 5 plsys, in which case it's probably a yao window?
+        window,0;
+        get_style,l,sys;
+        if (numberof(sys)!=5) need2open=1;
+      }
+    }
+    if (need2open)  {
+      if (window_exists(0)) winkill,0;
+      window,0,style="yao.gs",dpi=dpi,width=long(635*(dpi/75.)), \
+        height=long(650*(dpi/75.)),wait=1;
+      if ( (xft!=[]) && (xft()) ) {
+        get_style, landscape, systems, legends, clegends;
+        systems.ticks.vert.textStyle.height(4)*=1.5;
+        systems.ticks.horiz.textStyle.height(4)*=1.5;
+        set_style, landscape, systems, legends, clegends;
+      }
     }
   }
   plsys,1; limits,square=1;
