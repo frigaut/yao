@@ -679,10 +679,16 @@ func shwfs_init_lgs_kernels(ns)
     tmp = tmp/sum(tmp);
     grow,kall,float((eclat(tmp))(*));
 
+    if (wfs(ns)._gsalt==0) {
+      // then we are dealing with a NGS, not subaperture dependent:
+      kall = array(kall,wfs(ns)._nsub4disp)(*);
+      if (sim.debug) write,"Dealing with NGS, no subap dependant elongation";
+      break;
+    }
+
     s2 = tel.diam/wfs(ns).shnxsub*0.9/2.;
     gui_progressbar_frac,float(l)/wfs(ns)._nsub4disp;
   }
-
   clean_progressbar;
 
   wfs(ns)._kernels = &(float(kall));
