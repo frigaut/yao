@@ -1566,20 +1566,26 @@ func zwfs(pup,pha,ns,init=)
     to run this code.
   On top, of that, the following variable allow to control how the ZWFS is
   operating:
-  zwfsmasktlod = Multiplicative factor to apply on default image phase
-                 shift mask diameter. By default, the mask diameter is 
-                 lambda/D, and this parameter value is 1.
-                 Typical value is 1 to a few units.
-  zwfsoversamp = how much the image should be oversampled by. Has to
+  zwfsmasktlod = Diameter in lambda/D of image phase shift mask 
+                 diameter. Default 1. Typical value is 1 to a few units.
+
+  zwfsoversamp = How much the image should be oversampled by. Has to
                  be an integer, preferably a power of 2  (1,2,4,8).
                  That allows to more finely apply the mask.
                  Default is 1.
+
   zwfsbin      = Binning factor of the final (pupil plane) image.
                  Just binning, adding pixel values. Usually, but not
                  necessarily a power of 2. Of course this is reducing the
                  number of output measurements, and also smooth out the
                  high order aberrations. Default is 4;
-  zwfsphashift = phase shift induced by the mask, in lambda units. default 1/4.
+
+  zwfsphashift = Phase shift induced by the mask, in lambda units. 
+                 Default 1/4.
+
+  zwfsantialia = Diameter in lambda/D of antialiasing mask
+                 in image plane. No mask if equal to 0 or undefined.
+                 Default 0.
 
   NOTES: This is a first draft implementation, and incomplete. Future
   upgrades include:
@@ -1615,11 +1621,17 @@ func zwfs(pup,pha,ns,init=)
   if (zwfsmasktlod==[]) zwfsmasktlod = 1;
 
   zwfsmaskrad = sim._size/2./sim.pupildiam*zwfsoversamp*2*zwfsmasktlod;
+  if (zwfsantialia) \
+    zwfsaarad = sim._size/2./sim.pupildiam*zwfsoversamp*2*zwfsantialia;
 
   if (init) {
     // Built up the phase shift mask
     zwfsmask = (dist(sim._size*zwfsoversamp)<zwfsmaskrad)*2*pi*zwfsphashift;
     zwfsmask = exp(1i*zwfsmask);
+    if (zwfsantialia) {
+      aamask = (dist(sim._size*zwfsoversamp)<zwfsaarad);
+      zwfsmask *= aamask;
+    }
     zwfsmask = roll(zwfsmask);
     // that's the indices at which the intensity will be returned
     zwfsw = where(bin2d(pup,zwfsbin));
