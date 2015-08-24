@@ -1430,6 +1430,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   // to get the phase for a given WFS
   // this integration is done by the C routine _get2dPhase
   // which take, in addition to the screens and output phase parameters,
+  // and a int vector speficying which layer/dm to skip,
   // only a set of X and Y positions as input [the one we just talked
   // about, xposvec(iteration) + wfsxposcub(,,wfs#) ].
 
@@ -1474,11 +1475,12 @@ func get_turb_phase(iter,nn,type)
     xshifts = gsxposcub(,,nn)+xposvec(iter,)(-,);
     yshifts = gsyposcub(,,nn)+yposvec(iter,)(-,);
   }
+  skip = array(0n,nscreens);
 
   ishifts = int(xshifts);  xshifts = xshifts - ishifts;
   jshifts = int(yshifts);  yshifts = yshifts - jshifts;
 
-  err = _get2dPhase(&pscreens,psnx,psny,nscreens,
+  err = _get2dPhase(&pscreens,psnx,psny,nscreens,&skip,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
@@ -1545,16 +1547,18 @@ func get_phase2d_from_dms(nn,type)
     // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmwfsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
     yshifts = dmwfsyposcub(,,nn)+(sim._cent+dm.misreg(2,)-1)(-,);
+    skip = int(*wfs(nn)._dmnotinpath);
   } else if ( type == "target") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmgsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
     yshifts = dmgsyposcub(,,nn)+(sim._cent+dm.misreg(2,)-1)(-,);
+    skip = array(0n,nmirrors);
   }
 
   ishifts = int(xshifts); xshifts = xshifts - ishifts;
   jshifts = int(yshifts); yshifts = yshifts - jshifts;
 
-  err = _get2dPhase(&mirrorcube,psnx,psny,nmirrors,
+  err = _get2dPhase(&mirrorcube,psnx,psny,nmirrors,&skip,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
@@ -1583,7 +1587,7 @@ func get_phase2d_from_optics(nn,type)
   if (type=="wfs") {
     w = where(opt.path_type != "target");
     if (numberof(w)==0) return 0.0f; // no common or wfs optics, return
-    
+
     // now for each optics, check this wfs has not been excluded
     for (no=1;no<=numberof(w);no++) {
       if (opt(w(no)).path_type=="common"){continue;}
@@ -1594,7 +1598,7 @@ func get_phase2d_from_optics(nn,type)
       if (opt(w(no)).scale==0){
         w(no)=-1;
         continue;
-      }      
+      }
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
@@ -1614,12 +1618,12 @@ func get_phase2d_from_optics(nn,type)
       if (opt(w(no)).scale==0){
         w(no)=-1;
         continue;
-      }      
+      }
     }
     w = w(where(w>=0));
     if (numberof(w)==0) return 0.0f;
   }
-    
+
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
@@ -1643,11 +1647,12 @@ func get_phase2d_from_optics(nn,type)
     xshifts = optgsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
     yshifts = optgsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
   }
+  skip = array(0n,nopts);
 
   ishifts = int(xshifts); xshifts = float(xshifts - ishifts);
   jshifts = int(yshifts); yshifts = float(yshifts - jshifts);
 
-  err = _get2dPhase(&thisphasemaps,psnx,psny,nopts,
+  err = _get2dPhase(&thisphasemaps,psnx,psny,nopts,&skip,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);

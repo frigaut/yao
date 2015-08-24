@@ -51,7 +51,7 @@ extern _dmsumelt
 
 extern _get2dPhase
 /* PROTOTYPE
-   int _get2dPhase(pointer pscreens, int psnx, int psny, int nscreens, pointer outphase, int phnx, int phny, pointer ishifts, pointer xshifts, pointer jshifts, pointer yshifts)
+   int _get2dPhase(pointer pscreens, int psnx, int psny, int nscreens, pointer skip, pointer outphase, int phnx, int phny, pointer ishifts, pointer xshifts, pointer jshifts, pointer yshifts)
 */
 
 func cosf(array)

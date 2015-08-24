@@ -48,7 +48,7 @@ func create_yao_window(dpi)
     } else {
       // is the size allright?
       wg = long(window_geometry(0));
-      // write,wg(-1:0); 
+      // write,wg(-1:0);
       // write,long([635*(dpi/75.),650*(dpi/75.)]);
       if (nallof(wg(-1:0)==long([635*(dpi/75.),650*(dpi/75.)]))) {
         need2open=1;
@@ -484,19 +484,27 @@ func check_parameters(void)
       }
     }
 
+    // DMs in this WFS path. Default is for all DM to be in path:
+    wfs(ns)._dmnotinpath = &array(0n,ndm);
+    if (wfs(ns).dmnotinpath) {
+      if (anyof(*wfs(ns).dmnotinpath>ndm)||anyof(*wfs(ns).dmnotinpath<1)) \
+        error,swrite(format="Issue with WFS#%d dmnotinpath definition (indices)",ns);
+      (*wfs(ns)._dmnotinpath)(int(*wfs(ns).dmnotinpath)) = 1n;
+    }
+
     wfs(ns).ron = float(wfs(ns).ron);
 
     if ((wfs(ns).type == "hartmann") && (wfs(ns).shmethod == 1) && (wfs(ns).noise == 1) && (wfs(ns).ron > 0.)){
       write, format = "WARNING: wfs(%d).shmethod = 1 and wfs(%d).noise = 1\n",ns,ns;
       write, format = "This feature produces a measurement error in wfs(%d) of wfs(%d).ron arcsec\n",ns,ns;
     }
-    
+
     if (!wfs(ns).lgs_prof_amp) wfs(ns).lgs_prof_amp = &float([0.]);
     if (!wfs(ns).lgs_prof_alt) wfs(ns).lgs_prof_alt = &float([0.]);
     if (numberof(*wfs(ns).lgs_prof_amp)!=numberof(*wfs(ns).lgs_prof_alt)) {
       error,"numberof(*wfs(ns).lgs_prof_amp)!=numberof(*wfs(ns).lgs_prof_alt)";
     }
-    
+
   }
 
   // DM STRUCTURE
@@ -512,7 +520,7 @@ func check_parameters(void)
     if (dm(nm).ecmatfile == string()) {dm(nm).ecmatfile = "";}
     if (dm(nm).push4imat == 0) {dm(nm).push4imat = 20;}
     if (dm(nm).thresholdresp == 0) {dm(nm).thresholdresp = 0.3;}
-    if (dm(nm).gain == 0) {write,format="  WARNING: dm(%d).gain set to 0\n",nm;}      
+    if (dm(nm).gain == 0) {write,format="  WARNING: dm(%d).gain set to 0\n",nm;}
     if (dm(nm).unitpervolt == 0) {
       write,format="  WARNING: dm(%d).unitpervolt set to 0\n",nm;
       // below: this is stupid. but I don't dare to change it now (2011mar16)
@@ -536,7 +544,7 @@ func check_parameters(void)
     if ( (dm(nm).type == "stackarray") && (dm(nm).pitch == 0) ) {
       exit,swrite(format="dm(%d).pitch has not been set",nm);
     }
-    if (dm(nm).type=="stackarray") {      
+    if (dm(nm).type=="stackarray") {
       if ((dm(nm).coupling<0.0) || (dm(nm).coupling>0.8)) {
         write,format="Invalid value for dm(%d).coupling -> %f\n",nm,dm(nm).coupling;
         exit,"Valid values from 0 to 0.80";
@@ -615,7 +623,7 @@ func check_parameters(void)
 
   // GS STRUCTURE
   if (gs.zenithangle > 0 && anyof(wfs.gsalt > 0)){write,"WARNING: The return from the LGS is assumed to vary as cos(gs.zenithangle).";}
-    
+
   if (anyof(wfs.gsalt != 0) && (gs.lgsreturnperwatt == 0)) {
     gs.lgsreturnperwatt = 22.;
     write,format="gs.lgsreturnperwatt set to %f\n",gs.lgsreturnperwatt;
@@ -1763,7 +1771,7 @@ func make_fieldstop(ns)
     fs(wfs(ns)._nx/2-hsize+1:wfs(ns)._nx/2+hsize, \
        wfs(ns)._nx/2-hsize+1:wfs(ns)._nx/2+hsize) = 1n;
   }
-  
+
   if (wfs(ns).fsoffset!=[]) {
     // only roll by an integer # of fft pixel:
     fsoffset = long(round(wfs(ns).fsoffset/fftpixsize));
@@ -1954,7 +1962,7 @@ func expand_path(_path)
           path = strpart(home, 1:-1) + tail;
         } else {
           path = strpart(home, 1:-1);
-        } 
+        }
         //~ else {
           //~ eq_nocopy, path, home;
         //~ }
@@ -1995,4 +2003,3 @@ func prime_factors(n,upper_limit=)
   grow,factors,n;
   return factors;
 }
-

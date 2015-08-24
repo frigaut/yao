@@ -40,7 +40,7 @@ func fit_lgs_profile(amp,alt,npt,&fitamp,&fitalt,&fitdepth)
   for (i=1;i<=6;i++) {
     wfs(i).lgs_prof_amp= &float(fitamp);
     wfs(i).lgs_prof_alt= &float(fitalt);
-    wfs(i).gsdepth     = 
+    wfs(i).gsdepth     =
     wfs(i).lgs_focus_alt = 0.; // will be set by shwfs_comp_lgs_defocuses()
   }
   // and this to compute the defocus vector associated with the altitudes:
@@ -110,7 +110,7 @@ func shwfs_comp_lgs_defocuses(ns)
  */
 {
   extern wfs;
-  
+
   for (i=1;i<=numberof(ns);i++) {
     // ok, so according to my calculations, we have:
     // a4[m] = D^2/(16*sqrt(3)) * 1/RoC
@@ -131,7 +131,7 @@ func shwfs_comp_lgs_defocuses(ns)
     a4s = a4s-a4cur;
     wfs(ns(i))._lgs_defocuses = &float(a4s);
   }
-}  
+}
 
 //----------------------------------------------------
 func comp_turb_lgs_kernel(ns,init=)
@@ -155,12 +155,12 @@ func comp_turb_lgs_kernel(ns,init=)
           return;
         }
       }
-    } 
+    }
     wfs(ns)._LLT_use = ns;
     // we didn't find a matching existing LLT. Let's init this one
 
     // Find out how to scale pixel size etc for the LLT:
-    // first, the created turbulent kernel will be used in 
+    // first, the created turbulent kernel will be used in
     // _shwfs_phase2spots to convolve an ximage array of size _nx4fft.
     // however, the pixel size in this array is set by:
     // quantumPixelSize = wfs(ns).lambda/(tel.diam/sim.pupildiam)/4.848/wfs(ns)._sdim;
@@ -201,7 +201,7 @@ func comp_turb_lgs_kernel(ns,init=)
     // pad it:
     pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));
     pscreen = transpose(pscreen);
-    pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));      
+    pscreen = _(pscreen,pscreen(,1:wfs(ns)._nx4fft));
     // write,"TODO: Check normalization of llt phase screen !";
     wfs(1)._LLT_pscreen = &float(pscreen);
 
@@ -243,7 +243,9 @@ func comp_turb_lgs_kernel(ns,init=)
 
   *wfs(ns)._LLT_phase *= 0.0f;
 
-  err = _get2dPhase(wfs(1)._LLT_pscreen,d(2),d(3),1,
+  skip = array(0n,1);
+
+  err = _get2dPhase(wfs(1)._LLT_pscreen,d(2),d(3),1,&skip,
                     wfs(ns)._LLT_phase,wfs(ns)._nx4fft,wfs(ns)._nx4fft,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);

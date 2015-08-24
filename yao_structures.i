@@ -179,6 +179,8 @@ struct wfs_struct
                           // (0 or 1: don't parallelize)
   float   zeropoint;      // zeropoint for the wavefront sensor. Optional [0.]
   long    ncpdm;          // DM on the path of the WFS, if any
+  pointer dmnotinpath;    // vector with indices of DM NOT in this WFS path
+                          // Default is to include all DM.
 
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
@@ -347,6 +349,7 @@ struct wfs_struct
   pointer _LLT_phase;     // actual phase
   pointer _LLT_kernel;    // pointer to actual LLT spot image
   int     _nkernels;      // number of kernels in *wfs._kernel
+  pointer _dmnotinpath;   // vector of ndm lengh with value included/not included. from dmnotinpath
 };
 
 struct dm_struct

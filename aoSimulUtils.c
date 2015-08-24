@@ -7,7 +7,7 @@
  * yao.i, the AO simulation tool written in Yorick. This codes
  * efficiently, in C, the most critical elements of the AO loop (func-
  * tion aoloop in yao.i, for yao versions > 2.0.
- * 
+ *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
  * Copyright (c) 2002-2013, Francois Rigaut
@@ -37,12 +37,13 @@
  ************************************************************************/
 
 int _get2dPhase(float *pscreens, /* dimension [psnx,psny,nscreens] */
-                int psnx, 
-                int psny, 
-                int nscreens, 
+                int psnx,
+                int psny,
+                int nscreens,
+                int *skip, /* dimension nscreens */
                 float *outphase, /* dimension [phnx,phny] */
-                int phnx, 
-                int phny, 
+                int phnx,
+                int phny,
                 int *ishifts,    /* array of X integer shifts dimension [phnx,nscreens] */
                 float *xshifts,  /* array of X fractional shifts dimension [phnx,nscreens] */
                 int *jshifts,    /* array of Y integer shifts dimension [phnx,nscreens] */
@@ -58,26 +59,28 @@ int _get2dPhase(float *pscreens, /* dimension [psnx,psny,nscreens] */
   /* Loop on phase screens */
   for (k=0;k<nscreens;++k) {
 
+    if (skip[k]) continue;
+
     /* first indice for this screen */
     firstel = k*(psnx*psny);
-    
+
     /* Loop on indices of output (integrated) phase */
     for (j=0;j<phny;++j) {
       for (i=0;i<phnx;++i) {
 
         ips = ishifts[i+k*phnx];
         jps = jshifts[j+k*phny];
-        
+
         /* Computes the weights for the 4 surrounding pixels */
         wx1 = (1.0f - xshifts[i+k*phnx]);
         wx2 = (xshifts[i+k*phnx]);
         wy1 = (1.0f - yshifts[j+k*phny]);
         wy2 = (yshifts[j+k*phny]);
-        
-        
+
+
         /* Safety net: don't access elements outside of pscreens memory space */
         if ( (firstel+ips+1+(jps+1)*psnx) >= (psnx*psny*nscreens) ) {return (1);}
-        
+
         /* Finaly, compute and integrate outphase */
         outphase[i+j*phnx] += ( wx1*wy1*pscreens[firstel+ips+jps*psnx]
                               + wx2*wy1*pscreens[firstel+ips+1+jps*psnx]
@@ -101,7 +104,7 @@ int _get2dPhase(float *pscreens, /* dimension [psnx,psny,nscreens] */
  * Author: F.Rigaut                                                     *
  ************************************************************************/
 
-void _dmsum(float *def,     // pointer to dm influence functions 
+void _dmsum(float *def,     // pointer to dm influence functions
             int  nxdef,     // X dim
             int  nydef,     // Y dim
             int  nzdef,     // Z (3rd) dim = # IFs
@@ -161,7 +164,7 @@ void _dmsum2(float *def,     // pointer to dm influence functions
  * Author: F.Rigaut                                                     *
  ************************************************************************/
 
-void _dmsumelt(float *def,     // pointer to dm influence functions 
+void _dmsumelt(float *def,     // pointer to dm influence functions
                int  nxdef,     // X dim
                int  nydef,     // Y dim
                int  nzdef,     // Z (3rd) dim = # IFs
@@ -196,4 +199,3 @@ void _dmsumelt(float *def,     // pointer to dm influence functions
     }
   }
 }
-
