@@ -1555,6 +1555,128 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
 
 
 //----------------------------------------------------
+func zwfs(pup,pha,ns,init=)
+/* DOCUMENT zwfs(pup,pha,ns,init=)
+  pup, pha, ns and init as in any wfs call in yao:
+  pup is the pupil, defined over a float array of sim._size x sim._size
+  pha is the phase, in micron, same size as pup (wfs.lambda is used
+    to scale to rd)
+  ns is the sensor number, as in the parfile
+  init = allows this routine to initialise a number of things necessary
+    to run this code.
+  On top, of that, the following variable allow to control how the ZWFS is
+  operating:
+  zwfsmasktlod = Multiplicative factor to apply on default image phase
+                 shift mask diameter. By default, the mask diameter is 
+                 lambda/D, and this parameter value is 1.
+                 Typical value is 1 to a few units.
+  zwfsoversamp = how much the image should be oversampled by. Has to
+                 be an integer, preferably a power of 2  (1,2,4,8).
+                 That allows to more finely apply the mask.
+                 Default is 1.
+  zwfsbin      = Binning factor of the final (pupil plane) image.
+                 Just binning, adding pixel values. Usually, but not
+                 necessarily a power of 2. Of course this is reducing the
+                 number of output measurements, and also smooth out the
+                 high order aberrations. Default is 4;
+  zwfsphashift = phase shift induced by the mask, in lambda units. default 1/4.
+
+  NOTES: This is a first draft implementation, and incomplete. Future
+  upgrades include:
+  - faster algorithms. An obvious upgrade would be to port it to C.
+    Another, cleverer method would be to just process the point of
+    the image plane that are under the mask. Because the FT is linear,
+    and we are going from pupil -> image -> pupil, all the points outside
+    the mask in the image are unaffected and are transformed back as they
+    were in the initial complex pupil image. Thus, only computing the
+    value of the first fourier transform for this point, applying the phase
+    shift and transforming back only from this point should work. We have
+    also to remove the contribution of the unshifted points from the original
+    image. In effect, if we call PS the phase shift mask, P the complex
+    pupil image and IA the complex image area/points within the phase
+    shifted area:
+    P1 = ITF ( ( TF(P)_IA ) * PS )
+    P2 = ITF ( ( TF(P)_IA ) )
+    P = P - P2 + P1,
+    is what we are looking for (which has to be squared).
+    The FFT is of course much faster than
+  - a output binning on a polar basis, not cartesian, similar to the
+    definition of the subaperture mask in a curvatur sensor
+  - proper application of noise, including read noise
+  - polychromatic option
+*/
+{
+  extern zwfsmask,wfs,zwfsw,zimref;
+
+  if (!zwfsbin) zwfsbin=4;
+  if (zwfsphashift==[]) zwfsphashift=1./4;
+  if (!zwfsoversamp) zwfsoversamp=1;
+  // zwfsoversamp = 1->189 it/s, 2->90 it/s,  3->22 it/s
+  if (zwfsmasktlod==[]) zwfsmasktlod = 1;
+
+  zwfsmaskrad = sim._size/2./sim.pupildiam*zwfsoversamp*2*zwfsmasktlod;
+
+  if (init) {
+    // Built up the phase shift mask
+    zwfsmask = (dist(sim._size*zwfsoversamp)<zwfsmaskrad)*2*pi*zwfsphashift;
+    zwfsmask = exp(1i*zwfsmask);
+    zwfsmask = roll(zwfsmask);
+    // that's the indices at which the intensity will be returned
+    zwfsw = where(bin2d(pup,zwfsbin));
+    // reference vector length. ref mes not properly treated now
+    wfs(ns)._nmes = numberof(zwfsw);
+    // oversampling array
+    oversarray = array(complex,[2,sim._size*zwfsoversamp,sim._size*zwfsoversamp]);
+    // populate it with pup and phase
+    oversarray(1:sim._size,1:sim._size) = pup*exp(1i*0);
+    // transform to complex image
+    fft_inplace,oversarray,1;
+    // apply phase shift
+    oversarray = oversarray*zwfsmask;
+    // transform back to pupil
+    fft_inplace,oversarray,-1;
+    // cut back section from before oversampling
+    ac = oversarray(1:sim._size,1:sim._size);
+    // make it an  intensity
+    zimref = float(abs(ac))^2.;
+    // get the total for future normalisation
+    zimref = sum(zimref);
+  }
+
+  // scale the phase to radian
+  pha = pha*2*pi/wfs(ns).lambda;
+
+  // allocate oversampling array (3x faster to realocate than to * by 0)
+  oversarray = array(complex,[2,sim._size*zwfsoversamp,sim._size*zwfsoversamp]);
+  // stuff pup and phase into array
+  oversarray(1:sim._size,1:sim._size) = pup*exp(1i*pha);
+  // compute image complex amplitude
+  fft_inplace,oversarray,1;
+  // apply image phase shift
+  oversarray = oversarray*zwfsmask;
+  // transform back
+  fft_inplace,oversarray,-1;
+  // cut original piece (back from oversampling)
+  ac = oversarray(1:sim._size,1:sim._size);
+  // make it an intensity
+  zim = float(abs(ac))^2.;
+  if (wfsnph==[]) wfsnph=100.;
+  // normalise in flux and apply number of photons
+  zim = zim*(wfsnph/zimref);
+  // bin as required
+  zim = bin2d(zim,zwfsbin);
+  // apply noise as required
+  if (wfs(ns).noise) zim=poidev(zim);
+  // populate arrays that yao needs for display:
+  wfs(ns)._dispimage = &zim;
+  wfs(ns)._fimage = &zim;
+
+  // return the measurements
+  return zim(zwfsw);
+}
+
+
+//----------------------------------------------------
 
 func zernike_wfs(pupsh,phase,ns,init=)
 /* DOCUMENT
@@ -1564,6 +1686,7 @@ func zernike_wfs(pupsh,phase,ns,init=)
    phase  = phase
    ns     = WFS yao #
    init   = set to init the WFS. has to be called at least once.
+   NOTES: NOT THE ACTUAL ZERNIKE SENSOR!!! SEE ZWFS
    SEE ALSO:
  */
 {
