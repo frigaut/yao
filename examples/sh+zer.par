@@ -1,4 +1,9 @@
 // YAO parameter file
+// Example parfile for a SH (first stage) and ZWFS (second stage)
+// to use, use the normal aoread,aoinit,aoloop,
+// but before closing the loop, set dm.gain=[1.,0.] for some iterations.
+// then, with the phase error reduced now, one can switch to the other
+// WFS by setting dm.gain=[0.,1.]
 //-------------------------------
 sim.name            = "SH + Zernike WFS & DH DM";
 sim.pupildiam       = 64;
