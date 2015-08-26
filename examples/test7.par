@@ -141,7 +141,7 @@ dm(n).pitch        = sim.pupildiam/wfs(n).shnxsub;
 dm(n).ndh          = 40;
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.01;
-dm(n).push4imat    = 20.;
+dm(n).push4imat    = 300.;
 dm(n).elt          = 0;
 
 n  =2;

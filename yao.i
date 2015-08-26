@@ -1474,6 +1474,15 @@ func get_turb_phase(iter,nn,type)
     // stuff xshifts with fractionnal offsets, add xposvec for each screen
     xshifts = gsxposcub(,,nn)+xposvec(iter,)(-,);
     yshifts = gsyposcub(,,nn)+yposvec(iter,)(-,);
+    ppm = sim.pupildiam/tel.diam;
+    if (target.xspeed&&loopCounter) {
+      xss = (*target.xspeed)(nn)*4.848e-6*(*atm.layeralt)*loop.ittime*loopCounter*ppm;
+      xshifts += float(xss)(-,);
+    }
+    if (target.yspeed&&loopCounter) {
+      yss = (*target.yspeed)(nn)*4.848e-6*(*atm.layeralt)*loop.ittime*loopCounter*ppm;
+      yshifts += float(yss)(-,);
+    }    
   }
   skip = array(0n,nscreens);
 
@@ -1552,6 +1561,15 @@ func get_phase2d_from_dms(nn,type)
     // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmgsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
     yshifts = dmgsyposcub(,,nn)+(sim._cent+dm.misreg(2,)-1)(-,);
+    ppm = sim.pupildiam/tel.diam;
+    if (target.xspeed&&loopCounter) {
+      xss = (*target.xspeed)(nn)*4.848e-6*dm.alt*loop.ittime*loopCounter*ppm;
+      xshifts += float(xss)(-,);
+    }
+    if (target.yspeed&&loopCounter) {
+      yss = (*target.yspeed)(nn)*4.848e-6*dm.alt*loop.ittime*loopCounter*ppm;
+      yshifts += float(yss)(-,);
+    }
     skip = array(0n,nmirrors);
   }
 
@@ -1646,6 +1664,15 @@ func get_phase2d_from_optics(nn,type)
     // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = optgsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
     yshifts = optgsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
+    ppm = sim.pupildiam/tel.diam;
+    if (target.xspeed&&loopCounter) {
+      xss = (*target.xspeed)(nn)*4.848e-6*opt.alt*loop.ittime*loopCounter*ppm;
+      xshifts += float(xss)(-,);
+    }
+    if (target.yspeed&&loopCounter) {
+      yss = (*target.yspeed)(nn)*4.848e-6*opt.alt*loop.ittime*loopCounter*ppm;
+      yshifts += float(yss)(-,);
+    }
   }
   skip = array(0n,nopts);
 
@@ -3683,8 +3710,10 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
                           tel.diam*sim.pupildiam/sim._size/2*sim._size];
       // last 2 terms to accomodate internal dispzoom scaling
     }
-    disp2d,im,*target.xposition,*target.yposition,1,
-      zoom=*target.dispzoom,init=1;
+
+    txpos = *target.xposition;
+    typos = *target.yposition;
+    disp2d,im,txpos,typos,1,zoom=*target.dispzoom,init=1;
       if (wfs_display_mode=="spatial") {
         disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
            zoom=wfs.dispzoom,init=1;
@@ -4201,11 +4230,17 @@ func go(nshot,all=)
     if (!animFlag) fma;
     // PSF Images
     plt,sim.name,0.01,0.227,tosys=0;
+
+    txpos = *target.xposition;
+    if (target.xspeed) txpos += *target.xspeed*loopCounter*loop.ittime;
+    typos = *target.yposition;
+    if (target.yspeed) typos += *target.yspeed*loopCounter*loop.ittime;
+
     if (dispImImav) {
-      disp2d,imav,*target.xposition,*target.yposition,1,power=0.5;
+      disp2d,imav,txpos,typos,1,power=0.5;
       mypltitle,"Average PSFs",[0.,-0.00],height=12;
     } else {
-      disp2d,im,*target.xposition,*target.yposition,1,power=0.5;
+      disp2d,im,txpos,typos,1,power=0.5;
       mypltitle,"Instantaneous PSFs",[0.,-0.00],height=12;
     }
     for (j=1;j<=nwfs;j++) {

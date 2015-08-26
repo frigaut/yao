@@ -525,6 +525,8 @@ struct target_struct
   pointer lambda;         // float vectorptr. Image wavelengths in micron. Required [none]
   pointer xposition;      // float vectorptr. X positions in arcsec. Required [none]
   pointer yposition;      // float vectorptr. Y positions in arcsec. Required [none]
+  pointer xspeed;         // float vectorptr. X speed in arcsec/s. Default [0.]
+  pointer yspeed;         // float vectorptr. Y speed in arcsec/s. Default [0.]
   pointer dispzoom;       // float vectorptr. Display zoom (typically around 1.). Optional [1.]
   pointer ncpdm;          // DM on the path of the targets, if any
 
