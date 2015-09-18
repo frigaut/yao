@@ -181,6 +181,8 @@ struct wfs_struct
   long    ncpdm;          // DM on the path of the WFS, if any
   pointer dmnotinpath;    // vector with indices of DM NOT in this WFS path
                           // Default is to include all DM.
+  long    framedelay;      // loop delay (# of frames). Optional [0]
+                           // Readout time + compute delay of one cycle -> framedelay=1 (typical)
 
   // Curvature WFS only keywords:
   pointer nsubperring;    // Long vectorptr. # subapertures per ring. Required [none]
@@ -253,6 +255,7 @@ struct wfs_struct
   int     ndhfiltered;    // # of dh filtered. 2 would filter tip and tilt.
 
   // Internal keywords:
+  int     _framedelay;   // number of frames of delay, either from loop.framedelay or wfs.framedelay
   int     _initkernels;   // put in wfs struct for svipc sync 2010jun25
   int     _svipc_init_done; // svipc init done for this wfs
   pointer _svipc_subok;   // vector (length=nsub4disp) 0-> skip comput. of spot. 1->do it.
@@ -560,8 +563,7 @@ struct loop_struct
   pointer leakho;          // vector of higher order leaks (starting at 2nd order)
 
   long    framedelay;      // loop delay (# of frames). Optional [0]
-                           // Regular CCD 1 frame integration -> framedelay=1
-                           // + readout & Calculation -> framedelay=2
+                           // Readout time + compute delay of one cycle -> framedelay=1 (typical)
   long    niter;           // # of total iteration. Required [none]
   float   ittime;          // Iteration time in seconds. Required [none]
   long    startskip;       // # iter to skip before collecting statistics. Optional [10]

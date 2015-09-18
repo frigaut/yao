@@ -666,6 +666,15 @@ func check_parameters(void)
       wfs(ns)._zeropoint =  wfs(ns).zeropoint;
     }
 
+    if (wfs(ns).framedelay == -1){
+      wfs(ns)._framedelay = loop.framedelay;
+    } else {
+      wfs(ns)._framedelay = wfs(ns).framedelay;
+      if ((sim.verbose) && (loop.framedelay != wfs(ns).framedelay)){
+          write, format="Using a loop delay of %d frames for wfs(%d)\n",wfs(ns).framedelay, ns;
+      }
+    }
+    
     if (wfs(ns).lambda < 0.1) {
       write,format="WFS#%d: wfs.lambda < 0.1. That seems weird.\n",ns;
       write,"Remember: lambda should be in microns";

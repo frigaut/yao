@@ -63,20 +63,20 @@ require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
 require,"yaodh.i";
-include,"lapack.i",3; // optional
 
 func LUsolve2(A,b){
-/* DOCUMENT LUsolve(a, b)
-         or a_inverse= LUsolve(a)
+/* DOCUMENT LUsolve2(a, b)
+         or a_inverse= LUsolve2(a)
  
    returns the solution x of the matrix equation:
    A(,+)*x(+) = B
+   using lpk_gesv in lapack for the matrix inversion
+
    If A is an n-by-n matrix then B must have length n, and the returned
    x will also have length n.
-      
+   
    SEE ALSO: LUsolve, lpk_gesv
 */
-  // use lapack for matrix inversions
   local b;
   // b can be a matrix or a vector. If it does not exist, make it the identity matrix
   if (b == []){
@@ -88,11 +88,6 @@ func LUsolve2(A,b){
   }
       
   return lpk_gesv(A,b);
-}
-
-if (lpk_gesv != []){
-  write, "Using ylapack to do matrix inversions: LUsolve=LUsolve2";
-  LUsolve = LUsolve2; 
 }
 
 // can't call use_sincos_approx directly in yao.conf, as not defined, work around:
@@ -1858,7 +1853,7 @@ func aoread(parfile)
   atm  = atm_struct();
   opts  = opt_struct(path_type="common",scale=1.0);
   sim  = sim_struct();
-  wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.);
+  wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.,framedelay=-1);
   dms  = dm_struct(gain=1.,coupling=0.2);
   mat  = mat_struct(file="",fit_type="target",fit_which=1);
   tel  = tel_struct();
@@ -1917,6 +1912,17 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   extern segmenttiptiltvib,segmentpistonvib;
   extern default_dpi;
 
+  if (lpk_gesv == []){
+    // if ylapack not in use, use LUsolve from matrix.i
+    autoload, "matrix.i", LUsolve;
+  } else {
+    // if the ylapack package is installed, use it!
+    // Run it by typing:
+    // > include, "lapack" 
+    LUsolve = LUsolve2; 
+    if (sim.verbose){write, "Using ylapack to do matrix inversions: LUsolve=LUsolve2";}
+  }
+  
   disp = ( (disp==[])? (aoinit_disp==[]? 0:aoinit_disp):disp );
   clean = ( (clean==[])? (aoinit_clean==[]? 0:aoinit_clean):clean );
   forcemat = ( (forcemat==[])? (aoinit_forcemat==[]? 0:aoinit_forcemat):forcemat );
@@ -3545,6 +3551,17 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   check_control_parameters,verbose=1; // update the control laws
 
+  for (ns=1;ns<=nwfs;ns++) {
+    if (wfs(ns).framedelay == -1){
+      wfs(ns)._framedelay = loop.framedelay;
+    } else {
+      wfs(ns)._framedelay = wfs(ns).framedelay;
+      if ((sim.verbose) && (loop.framedelay != wfs(ns).framedelay)){
+        write, format="Using a loop delay of %d frames for wfs(%d)\n",wfs(ns).framedelay, ns;
+      }
+    }
+  }
+    
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._x0 = &array(float,dm(nm)._nact);
@@ -3568,12 +3585,11 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
 
   size    = sim._size;
 
-
   // Some arrays initialization:
   looptime      = 0.;
   mircube       = array(float,[3,size,size,ndm]);
   command       = array(float,sum(dm._nact));
-  wfsMesHistory = array(float,[2,sum(wfs._nmes),loop.framedelay+1]);
+  wfsMesHistory = array(float,[2,sum(wfs._nmes),max(wfs._framedelay)+1]);
   cubphase      = array(float,[3,size,size,target._ntarget]);
   im            = array(float,[3,size,size,target._ntarget]);
   imav          = array(float,[4,size,size,target._ntarget,target._nlambda]);
@@ -3895,12 +3911,18 @@ func go(nshot,all=)
   // computation, etc...
   wfsMesHistory  = roll(wfsMesHistory,[0,-1]);
 
-  if (anyof([sim.svipc>>0,sim.svipc>>2]&1)) { // parallel computing.
-    wfsMesHistory(,loop.framedelay) = svipc_wfsmes;
-  } else {
-    wfsMesHistory(,loop.framedelay+1) = WfsMes;
+  mc = 0; // measurement counter
+  for (ns=1;ns<=nwfs;ns++){
+    if (anyof([sim.svipc>>0,sim.svipc>>2]&1)) { // parallel computing.
+      //wfsMesHistory(,loop.framedelay) = svipc_wfsmes;
+      wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay) = svipc_wfsmes(mc+1:mc+wfs(ns)._nmes); 
+    } else {
+      //wfsMesHistory(,loop.framedelay+1) = WfsMes;
+      wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay+1) = WfsMes(mc+1:mc+wfs(ns)._nmes); 
+    }
+    mc += wfs(ns)._nmes;
   }
-
+    
   usedMes        = float(wfsMesHistory(,1));
 
   time(3) += tac();
@@ -4322,7 +4344,12 @@ func go(nshot,all=)
 
   // Fill the circular buffer
   if (is_set(savecb)) {
-    cbmes(,i) = wfsMesHistory(,loop.framedelay);
+    mc = 0; // measurement counter
+    for (ns=1;ns<=nwfs;ns++){
+      cbmes(mc+1:mc+wfs(ns)._nmes,i) = wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay);
+      mc += wfs(ns)._nmes;
+    }
+    //cbmes(,i) = wfsMesHistory(,loop.framedelay);
     cbcom(,i) = comvec;
     cberr(,i) = err;
   }
