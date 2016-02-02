@@ -247,5 +247,3 @@ extern _cwfs
 // fftw_wisdom;
 // if (fftw_n_threads) fftw_set_n_threads,fftw_n_threads; \
 // else fftw_set_n_threads,nprocs();
-
-

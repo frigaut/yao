@@ -77,8 +77,18 @@ func create_yao_window(dpi)
 
 
 //----------------------------------------------------
+func xyxy2xxyy(void)
+{
+  offset=0;
+  for (n=1;n<=nwfs;n++) {
+    tmp = indgen(wfs(n)._nsub)*2;
+    tmp = _(tmp,tmp+1);
+    grow,reordered,tmp+offset;
+    offset+=wfs(n)._nmes;
+  }
+  return reordered;
+}
 
-//func xyxy2xxyy(void)
 func xxyy2xyxy(void)
 {
   offset=0;

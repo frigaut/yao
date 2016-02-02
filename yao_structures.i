@@ -264,6 +264,7 @@ struct wfs_struct
   pointer _fork_subs2;  // same, but for call to _shwfs_spots2slopesa
   pointer _validsubs;     // 0/1 mark invalid/valid, out of the ones selected for display
   float   _origpixsize;   // Internal.
+  int     _orignpixels;   // Internal.
   int     _rebinfactor;   // fft pixels to big pixels
   float   _gsalt;         // This WFS guide star altitude in meter. 0 for infinity.
   float   _gsdepth;       // This WFS GS depth in meter (e.g. Na layer thickness).

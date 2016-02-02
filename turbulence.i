@@ -268,4 +268,3 @@ func generate_phase_with_L0(dim,l0,nalias=,silent=,no_ipart=)
   re = im = [];
   return phaout;
 }
-

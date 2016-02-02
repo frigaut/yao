@@ -1161,6 +1161,3 @@ func renum_int_array(map)
 
   return rmap;
 }
-
-
-

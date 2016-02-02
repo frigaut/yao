@@ -823,13 +823,13 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
     }
     npext = max([wfs(ns).npixels,wfs(ns)._npixels]);
     write,format="%2d      %.4f  %.4f  %.4f   %4.2f  %4.2f  %4.2f   %2dx%2d   %2dx%2d    %.1f\n",
-      ns,desiredPixelSize,quantumPixelSize,actualPixelSize,quantumPixelSize*sdim,
-      actualPixelSize*wfs(ns).npixels,actualPixelSize*npext,desiredNpixels,
-      desiredNpixels,wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
+      ns,wfs(ns)._origpixsize,quantumPixelSize,actualPixelSize,quantumPixelSize*sdim,
+      actualPixelSize*wfs(ns).npixels,actualPixelSize*npext,wfs(ns)._orignpixels,
+      wfs(ns)._orignpixels,wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
     write,f,format="%2d      %.4f  %.4f  %.4f   %4.2f  %4.2f  %4.2f   %2dx%2d   %2dx%2d    %.1f\n",
-      ns,desiredPixelSize,quantumPixelSize,actualPixelSize,quantumPixelSize*sdim,
-      actualPixelSize*wfs(ns).npixels,actualPixelSize*npext,desiredNpixels,
-      desiredNpixels,wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
+      ns,wfs(ns)._origpixsize,quantumPixelSize,actualPixelSize,quantumPixelSize*sdim,
+      actualPixelSize*wfs(ns).npixels,actualPixelSize*npext,wfs(ns)._orignpixels,
+      wfs(ns)._orignpixels,wfs(ns).npixels,wfs(ns).npixels,wfs(ns)._nphotons;
     close,f;
   }
 

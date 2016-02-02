@@ -1891,7 +1891,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
    dpi          = dpi of graphic window
    keepdmconfig = when forcemat=1, the default behavior is to agregate the
                   previously determined active and extrapolated actuators
-                  and do the new interacton matrix with all of them. The
+                  and do the new interaction matrix with all of them. The
                   selection of valid/extrapolated is then reset (and
                   re-executed when the interaction matrix is done).
                   Setting keepdmconfig=1 impose that the valid/extrapolated
@@ -1970,6 +1970,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // PARAMETER CHECKS. SETS SOME DEFAULTS
   //=====================================
   check_parameters;
+
+  wfs._origpixsize = wfs.pixsize;
+  wfs._orignpixels = wfs.npixels;
+
   if (!is_set(disp)) {disp = 0;}
   if (!is_set(dpi)) {dpi = 70;}
   if (is_set(clean)) {forcemat=1;}
@@ -1981,7 +1985,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
 
   // Sets other parameters:
-  sim._size = int(2^ceil(log(sim.pupildiam)/log(2)+1));
+  if (!sim._size) sim._size = int(2^ceil(log(sim.pupildiam)/log(2)+1));
   size      = sim._size;
   // mircube will receive the shape of each DM (one plan per DM):
   mircube   = array(float,sim._size,sim._size,ndm);
@@ -4327,11 +4331,11 @@ func go(nshot,all=)
     }
     // Display residual wavefront
     plsys,5;
-    pli, (pupil*residual_phase)(n1:n2,n1:n2);
+    pli, (ipupil*residual_phase)(n1:n2,n1:n2);
     if (rp_rms!=[]) \
       plt,swrite(format="rms=%dnm",long(rp_rms)),0.450,0.579,\
       tosys=0,height=10,justify="LA";
-    mypltitle,swrite(format="Residual wavefront on %s #%d",residual_phase_what,\
+    mypltitle,swrite(format="Residual phase on %s #%d",residual_phase_what,\
                      residual_phase_which),[0.,-0.0],height=12;
 
     if (user_plot != []) user_plot,i,init=(i==1);  // execute user's plot routine if it exists.
