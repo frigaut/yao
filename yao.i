@@ -1653,12 +1653,12 @@ func get_phase2d_from_optics(nn,type)
   // subroutine, this one.
   if (type == "wfs") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
-    xshifts = optwfsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
-    yshifts = optwfsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
+    xshifts = optwfsxposcub(,w,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
+    yshifts = optwfsyposcub(,w,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
   } else if ( type == "target") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
-    xshifts = optgsxposcub(,,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
-    yshifts = optgsyposcub(,,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
+    xshifts = optgsxposcub(,w,nn)+(opt._cent+opt.misreg(1,)-1)(-,w);
+    yshifts = optgsyposcub(,w,nn)+(opt._cent+opt.misreg(2,)-1)(-,w);
     ppm = sim.pupildiam/tel.diam;
     if (target.xspeed&&loopCounter) {
       xss = (*target.xspeed)(nn)*4.848e-6*opt.alt*loop.ittime*loopCounter*ppm;
