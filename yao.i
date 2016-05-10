@@ -3523,7 +3523,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   extern im, imav, imtmp, airy, sairy, fwhm, e50;
   extern niterok;
   extern pp, sphase, bphase, imphase, dimpow2, cMat, pupil, ipupil;
-  extern time, strehllp, strehlsp, itv, ok, njumpsinceswap;
+  extern time, strehllp, strehlsp, rpv, itv, ok, njumpsinceswap;
   extern remainingTimestring  ;
   extern cbmes, cbcom, cberr;
   extern indexDm, aniso, waniso, wdmaniso;
@@ -3610,7 +3610,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   pupil         = float(pupil);
   ipupil        = float(ipupil);
   time          = array(float,10);
-  strehllp = strehlsp = itv = [];
+  strehllp = strehlsp = itv = rpv = [];
   ok            = 0;
   niterok       = 0;
   remainingTimestring = "";
@@ -4140,7 +4140,7 @@ func go(nshot,all=)
   okcscreen = ( is_set(controlscreen) && (((i-1) % controlscreen) == 0) );
   if (is_set(controlscreen) && (i == loop.niter)) okcscreen=1;  // display at last iteration
 
-  if (savephase||okdisp) {
+  if (savephase||ok||okdisp) {
     // get the residual phase; initially for the first target
     // display and save the residual wavefront
     if (residual_phase_what==[]) residual_phase_what="target";
@@ -4179,6 +4179,21 @@ func go(nshot,all=)
       rp1d = residual_phase(rp_w);
       rp_rms = rp1d(rms)*1000.; // in nm
       rp_z = rp1d(+)*rp_zerns(+,)*1000.; // in nm
+    } else if (residual_phase_rms_nott) {
+      extern rp_tip1d,rp_tilt1d;
+      if (rp_tip1d==[]) {
+        tmp = indices(dimsof(pupil)(0));
+        rp_tip1d  = tmp(,,1)(where(pupil > 0));
+        rp_tilt1d = tmp(,,2)(where(pupil > 0));
+        rp_tip1d -= avg(rp_tip1d);
+        rp_tilt1d -= avg(rp_tilt1d);
+        rp_tip1d = rp_tip1d/sqrt(sum(rp_tip1d^2.));
+        rp_tilt1d = rp_tilt1d/sqrt(sum(rp_tilt1d^2.));
+      }
+      rp1d_nott = residual_phase1d;
+      rp1d_nott -= sum(rp1d_nott*rp_tip1d)*rp_tip1d;
+      rp1d_nott -= sum(rp1d_nott*rp_tilt1d)*rp_tilt1d;
+      if (ok) grow,rpv,rp1d_nott(rms)*1000.; // in nm
     }
 
 
@@ -4550,13 +4565,15 @@ func after_loop(void)
   timeComments = ["WF sensing","Reset and measurement history handling","cMat multiplication",\
                   "DM shape computation","Target PSFs estimation","Displays",\
                   "Circular buffers, end-of-loop printouts"];
-  for (i=2;i<=8;i++) {
-    write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time2(i)*1e3,timeComments(i-1);}
+  if (!go_quiet) {
+    for (i=2;i<=8;i++) {
+      write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time2(i)*1e3,timeComments(i-1);}
 
-  write,format="Finished on %s\n",endtime_str;
+    write,format="Finished on %s\n",endtime_str;
+  }
   // tottime = (endtime - starttime);
   iter_per_sec = loopCounter/tottime;
-  write,format="%f iterations/second on average\n",iter_per_sec;
+  if (!go_quiet) write,format="%f iterations/second on average\n",iter_per_sec;
 
   // Save the circular buffers:
   if (is_set(savecb)) {
@@ -4578,7 +4595,7 @@ func after_loop(void)
     grow, tmp, swrite(format="%.3f",psize(nl));
   }
   grow, tmp, "mas";
-  write, tmp;
+  if (!go_quiet) write, tmp;
 
   write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
