@@ -67,14 +67,14 @@ require,"yaodh.i";
 func LUsolve2(A,b){
 /* DOCUMENT LUsolve2(a, b)
          or a_inverse= LUsolve2(a)
- 
+
    returns the solution x of the matrix equation:
    A(,+)*x(+) = B
    using lpk_gesv in lapack for the matrix inversion
 
    If A is an n-by-n matrix then B must have length n, and the returned
    x will also have length n.
-   
+
    SEE ALSO: LUsolve, lpk_gesv
 */
   local b;
@@ -86,7 +86,7 @@ func LUsolve2(A,b){
       b = float(unit(nr));
     }
   }
-      
+
   return lpk_gesv(A,b);
 }
 
@@ -1173,6 +1173,10 @@ func get_turb_phase_init(skipReadPhaseScreens=)
 
     // apply weights to each phase screens (normalize):
     // the screens are expressed in microns
+    if (*atm.screen_norm!=[]) {
+      weight = float(*atm.screen_norm);
+      write,format="%s","Using special normalisation: "; weight;
+    }
     pscreens = pscreens*weight(-,-,);
     currentScreenNorm = weight;
 
@@ -1239,7 +1243,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
   if (loop.skipevery > 0){
     iposvec = iposvec+((iposvec-1)/loop.skipevery)*loop.skipby;
   }
-  
+
   // Build the position vector vs iteration by phase screen
   deltax  = sim.pupildiam/tel.diam*(*atm.layerspeed)*cos(dtor*gs.zenithangle)*loop.ittime;
   // has to start away from edge as this is the coordinate of the beam center
@@ -1477,7 +1481,7 @@ func get_turb_phase(iter,nn,type)
     if (target.yspeed&&loopCounter) {
       yss = (*target.yspeed)(nn)*4.848e-6*(*atm.layeralt)*loop.ittime*loopCounter*ppm;
       yshifts += float(yss)(-,);
-    }    
+    }
   }
   skip = array(0n,nscreens);
 
@@ -1773,7 +1777,7 @@ func check_control_parameters(void,verbose=){
     }
 
     if ((ctrlnum != []) && (ctrlden != [])){
-      
+
       // ctrlnum and ctrlden are defined
      if (verbose){write, format = "Using dm.ctrlden and dm.ctrlnum for DM %d \n",nm;}
     } else {
@@ -1918,11 +1922,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   } else {
     // if the ylapack package is installed, use it!
     // Run it by typing:
-    // > include, "lapack" 
-    LUsolve = LUsolve2; 
+    // > include, "lapack"
+    LUsolve = LUsolve2;
     if (sim.verbose){write, "Using ylapack to do matrix inversions: LUsolve=LUsolve2";}
   }
-  
+
   disp = ( (disp==[])? (aoinit_disp==[]? 0:aoinit_disp):disp );
   clean = ( (clean==[])? (aoinit_clean==[]? 0:aoinit_clean):clean );
   forcemat = ( (forcemat==[])? (aoinit_forcemat==[]? 0:aoinit_forcemat):forcemat );
@@ -1936,7 +1940,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
     keepdmconfig  = 1;
   }
-  
+
   // initialize DM hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._alpha = [0.01,0.2,4];
@@ -3565,7 +3569,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       }
     }
   }
-    
+
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._x0 = &array(float,dm(nm)._nact);
@@ -3919,14 +3923,14 @@ func go(nshot,all=)
   for (ns=1;ns<=nwfs;ns++){
     if (anyof([sim.svipc>>0,sim.svipc>>2]&1)) { // parallel computing.
       //wfsMesHistory(,loop.framedelay) = svipc_wfsmes;
-      wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay) = svipc_wfsmes(mc+1:mc+wfs(ns)._nmes); 
+      wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay) = svipc_wfsmes(mc+1:mc+wfs(ns)._nmes);
     } else {
       //wfsMesHistory(,loop.framedelay+1) = WfsMes;
-      wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay+1) = WfsMes(mc+1:mc+wfs(ns)._nmes); 
+      wfsMesHistory(mc+1:mc+wfs(ns)._nmes,wfs(ns)._framedelay+1) = WfsMes(mc+1:mc+wfs(ns)._nmes);
     }
     mc += wfs(ns)._nmes;
   }
-    
+
   usedMes        = float(wfsMesHistory(,1));
 
   time(3) += tac();
@@ -4751,7 +4755,3 @@ generatePhaseWithL0   = generate_phase_with_L0;
 plotMTF               = plot_mtf;
 plotDphi              = plot_dphi;
 userPlot              = user_plot;
-
-
-
-
