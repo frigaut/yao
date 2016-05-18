@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.7.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2015aug25";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.8.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2016may11";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -3614,7 +3614,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   pupil         = float(pupil);
   ipupil        = float(ipupil);
   time          = array(float,10);
-  strehllp = strehlsp = itv = rpv = [];
+  strehllp = strehlsp = itv = rpv = rp_tip1d = rp_tilt1d = [];
   ok            = 0;
   niterok       = 0;
   remainingTimestring = "";
