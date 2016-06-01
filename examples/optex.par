@@ -1,0 +1,95 @@
+// YAO parameter file
+//-------------------------------
+sim.name           = "SH6x6, full diffraction WFS, opt example";
+sim.pupildiam      = 120;
+sim.debug          = 0;
+sim.verbose        = 0;
+
+//-------------------------------
+atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen	   = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
+atm.layerspeed     = &([11.,20,29,35]);
+atm.layeralt	   = &([0.,400,6000,9000]);
+atm.winddir        = &([0,0,0,0]);
+
+//-------------------------------
+nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+n   = 1;
+wfs(n).type	   = "hartmann";
+wfs(n).lambda	   = 0.65;
+wfs(n).gspos       = [0.,0.];
+wfs(n).gsalt       = 0.;
+wfs(n).gsmag       = 5.;
+wfs(n).shmethod	   = 2;
+wfs(n).shnxsub	   = 6;
+wfs(n).pixsize     = 0.2;
+wfs(n).npixels     = 10;
+wfs(n).noise       = 1;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
+wfs(n).nintegcycles= 1;
+
+//-------------------------------
+ndm                = 2;
+dm = array(dms,ndm);
+
+n  =1;
+dm(n).type	   = "stackarray";
+dm(n).iffile	   = "";
+dm(n).nxact	   = 7;
+dm(n).pitch	   = 20;
+dm(n).alt          = 0.;
+dm(n).unitpervolt   = 0.01;
+dm(n).push4imat    = 100;
+
+n  =2;
+dm(n).type	   = "tiptilt";
+dm(n).iffile	   = "";
+dm(n).alt          = 0.;
+dm(n).unitpervolt   = 0.0005;
+dm(n).push4imat    = 400;
+
+//-------------------------------
+nopt = 2;
+opt = array(opts,nopt);
+
+opt(1).phasemaps = "optics1.fits";
+opt(1).path_type = "common";
+opt(1).alt = 0.;
+
+opt(2).phasemaps = "optics2.fits";
+opt(2).path_type = "wfs";
+opt(2).path_which = &([1,2]);
+opt(2).alt = 200.;
+
+//-------------------------------
+mat.condition      = &([15.]);
+mat.file	   = "";
+
+//-------------------------------
+tel.diam	   = 7.9;
+tel.cobs	   = 0.1125;
+
+//-------------------------------
+target.lambda	   = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint	   = 1e11;
+
+//-------------------------------
+loop.gain	   = 0.6;
+loop.framedelay    = 1;
+loop.niter	   = 5000;
+loop.ittime	   = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 10000;
+loop.skipby        = 10000;
+loop.modalgainfile = "simulModeGains.fits";
+
+//-------------------------------
