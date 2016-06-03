@@ -3836,6 +3836,8 @@ func go(nshot,all=)
 
   go_start:  now = tac(2);
 
+  if (go2_user_func!=[]) status = go2_user_func();
+
   loopCounter++;
   nshots--;
 
