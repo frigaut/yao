@@ -142,6 +142,10 @@ dm(n).ndh          = 40;
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.01;
 dm(n).push4imat    = 300.;
+//dm(n).unitpervolt     = 1.;            // microns per Volt;
+//dm(n).push4imat       = 1.;            // in volts, used for matrix generation
+dm(n).regtype         = "laplacian";   // regularization approach
+dm(n).regparam        = 1.E-6;         // regularization parameter (optimized by Andreas Obereder (Email: 14 Dec 2014)
 dm(n).elt          = 0;
 
 n  =2;
