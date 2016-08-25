@@ -4,10 +4,10 @@ Copyright (c) Francois Rigaut (frigaut) 2002-2016.
 Initial release June 2002.
 
 ## Developers
-Francois Rigaut         frigaut@gmail.com
-Marcos van Dam          marcos@flatwavefronts.com
-Ralf Flicker            †July 2009
-Damien Gratadour        damien.gratadour@obspm.fr
+Francois Rigaut         frigaut@gmail.com  
+Marcos van Dam          marcos@flatwavefronts.com  
+Ralf Flicker            †July 2009  
+Damien Gratadour        damien.gratadour@obspm.fr  
 Aurea Garcia-Rissmann   agrissmann@gmail.com
 
 ## Synopsis
