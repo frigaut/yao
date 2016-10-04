@@ -3462,7 +3462,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         "(%+4.1f\",%+4.1f\"), noise %s\n",
         ns,wfs(ns).type,wfs(ns).shmethod,wfs(ns)._nsub,wfs(ns).gspos(1),
         wfs(ns).gspos(2),
-        ( (wfs(ns).noise && (wfs(ns).shmethod == 2)) ? "enabled" : "disabled" );
+        ( (wfs(ns).noise) ? "enabled" : "disabled" );
     }
     write,format="D/r0 (500nm) = %.1f; %d iterations\n",atm.dr0at05mic/
       cos(gs.zenithangle*dtor)^0.6,loop.niter;
@@ -3482,7 +3482,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       "(%+4.1f\",%+4.1f\"), noise %s\n",
       ns,wfs(ns).type,wfs(ns).shmethod,wfs(ns)._nsub,wfs(ns).gspos(1),
       wfs(ns).gspos(2),
-      ( (wfs(ns).noise && (wfs(ns).shmethod == 2)) ? "enabled" : "disabled" );
+      ( (wfs(ns).noise) ? "enabled" : "disabled" );
   }
   write,f,format="D/r0 (500nm) = %.1f; %d iterations\n",atm.dr0at05mic/
     cos(gs.zenithangle*dtor)^0.6,loop.niter;
