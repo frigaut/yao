@@ -1644,6 +1644,7 @@ func get_phase2d_from_optics(nn,type)
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
+  if (typeof(optphasemaps) != "float"){optphasemaps = float(optphasemaps);}
   thisphasemaps = optphasemaps(,,w)*opt(w).scale(-,-,);
 
   // Now we can call the C interpolation routine and get the integrated
