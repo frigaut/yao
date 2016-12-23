@@ -1651,6 +1651,7 @@ func get_phase2d_from_optics(nn,type)
   sphase = array(float,_n,_n);
   bphase = array(float,sim._size,sim._size);
 
+  if (typeof(optphasemaps) != "float"){optphasemaps = float(optphasemaps);}
   thisphasemaps = optphasemaps(,,w)*opt(w).scale(-,-,);
 
   // Now we can call the C interpolation routine and get the integrated
@@ -1865,7 +1866,7 @@ func aoread(parfile)
   opts  = opt_struct(path_type="common",scale=1.0);
   sim  = sim_struct();
   wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.,framedelay=-1);
-  dms  = dm_struct(gain=1.,coupling=0.2);
+  dms  = dm_struct(gain=1.,coupling=0.2,thresholdresp=0.3);
   mat  = mat_struct(file="",fit_type="target",fit_which=1);
   tel  = tel_struct();
   target = target_struct();
@@ -2143,47 +2144,47 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (sim.verbose) {write,"\n> INITIALIZING SENSOR GEOMETRY";}
   gui_message,"Initializing sensor geometry";
 
-  for (n=1;n<=nwfs;n++) {
+  for (ns=1;ns<=nwfs;ns++) {
 
-    if (wfs(n).type == "curvature") {
+    if (wfs(ns).type == "curvature") {
 
       // build subaperture geometry:
-      make_curv_wfs_subs,n,size,sim.pupildiam;
+      make_curv_wfs_subs,ns,size,sim.pupildiam;
       // init WFS
-      curv_wfs,pupil,pupil*0.0f,n,init=1;
-      wfs(n)._nsub = int(sum(*(wfs(n).nsubperring)));
-      wfs(n)._nmes = wfs(n)._nsub;
+      curv_wfs,pupil,pupil*0.0f,ns,init=1;
+      wfs(ns)._nsub = int(sum(*(wfs(ns).nsubperring)));
+      wfs(ns)._nmes = wfs(ns)._nsub;
 
-    } else if (wfs(n).type == "hartmann") {
+    } else if (wfs(ns).type == "hartmann") {
 
       // init WFS:
-      if (wfs(n).disjointpup) {
-        shwfs_init,disjointpup(,,n),n,imat=1,clean=clean;
-      } else shwfs_init,ipupil,n,imat=1,clean=clean;
-      wfs(n)._nmes = 2*wfs(n)._nsub;
+      if (wfs(ns).disjointpup) {
+        shwfs_init,disjointpup(,,ns),ns,imat=1,clean=clean;
+      } else shwfs_init,ipupil,ns,imat=1,clean=clean;
+      wfs(ns)._nmes = 2*wfs(ns)._nsub;
 
-    } else if (wfs(n).type == "pyramid") {
+    } else if (wfs(ns).type == "pyramid") {
 
       // init WFS
-      v = pyramid_wfs(pupil,pupil*0.,n,disp=disp,init=1);
-      wfs(n)._nsub = numberof(v)/2;
-      wfs(n)._nmes = 2*wfs(n)._nsub;
+      v = pyramid_wfs(pupil,pupil*0.,ns,disp=disp,init=1);
+      wfs(ns)._nsub = numberof(v)/2;
+      wfs(ns)._nmes = 2*wfs(ns)._nsub;
 
-    } else if (wfs(n).type == "zernike") {
-      zernike_wfs,ipupil,ipupil*0.,n,init=1;
+    } else if (wfs(ns).type == "zernike") {
+      zernike_wfs,ipupil,ipupil*0.,ns,init=1;
 
-    } else if (wfs(n).type == "dh") {
-      dh_wfs,ipupil,ipupil*0.,n,init=1;
+    } else if (wfs(ns).type == "dh") {
+      dh_wfs,ipupil,ipupil*0.,ns,init=1;
 
     } else {
       // assign user_wfs to requested function/type:
-      cmd = swrite(format="user_wfs = %s",wfs(n).type);
+      cmd = swrite(format="user_wfs = %s",wfs(ns).type);
       include,[cmd],1;
-      user_wfs,ipupil,ipupil*0.,n,init=1;
+      user_wfs,ipupil,ipupil*0.,ns,init=1;
     }
 
-    if ( (wfs(n).disjointpup) && (disjointpup==[]) ) \
-      error,swrite(format="wfs(%d).disjointpup set but disjointpup does not exist\n",n);
+    if ( (wfs(ns).disjointpup) && (disjointpup==[]) ) \
+      error,swrite(format="wfs(%d).disjointpup set but disjointpup does not exist\n",ns);
   }
 
   // set up array for uplink TT compensation:
@@ -2291,21 +2292,22 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     if (clean) dm(n)._def = dm(n)._edef = &([]);
     // Set _n1 and _n2, the limit indices
-    if (dm(n).type == "stackarray") {
-      // find out the support dimension for the given mirror.
-      extent = dm(n).pitch*(dm(n).nxact+2.); // + 1.5 pitch each side
+    if (dm(n).type == "stackarray"){
+      if (dm(n).alt == 0) {
+        // special case = (only) 6 pixels margin each side:
+        // note: "upgraded" from 2 to 8 to allow more margin when misregistering   
+        extent = sim.pupildiam+16;
+      } else {
+        extent = dm(n).pitch*(dm(n).nxact+2.); // + 1.5 pitch each side
+      }
       dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
       dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
-    } else {  // we are dealing with a curvature mirror, TT, zernike,dh or aniso:
-      dm(n)._n1 = 1;
-      dm(n)._n2 = sim._size;
-    }
-    // special case = (only) 6 pixels margin each side:
-    // note: "upgraded" from 2 to 8 to allow more margin when misregistering
-    if (dm(n).alt == 0) {
-      extent = sim.pupildiam+16;
-      dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
-      dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
+    } else {      
+      // define for all other programmed DMs, but not for user defined DMs, which could have different values
+      if (anyof(dm(n).type == ["bimorph","zernike","dh","kl","tiptilt","segmented","aniso"])){
+        dm(n)._n1 = 1;
+        dm(n)._n2 = sim._size;
+      }
     }
 
     // compute influence functions:
@@ -2436,6 +2438,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           yao_fitswrite,YAO_SAVEPATH+dm(n).iffile,long(*(dm(n)._j1)),exttype="IMAGE",append=1;
         }
       }
+    }
+    // need to set ._n1 and ._n2 for user defined DMs that have already been defined and saved
+    if (dm(n)._n1 == 0){
+      dmdims = dimsof(*dm(n)._def);
+      dm(n)._n1 = long(sim._cent+0.5-dmdims(2)/2);
+      dm(n)._n2 = long(sim._cent-0.5+dmdims(2)/2);
     }
   }
 
@@ -2800,6 +2808,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       iMat = tmp(,,1);
       cMat = transpose(tmp(,,2));
       tmp = [];
+            
       if (anyof(dm.dmfit_which)){
         if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
           dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
@@ -2880,7 +2889,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             dist2= dx^2+dy^2;
 
             L(ii,ii) = -1.;
-            L(ii,where(dist2 == pitch2)) = 0.25;
+
+            ww = where(dist2 == pitch2);
+            if (numberof(ww)){L(ii,ww) = 0.25;}
           }
           dm(nm)._regmatrix = &(L(+,)*L(+,));
         } else { // identity matrix
@@ -3469,7 +3480,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         "(%+4.1f\",%+4.1f\"), noise %s\n",
         ns,wfs(ns).type,wfs(ns).shmethod,wfs(ns)._nsub,wfs(ns).gspos(1),
         wfs(ns).gspos(2),
-        ( (wfs(ns).noise && (wfs(ns).shmethod == 2)) ? "enabled" : "disabled" );
+        ( (wfs(ns).noise) ? "enabled" : "disabled" );
     }
     write,format="D/r0 (500nm) = %.1f; %d iterations\n",atm.dr0at05mic/
       cos(gs.zenithangle*dtor)^0.6,loop.niter;
@@ -3489,7 +3500,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       "(%+4.1f\",%+4.1f\"), noise %s\n",
       ns,wfs(ns).type,wfs(ns).shmethod,wfs(ns)._nsub,wfs(ns).gspos(1),
       wfs(ns).gspos(2),
-      ( (wfs(ns).noise && (wfs(ns).shmethod == 2)) ? "enabled" : "disabled" );
+      ( (wfs(ns).noise) ? "enabled" : "disabled" );
   }
   write,f,format="D/r0 (500nm) = %.1f; %d iterations\n",atm.dr0at05mic/
     cos(gs.zenithangle*dtor)^0.6,loop.niter;
@@ -3981,7 +3992,16 @@ func go(nshot,all=)
     }
   } else {
     err = cMat(,+) * usedMes(+);
-    if ((loop.method == "pseudo open-loop") && (i > 1) && (dMat != [])){
+    if ((loop.method == "pseudo open-loop") && (i > 1)){
+      // make sure that dMat exists
+      if (dMat == []){
+        // if not, load it
+        if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
+          dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
+        } else {
+          error, "loop.method set to pseudo open-loop, but dMat is not defined";
+        }
+      }          
       polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
       if (anyof(wfs.nintegcycles > 1)){
         // if some DMs are not updating because the WFSs have not finished
