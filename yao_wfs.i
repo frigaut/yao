@@ -160,7 +160,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   // then out of these, we will only compute mesvec for the "valid":
   tmp = fluxPerSub;
   tmp = tmp(gind);
-  wfs(ns)._validsubs = &(int(tmp > fracsub));
+  if (!wfs_keep_valid) wfs(ns)._validsubs = &(int(tmp > fracsub));
 
   istart     = istart(gind);
   jstart     = jstart(gind);
@@ -677,12 +677,15 @@ func shwfs_init_lgs_kernels(ns)
     tmp  = exp(-((cos(ang)*xy(,,1)+sin(ang)*xy(,,2))/alpha)^expo);
     tmp *= exp(-((cos(angp90)*xy(,,1)+sin(angp90)*xy(,,2))/beta)^expo);
     tmp = tmp/sum(tmp);
-    grow,kall,float((eclat(tmp))(*));
+    if (kall==[]) {
+      kall = array(0.0f,[2,numberof(tmp),wfs(ns)._nsub4disp]);
+    }
+    kall(,l) = float((eclat(tmp))(*));
 
     if (wfs(ns)._gsalt==0) {
       // then we are dealing with a NGS, not subaperture dependent:
-      kall = array(kall,wfs(ns)._nsub4disp)(*);
-      if (sim.debug) write,"Dealing with NGS, no subap dependant elongation";
+      kall = array(kall(,1),wfs(ns)._nsub4disp);
+      if (sim.debug) write,"Dealing with NGS, no subap dependent elongation";
       break;
     }
 
@@ -690,6 +693,8 @@ func shwfs_init_lgs_kernels(ns)
     gui_progressbar_frac,float(l)/wfs(ns)._nsub4disp;
   }
   clean_progressbar;
+
+  kall = kall(*);
 
   wfs(ns)._kernels = &(float(kall));
   wfs(ns)._kerfftr = &(float(kall*0.0f));
@@ -720,7 +725,7 @@ func shwfs_init_rayleigh(ns)
   isthere = fileExist(YAO_SAVEPATH+rayfname);
   fov    = quantumPixelSize*wfs(ns)._nx4fft;
   aspp   = quantumPixelSize;
-
+  kall   = [];
 
   if ( (isthere) && (!clean) ) {
     kall         = yao_fitsread(YAO_SAVEPATH+rayfname)*1e6;
@@ -736,7 +741,11 @@ func shwfs_init_rayleigh(ns)
       // the switch of xsub <-> ysub and transpose are to accomodate the
       // C vs yorick 0 vs 1 start array index.
       //        tmp = tmp/sum(tmp);
-      grow,kall,(eclat(tmp))(*);
+      if (kall==[]) {
+        kall = array(0.0f,[2,numberof(tmp),wfs(ns)._nsub4disp]);
+      }
+      kall(,l) = float((eclat(tmp))(*));
+      // grow,kall,(eclat(tmp))(*);
     }
     yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
     yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
@@ -753,6 +762,7 @@ func shwfs_init_rayleigh(ns)
       min(sodiumflux),max(sodiumflux);
   }
 
+  kall = kall(*);
   wfs(ns)._rayleigh = &(float(kall));
   wfs(ns)._rayleighflux = &float(rayleighflux);
   wfs(ns)._sodiumflux = &float(sodiumflux);

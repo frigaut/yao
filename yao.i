@@ -131,7 +131,7 @@ if (_import_wisdom(expand_path(fftw_wisdom_file))){
 pyk_error = pyk_info = pyk_warning = null;
 gui_message = gui_message1 = gui_progressbar_frac = gui_progressbar_text = null;
 clean_progressbar = gui_show_statusbar1 = gui_hide_statusbar1 = pyk_flush = null;
-YAO_SAVEPATH = get_cwd();
+if (YAO_SAVEPATH==[]) YAO_SAVEPATH = get_cwd();
 
 //----------------------------------------------------
 func comp_dm_shape_init(nm)
@@ -351,6 +351,8 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
    SEE ALSO: shwfs_init
  */
 {
+  extern wfs;
+
   as2rd = dtor/3600.;
   cobs  = 0;
 
@@ -370,7 +372,9 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
 
   // I have not implemented the 4 following parameters in the parfile.
   // one has to fill it by hand in the code for now!!!!!!!
-  beamdiameter = 0.3; // fwhm of gaussian laser beam in meter
+  // beamdiameter = 0.3; // fwhm of gaussian laser beam in meter
+  if (wfs(nwfs).LLT1overe2diam==0) wfs(nwfs).LLT1overe2diam=0.3;
+  beamdiameter = wfs(nwfs).LLT1overe2diam; // Gaussian laser beam FWHM [m]
 
   laserlambda  = wfs(nwfs).lambda*1e-6; //589e-9;
   diamsubap    = tel.diam/wfs(nwfs).shnxsub; // side of a subaperture [m]
@@ -1484,6 +1488,9 @@ func get_turb_phase(iter,nn,type)
     }
   }
   skip = array(0n,nscreens);
+
+  xshifts = xshifts - screendim(1)*(xshifts>=(psnx-1));
+  yshifts = yshifts - screendim(2)*(yshifts>=(psny-1));
 
   ishifts = int(xshifts);  xshifts = xshifts - ishifts;
   jshifts = int(yshifts);  yshifts = yshifts - jshifts;

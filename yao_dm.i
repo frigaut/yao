@@ -462,7 +462,7 @@ func make_dh_dm(nm,&def,disp=)
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
   patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
-  def = float(make_diskharmonic(dim,patchDiam,ndh,xc=cent-dm(nm)._n1+1,yc=cent-dm(nm)._n1+1));
+  def = float(make_diskharmonic(dim,patchDiam,ndh,xc=cent-dm(nm)._n1+1,yc=cent-dm(nm)._n1+1,disp=disp));
 
   if (sim.verbose>=1) {write,format="Number of DH modes :%d\n",ndh;}
 

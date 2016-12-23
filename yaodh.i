@@ -80,20 +80,22 @@ func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=)
   max_order = zernumero(ndhmodes)(1)+1;
   ndh=0;
   //ntmodes = sum(indgen(max_order+1));
+  if (sim.debug) write,format="%s","#DH:  ";
 
   for (i=0;i<=max_order;i++) {
     for (k=0;k<=i;k++) {
       ndh = ndh+1;
+      if (ndh>ndhmodes) break;
+      if (sim.debug) write,format="\rDoing DH# %d",ndh;
       if (ndh == 1) {
-        dh_tab = array(float,size,size,1);
-      } else {
-        grow,dh_tab,array(float,size,size,1);
+        dh_tab = array(float,[3,size,size,ndhmodes]);
       }
       p = dh_dhindex(i,k);
       dh_tab(,,ndh) = dh_dh(p(1),p(2),zr,ztheta);
       if (disp == 1) {fma; pli,dh_tab(,,ndh);}
     }
   }
+  write,"";
 
   return dh_tab(,,1:ndhmodes);
 
