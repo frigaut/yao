@@ -210,6 +210,8 @@ notes on Yorick.</p>
   <code>Y_USER/data=.yorick/data</code> in my case). You will need to edit 
   the <b>yao</b> parameter files to reflect the path and names of these 
   phase screens if you put it somewhere different or used a different name (look for "atm.screen" in the parfile).</p>
+<p>It is possible to create phase screens with a finite outer scale (this requires ygls to be installed). The value of l0 is the outer scale <em>in pixels</em></p>
+<pre>create_phase_screens,2048,256,prefix="screen",l0=200</pre>
 
 <p>Next, we will try to run "sh6x6", which is a simple 6x6 Shack-Hartmann 
   example. After you have edited the "sh6x6.par" file (in the <code>examples</code> directory) and modified the 
@@ -1086,7 +1088,8 @@ Often you wish to simulate an actual DM with defined actuator locations. In this
   (for KL), which specify the number of modes. Note that nzer
   (Zernike) &amp; max_order (disk harmonic) will start and include
   piston, while nkl (KL) will not (there is formally no piston mode in the
-  KL basis).</p>
+  KL basis). For the Zernike DM, you can specify the first Zernike mode using <code>dm.minzer</code>.
+</p>
 
 <h4>Segmented DM</h4>
 <p>Set <code>dm.type="segmented"</code>. The other mandatory

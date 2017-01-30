@@ -17,11 +17,15 @@ Yao is a Monte-Carlo simulation tool for Adaptive optics (AO) systems, written a
 http://frigaut.github.com/yao/index.html
 
 
-## Dependencies
+## Required Dependencies
 
 - FFTW (http://www.fftw.org)
 - yorick-yutils (https://github.com/frigaut/yorick-yutils)
 - yorick-imutil (https://github.com/frigaut/yorick-imutil)
 - yorick-spydr (https://github.com/frigaut/yorick-spydr)
-- yorick-soy (https://github.com/frigaut/yorick-soy)
 - yorick-usleep (https://github.com/frigaut/yorick-usleep)
+
+## Optional Dependencies
+- yorick-soy (https://github.com/frigaut/yorick-soy)
+- ygsl (https://github.com/emmt/ygsl)
+- ylapack (available from Eric Thiebaut)
