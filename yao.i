@@ -2093,6 +2093,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   ipupil = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                           cobs=tel.cobs));
 
+  wfs._pupil = &pupil; 
   if (user_pupil) user_pupil;
 
   pupil = float(pupil);
@@ -2160,7 +2161,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       // init WFS:
       if (wfs(ns).disjointpup) {
         shwfs_init,disjointpup(,,ns),ns,imat=1,clean=clean;
-      } else shwfs_init,ipupil,ns,imat=1,clean=clean;
+      } else shwfs_init,*wfs(ns)._pupil,ns,imat=1,clean=clean;
       wfs(ns)._nmes = 2*wfs(ns)._nsub;
 
     } else if (wfs(ns).type == "pyramid") {
@@ -3681,7 +3682,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       if (wfs(ns).type == "hartmann") {
         if (wfs(ns).disjointpup) {
           shwfs_init,disjointpup(,,ns),ns,silent=1;
-        } else shwfs_init,ipupil,ns,silent=1;
+        } else shwfs_init,*wfs(ns)._pupil,ns,silent=1;
       } else if (wfs(ns).type == "curvature") {
         curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
       }

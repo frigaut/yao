@@ -356,6 +356,7 @@ struct wfs_struct
   pointer _LLT_kernel;    // pointer to actual LLT spot image
   int     _nkernels;      // number of kernels in *wfs._kernel
   pointer _dmnotinpath;   // vector of ndm lengh with value included/not included. from dmnotinpath
+  pointer _pupil;         // the pupil for this WFS
 };
 
 struct dm_struct

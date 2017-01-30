@@ -1162,7 +1162,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
   if (anyof(wfs.excessnoise < 1.)){
     error, "wfs.excessnoise must be set to be greater than or equal to 1";
   }
-  err = _cwfs( ipupil, phase, phasescale, *wfs(ns)._tiltsh, *wfs(ns)._cxdef,
+  err = _cwfs( pupil, phase, phasescale, *wfs(ns)._tiltsh, *wfs(ns)._cxdef,
                *wfs(ns)._sxdef, dimpow2, *wfs(ns)._sind, *wfs(ns)._nsind,
                wfs(ns)._nsub, *wfs(ns)._fimage, *wfs(ns)._fimage2,
                float(wfs(ns)._nphotons), float(wfs(ns)._skynphotons),
@@ -1729,7 +1729,7 @@ func zernike_wfs(pupsh,phase,ns,init=)
     wfs(ns)._nmes  = wfs(ns).nzer;
     cent  = sim._cent;
     prepzernike,size,pupd,sim._cent,sim._cent;
-    wfs_wzer = where(zernike(1)*ipupil);
+    wfs_wzer = where(zernike(1)*pupil);
     wfs_zer = array(float,[2,numberof(wfs_wzer),nzer]);
     for (i=1;i<=nzer;i++) wfs_zer(,i) = zernike_ext(i)(*)(wfs_wzer);
     wfs_zer = LUsolve(wfs_zer(+,)*wfs_zer(+,),transpose(wfs_zer));
@@ -1786,7 +1786,7 @@ func dh_wfs(pupsh,phase,ns,init=)
     } else {
       def = float(make_diskharmonic(size,pupd,ndh,xc=cent,yc=cent));
 
-      wfs_wdh = where(ipupil);
+      wfs_wdh = where(pupil);
       wfs(ns)._wpha2dhc = &wfs_wdh;
 
       def = def(*,)(wfs_wdh,);
@@ -1847,21 +1847,21 @@ func mult_wfs_int_mat(disp=,subsys=)
       if (wfs(ns).disjointpup) {
         smes = sh_wfs(disjointpup(,,ns),phase,ns);
       } else {
-        smes = sh_wfs(ipupil,phase,ns);
+        smes = sh_wfs(*wfs(ns)._pupil,phase,ns);
       }
     } else if (wfs(ns).type == "curvature") {
-      smes = curv_wfs(pupil,phase,ns);
+      smes = curv_wfs(*wfs(ns)._pupil,phase,ns);
     } else if (wfs(ns).type == "pyramid") {
-      smes = pyramid_wfs(pupil,phase,ns);
+      smes = pyramid_wfs(*wfs(ns)._pupil,phase,ns);
     } else if (wfs(ns).type == "zernike") {
-      smes = zernike_wfs(ipupil,phase,ns);
+      smes = zernike_wfs(*wfs(ns)._pupil,phase,ns);
     } else if (wfs(ns).type == "dh") {
-      smes = dh_wfs(ipupil,phase,ns);
+      smes = dh_wfs(*wfs(ns)._pupil,phase,ns);
     } else {
       // assign user_wfs to requested function/type:
       cmd = swrite(format="user_wfs = %s",wfs(ns).type);
       include,[cmd],1;
-      smes = user_wfs(ipupil,phase,ns);
+      smes = user_wfs(*wfs(ns)._pupil,phase,ns);
     }
 
     // subtract the reference vector for this sensor:
@@ -1921,21 +1921,21 @@ func mult_wfs(iter,disp=)
       if (wfs(ns).disjointpup) {
         smes = sh_wfs(disjointpup(,,ns),phase,ns);
       } else {
-        smes = sh_wfs(ipupil,phase,ns);
+        smes = sh_wfs(*wfs(ns)._pupil,phase,ns);
       }
     } else if (wfs(ns).type == "curvature") {
-      smes = curv_wfs(pupil,phase,ns);
+      smes = curv_wfs(*wfs(ns)._pupil,phase,ns);
     } else if (wfs(ns).type == "pyramid") {
-      smes = pyramid_wfs(pupil,phase,ns);
+      smes = pyramid_wfs(*wfs(ns)._pupil,phase,ns);
     } else if (wfs(ns).type == "zernike") {
-      smes = zernike_wfs(ipupil,phase,ns);
+      smes = zernike_wfs(*wfs(ns)._pupil,phase,ns);
     } else if (wfs(ns).type == "dh") {
-      smes = dh_wfs(ipupil,phase,ns);
+      smes = dh_wfs(*wfs(ns)._pupil,phase,ns);
     } else {
       // assign user_wfs to requested function/type:
       cmd = swrite(format="user_wfs = %s",wfs(ns).type);
       include,[cmd],1;
-      smes = user_wfs(ipupil,phase,ns);
+      smes = user_wfs(*wfs(ns)._pupil,phase,ns);
     }
 
     if (sim.svipc) {
@@ -2142,7 +2142,7 @@ func shwfs_tests_plots(name,batch=)
 
   if (wfs(1).disjointpup) {
     sh_wfs,disjointpup(,,1),pupsh*0.0f,1;
-  } else sh_wfs,ipupil,ipupil*0.0f,1;
+  } else sh_wfs,pupil,pupil*0.0f,1;
 
   tv,*wfs(1)._fimage;
   pltitle,name;
@@ -2163,37 +2163,12 @@ func shwfs_tests_plots(name,batch=)
 
   if (wfs(1).disjointpup) {
     sh_wfs,disjointpup(,,1),pupsh*0.0f,1;
-  } else sh_wfs,ipupil,ipupil*0.0f,1;
+  } else sh_wfs,pupil,pupil*0.0f,1;
   tv,*wfs(1)._fimage;
   pltitle,name+" w/ bcksub=1";
   stat,*wfs(1)._fimage;
   if (batch) pause,ptime;
   else hitReturn;
-
-
-  //
-  /*
-  im = *wfs(1)._fimage;
-
-  wfs(1)._bckgrdsub  = 1;
-  wfs(1)._bckgrdinit = 1;
-  oldnoise = wfs(1).noise;
-  wfs(1).noise = 0;
-  // call sh_wfs for calibration of the background
-  sh_wfs,ipupil,ipupil*0.0f,1;
-  wfs(1)._bckgrdinit = 0;
-  wfs(1).noise = oldnoise;
-  tv,*wfs(1)._fimage;
-  pltitle,name+" / bkgr calib";
-  stat,*wfs(1)._fimage;
-  hitReturn;
-
-  tv,im-*wfs(1)._fimage;
-  pltitle,name+" / image - bkgr calib";
-  stat,im-*wfs(1)._fimage;
-  hitReturn;
-*/
-
 }
 
 func pyramid_wfs_checks(nchecks)
@@ -2450,7 +2425,7 @@ func svipc_time_sh_wfs(void,nit=,svipc=)
   phase = float(zernike(5));
 
   for(i=1;i<nit;i++) {
-    tic; r = sh_wfs(ipupil,phase,1); t(i)=tac()*1000.;
+    tic; r = sh_wfs(pupil,phase,1); t(i)=tac()*1000.;
   }
   msg = swrite(format="%-20s %2d threads, sh_wfs() avg=%.2fms, median=%.2fms\n", \
                parprefix+":",wfs.svipc,avg(t(10:)),median(t(10:)));
