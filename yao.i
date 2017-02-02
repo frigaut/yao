@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.8.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2016may11";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.9.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2017feb03";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -598,7 +598,7 @@ func do_imat(disp=)
       // WFS spots:
       if (is_set(disp)) {
         fma;
-        plt,sim.name,0.01,0.227,tosys=0;
+        plt,escapechar(swrite(format="YAO %s | %s | %s",aoSimulVersion,parprefix,sim.name)),0.01,0.227,tosys=0;
         if (!allof(wfs.shmethod ==1)) {
           if (wfs_display_mode=="spatial") {
             disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
@@ -962,7 +962,7 @@ func build_cmat(condition,modalgain,subsystem=,all=,nomodalgain=,disp=)
 
       // display using disp2d of integrated phases
       fma;
-      plt,sim.name,0.01,0.227,tosys=0;
+      plt,escapechar(swrite(format="YAO %s | %s | %s",aoSimulVersion,parprefix,sim.name)),0.01,0.227,tosys=0;
       disp2d,cubphase,subpos(1,),subpos(2,),1;
       mypltitle,swrite(format="Mode %d, Normalized eigenvalue = %f",
                      i,eigenvalues(i)/max(eigenvalues)),[0.,-0.005],height=12;
@@ -2093,8 +2093,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   ipupil = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                           cobs=tel.cobs));
 
-  wfs._pupil = &pupil; 
   if (user_pupil) user_pupil;
+  wfs._pupil = &pupil;
 
   pupil = float(pupil);
   ipupil = float(ipupil);
@@ -2296,14 +2296,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     if (dm(n).type == "stackarray"){
       if (dm(n).alt == 0) {
         // special case = (only) 6 pixels margin each side:
-        // note: "upgraded" from 2 to 8 to allow more margin when misregistering   
+        // note: "upgraded" from 2 to 8 to allow more margin when misregistering
         extent = sim.pupildiam+16;
       } else {
         extent = dm(n).pitch*(dm(n).nxact+2.); // + 1.5 pitch each side
       }
       dm(n)._n1 = long(clip(floor(sim._cent-extent/2.),1,));
       dm(n)._n2 = long(clip(ceil(sim._cent+extent/2.),,sim._size));
-    } else {      
+    } else {
       // define for all other programmed DMs, but not for user defined DMs, which could have different values
       if (anyof(dm(n).type == ["bimorph","zernike","dh","kl","tiptilt","segmented","aniso"])){
         dm(n)._n1 = 1;
@@ -2809,7 +2809,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       iMat = tmp(,,1);
       cMat = transpose(tmp(,,2));
       tmp = [];
-            
+
       if (anyof(dm.dmfit_which)){
         if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
           dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
@@ -4002,7 +4002,7 @@ func go(nshot,all=)
         } else {
           error, "loop.method set to pseudo open-loop, but dMat is not defined";
         }
-      }          
+      }
       polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
       if (anyof(wfs.nintegcycles > 1)){
         // if some DMs are not updating because the WFSs have not finished
@@ -4304,7 +4304,7 @@ func go(nshot,all=)
   if (okdisp) {
     if (!animFlag) fma;
     // PSF Images
-    plt,sim.name,0.01,0.227,tosys=0;
+    plt,escapechar(swrite(format="YAO %s | %s | %s",aoSimulVersion,parprefix,sim.name)),0.01,0.227,tosys=0;
 
     txpos = *target.xposition;
     if (target.xspeed) txpos += *target.xspeed*loopCounter*loop.ittime;
@@ -4380,7 +4380,7 @@ func go(nshot,all=)
     }
     // Display residual wavefront
     plsys,5;
-    pli, (ipupil*residual_phase)(n1:n2,n1:n2);
+    pli, (ipupil*residual_phase)(_n1:_n2,_n1:_n2);
     if (rp_rms!=[]) \
       plt,swrite(format="rms=%dnm",long(rp_rms)),0.450,0.579,\
       tosys=0,height=10,justify="LA";
@@ -4718,7 +4718,7 @@ func after_loop(void)
     myxytitles,"Iterations","Strehl";
     // hcp;
   }
-  plt,sim.name,0.01,0.227,tosys=0;
+  plt,escapechar(swrite(format="YAO %s | %s | %s",aoSimulVersion,parprefix,sim.name)),0.01,0.227,tosys=0;
   hcpoff;
   hcp_finish;
 

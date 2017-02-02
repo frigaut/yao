@@ -23,6 +23,7 @@ smdebug=0;
 write,"LOOPING ON TEST*.PAR";
 for (i=1;i<=numberof(f);i++) {
   write,format="\n\nTesting %s\n\n",f(i);
+  user_pupil = [];
   aoread,f(i);
   sim.verbose = 1;
   sim.debug=0;
@@ -36,7 +37,7 @@ for (i=1;i<=numberof(f);i++) {
   if (!strmatch(f(i),"fast")) loop.niter = 500;
   else disp=0; // let's not display for the fast demo
   aoinit,disp=disp,clean=1;
-  random_seed,0.5; ran1init; 
+  random_seed,0.5; ran1init;
   aoloop,disp=disp,no_reinit_wfs=1,controlscreen=10*(i==2)*(disp!=0);
   go,all=1;
   grow,perf,perf_s();
@@ -48,7 +49,7 @@ for (i=1;i<=numberof(f);i++) {
   perf(0).lambda = (*target.lambda)(0);
   // same without displays
   disp=0;
-  random_seed,0.5; ran1init; 
+  random_seed,0.5; ran1init;
   aoloop,disp=disp,no_reinit_wfs=1;
   go,all=1;
   grow,perf,perf_s();
@@ -63,7 +64,7 @@ for (i=1;i<=numberof(f);i++) {
 }
 
 //~ write,format="\n\nTesting %s (no display)\n\n",f(0);
-//~ aoread,f(0); 
+//~ aoread,f(0);
 //~ sim.verbose = 1;
 //~ sim.debug=0;
 //~ loop.niter = 500;
@@ -71,7 +72,7 @@ for (i=1;i<=numberof(f);i++) {
 //~ aoloop,disp=0;
 //~ go,all=1;
 //~ perf(0).parfile = f(0);
-//~ perf(0).name=sim.name; 
+//~ perf(0).name=sim.name;
 //~ perf(0).itps = iter_per_sec;
 //~ perf(0).display = "OFF";
 //~ perf(0).strehl = strehl(1,0); // first position, last lambda
@@ -92,4 +93,3 @@ for (i=1;i<=numberof(perf);i++) {
   write,f,format="%s\n",str;
 }
 close,f;
-
