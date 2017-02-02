@@ -733,9 +733,19 @@ The yao parameters that can be used to define the pupil arrays are </p>
   havoc the slope estimation. yao now correctly handle this behavior: all 
   subaperture images are computed, then added to an image that will include all 
   spots. When all spots have been computed, each spot image is extracted and 
-  the spot position is estimated from there (center of gravity, soon
-  to come weighted CoG, etc...).</p>
-  
+  the spot position is estimated from there.</p>
+
+<h5>Centroiding parameters</h5>
+<p>There are a number of centroiding parameters:
+<ul>
+  <li><code>wfs.shmethod</code>: Set to 1 for mean slope over the subapertures, 2 for full physical optics simulation.</li>
+  <li><code>wfs.shthreshold</code>: The pixel thresholding to be applied.</li>
+  <li><code>wfs.shcorrelation</code>: Set to 1 to use the correlation algorithm instead of the centroid.</li>
+</ul>
+</p>
+
+
+
 <h5>Graphic configuration</h5>
 <p>When the correct debug setting is selected (<code>sim.debug>=1</code>), <code>aoinit()</code> will 
   display a SHWFS far field graphic configuration diagram as shown on the 
@@ -1524,7 +1534,8 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">npixpersub        </td><td>long     </td><td>Unitless   </td><td>none       </td><td>no  </td><td>Pupil plane: # of pixel in a subaperture (to force npixpersub and bypass constraint that pupildiam should be a multiple of this number e.g. to investigate lenslet larger than pupildiam</td></tr>
   <tr><td class="varname">pupoffset(2)      </td><td>float    </td><td>meter      </td><td>[0,0]      </td><td>no  </td><td>Pupil plane: Offset of the whole WFS subapertures w.r.t telescope aperture. Allow misregistration w.r.t telescope pupil and other funky configurations                </td></tr>
   <tr><td class="varname">shthreshold       </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>Threshold for the computation of the subaperture signal from CCD spots  >= 0             </td></tr>
-  <tr><td class="varname">biasrmserror      </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>rms error on WFS CCD bias in electron                                                    </td></tr>
+  <tr><td class="varname">shcorrelation       </td><td>float    </td><td>N/A         </td><td>0          </td><td>no  </td><td>Set to 1 to use the correlation algorithm instead of the centroid. </td></tr>
+      <tr><td class="varname">biasrmserror      </td><td>float    </td><td>e-         </td><td>0          </td><td>no  </td><td>rms error on WFS CCD bias in electron                                                    </td></tr>
   <tr><td class="varname">flatrmserror      </td><td>float    </td><td>Unitless   </td><td>0          </td><td>no  </td><td>rms error on WFS CCD flat, referenced to 1 (i.e. 0.1 mean 10% rms error). Typical value can be 0.01 </td></tr>
   <tr><td class="varname">fsname            </td><td>string   </td><td>N/A        </td><td>none       </td><td>no  </td><td>Fits file with subaperture amplitude mask. It should have dimension 2^sdimpow2 square. Can be float or long.</td></tr>
   <tr><td class="varname">fstop             </td><td>string   </td><td>N/A        </td><td>"square"   </td><td>no  </td><td>Valid fiels stop type are "none", "square" or "round"                                     </td></tr>

@@ -769,6 +769,57 @@ func shwfs_init_rayleigh(ns)
   kall = [];
 }
 
+func subimage_disp(image_cube,ref_image){
+/* DOCUMENT subimage_disp(image_cube,ref_image)
+
+   Finds the displacement of the images in the image cube relative to the refernece image. Used to implement the correlation algorithm instead of the centroid in a Shack-Hartmann WFS.
+
+   SEE ALSO: 
+ */
+
+  dims = (dimsof(image_cube));
+  npix = dims(2);
+  nsub = dims(4);
+  
+  fft_ref_image=conj(fft(ref_image,1));
+  fft_ref_image(1,1)=0. ;// remove the DC term so that the maximum correlation is DC independent (it doesn't affect the slope estimates which are already background independent).
+  
+  fft_image_cube = fft(image_cube,[1,1,0]);
+  
+  results = array(float,2*nsub);
+  for (n1=1;n1<=nsub;n1++){
+
+    ccft = fft_ref_image*fft_image_cube(,,n1);
+    cc = float(fft(ccft,-1));
+
+    maxloc2 = (where2(cc == max(cc)))(:,1);
+    xloc = maxloc2(1);  
+    yloc = maxloc2(2);
+
+    xloc = xloc % npix;
+    yloc = yloc % npix;
+    // find the maximum using a quadratic fit
+    cc0 = cc(xloc,yloc);
+    
+    ccm1x = cc(xloc-1,yloc);
+    ccp1x = cc(xloc+1,yloc);
+    
+    ccm1y = cc(xloc,yloc-1);
+    ccp1y = cc(xloc,yloc+1);
+    delx = -0.5*(ccm1x-ccp1x)/(ccm1x+ccp1x-2.0*cc0+1e-6);
+    dely = -0.5*(ccm1y-ccp1y)/(ccm1y+ccp1y-2.0*cc0+1e-6);
+    
+    estx = xloc-1-delx;
+    esty = yloc-1-dely;
+    
+    if (estx > npix - estx){estx = estx - npix;} 
+    if (esty > npix - esty){esty = esty - npix;}
+    
+    results(n1) = estx;
+    results(n1+nsub) = esty;
+  }
+  return results;    
+}
 
 //----------------------------------------------------
 func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,silent=)
@@ -1044,8 +1095,44 @@ func sh_wfs(pupsh,phase,ns)
         wfs(ns).ron, wfs(ns).excessnoise, wfs(ns).noise, *wfs(ns)._bckgrdcalib,
         wfs(ns)._bckgrdinit, wfs(ns)._bckgrdsub, *wfs(ns)._validsubs, subok2,
         wfs(ns).nintegcycles, mesvec);
-    } else mesvec *= 0;
+      
+      if (wfs(ns).shcorrelation){ // use the correlation algorithm instead of the centroid
+        // take the full image and extract the spots
+        imistart2 = int(*wfs(ns)._imistart2);
+        imjstart2 = int(*wfs(ns)._imjstart2);
+        fimnx = wfs(ns)._fimnx;
+        nsubs = wfs(ns)._nsub4disp;
+        validsubs = *wfs(ns)._validsubs;
+        nvalidsubs = sum(validsubs);
+        binxy2 = wfs(ns)._npixels;
+      
+        // find fwhm of the spots. This is the largest of the seeing and diffraction
+        dr0 = atm.dr0at05mic*(0.5/wfs(ns).lambda)^1.2/cos(gs.zenithangle*dtor)^0.6;     
+        fwhmseeing = wfs(ns).lambda/
+          (tel.diam/sqrt(wfs(ns).shnxsub^2.+(dr0*wfs(ns).shcalibseeing)^2.))/4.848;        
+        kernelfwhm = sqrt(fwhmseeing^2.+wfs(ns).kernel^2.);
 
+        // create the reference subimages with larger width than the true FWHM, as this gives better performance and is more robust
+        ctr = (wfs(ns).npixels+1.)/2.;
+        spot = makegaussian(wfs(ns).npixels,1.5*kernelfwhm/wfs(ns).pixsize,xc=ctr,yc=ctr);
+               
+        image_cube = array(float,[3,binxy2,binxy2,nvalidsubs]);
+        counter=0;
+        for ( l=1 ; l<=nsubs ; l++ ) {
+          if (validsubs(l) == 0){continue;}
+          counter+=1;
+          koff = imistart2(l) + imjstart2(l)*fimnx;
+          image_cube(:,:,counter) = ffimage(imistart2(l)+1:imistart2(l)+binxy2,imjstart2(l)+1:imjstart2(l)+binxy2);
+        }
+        
+        if (wfs(ns)._npixels != wfs(ns).npixels){
+          df2 = (wfs(ns)._npixels - wfs(ns).npixels)/2;
+          image_cube = image_cube(df2+1:-df2,df2+1:-df2,:);
+        }        
+        mesvec = subimage_disp(image_cube,spot)*wfs(ns).pixsize;
+      }
+    } else mesvec *= 0;
+    
     if ( wfs(ns).svipc>1 ) {
       sem_take,semkey,20+4*(ns-1)+3,count=wfs(ns).svipc-1;
     }
