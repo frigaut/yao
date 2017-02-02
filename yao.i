@@ -2094,11 +2094,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                           cobs=tel.cobs));
 
   if (user_pupil) user_pupil;
-  wfs._pupil = &pupil;
 
   pupil = float(pupil);
   ipupil = float(ipupil);
 
+  // if the pupil for the WFSs has not already been defined by the user_pupil function, then set it to be the same as the telescope pupil
+  for (ns=1;ns<=numberof(wfs);ns++){
+    if (*wfs(ns)._pupil == []){wfs(ns)._pupil = &pupil;}
+  }
+  
   //==================================
   // DEFINE INDICES FOR SUBARRAY WORK:
   //==================================
