@@ -1076,8 +1076,6 @@ func sh_wfs(pupsh,phase,ns)
 
     // spot image to slopes:
     if (wfs(ns)._cyclecounter==wfs(ns).nintegcycles) {
-      ffimage += wfs(ns).darkcurrent*loop.ittime*wfs(ns).nintegcycles;
-
       xysof = (wfs(ns)._npixels-wfs(ns).npixels-wfs(ns)._npb/2);
       xtmp = int(*wfs(ns)._imistart2+xysof);
       ytmp = int(*wfs(ns)._imjstart2+xysof);
@@ -1131,6 +1129,15 @@ func sh_wfs(pupsh,phase,ns)
         }        
         mesvec = subimage_disp(image_cube,spot)*wfs(ns).pixsize;
       }
+
+      wfs(ns)._fimage = &ffimage;
+
+      if (wfs_disp_crop_edges) {
+        xysof = long(wfs(ns)._npixels-wfs(ns).spotpitch)/2;
+        tmp = ffimage(1+xysof:-xysof,1+xysof:-xysof);
+      } else tmp = ffimage;
+      
+      wfs(ns)._dispimage = &tmp;
     } else mesvec *= 0;
     
     if ( wfs(ns).svipc>1 ) {
@@ -1144,15 +1151,6 @@ func sh_wfs(pupsh,phase,ns)
 
     //    if (wfs(ns)._refmes) write,mesvec-*wfs(ns)._refmes;
     //    else write,mesvec;
-
-    wfs(ns)._fimage = &ffimage;
-
-    if (wfs_disp_crop_edges) {
-      xysof = long(wfs(ns)._npixels-wfs(ns).spotpitch)/2;
-      tmp = ffimage(1+xysof:-xysof,1+xysof:-xysof);
-    } else tmp = ffimage;
-
-    wfs(ns)._dispimage = &tmp;
 
     wfs(ns)._initkernels = 0n;
 

@@ -1044,7 +1044,6 @@ int _shwfs_phase2spots(
   
     if (debug) printf("here4-3\n");
     for ( i=0 ; i<nb*nb ; i++ ) { 
-      // bimage[i] += darkcurrent; // nope. has to be added only once/pixel!
       bimage[i] += ( sky + brayleigh[i] ) * bsubmask[i]; 
     }
     if (debug) printf("here4-4\n");
@@ -1058,7 +1057,7 @@ int _shwfs_phase2spots(
     for ( j=0 ; j<nb ;j++) {
       for ( i=0 ; i<nb ;i++) {
         k = koff + i + j*fimnx;
-        *(fimage+k) += bimage[i+j*nb];
+        *(fimage+k) += bimage[i+j*nb]+darkcurrent;
         //~ if (bimage[i+j*nb]==0) printf("bimage[%d]==0 ",i+j*nb);
       }
     }
