@@ -1,0 +1,184 @@
+// YAO parameter file
+//-------------------------------
+sim.name           = "LGS SH12x12, Extended WFS (11 npt profile)";
+sim.pupildiam      = 120;
+sim.debug          = 0;
+sim.verbose        = 1;
+
+//-------------------------------
+atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen         = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
+atm.layerspeed     = &([11.,20,29,35]);
+atm.layeralt       = &([0.,400,6000,9000]);
+atm.winddir        = &([0,0,0,0]);
+
+//-------------------------------
+tel.diam           = 8.;
+tel.cobs           = 0.1125;
+
+//-------------------------------
+nwfs               = 2; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+no_pad_simage = 1;
+n   = 1;
+wfs(n).subsystem   = 1;
+wfs(n).type        = "hartmann";
+wfs(n).lambda      = 0.65;
+wfs(n).gspos       = [0.,0.];
+wfs(n).gsalt       = 90000.;
+wfs(n).gsdepth     = 10000.;
+wfs(n).gsdepth     = 2000.;
+wfs(n).laserpower  = 30.;
+wfs(n).kernel      = 1.1;
+wfs(n).gsmag       = 7.;
+wfs(n).shmethod    = 2;
+wfs(n).shnxsub     = 12;
+wfs(n).pixsize     = 0.25;
+wfs(n).npixels     = 8;
+wfs(n).extfield    = 5.;
+wfs(n).noise       = 1;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
+wfs(n).nintegcycles= 1;
+wfs(n).lgs_prof_amp= &float([0.6,1.2,0.9,0.9,0.5,0.2]);
+wfs(n).lgs_prof_alt= &float([92 ,94 ,96 ,98 ,100,102]*1e3);
+wfs(n).fssize      = 4.;
+wfs(n).filtertilt  = 1;
+wfs(n).correctUpTT = 1;
+wfs(n).uplinkgain  = 0.2;
+
+wfs(n).LLTxy       = [5.,0.];
+wfs(n).LLT_uplink_turb = 1;// boolean. Set to 1 to model uplink seeing.
+wfs(n).LLTr0 = tel.diam/atm.dr0at05mic*(589/500.)^1.2*0.8;// r0 @ LLT @ laser wavelength [m]
+wfs(n).LLTdiam = 0.50;        // LLT diameter [m].
+wfs(n).LLT1overe2diam = 0.30; // LLT 1/e2 diameter [m]
+
+wfs(1).lgs_prof_amp = &float([1.0,1.0]);
+wfs(1).lgs_prof_alt = &float([90000,100000]);
+wfs(1).lgs_prof_alt = &float([90000,95000]);
+wfs(1).lgs_focus_alt=0;
+shwfs_comp_lgs_defocuses,1;
+
+func one_layer(void)
+{
+  extern wfs;
+  wfs(1).lgs_prof_amp = &float([1.0]);
+  wfs(1).lgs_prof_alt = &float([94000]);
+  wfs(1).lgs_focus_alt=94000;
+  shwfs_comp_lgs_defocuses,1;
+}
+
+func all_layers(void)
+{
+  wfs(1).lgs_prof_amp= &float([0.6,1.2,0.9,0.9,0.5,0.2]);
+  wfs(1).lgs_prof_alt= &float([92 ,94 ,96 ,98 ,100,102]*1e3);
+  wfs(1).lgs_prof_amp= &float(makegaussian(21,10)(11,));
+  (*wfs(1).lgs_prof_amp)(3) *=2 ;
+  // this will put two points separated by 10km, for calibrations of the method:
+  //~ *wfs(1).lgs_prof_amp *=0;
+  //~ (*wfs(1).lgs_prof_amp)(3) = 2;
+  //~ (*wfs(1).lgs_prof_amp)(8) = 3;
+  wfs(1).lgs_prof_alt= &float((89+indgen(21)*1)*1e3); // that should be fwhm=10km
+  wfs(1).lgs_focus_alt = 0.; // will be set by shwfs_comp_lgs_defocuses()
+  shwfs_comp_lgs_defocuses,1;
+}
+
+func all_layers2(ns,npt,fwhm)
+{
+  extern wfs;
+  wfs(ns).lgs_prof_amp= &float(makegaussian(npt,npt/2*fwhm/10.)(npt/2+1,));
+  (*wfs(ns).lgs_prof_amp)(3) *=2 ;
+  wfs(ns).lgs_prof_alt= &float(span(90,110,npt)*1e3); // that should be fwhm=10km
+  wfs(ns).lgs_focus_alt = 0.; // will be set by shwfs_comp_lgs_defocuses()
+  shwfs_comp_lgs_defocuses,ns;
+}
+
+func ubc_profile(bin2)
+{
+  extern wfs;
+  amp = [0.00125154,0.00143618,0.00161906,0.0481773,0.043927,0.0533849,0.0932741,
+      0.0816419,0.0849489,0.155098,0.146013,0.130336,0.096709,0.022861,0.0130669,
+      0.00831713,0.00523775,0.0045743,0.0048842,0.00324208];
+  alt = [90,91.3158,92.6316,93.9474,95.2632,96.5789,97.8947,99.2105,100.526,101.842,
+        103.158,104.474,105.789,107.105,108.421,109.737,111.053,112.368,113.684,115]*1e3;
+  if (bin2) {
+    amp = (amp+roll(amp,1))(indgen(10)*2);
+    alt = (alt+roll(alt,1))(indgen(10)*2)/2.;
+  }
+  for (i=1;i<=nwfs;i++) {
+    wfs(i).lgs_prof_amp= &float(amp);
+    wfs(i).lgs_prof_alt= &float(alt);
+    wfs(i).lgs_focus_alt = 0.; // will be set by shwfs_comp_lgs_defocuses()
+    shwfs_comp_lgs_defocuses,i;
+  }
+}
+
+
+
+// all_layers2,1,11,10.;
+
+
+n   = 2;
+wfs(n).subsystem   = 2;
+wfs(n).type        = "hartmann";
+wfs(n).lambda      = 0.65;
+wfs(n).gspos       = [0.,0.];
+wfs(n).gsmag       = 7.;
+wfs(n).shmethod    = 1;
+wfs(n).shnxsub     = 1;
+wfs(n).noise       = 0;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
+wfs(n).dispzoom    = 0.0;
+//-------------------------------
+ndm                = 2;
+dm = array(dms,ndm);
+mergedms4disp = 1;
+
+n  =1;
+dm(n).subsystem    = 1;
+dm(n).type         = "stackarray";
+dm(n).iffile       = "";
+dm(n).nxact        = wfs(n).shnxsub+1;
+dm(n).pitch        = sim.pupildiam/wfs(n).shnxsub;
+dm(n).ndh          = 40;
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.01;
+dm(n).push4imat    = 300.;
+dm(n).elt          = 0;
+
+n  =2;
+dm(n).subsystem    = 2;
+dm(n).type         = "tiptilt";
+dm(n).iffile       = "";
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.0005;
+dm(n).push4imat    = 400;
+
+//-------------------------------
+mat.method         = "mmse";
+
+//-------------------------------
+target.lambda      = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint       = 1e11;
+
+//-------------------------------
+loop.gain          = 0.6;
+loop.framedelay    = 1;
+loop.niter         = 20000;
+loop.ittime        = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 10000;
+loop.skipby        = 10000;
+
+//-------------------------------
+
+
+ubc_profile;

@@ -2102,7 +2102,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   for (ns=1;ns<=numberof(wfs);ns++){
     if (*wfs(ns)._pupil == []){wfs(ns)._pupil = &pupil;}
   }
-  
+
   //==================================
   // DEFINE INDICES FOR SUBARRAY WORK:
   //==================================
@@ -4494,7 +4494,8 @@ func go(nshot,all=)
       animate,0;
     }
     if ((sim.svipc>>0)&1) sem_take,semkey,1;
-    after_loop;
+    status = after_loop();
+    if (user_wrapup) status = user_wrapup()
     notify,swrite(format="%s: %d iterations completed",parprefix,loopCounter)
   }
   maybe_prompt;
@@ -4727,6 +4728,8 @@ func after_loop(void)
   hcp_finish;
 
   gui_message,swrite(format="Dumping results in %s.res (ps,imav.fits)...DONE",YAO_SAVEPATH+parprefix);
+
+  if (user_end_after_loop) status = user_end_after_loop();
 
   if (curw != -1) {window,curw;}
   //  if (is_set(disp)) {window,style="boxed.gs";}
