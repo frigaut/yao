@@ -1341,7 +1341,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     if (x!=long(x)) error,swrite(format="sim.pupildiam not multiple of wfs(%i).shnxsub",ns);
 
     x = wfs(ns).pyr_mod_npts/4.;
-    if (x!=long(x) && wfs(n).pyr_mod_ampl != 0.) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);
+    if (x!=long(x) && wfs(ns).pyr_mod_ampl != 0.) error,swrite(format="wfs(%i).pyr_mod_npts not multiple of 4",ns);
 
     // compute size of small complex amp image based on field stop size
     // To save computing time, we will extract a subimage from
