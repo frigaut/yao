@@ -8,6 +8,7 @@
  * Copyright (c) 2002-2013, Francois Rigaut
  * Original in MatLab: Norman Mark Milton (August 25, 2005)
  * Adapted to Yorick by Aurea Garcia Rissmann (May 23, 2010)
+ * Addded support for obstructed apertures by Visa Korkiakoski (Feb 16, 2017)
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -69,13 +70,13 @@ local yaodh;
 
 */
 
-func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=)
+func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=,cobs=)
 /* DOCUMENT:
  * make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=)
  * shortcut to prepdiskharmonic. return data cube.
  */
 {
-  prepdiskharmonic,size,diameter,xc,yc;
+  prepdiskharmonic,size,diameter,xc,yc,cobs=cobs;
   load_dh_bjprime_zero_tab;
   max_order = zernumero(ndhmodes)(1)+1;
   ndh=0;
@@ -104,7 +105,7 @@ func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=)
 
 //===========================================================================
 
-func prepdiskharmonic(size,diameter,xc,yc)
+func prepdiskharmonic(size,diameter,xc,yc,cobs=)
 
 /* DOCUMENT prepdiskharmonic(size,diameter,xc,yc)
  * Call this function to set up the geometry for subsequent calls
@@ -114,6 +115,7 @@ func prepdiskharmonic(size,diameter,xc,yc)
  * size : size of the 2d array on which future "diskharmonic" will be returned
  * diameter : diameter of the pupil in pixel in the array
  * xc, yc (optional) : Coordinates (in pixels of the center of the pupil)
+ * cobs (optional) : Central obstruction ratio
  * Example:
  * > prepdiskharmonic,128,100
  * SEE ALSO:
@@ -126,7 +128,16 @@ func prepdiskharmonic(size,diameter,xc,yc)
 
   radius= (diameter+1.)/2.;
   zdim	= size;
-  zr	= dist(zdim,xc=xc,yc=yc)/radius;
+  if (cobs) {
+    // Adjust the zr such that it goes 0..radius
+    // from the obstruction border to pupil border.
+    puredist = dist(zdim,xc=xc,yc=yc)/radius;
+    zr = (puredist-cobs) /(1.-cobs*1.);
+    zr = clip(zr, 0);
+  } else {
+    zr	= dist(zdim,xc=xc,yc=yc)/radius;
+  }
+
   zmask	= (zr <= 1.);
   zmaskmod = (zr <= 1.2);
   zrmod	= zr*zmaskmod;

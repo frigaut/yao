@@ -436,6 +436,7 @@ struct dm_struct
 
   // Disk-Harmonic only keywords
   long    ndh;            // number of DH modes
+  int     full_aperture;  // if set non-zero, use DHs with full aperture (otherwise obstruction used).
 
   // KL-only keywords:
   long    nkl;            // Number of modes, including piston. Required [none]

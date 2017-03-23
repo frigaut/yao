@@ -462,7 +462,12 @@ func make_dh_dm(nm,&def,disp=)
   gsdist = sqrt((abs(wfs.gspos)^2.)(sum,));
   patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
-  def = float(make_diskharmonic(dim,patchDiam,ndh,xc=cent-dm(nm)._n1+1,yc=cent-dm(nm)._n1+1,disp=disp));
+  // Use full-aperture DHs or the ones with obstruction incorporated?
+  usecobs = (dm(nm).full_aperture ? 0 : cobs)
+
+  def = float(make_diskharmonic(dim,patchDiam,ndh,
+                                xc=cent-dm(nm)._n1+1,
+                                yc=cent-dm(nm)._n1+1, disp=disp, cobs=usecobs));
 
   if (sim.verbose>=1) {write,format="Number of DH modes :%d\n",ndh;}
 
