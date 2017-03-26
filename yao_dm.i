@@ -463,7 +463,7 @@ func make_dh_dm(nm,&def,disp=)
   patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
   // Use full-aperture DHs or the ones with obstruction incorporated?
-  usecobs = (dm(nm).full_aperture ? 0 : cobs)
+  usecobs = (dm(nm).dhs_obstructed ? cobs : 0)
 
   def = float(make_diskharmonic(dim,patchDiam,ndh,
                                 xc=cent-dm(nm)._n1+1,
