@@ -1596,7 +1596,7 @@ I know, it seems weird, but there is a good reason to have done it like this.
   <tr><td class="varname">nzer              </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Zernike modes, including piston </td></tr>
   <tr><td colspan="6" class="subth">Disk Marmonic-only keywords </td></tr>
   <tr><td class="varname">ndh              </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Disk Harmonic modes, including piston </td></tr>
-  <tr><td class="varname">full_aperture    </td><td>int      </td><td>Unitless   </td><td>none       </td><td>no </td><td>If set to a non-zero value, DH modes are calculated disregarding any central obstruction. By default (this field set to zero), DH modes are calculated such that they are always orthogonal with the used telescope aperture. </td></tr>
+  <tr><td class="varname">dhs_obstructed   </td><td>int      </td><td>Unitless   </td><td>none       </td><td>no </td><td>If zero (default), DH modes are calculated disregarding any central obstruction. If set to a non-zero value, DH modes are calculated such that they are always orthogonal with the used telescope aperture. </td></tr>
   <tr><td colspan="6" class="subth">Karhuenen-Loeve DM-only keywords </td></tr>
   <tr><td class="varname">nkl               </td><td>long     </td><td>Unitless   </td><td>none       </td><td>yes </td><td>Number of Karhuenen-Loeve modes, including piston??? </td></tr>
   <tr><td colspan="6" class="subth">Segmented DM-only keywords</td></tr>
