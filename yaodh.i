@@ -98,8 +98,27 @@ func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=,cobs=)
   }
   write,"";
 
-  return dh_tab(,,1:ndhmodes);
+  // Introduce radial scaling to keep modes orthogonal
+  normcoef = sum(pupil) / sum(radmod *pupil)
+  for (i1=1; i1<=ndhmodes; i1++) {
+    dh_tab(,,i1) = dh_tab(,,i1) * radmod *pupil * normcoef
+  }
 
+  // Test that everything went well
+  if (1==0) {
+    // Make sure the modes are multiplied w/ pupil
+    for (i1=1; i1<=ndhmodes; i1++)
+      dh_tab(,,i1) = dh_tab(,,i1) * pupil;
+    // Calculate cross-correlation matrix
+    dhmat = array(float, [2,dim*dim,ndhmodes]);
+    dhmat(*) = dh_tab(*);
+    crs = dhmat(+,)*dhmat(+,);  
+    // How big are the off-diagonal cross-correlation elements?
+    max(crs-diag(diag(crs))) / avg(diag(crs));
+    min(crs-diag(diag(crs))) / avg(diag(crs));
+  }
+  
+  return dh_tab(,,1:ndhmodes);
 }
 
 
@@ -121,7 +140,7 @@ func prepdiskharmonic(size,diameter,xc,yc,cobs=)
  * SEE ALSO:
  */
 {
-  extern zdim,zr,ztheta,zmask,zrmod,zmaskmod;
+  extern zdim,zr,ztheta,zmask,zrmod,zmaskmod,radmod;
 
   if (xc == []) {xc = size/2+1;}
   if (yc == []) {yc = size/2+1;}
@@ -134,6 +153,9 @@ func prepdiskharmonic(size,diameter,xc,yc,cobs=)
     puredist = dist(zdim,xc=xc,yc=yc)/radius;
     zr = (puredist-cobs) /(1.-cobs*1.);
     zr = clip(zr, 0);
+    // This radial modification need to be applied later on to keep
+    // the modes orthogonal
+    radmod = sqrt(zr / puredist);
   } else {
     zr	= dist(zdim,xc=xc,yc=yc)/radius;
   }
