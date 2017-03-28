@@ -99,9 +99,11 @@ func make_diskharmonic(size,diameter,ndhmodes,xc=,yc=,disp=,cobs=)
   write,"";
 
   // Introduce radial scaling to keep modes orthogonal
-  normcoef = sum(pupil) / sum(radmod *pupil)
-  for (i1=1; i1<=ndhmodes; i1++) {
-    dh_tab(,,i1) = dh_tab(,,i1) * radmod *pupil * normcoef
+  if (cobs) {
+    normcoef = sum(pupil) / sum(radmod *pupil)
+      for (i1=1; i1<=ndhmodes; i1++) {
+        dh_tab(,,i1) = dh_tab(,,i1) * radmod *pupil * normcoef
+      }
   }
 
   // Test that everything went well
