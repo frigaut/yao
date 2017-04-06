@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.9.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2017feb17";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2017apr07";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1836,6 +1836,7 @@ func aoread(parfile)
 */
 {
   extern atm,opt,sim,wfs,dm,mat,tel,target,gs,loop,parprefix,oparfile;
+  extern pupil,ipupil,loopCounter,iMat,cMat;
 
   write,format="Yao, Version %s, %s\n",aoSimulVersion, aoSimulVersionDate;
 
@@ -1860,18 +1861,20 @@ func aoread(parfile)
 
   // flush any prior assignments to ao members
   atm=opt=sim=wfs=dm=mat=tel=target=gs=loop=cwfs=[];
+  // reset a number of other array that may have been set previously
+  pupil = ipupil = loopCounter = iMat = cMat = [];
 
   // INIT STRUCTURES:
-  atm  = atm_struct();
-  opts  = opt_struct(path_type="common",scale=1.0);
-  sim  = sim_struct();
-  wfss = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.,framedelay=-1);
-  dms  = dm_struct(gain=1.,coupling=0.2,thresholdresp=0.3);
-  mat  = mat_struct(file="",fit_type="target",fit_which=1);
-  tel  = tel_struct();
+  atm    = atm_struct();
+  opts   = opt_struct(path_type="common",scale=1.0);
+  sim    = sim_struct();
+  wfss   = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.,framedelay=-1);
+  dms    = dm_struct(gain=1.,coupling=0.2,thresholdresp=0.3);
+  mat    = mat_struct(file="",fit_type="target",fit_which=1);
+  tel    = tel_struct();
   target = target_struct();
-  gs   = gs_struct();
-  loop = loop_struct(modalgainfile="",stats_every=4,startskip=10);
+  gs     = gs_struct();
+  loop   = loop_struct(modalgainfile="",stats_every=4,startskip=10);
 
   if (!fileExist(parfile)) {
     exit,swrite(format="Can not find parameter file %s !",parfile);}
@@ -1990,7 +1993,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (!is_set(dpi)) {dpi = 70;}
   if (is_set(clean)) {forcemat=1;}
 
-  default_dpi=dpi;
+  if (!default_dpi) default_dpi=dpi;
 
   if (anyof(wfs.nintegcycles != 1) && (loop.method == "open-loop")) {
     exit, ">> nintegcycles > 1 not implemented for open-loop, exiting";
@@ -2364,7 +2367,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       if (fileExist(YAO_SAVEPATH+dm(n)._eiffile)) {// delete the extrapolated influence functions
         remove, YAO_SAVEPATH+dm(n)._eiffile;
       }
-      if (disp) { plsys,1; animate,1; }
+
+      dispif = (disp&&(sim.debug));
+      if (dispif) { plsys,1; animate,1; }
 
       if (dm(n).use_def_of) {
 
@@ -2375,25 +2380,25 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       } else {
 
         if (dm(n).type == "bimorph") {
-          make_curvature_dm, n, disp=disp,cobs=tel.cobs;
+          make_curvature_dm, n, disp=dispif,cobs=tel.cobs;
         } else if (dm(n).type == "stackarray") {
           if (dm(n).elt == 1) {
-            make_pzt_dm_elt, n, disp=disp;
+            make_pzt_dm_elt, n, disp=dispif;
           } else {
-            make_pzt_dm, n, disp=disp;
+            make_pzt_dm, n, disp=dispif;
           }
         } else if (dm(n).type == "zernike") {
-          make_zernike_dm, n, disp=disp;
+          make_zernike_dm, n, disp=dispif;
         } else if (dm(n).type == "dh") {
-          make_dh_dm, n, disp=disp;
+          make_dh_dm, n, disp=dispif;
         } else if (dm(n).type == "kl") {
-          make_kl_dm, n, disp=disp;
+          make_kl_dm, n, disp=dispif;
         } else if (dm(n).type == "tiptilt") {
-          make_tiptilt_dm, n, disp=disp;
+          make_tiptilt_dm, n, disp=dispif;
         } else if (dm(n).type == "segmented") {
-          make_segmented_dm, n, disp=disp;
+          make_segmented_dm, n, disp=dispif;
         } else if (dm(n).type == "aniso") {
-          make_aniso_dm, n, disp=disp;
+          make_aniso_dm, n, disp=dispif;
         } else {
           // we're dealing with a user defined DM function:
           // assign user_wfs to requested function/type:
@@ -2426,7 +2431,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
         *dm(n)._x = (*dm(n)._x-sim._cent)*(1-dm(n).xscale)+sim._cent;
       }
 
-      if (disp) { plsys,1; animate,0; }
+      if (dispif) { plsys,1; animate,0; }
 
       // the IF are in microns/volt
       if (sim.verbose) {
@@ -2772,7 +2777,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   // INITIALIZE MODAL GAINS:
 
   if (mat.method == "svd"){
-    if (sim.verbose) {write,"\n> INITIALIZING MODAL GAINS";}
+    if (sim.verbose>1) {write,"\n> INITIALIZING MODAL GAINS";}
     gui_message,"Initializing modal gains";
 
     modalgain = [];
@@ -2786,12 +2791,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
 
     if (numberof(modalgain) != sum(dm._nact)) {
 
-      if (sim.verbose) {
+      if (sim.verbose>1) {
         write,format="I did not find %s or it did not have the right\n ",
           loop.modalgainfile;
         write,format="  number of elements (should be %i), so I have generated\n",
           sum(dm._nact);
-        write,"  a modal gain vector with ones in it.\n";
+        write,"  a modal gain vector with ones in it.";
       }
 
       modalgain = array(1.,sum(dm._nact));
@@ -3388,6 +3393,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
   }
+
+  if (mat.use_cmat_file) {
+    if (sim.verbose) write,format=">> Reading requested cmat %s\n",mat.use_cmat_file;
+    cMat = yao_fitsread(mat.use_cmat_file);
+  }
+
 
   //===================================================================
   // COMPUTE THE COMMAND VECTOR FOR OFFLOADING THE ANISOPLANATISM MODES
@@ -4272,7 +4283,7 @@ func go(nshot,all=)
         }
         // compute image cube from phase cube
         status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
-                                target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
+                 target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
 
         // Accumulate statistics:
         imav(,,,jl) = imav(,,,jl) + im;
@@ -4377,9 +4388,11 @@ func go(nshot,all=)
         } else ii=1;
         plg,strehlsp(ii:),itv(ii:),marks=0;
         plg,strehllp(ii:),itv(ii:),marks=0,color="red";
-        myxytitles,"",swrite(format="Strehl @ %.2f mic",        \
-                                       (*target.lambda)(0)),[0.005,-0.005],height=12;
+        myxytitles,"",swrite(format="Strehl @ %.2f mic",\
+                      (*target.lambda)(0)),[0.005,-0.005],height=12;
         range,0.,1.;
+        if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
+        plt,"Over target indices "+print(sind)(1),0.070,0.6075,tosys=0,justify="LT",height=8;
       }
     }
     // Display residual wavefront

@@ -256,6 +256,7 @@ struct wfs_struct
   // DH wfs only
   int     ndh;            // # of dh sensed
   int     ndhfiltered;    // # of dh filtered. 2 would filter tip and tilt.
+  float   dhs_obstructed; // if set non-zero, DHs are modified such that the central obstruction is taken into account.
 
   // Internal keywords:
   int     _framedelay;   // number of frames of delay, either from loop.framedelay or wfs.framedelay
@@ -436,7 +437,7 @@ struct dm_struct
 
   // Disk-Harmonic only keywords
   long    ndh;            // number of DH modes
-  int     dhs_obstructed; // if set non-zero, DHs are modified such that the central obstruction is taken into account.
+  float   dhs_obstructed; // if set non-zero, DHs are modified such that the central obstruction is taken into account.
 
   // KL-only keywords:
   long    nkl;            // Number of modes, including piston. Required [none]
@@ -500,6 +501,7 @@ struct mat_struct
   float   sparse_thresh;  // threshold for non-zero sparse elements
   float   sparse_pcgtol;  // tolerance for reconstruction, default = 1e-3
   string  file;           // iMat and cMat filename. Leave it alone.
+  string  use_cmat_file;  // Use this cMat instead of the yao computed cMat. Same dims, fits file.
   // fitting parameters for tomographic reconstruction
   long    fit_simple;     // 0 or 1, default = 0. Simple optimizes on the optical axis and only works if the tomographic DM is the same as the corresponding virtual DMs, but is faster.
   // the following parameters only apply to "mmse" fitting

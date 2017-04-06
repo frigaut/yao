@@ -102,7 +102,7 @@ func make_pzt_dm(nm,&def,disp=)
   cub      = cub(*,);
   // cub now has two indices: first one is actuator number (valid or extrap)
   // second one is: 1:Xcoord, 2:Ycoord, 3:valid?, 4:extrapolation actuator?
-  
+
   if (strlen(dm(nm).actlocfile) != 0){
     tmp = findfiles(dm(nm).actlocfile);
     if (tmp == []){error, "Unable to find file "+dm(nm).actlocfile;}
@@ -112,7 +112,7 @@ func make_pzt_dm(nm,&def,disp=)
     }
     if (sim.verbose){write, "Using actuator map from file "+dm(nm).actlocfile;}
     cub      = cub(where(actmap),);
-  } else {   
+  } else {
     // filtering actuators outside of a disk radius = rad (see above)
     cub      = cub(inbigcirc,);
   }
@@ -303,7 +303,7 @@ func make_pzt_dm_elt(nm,&def,disp=)
     }
     if (sim.verbose){write, "Using actuator map from file "+dm(nm).actlocfile;}
     cubval      = cub(where(actmap),);
-  } else {   
+  } else {
     // filtering actuators outside of a disk radius = rad (see above)
     cubval   = cub(inbigcirc,);
   }
@@ -463,7 +463,7 @@ func make_dh_dm(nm,&def,disp=)
   patchDiam = sim.pupildiam+2*max(gsdist)*4.848e-6*abs(dm(nm).alt)/psize;
 
   // Use full-aperture DHs or the ones with obstruction incorporated?
-  usecobs = (dm(nm).dhs_obstructed ? cobs : 0)
+  usecobs = cobs*dm(nm).dhs_obstructed;
 
   def = float(make_diskharmonic(dim,patchDiam,ndh,
                                 xc=cent-dm(nm)._n1+1,
@@ -1103,7 +1103,7 @@ map=make_seg_hexa_grid(5*180/7,7,5*200,x,y);
 map=filt_seg_hexa_grid(map,x,y,5*200*200/512.);
 map=renum_int_array(map);
 edges=((abs(map(:-1,dif))!=0)+(abs(map(dif,:-1))!=0))>0.;
-pup=(map!=0); pup(1:-1,1:-1)*=(1-edges); 
+pup=(map!=0); pup(1:-1,1:-1)*=(1-edges);
 tv,pup
 
 */

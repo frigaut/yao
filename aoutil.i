@@ -71,8 +71,8 @@ func create_yao_window(dpi)
       }
     }
   }
-  plsys,1; limits,square=1;
-  plsys,2; limits,square=1;
+  plsys,1; limits; limits,square=1;
+  plsys,2; limits; limits,square=1;
 }
 
 
@@ -246,7 +246,7 @@ func graphic_config(subsystemnum,dmnum)
 
       }
 
-      myxytitles,"Beam outline [m]","Beam outline [m]",[0.02,0.02];
+      myxytitles,"Beam outline [m]","Beam outline [m]",[0.0,0.0];
       mypltitle,swrite(format="Patches of guide star beams on DM#%d, Subsystem %d",i,nss);
       comment = swrite(format="Configuration actuator/beams in a plane at altitude %.0f\n"+
                        "Solid lines: Outline of this subsystem GS beams\n"+
@@ -295,7 +295,7 @@ func graphic_config(subsystemnum,dmnum)
       }
     }
 
-    myxytitles,"Beam outline [m]","Beam outline [m]",[0.02,0.02];
+    myxytitles,"Beam outline [m]","Beam outline [m]",[0.0,0.0];
     mypltitle,swrite(format="Patches of guide star beams on DMs, Subsystem %d",nss);
     plt,sim.name,0.01,0.227,tosys=0;
     limits; lim=limits(); limits,lim(1)*1.1,lim(2)*1.1,lim(3)*1.1,lim(4)*1.1;
@@ -683,7 +683,7 @@ func check_parameters(void)
           write, format="Using a loop delay of %d frames for wfs(%d)\n",wfs(ns).framedelay, ns;
       }
     }
-    
+
     if (wfs(ns).lambda < 0.1) {
       write,format="WFS#%d: wfs.lambda < 0.1. That seems weird.\n",ns;
       write,"Remember: lambda should be in microns";
