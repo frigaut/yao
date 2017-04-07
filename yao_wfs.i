@@ -1869,7 +1869,7 @@ func dh_wfs(pupsh,phase,ns,init=)
       wfs(ns)._n12      = wfs(wdhok(1))._n12;
       if (sim.verbose>=1) write,format="Disk Harmonic wfs initialized (copied from wfs%d)\n",wdhok(1);
     } else {
-      usecobs = cobs*wfs(ns).dhs_obstructed;
+      usecobs = tel.cobs*wfs(ns).dhs_obstructed;
       def = float(make_diskharmonic(size,pupd,ndh,xc=cent,yc=cent,cobs=usecobs));
 
       wfs_wdh = where(pupil);
