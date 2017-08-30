@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.2";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2017apr07";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.3";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2017aug30";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -3558,7 +3558,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
  */
 {
   extern looptime, mircube, command, wfsMesHistory, cubphase;
-  extern im, imav, imtmp, airy, sairy, fwhm, e50;
+  extern im, imav, airy, sairy, fwhm, e50;
   extern niterok;
   extern pp, sphase, bphase, imphase, dimpow2, cMat, pupil, ipupil;
   extern time, strehllp, strehlsp, rpv, itv, ok, njumpsinceswap;
@@ -3635,9 +3635,17 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   cubphase      = array(float,[3,size,size,target._ntarget]);
   im            = array(float,[3,size,size,target._ntarget]);
   imav          = array(float,[4,size,size,target._ntarget,target._nlambda]);
-  imtmp         = array(float,[2,size,size]);
-  airy          = calc_psf_fast(pupil,pupil*0.);
-  sairy         = max(airy);
+  if (*target._pupil == []){ 
+    airy          = calc_psf_fast(pupil,pupil*0.);
+    sairy         = max(airy);
+  } else {
+    sairy = array(float,target._ntarget);
+    for (nt=1;nt<=target._ntarget;nt++){
+      airy = calc_psf_fast((*target._pupil)(,,nt),pupil*0.);
+      sairy(nt) = max(airy);
+    }
+  }
+    
   fwhm   = e50  = array(float,[2,target._ntarget,target._nlambda]);
   pp            = array(complex,[2,size,size]);
   sphase        = array(float,[2,_n,_n]);
@@ -4244,8 +4252,6 @@ func go(nshot,all=)
       rp1d_nott -= sum(rp1d_nott*rp_tilt1d)*rp_tilt1d;
       if (ok) grow,rpv,rp1d_nott(rms)*1000.; // in nm
     }
-
-
   }
 
   // Computes the instantaneous PSF:
@@ -4262,8 +4268,8 @@ func go(nshot,all=)
         niterok += 1;
         grow,itv,i;
         if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
-        grow,strehlsp,im(max,max,sind)/sairy;
-        grow,strehllp,imav(max,max,sind,0)/sairy/(niterok+1e-5);
+        grow,strehlsp,im(max,max,sind)/sairy(sind);
+        grow,strehllp,imav(max,max,sind,0)/sairy(sind)/(niterok+1e-5);
       }
       extern psf_child_started;
       // give the go for next batch:
@@ -4281,18 +4287,25 @@ func go(nshot,all=)
                             get_turb_phase(i,jt,"target");
           // vibration already added to dm1
         }
-        // compute image cube from phase cube
-        status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
-                 target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
-
+        if (*target._pupil == []){
+          // compute image cube from phase cube
+          status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
+                                  target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
+        } else {
+          for (nt=1;nt<=target._ntarget;nt++){
+            imtarg = im(,,nt);
+            status = _calc_psf_fast(&(*target._pupil)(,,nt),&cubphase(,,nt),&imtarg,2^dimpow2,1,float(2*pi/(*target.lambda)(jl)),1n);
+            im(,,nt) = imtarg;
+          }
+        }
         // Accumulate statistics:
         imav(,,,jl) = imav(,,,jl) + im;
       }
       niterok += 1;
       grow,itv,i;
-      if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
-      grow,strehlsp,im(max,max,sind)/sairy;
-      grow,strehllp,imav(max,max,sind,0)/sairy/(niterok+1e-5);
+      if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;      
+      grow,strehlsp,im(max,max,sind)/sairy(sind);
+      grow,strehllp,imav(max,max,sind,0)/sairy(sind)/(niterok+1e-5);
     }
   }
 
@@ -4451,32 +4464,32 @@ func go(nshot,all=)
   if ((looptime > 2) || ((i % 50) == 1) || (nshots>=0)) {
     if (numberof(*target.xposition)==1) {
       msg = swrite(format="%5i  %5.3f        %5.3f             %s",
-                   i,im(max,max,max)/sairy,
-                   imav(max,max,max,0)/sairy/(niterok+1e-5),
+                   i,(im(max,max,)/sairy)(max),
+                   (imav(max,max,,0)/sairy)(max)/(niterok+1e-5),
                    remainingTimestring);
       msg1 = swrite(format=" %.1f",iter_per_sec);
       write,msg+msg1;
       header = "Iter#  Inst.Strehl  Long expo.Strehl  Time Left";
       msg = swrite(format="%5i  %5.3f          %5.3f             %s",
-                   i,im(max,max,max)/sairy,
-                   imav(max,max,max,0)/sairy/(niterok+1e-5),
+                   i,(im(max,max,)/sairy)(max),
+                   (imav(max,max,,0)/sairy)(max)/(niterok+1e-5),
                    remainingTimestring);
       gui_message1,header;
       gui_message,msg;
     } else {
       msg = swrite(format="%5i  %5.3f %5.3f %5.3f  %5.3f %5.3f %5.3f  %s",
-                   i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
-                   avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
-                   min(imav(max,max,,0))/sairy/(niterok+1e-5),
-                   avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
+                   i,(im(max,max,)/sairy)(max),(im(max,max,)/sairy)(min),
+                   avg(im(max,max,)/sairy),(imav(max,max,,0)/sairy)(max)/(niterok+1e-5),
+                   (imav(max,max,,0)/sairy)(min)/(niterok+1e-5),
+                   (imav(max,max,,0)/sairy)(avg)/(niterok+1e-5),remainingTimestring);
       msg1 = swrite(format=" %.1f",iter_per_sec);
       write,msg+msg1;
       header = "Iter#  Inst:Max.S/Min.S/Avg.S  Avg:Max.S/Min.S/Avg.S  Time Left";
       msg = swrite(format="%5i         %5.3f %5.3f %5.3f        %5.3f %5.3f %5.3f  %s",
-                   i,im(max,max,max)/sairy,min(im(max,max,))/sairy,
-                   avg(im(max,max,))/sairy,imav(max,max,max,0)/sairy/(niterok+1e-5),
-                   min(imav(max,max,,0))/sairy/(niterok+1e-5),
-                   avg(imav(max,max,,0))/sairy/(niterok+1e-5),remainingTimestring);
+                   i,(im(max,max,)/sairy)(max),(im(max,max,)/sairy)(min),
+                   avg(im(max,max,)/sairy),(imav(max,max,,0)/sairy)(max)/(niterok+1e-5),
+                   (imav(max,max,,0)/sairy)(min)/(niterok+1e-5),
+                   (imav(max,max,,0)/sairy)(avg)/(niterok+1e-5),remainingTimestring);
       gui_message1,header;
       gui_message,msg;
     }

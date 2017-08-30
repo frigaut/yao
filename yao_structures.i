@@ -544,6 +544,7 @@ struct target_struct
   // Internal keywords
   long    _ntarget;       // Internal: # of target
   long    _nlambda;       // Internal: # of lambda
+  pointer _pupil;         // the pupil for all of the targets
 };
 
 struct gs_struct
