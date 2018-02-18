@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -23,7 +23,7 @@
 
 // define function names. Will be redefined by GUI routine if needed:
 func null (arg,..) { return 0; }
-pyk_error=pyk_info=pyk_warning=gui_message=gui_progressbar_frac=gui_progressbar_text=null; 
+pyk_error=pyk_info=pyk_warning=gui_message=gui_progressbar_frac=gui_progressbar_text=null;
 
 //+++++++++++++++++++++++++++
 
@@ -70,11 +70,11 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
 
      Example:
      create_phase_screens,2048,256,prefix="screen256"
-     
+
      F.Rigaut, 2001/11/10.
      modify 2003 Feb 24 to add dimy (before dimy=256) and prefix
      SEE ALSO: generate_phase, phase_struct_func.
-  */ 
+  */
 
 {
   if (is_void(l0)) l0 = 0.;
@@ -99,7 +99,7 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
     psfunc(i) = sqrt((fsx+fsy)/2.);
     if (yaopy) gui_progressbar_frac,0.25+0.6*(i-off(1))/(off(2)-off(1));
   }
-  
+
   c = (24./5.*gamma(6/5.))^(5/6.);
   r = float(indgen(off(2)));
   if (l0 == 0){
@@ -126,7 +126,7 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
   if (!silent) write,psfunc(off(1):off(2))/theo(off(1):off(2));
 
   pscreen(*) = pscreen(*)/float(nfact);
-  
+
   if (!silent) write,"Sectioning and saving phase screens";
   if (yaopy) gui_progressbar_text,"Sectioning and saving phase screens";
   pscreen = reform(pscreen,[3,dimx,dimy,nscreen]);
@@ -154,10 +154,10 @@ func clean_progressbar(void)
 
 func generate_phase(dim,silent=)
   /* DOCUMENT generate_phase(size)
-     Generate by Fourier an un-normalized 2D phase screen from the 
-     -11/3 amplitude and a randomn phase component. Only returns the 
-     real part. Beware that these screens have a effective outer scale 
-     of about half the length of the screen. 
+     Generate by Fourier an un-normalized 2D phase screen from the
+     -11/3 amplitude and a randomn phase component. Only returns the
+     real part. Beware that these screens have a effective outer scale
+     of about half the length of the screen.
      F.Rigaut, 2001/11/10.
      SEE ALSO: create_phase_screens, phase_struct_func.
   */
@@ -190,13 +190,13 @@ func generate_phase(dim,silent=)
 func generate_von_karman_spectrum(dim,k0,nalias=,silent=)
 /* DOCUMENT func generate_von_karman_spectrum(sdim,bdim,k0)
    generate correct von Karman spectrum including aliasing.
-     
+
    SEE ALSO:
  */
 {
   if (is_void(nalias)) nalias = 0;
   if (!silent) for (i=1;i<=2*nalias+1;i++) write,format="%s","#";
-  
+
   res = array(float,[2,dim,dim]);
   for (i=-nalias;i<=nalias;i++) {
     for (j=-nalias;j<=nalias;j++) {
@@ -222,8 +222,8 @@ func generate_von_karman_spectrum(dim,k0,nalias=,silent=)
 
 func generate_phase_with_L0(dim,l0,nalias=,silent=,no_ipart=)
   /* DOCUMENT generate_phase(size,l0)
-     Generate by Fourier an un-normalized 2D phase screen from the 
-     -11/3 amplitude and a randomn phase component. Returns the real and 
+     Generate by Fourier an un-normalized 2D phase screen from the
+     -11/3 amplitude and a randomn phase component. Returns the real and
      complex parts.
      Uses fftVE and cosf/sinf to keep floats for RAM use consideration
      (the previous version of this routine was using the yorick fft,
@@ -232,7 +232,7 @@ func generate_phase_with_L0(dim,l0,nalias=,silent=,no_ipart=)
      dim: desired dimension of the result phase screens
      l0: outer scale IN PIXELS
      no_ipart = loose the im part to gain RAM
-     
+
      F.Rigaut, 2001/11/10.
      SEE ALSO: create_phase_screens, phase_struct_func.
   */

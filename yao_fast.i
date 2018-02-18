@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -44,18 +44,18 @@ func calc_psf_fast(pupil,phase,scale=,noswap=)
   if (typeof(pupil) != "float") {pupil=float(pupil);}
   if (typeof(phase) != "float") {phase=float(phase);}
   if (is_set(scale)) {scale = float(scale);} else {scale=1.0f;}
-  if (is_set(noswap)) noswap=1n; else noswap=0n; 
-  
+  if (is_set(noswap)) noswap=1n; else noswap=0n;
+
   dims = dimsof(phase);
   if (dims(2) != dims(3)) { error,"X and Y dimension have to be the same"; }
-  
+
   outimage = array(float,dims);
   n = dims(2);
   // n2       = int(log(dims(2))/log(2));
   // if ((2^n2) != dims(2)) { error," Dimension has to be a power of 2"; }
 
   if (dims(1) == 3) {nplans = int(dims(4));} else {nplans = 1n;}
-  
+
   err = _calc_psf_fast(&pupil,&phase,&outimage,n,nplans,scale,1n-noswap);
 
   return outimage;
@@ -95,7 +95,7 @@ func init_fftw_wisdom(nlimit)
  */
 {
   if (nlimit == []) nlimit=11;
-  
+
   wisdom_file = expand_path(Y_USER)+"fftw_wisdom_file.dat";
   if (open(wisdom_file,"r",1)) { //file exists
     write,format="%s\n","fftw wisdom file already exist!";
@@ -171,7 +171,7 @@ func fftVE(realp,imagp,dir)
   _fftVE,&x,&y,int(dims(2)),dir;
 
   if (sub) return;
-  
+
   return [x,y];
 }
 
@@ -193,7 +193,7 @@ extern _fftVE2
 //==================================================================
 extern embed_image
 /* PROTOTYPE
-   int embed_image(float array inim, int indx, int indy,    
+   int embed_image(float array inim, int indx, int indy,
    float array outim, int outdx, int outdy, int destx, int desty)
 */
 
@@ -202,7 +202,7 @@ extern _shwfs_phase2spots
    int _shwfs_phase2spots(float array pupil, float array phase,
    float phasescale, float array phaseoffset, int dim,
    int array istart, int array jstart, int nsx, int nsy,
-   int nsubs, int sdimpow2, long domask, float array submask, 
+   int nsubs, int sdimpow2, long domask, float array submask,
    float array kernel, int nkernels, float array kernels, float array kerfftr,
    float array kerffti, int initkernels, int kernelconv,
    int array binindices, int binxy, int rebinfactor, int nx,
@@ -210,7 +210,7 @@ extern _shwfs_phase2spots
    float array lgs_profile, float array defocuses, int n_in_profile,
    float array unit_defocus, float array fimage, int array svipc_subok,
    int array imistart, int array jmistart, int fimnx, int fimny,
-   float array flux, float array rayleighflux, float array skyflux, 
+   float array flux, float array rayleighflux, float array skyflux,
    float darkcurrent, int rayleighflag, float array rayleigh,
    int bckgrdinit, int counter, int niter)
 */

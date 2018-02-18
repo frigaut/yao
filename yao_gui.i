@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -28,7 +28,7 @@ func progress_bar(percent,&id,init=)
    init = [x0,y0,x1,y1]: position to display the progress bar
    NOTE: One has to use the palette "earth.gp" to get a nice blue progress bar
    example:
-   
+
    SEE ALSO:
  */
 {
@@ -108,4 +108,3 @@ func draw_status(status,&id,init=)
   //  plg,coo(3)*cos(s)/2+coo(2),coo(3)*sin(s)/2+coo(1),width=3;
   limits,0.,1.,0.,1.;
 }
-  

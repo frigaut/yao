@@ -9,7 +9,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -99,7 +99,7 @@ func save_conf(void)
 {
   extern path2conf;
   if (is_void(path2conf)) path2conf=Y_USER;
-  
+
   if (catch(0x02)) {
     pyk_error,swrite(format="Can not create %syao.conf. Permission problem?",path2conf);
     return;
@@ -167,12 +167,12 @@ func clean_progressbar(void)
 
 func gui_progressbar_frac(frac)
 {
-  pyk,swrite(format="progressbar.set_fraction(%f)",float(clip(frac,0.,1.)));  
+  pyk,swrite(format="progressbar.set_fraction(%f)",float(clip(frac,0.,1.)));
 }
 
 func gui_progressbar_text(text)
 {
-  pyk,swrite(format="progressbar.set_text('%s')",text);  
+  pyk,swrite(format="progressbar.set_text('%s')",text);
 }
 
 func gui_message(msg)
@@ -559,7 +559,7 @@ func gui_update_wfs(num)
 {
   pyk,swrite(format="y_set_checkbutton('subtract_background',%d)",long(wfs(num)._bckgrdsub));
   pyk,swrite(format="y_set_checkbutton('noise',%d)",long(wfs(num).noise));
-  pyk,swrite(format="y_set_checkbutton('correct_up_tt',%d)",long(wfs(num).correctUpTT));  
+  pyk,swrite(format="y_set_checkbutton('correct_up_tt',%d)",long(wfs(num).correctUpTT));
   pyk,swrite(format="y_parm_update('efd',%f)",float(wfs(num).l));
   pyk,swrite(format="y_parm_update('pyr_mod',%f)",float(wfs(num).pyr_mod_ampl));
   pyk,swrite(format="y_parm_update('gsmag',%f)",float(wfs(num).gsmag));
@@ -577,7 +577,7 @@ func plot_mtf(i,init=)
 {
   extern mtf_reference,mtf_airy,record_shot;
   extern airy,window3_created;
-  
+
   if (init) {
     if (window3_created==0) {
       dimwin=450*default_dpi/80;
@@ -627,7 +627,7 @@ func plot_dphi(i,init=)
 {
   extern dphi_reference,mtf_airy,dphi_atmos,record_shot;
   extern airy,imax,dphi_x,window3_created;
-  
+
   if (init) {
     if (window3_created==0) {
       dimwin=450*default_dpi/80;
@@ -657,7 +657,7 @@ func plot_dphi(i,init=)
   mtf=mtf(,avg);
   mtf=mtf/mtf_airy;
   dphi=-2*log(mtf);
-  
+
   if (record_shot) {
     dphi_reference=dphi;
     record_shot=0;
@@ -710,21 +710,21 @@ func gui_update(void)
   if (is_void(path2conf)) save_conf;
   write,format="Results will be saved in %s\n",YAO_SAVEPATH;
   gui_message,swrite(format="Results will be saved in %s",YAO_SAVEPATH);
-  
+
   require,"string.i";
-  pyk,swrite(format="yuserdir = '%s'",streplace(Y_USER,strfind("~",Y_USER),get_env("HOME"))); 
-  pyk,swrite(format="yaopardir = '%s'",yaopardir); 
-    
+  pyk,swrite(format="yuserdir = '%s'",streplace(Y_USER,strfind("~",Y_USER),get_env("HOME")));
+  pyk,swrite(format="yaopardir = '%s'",yaopardir);
+
   if (strlen(yaoparfile)) {
     pyk,swrite(format="y_text_parm_update('yaoparfile','%s')",yaoparfile);
-    pyk,swrite(format="yaoparfile = '%s'",yaoparfile); 
+    pyk,swrite(format="yaoparfile = '%s'",yaoparfile);
   } else {
     pyk,"glade.get_widget('aoread').set_sensitive(0)";
   }
   //  usleep,100; // why do I have to do that for it to work ????
   //  pyk,"yo2py_flush";
   if (wfs==[]) return;  // then aoread has not yet occured.
-  
+
   sim.debug=0;
 
   dispImImav = 1;
@@ -733,7 +733,7 @@ func gui_update(void)
   disp = 10;
   //  wfsMesHistory = 0;
   for (i=1;i<=ndm;i++) {dm(i)._command = &([0]);}
-  
+
   okwfs = array(0.,nwfs);
   okdm  = array(0.,ndm);
   //  pyk,swrite(format="nwfs=%d",nwfs);
@@ -742,8 +742,8 @@ func gui_update(void)
   pyk,"glade.get_widget('edit').set_sensitive(1)";
   pyk,"glade.get_widget('aoread').set_sensitive(1)";
   //  pyk,"glade.get_widget('aoread').grab_focus()";
-  pyk,swrite(format="y_text_parm_update('yaoparfile','%s')",yaoparfile); 
-  pyk,swrite(format="window.set_title('%s')",yaoparfile); 
+  pyk,swrite(format="y_text_parm_update('yaoparfile','%s')",yaoparfile);
+  pyk,swrite(format="window.set_title('%s')",yaoparfile);
   pyk,swrite(format="y_parm_update('seeing',%f)",float(seeing));
   pyk,swrite(format="y_parm_update('loopgain',%f)",float(loop.gain));
   pyk,swrite(format="y_parm_update('imlambda',%f)",float((*target.lambda)(0)));
@@ -829,4 +829,3 @@ pyk_cmd=[python_exec,                                   \
 
 // span the python process, and hook to existing _tyk_proc (see pyk.i)
 _pyk_proc = spawn(pyk_cmd, _pyk_callback);
-

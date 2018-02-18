@@ -17,7 +17,7 @@ System configuration is done through a parameter file. The current GUI only prov
 with the main YAO functions and to change/play with some of the main system parameters, and see the changes at 
 once. This tool can be viewed as very practical for AO education purposes.</property>
     <property name="website">http://www.maumae.net/yao</property>
-    <property name="license" translatable="yes">Copyright (c) 2002-2013, Francois Rigaut
+    <property name="license" translatable="yes">Copyright (c) 2002-2017, Francois Rigaut
 
 This program is free software; you can redistribute it and/or  modify it
 under the terms of the GNU General Public License  as  published  by the

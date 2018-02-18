@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  * Copyright (c) 2006, Damien Gratadour
  *
  * This program is free software; you can redistribute it and/or  modify it
@@ -34,14 +34,14 @@ local yaokl;
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64);
   or
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="kolmo");
-  
+
 
   for a Von Karman statistics :
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman");
   or
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman",outscl=3);
   default is : an outter scale of 3 times the size of the telescope
-  
+
   res is a 128x128x150 array containing the 150 first KL
   of a kolmogorov or Von Karman stat
 
@@ -53,7 +53,7 @@ local yaokl;
    func radii(nr,np,ri)
    func polang(r)
    func setpincs(ax,ay,px,py,ri,&pincx,&pincy,&pincw)
-   func pcgeom (nr,np,ncp,ri,ncmar,ap)    
+   func pcgeom (nr,np,ncp,ri,ncmar,ap)
    func set_pctr(bas, ncp =, ncmar=)
    func pol2car(cpgeom,pol,mask=)
    func kolstf(dvec)
@@ -78,7 +78,7 @@ func dblindgen(n)
   /*DOCUMENT res=dblindgen(size)
 
   D. Gratadour Feb 2006
-  
+
   This routine returns a size x size array containing increasing indices
   from 1 to size x size.
 
@@ -99,7 +99,7 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
   Calculation of polar coordinates rho and phi and an intensity mask
   (the pupil) of a telescope of radius r
   Derived from an IDL routine (polaire2.pro) written by L. Mugnier
-  
+
   INPUTS :
   r = the radius of the mask
 
@@ -108,19 +108,19 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
   rho  = the width coordinate (2d image)
   phi  = the angle coordinate (rad) (2d image)
   pts  = (optional) indices of valid (non null) points of the
-         pupil (1d vector) if flag sizemin is set 
+         pupil (1d vector) if flag sizemin is set
 
   OPTIONAL :
   occ     = the occultation level (<=1)
-  xcent   = the x position of the center point of the mask 
-  xcent   = the y position of the center point of the mask 
+  xcent   = the x position of the center point of the mask
+  xcent   = the y position of the center point of the mask
   verbose = flag to get info on the process (0/1)
   leq     = flag to set the limits of the mask (<= radius or < radius)
   btw4pix = flag to set the center of the mask on 1 pixel or
             in between 4 pixels (0/1)
   sizemin = flag to set the outputs in a minimum size arrays (null points
             are eliminated) (0/1)
-     
+
   SEE ALSO : ...
   */
 {
@@ -128,8 +128,8 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
   if (!is_set(occ)) occ=0.0;
   if (!btw4pix) diam=long(2*floor(r)+1);
   else diam=long(2*round(r));
-  
-  if (!is_set(xcent)) xcent=float((diam-1)/2.);  
+
+  if (!is_set(xcent)) xcent=float((diam-1)/2.);
   if (!is_set(ycent)) ycent=float((diam-1)/2.);
 
   if (verbose) {
@@ -152,13 +152,13 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
     rho=float(sqrt(x^2+y^2))/float(r);
     phi=float(atan(y,x+(rho==0)));
   }
-  
+
   if (leq) mask=((rho<=1) & (rho>=occ));
   else {
     if (dbprec) mask=double((rho<1) & (rho>=occ));
     else mask=float((rho<1) & (rho>=occ));
   }
-  
+
   if (sizemin) {
     if (verbose) write,"We will keep only the non-null points";
     pts=where(mask != 0.);
@@ -177,32 +177,32 @@ func polar_coord(r,&mask,&rho,&phi,&pts,occ=,xcent=,ycent=,\
 
 struct gkl_basis_struct
 {
-  long   nr;            
-  long   ni;  
-  long   np;       
-  long   nfunc;   
-  float   ri;  
-  pointer   radp;   
-  pointer evals;   
-  long   nord;   
-  pointer   npo;   
-  pointer   ord;   
-  pointer   rabas;   
-  pointer   azbas;   
+  long   nr;
+  long   ni;
+  long   np;
+  long   nfunc;
+  float   ri;
+  pointer   radp;
+  pointer evals;
+  long   nord;
+  pointer   npo;
+  pointer   ord;
+  pointer   rabas;
+  pointer   azbas;
 };
 
 struct geom_struct
 {
-  pointer   px;            
-  pointer   py;  
-  pointer   cr;       
-  pointer   cp;   
-  pointer   pincx;  
-  pointer  pincy;   
-  pointer pincw;   
-  pointer   ap;   
-  long   ncp;   
-  long   ncmar;   
+  pointer   px;
+  pointer   py;
+  pointer   cr;
+  pointer   cp;
+  pointer   pincx;
+  pointer  pincy;
+  pointer pincw;
+  pointer   ap;
+  long   ncp;
+  long   ncmar;
 };
 
 
@@ -210,13 +210,13 @@ func radii(nr,np,ri)
   /*DOCUMENT res=radii(NumberOfR,NumberOfPhi,Dim)
 
   D. Gratadour Feb 2006
-  
+
   This routine generates an nr x np array with np copies of the
   radial coordinate array. Radial coordinate span the range from
   r=ri to r=1 with successive annuli having equal areas (ie, the
   area between ri and 1 is divided into nr equal rings, and the
   points are positioned at the half-area mark on each ring). There
-  are no points on the border.     
+  are no points on the border.
 
   SEE ALSO : polang
    */
@@ -230,9 +230,9 @@ func polang(r)
   /*DOCUMENT res=polang(RadialCoordArray)
 
   D. Gratadour Feb 2006
-  
+
   This routine generates an array with the same dimensions as r,
-  but containing the azimuthal values for a polar coordinate system.     
+  but containing the azimuthal values for a polar coordinate system.
 
   SEE ALSO : radii
    */
@@ -248,10 +248,10 @@ func setpincs(ax,ay,px,py,ri,&pincx,&pincy,&pincw)
   /*DOCUMENT res=polang(RadialCoordArray)
 
   D. Gratadour Feb 2006
-  
+
   This routine determines a set of squares for interpolating
   from cartesian to polar coordinates, using only those points
-  with ri < r < 1     
+  with ri < r < 1
 
   SEE ALSO : pcgeom
    */
@@ -273,9 +273,9 @@ func setpincs(ax,ay,px,py,ri,&pincx,&pincy,&pincw)
 
   pincx=[lx,lx+1,lx+1,lx]+1;
   pincy=[ly,ly,ly+1,ly+1]+1;
-  
+
   pincw=[(1-shx)*(1-shy),shx*(1-shy),shx*shy,(1-shx)*shy];
-  
+
   axy = ax^2 + ay^2;
   axyinap = clip(axy,ri^2.+1.e-3,0.999);
   sizeaxyinap=(dimsof(axyinap))(2);
@@ -283,17 +283,17 @@ func setpincs(ax,ay,px,py,ri,&pincx,&pincy,&pincw)
   pincw = pincw*(1.0/pincw(,,sum))(,,-);
 }
 
-func pcgeom (nr,np,ncp,ri,ncmar,ap)    
+func pcgeom (nr,np,ncp,ri,ncmar,ap)
   /*DOCUMENT geom=pcgeom(nr, np, ncp, ri, ncmar,ap)
 
   D. Gratadour Feb 2006
-  
+
   This routine builds a geom_struct. px and py are the x and y
   coordinates of points in the polar arrays.  cr and cp are the
   r and phi coordinates of points in the cartesian grids. ncmar
   allows the possibility that there is a margin of ncmar points
   in the cartesian arays outside the region of interest
-    
+
 
   SEE ALSO : setpincs, set_pctr
    */
@@ -301,8 +301,8 @@ func pcgeom (nr,np,ncp,ri,ncmar,ap)
   nused = ncp - 2*ncmar;
   ff = 0.5 * nused;
   hw =  float(ncp-1)/2;
-    
-  r = radii(nr,np,ri); 
+
+  r = radii(nr,np,ri);
   p = polang(r);
 
   px0 = r * cos(p);
@@ -310,28 +310,28 @@ func pcgeom (nr,np,ncp,ri,ncmar,ap)
   px = ff * px0 + hw;
   py = ff * py0 + hw;
   ax = float(dblindgen(ncp)-1) % ncp - 0.5 * (ncp-1);
-  ax = ax / (0.5 * nused); 
+  ax = ax / (0.5 * nused);
   ay = transpose(ax);
-        
+
   setpincs, ax, ay, px0, py0, ri,pincx, pincy, pincw;
   dpi = 2 * pi;
-  cr2 = (ax^2 + ay^2); 
+  cr2 = (ax^2 + ay^2);
   ap = clip(cr2,ri^2+1.e-3,0.999);
-  //cr = (cr2 - ri^2) / (1 - ri^2) * nr - 0.5; 
-  cr = (cr2 - ri^2) / (1 - ri^2) * nr; 
+  //cr = (cr2 - ri^2) / (1 - ri^2) * nr - 0.5;
+  cr = (cr2 - ri^2) / (1 - ri^2) * nr;
   cp = (atan(ay, ax) + dpi) % dpi;
   cp = (np / dpi) * cp;
-    
+
   cr = clip(cr,1.e-3,nr-1.001);
   //fudge -----, but one of the less bad ones
   cp = clip(cp,1.e-3,np -1.001);
   //fudge -----  this is the line which
   //gives that step in the cartesian grid
   //at phi = 0.
-  
+
   geom = geom_struct();
   geom.px=&px;
-  geom.py=&py; 
+  geom.py=&py;
   geom.cr=&cr;
   geom.cp=&cp;
   geom.pincx=&pincx;
@@ -339,8 +339,8 @@ func pcgeom (nr,np,ncp,ri,ncmar,ap)
   geom.pincw=&pincw;
   geom.ap=&ap;
   geom.ncp=ncp;
-  geom.ncmar=ncmar; 
-         
+  geom.ncmar=ncmar;
+
   return geom;
 }
 
@@ -348,17 +348,17 @@ func set_pctr(bas, ncp =, ncmar=)
   /*DOCUMENT geom=set_pctr(bas, ncp =, ncmar=)
 
   D. Gratadour Feb 2006
-  
+
   This routine calls pcgeom to build a geom_struct with the
   right initializations. bas is a gkl_basis_struct built with
   the gkl_bas routine.
-    
+
   SEE ALSO : pcgeom, setpincs, gkl_bas
    */
 {
   if (!is_set(ncmar)) ncmar = 2;
   if (!is_set(ncp)) ncp = 128;
-    
+
   return pcgeom(bas.nr,bas.np,ncp,bas.ri,ncmar,ap);
 }
 
@@ -366,13 +366,13 @@ func pol2car(cpgeom,pol,mask=)
   /*DOCUMENT cart=pol2car(cpgeom, pol, mask=)
 
   D. Gratadour Feb 2006
-  
+
   This routine is used for polar to cartesian conversion.
   pol is built with gkl_bas and cpgeom with pcgeom.
   However, points not in the aperture are actually treated
   as though they were at the first or last radial polar value
   -- a small fudge, but not serious  ?*******
-  
+
   SEE ALSO : pcgeom, gkl_bas
    */
 {
@@ -380,17 +380,17 @@ func pol2car(cpgeom,pol,mask=)
   cd = bilinear(pol, *cpgeom.cr+1, *cpgeom.cp+1);
   if (mask!=[]) cd = cd*(*cpgeom.ap);
   return cd;
-} 
+}
 
 func kolstf(dvec)
   /*DOCUMENT var=kolstf(dvec)
 
   D. Gratadour Feb 2006
-  
+
   This routine returns the kolmogorov phase variance at spatial
   dimension (inverse of the spatial frequency) dvec
-  
-  SEE ALSO : 
+
+  SEE ALSO :
    */
 {
   return  6.88 * dvec^(5./3.);
@@ -400,13 +400,13 @@ func karmanstf(dvec,outscl=)
   /*DOCUMENT var=kolstf(dvec)
 
   D. Gratadour Feb 2006
-  
+
   This routine returns the Von Karman phase variance at spatial
   dimension (inverse of the spatial frequency) dvec. Same as kolstf
   but with a correcting factor to account for the outter scale.
   The latter should be in units of telescope diameter
-  
-  SEE ALSO : 
+
+  SEE ALSO :
    */
 {
   if (dimsof(outscl)==[]) outscl = 3.;
@@ -419,12 +419,12 @@ func gkl_radii(nr,ri)
   /*DOCUMENT rad=gkl_radii(nr,ri)
 
   D. Gratadour Feb 2006
-  
+
   This routine generates an array of radial polar coordinates along
   which the KL are generated. nr is the number of elements and ri is
   the maximum radius.
-  
-  SEE ALSO : 
+
+  SEE ALSO :
    */
 {
   d = (1.-ri*ri)/nr;
@@ -434,22 +434,22 @@ func gkl_radii(nr,ri)
   //  rad2 = ri^2 +d/14.+ d * float(indgen(nr)-1);  // nr=64,128
   //  rad2 = ri^2 +d/10.+ d * float(indgen(nr)-1);
   rad = sqrt(rad2);
-  
+
   return rad;
 }
 
 func gkl_mkker(ri,nr,rad,funct=,outscl=)
-  /*DOCUMENT 
+  /*DOCUMENT
 
   D. Gratadour Feb 2006
-  
+
   This routine generates the kernel used to find the KL modes.
   The  kernel constructed here should be simply a discretization
   of the continuous kernel. It needs rescaling before it is treated
   as a matrix for finding  the eigen-values. The outter scale
   should be in units of the diameter of the telescope.
 
-  SEE ALSO : 
+  SEE ALSO :
    */
 {
   nth = 5*nr;
@@ -459,7 +459,7 @@ func gkl_mkker(ri,nr,rad,funct=,outscl=)
   fnorm = -1./(2*pi*(1.-ri^2))*0.5;
   //the 0.5 is to give  the r^2 kernel, not
   //the r kernel
-  for (i =1;i<=nr;i++) { 
+  for (i =1;i<=nr;i++) {
     for (j=1;j<=i;j++) {
       te = 0.5*sqrt(rad(i)^2+rad(j)^2-(2*rad(i)*rad(j))*cth);
       //te in units of the diameter, not the radius
@@ -476,9 +476,9 @@ func gkl_mkker(ri,nr,rad,funct=,outscl=)
     if (is_set(verbose)) write, i;
   }
   if (is_set (verbose))  write," ";
-  
+
   return kers;
-  
+
 }
 
 func piston_orth(nr)
@@ -495,10 +495,10 @@ func piston_orth(nr)
 }
 
 func gkl_fcom(kers,ri,nf,&evals,&nord,&npo,&ord,&rabas)
-  /*DOCUMENT 
+  /*DOCUMENT
 
   D. Gratadour Feb 2006
-  
+
   This routine does the work : finding the eigenvalues and
   corresponding eigenvectors. Sort them and select the right
   one. It returns the KL modes : in polar coordinates : rabas
@@ -530,7 +530,7 @@ func gkl_fcom(kers,ri,nf,&evals,&nord,&npo,&ord,&rabas)
   s = piston_orth(nr);
   ts =transpose(s);
   b1 = ((ts(,+)*zom(+,))(,+)*s(+,))(1:nr-1, 1:nr-1);
- 
+
   newev = SVdec(fktom*b1,v0,vt);
 
   v1 = array(float,[2,nr, nr]);
@@ -574,7 +574,7 @@ func gkl_fcom(kers,ri,nf,&evals,&nord,&npo,&ord,&rabas)
        }
        ni = ni + 1;
   } while (no < (nf+1));
-  
+
   oind = oind (1:nf);
   tord = (oind-1)/nr+1;
   odd = ((long(indgen(nf)-1) % 2) == 1);
@@ -587,7 +587,7 @@ func gkl_fcom(kers,ri,nf,&evals,&nord,&npo,&ord,&rabas)
   rabas = array(float,[2,nr, nf]);
   sizenpo=long(max(ord));
   npo = array(long,sizenpo);
-  
+
   for (i=1;i<=nf;i++) {
     npo(long(ord(i))) = npo(long(ord(i))) + 1;
     rabas(, i) = kers (, pio(i), tord(i));
@@ -606,10 +606,10 @@ func gkl_mkazi(nord, np)
 }
 
 func gkl_bas(ri=,nr=,np=,nfunc=,verbose=,funct=,outscl=)
-  /*DOCUMENT 
+  /*DOCUMENT
 
   D. Gratadour Feb 2006
-  
+
   This routine uses the output of gkl_fcom to fill the gkl_base_struct.
 
   SEE ALSO : gkl_fcom
@@ -641,7 +641,7 @@ func gkl_bas(ri=,nr=,np=,nfunc=,verbose=,funct=,outscl=)
   radp = gkl_radii(nr, ri);
 
   kers = gkl_mkker(ri, nr, radp,funct=funct,outscl=outscl);
-  
+
   gkl_fcom,kers,ri,nfunc,evals,nord,npo,ord,rabas;
 
   azbas = gkl_mkazi(nord, np);
@@ -649,7 +649,7 @@ func gkl_bas(ri=,nr=,np=,nfunc=,verbose=,funct=,outscl=)
   gklbasis = gkl_basis_struct();
   gklbasis.nr=nr;
   gklbasis.np=np;
-  gklbasis.nfunc=nfunc; 
+  gklbasis.nfunc=nfunc;
   gklbasis.ri=ri;
   gklbasis.radp=&radp;
   gklbasis.evals=&evals;
@@ -658,26 +658,26 @@ func gkl_bas(ri=,nr=,np=,nfunc=,verbose=,funct=,outscl=)
   gklbasis.ord=&ord;
   gklbasis.rabas=&rabas;
   gklbasis.azbas=&azbas;
-  
+
   return gklbasis;
 }
 
 func gkl_sfi(bas, i)
-  /*DOCUMENT 
+  /*DOCUMENT
 
   D. Gratadour Feb 2006
-  
+
   This routine returns the i'th function from the generalised KL
   basis bas. bas must be generated first with gkl_bas.
 
   SEE ALSO : gkl_bas
    */
-{    
-  if (i>bas.nfunc) { 
+{
+  if (i>bas.nfunc) {
     write, "the basis only contains ", nfunc, "functions";
     return 0;
   }
-       
+
   nr = bas.nr;
   np = bas.np;
   ordp = *bas.ord;
@@ -693,31 +693,31 @@ func gkl_sfi(bas, i)
   sf1(,*)=rabas;
 
   sf2=array(float,[2,np,nr]);
-  sf2(,*)=azbas;  
+  sf2(,*)=azbas;
 
   sf = sf1*transpose(sf2);
   return sf;
 }
 
-      
+
 func make_kl(nmax,dim,&var,&outpolarbase,&pupil,oc=,nr=,nopup=,funct=,outscl=,verbose=)
-/* DOCUMENT 
+/* DOCUMENT
   for a Kolmogorov statistics :
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64);
   or
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="kolmo");
-  
+
 
   for a Von Karman statistics :
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman");
   or
   res=make_kl(150,128,varkl,outbas,pup1,oc=0.12,nr=64,funct="karman",outscl=5);
-  
+
   the outter scale is in units of the telescope diameter
   default is : an outter scale of 3 times the size of the telescope
-    
+
   D. Gratadour Feb 2006
-  
+
   This routine is the main program. It returns nmax generalized
   KL in an array dim x dim x nmax. It also returns the associated
   variance as well as the pupil and the polar base used for their
@@ -730,23 +730,23 @@ func make_kl(nmax,dim,&var,&outpolarbase,&pupil,oc=,nr=,nopup=,funct=,outscl=,ve
 {
   if (pupil==[]) polar_coord,dim/2.,pup,rho,phi,occ=oc,btw4pix=1;
   else pup=pupil;
-  
+
   if (!is_set(nr)) nr=64;
 
   if (dimsof(funct)==[]) {
     write,"using the Kolmogorov model";
     funct="kolmo";
   }
-    
+
   polarbase = gkl_bas(ri=oc,nr=nr,np=(2*pi*nr),nfunc=nmax,\
                       funct=funct,outscl=outscl,verbose=verbose);
-  
+
   outpolarbase = polarbase;
-  
+
   pc1 = set_pctr(polarbase, ncp= dim);
 
   kl = array(float,[3,long(dim),long(dim),nmax]);
-  
+
   if (is_set(nopup)) {
     for (i=1;i<=nmax;i++) kl(,,i)=pol2car(pc1, gkl_sfi(polarbase,i));
   } else {
@@ -756,10 +756,10 @@ func make_kl(nmax,dim,&var,&outpolarbase,&pupil,oc=,nr=,nopup=,funct=,outscl=,ve
       kl(,,i)=pol2car(pc1, gkl_sfi(polarbase,i))*pup;
     }
   }
-    
-  pupil =  pup; 
+
+  pupil =  pup;
   var =  *polarbase.evals;
-  
+
   return kl;
 }
 
@@ -786,8 +786,8 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
    tab_ei_val = float(684);
    tab_ei_val = _(*ei_val(1),*ei_val(2),*ei_val(3));
    yao_fitswrite, "tab_ei_val_filt111.fits",tab_ei_val;
- 
-     
+
+
    b = kl_basis_in_dm_space(1, 3,eigen,extrap="extrap_kl.mat");
    will return a 240x240 array
    plot, b(,1); //first mode = Astig (piston/TT have been filtered)
@@ -808,7 +808,7 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
    plg,xx^(-11./6.)*45.,xx,color="red";
    logxy,1,1;
 */
-  
+
 {
 
   coeffi = [1.,1.24,1.47];//factor to take into account D vs h
@@ -822,9 +822,9 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   if_nb   = dimsof(inf_fun)(4);//nb of IF
   dim = dimsof(inf_fun)(2);//size of the support
 
-  
+
   //----Step0 : Modes Filtering-----------------
-  
+
   nnn = dimsof(ipupil)(2);
   if(nm == 1) {
     puptel = ipupil(nnn/2-dim/2+1:nnn/2+dim/2,nnn/2-dim/2+1:nnn/2+dim/2);
@@ -841,15 +841,15 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
     pupkl = zernike(1);
     puptel = pupkl;
   }
- 
+
   //define IF on the pupil only
-  for(cpt=1;cpt<=if_nb;cpt++){ 
+  for(cpt=1;cpt<=if_nb;cpt++){
     inf_fun(,,cpt) = inf_fun(,,cpt)*puptel;
   }
-  
+
   if (numberof(n_rm_modes) != 0) {
     if(n_rm_modes > 0) {
-      for(cpt=1;cpt<=if_nb;cpt++){ 
+      for(cpt=1;cpt<=if_nb;cpt++){
         cmpnt = 0.0;
           for(kj=1;kj<=n_rm_modes;kj++){
             polz  = zernike(kj);
@@ -866,7 +866,7 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   if(n_rm_modes == []) n_rm_modes = 0;
   name=swrite(format="KLDMmodes_DM%d_IF_nrmodes%d.fits",nm,n_rm_modes(1));
   yao_fitswrite,name,inf_fun;
-  
+
   //-------------------------------------------------------
   //Step1 : Computing geometrique covariance matrix ...
 
@@ -883,11 +883,11 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   phase_variance = (gamma(11./6.)*gamma(5./6.)/(2.*pi^(8./3.)))*
     (24.*gamma(6./5.)/5.)^(5./6.)*
     (L0/r0)^(5./3);
-  
+
   kdpix = long(dim/2.+10.)*k;//at least 2 times pupil size !
   if(kdpix <= dim) write, "ATTENTION!"
 
-  
+
   //-------------------------------------
   D = 8.*coeffi(nm);
   //sp_freq        = dist(kdpix)/(k*D*float(dim2)/float(sim.pupildiam));//FIXME
@@ -895,7 +895,7 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   sp_freq        = dist(kdpix)/(k*D);
   //------------------------------------
 
-  
+
   f = sp_freq;
   cst   = (gamma(11./6.)^2/(2.*pi^(11./3.)))*(24.*gamma(6./5.)/5.)^(5./6.) ;
   phase_spectrum = eclat(cst*r0^(-5./3.)*(f^2+(1/L0)^2)^(-11./6.)) ;
@@ -915,14 +915,14 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   inf_fun = support = [];
   //---------------------------------------------------------
   //Step3 : correlation statistique des fonctions d'influence
-  
+
   H_IF = array(float,[2,if_nb, if_nb]);
   nrm            = (Spup*Spup)*(k*D)*(k*D);
 
   tmp = FT_inf_fun(*,);
   FT_inf_fun = [];
   H_IF = float(tmp(+,)*conj(tmp)(+,))/nrm;
-  
+
   write, "-> Correlation Statistiques, DONE !";
 
   //-------------------------------------------------------------
@@ -937,7 +937,7 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   Bp = M(+,)*A(+,);
   eigen_val = Lp;
   write, "-> Double Diago, DONE !";
-  
+
   return Bp;
 
   /*
@@ -949,7 +949,7 @@ func kl_basis_in_dm_space(nm,n_rm_modes,&eigen_val,extrap=)
   i=1;
   tv,comp_dm_shape(nnm,&(float((*kl2dm(nnm))(,i))),extrap=0);
    */
-  
+
  }
 
 
@@ -963,7 +963,7 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
    b = kl_basis_in_dm_space_4extrap(1, 1);
    will return a 293x293 array
 */
-  
+
 {
   //-----------------------------------
   //Get Influence Functions WITH extrapolated
@@ -977,7 +977,7 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
   dm(1)._def = &def1;dm(2)._def = &def2;dm(3)._def = &def3;
   dm(4)._def = &def4;dm(5)._def = &def5;dm(1)._edef = &edef1;
   dm(2)._edef = &edef2;dm(3)._edef = &edef3;
-  
+
   //--------------------------------------------
   //Step0 : Modes Filtering
 
@@ -990,14 +990,14 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
   pupkl = zernike(1);
 
    //define IF on the pupil only
-  for(cpt=1;cpt<=if_nb;cpt++){ 
+  for(cpt=1;cpt<=if_nb;cpt++){
     inf_fun(,,cpt) = inf_fun(,,cpt)*pupkl;
   }
 
-  
+
   if (numberof(n_rm_modes) != []) {
     if(n_rm_modes > 0) {
-      for(cpt=1;cpt<=if_nb;cpt++){ 
+      for(cpt=1;cpt<=if_nb;cpt++){
         cmpnt = 0.0
           for(kj=1;kj<=n_rm_modes;kj++){
             polz  = zernike(kj)
@@ -1048,7 +1048,7 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
   //Step2 : Calcul des TF des fonction d'influence
 
   FT_inf_fun = calc_FT_inf_fun(inf_fun,kdpix,if_nb,phase_spectrum);
-  
+
   /*support = array(float,[2,kdpix, kdpix]);
   FT_inf_fun = array(complex,[3,kdpix, kdpix, if_nb]);
   for(i=1;i<=if_nb;i++){
@@ -1057,7 +1057,7 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
   }
   write, "-> Calcul des TFs, DONE !";*/
   inf_fun = support = phase_spectrum = f = sp_freq = [];
-  
+
   //---------------------------------------------------------
   //Step3 : correlation statistique des fonctions d'influence
 
@@ -1079,12 +1079,12 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
   Bp = M(+,)*A(+,);
   eigen_val = Lp;
   write, "-> Double Diago, DONE !";
-  
+
   return Bp;
 
   /*To check that the extrapolator is really doing what we want:
     mmm = 2;
-    
+
     nb_modes = 150;
     condy = 5000;
 
@@ -1115,9 +1115,9 @@ func kl_basis_in_dm_space_4extrap(nm, n_rm_modes)
 
 func aff_kldm_basis(dm_mode2,nmodes,puptel=)
 /* DOCUMENT
-   Display zernike, KL or KLDM modes 
+   Display zernike, KL or KLDM modes
 */
-  
+
 {
 
   window, 49;
@@ -1147,8 +1147,8 @@ func aff_kldm_basis(dm_mode2,nmodes,puptel=)
    if(nmodes > 300){
     n1=18;
     n2=nmodes/n1;}
-  
-   if(puptel == []) puptel = array(float,[2,dimsof(dm_mode2)(3),dimsof(dm_mode2)(3)])+1.;  
+
+   if(puptel == []) puptel = array(float,[2,dimsof(dm_mode2)(3),dimsof(dm_mode2)(3)])+1.;
   tab = array(float,[2,dimsof(dm_mode2)(3)*n1,dimsof(dm_mode2)(3)*n2]);
 
   for(i=1;i<=n2;i++){
@@ -1176,10 +1176,10 @@ func klmodes_4extrap(nm, n_rm_modes,nsamp)
    samples. So nsamp should be large to make the covariance matrices
    to converge.
    It returns directly the Extrap Matrix fo DM #nm:
-   
-   E = klmodes_4extrap(1,0,10000); 
+
+   E = klmodes_4extrap(1,0,10000);
 */
-  
+
 {
   inf_fun = get_mInfluence_large(nm);//it includes extrap and valids
   if_nb   = dimsof(inf_fun)(4);//nb of IF
@@ -1187,7 +1187,7 @@ func klmodes_4extrap(nm, n_rm_modes,nsamp)
 
   //-----------------------
   //Step0 : Modes Filtering
-  
+
   //First, we have to define a pupil...
   pup = inf_fun(,,sum);
   pup = sign(pup(wheremax(abs(pup))(1)))*pup;
@@ -1198,7 +1198,7 @@ func klmodes_4extrap(nm, n_rm_modes,nsamp)
 
   if (numberof(n_rm_modes) != []) {
     if(n_rm_modes > 0) {
-      for(cpt=1;cpt<=if_nb;cpt++){ 
+      for(cpt=1;cpt<=if_nb;cpt++){
         cmpnt = 0.0
           for(kj=1;kj<=n_rm_modes;kj++){
             polz  = zernike(kj)
@@ -1235,8 +1235,8 @@ func klmodes_4extrap(nm, n_rm_modes,nsamp)
 
    if(dim >= 256) dimp = 512 ;
    if(dim < 256) dimp = 256 ;
-  
-  
+
+
   for (i=1;i<=nsamp;i++) {
     phase=generate_phase_with_L0(dimp*2,l0,nalias=1)(1:dim,1:dim,1);
     phaseb=phase-avg(phase); // substraction of the piston
@@ -1258,7 +1258,7 @@ func klmodes_4extrap(nm, n_rm_modes,nsamp)
 
  E = mat1(+,)*mat2_inv(,+);
  return E;
- 
+
 }
 
 
@@ -1297,35 +1297,35 @@ func order_kls(kl,pupd,&cp,&ord,&sig,upto=)
   zrmod2 = zrmod; zmaskmod2 = zmaskmod;
 
   local kl;
-  
+
   nklmax = dimsof(kl)(0);
   dim = dimsof(kl)(2);
-  
+
   if (upto==[]) upto = floor_to_radial_order_kl(nklmax);
   else upto = floor_to_radial_order_kl(min([upto,nklmax]));
 
   write,format="Ordering KLs up to #%d\n",upto;
-  
+
   prepzernike,dim,pupd-1,dim/2+0.5,dim/2+0.5;
 
   w = where(zernike(1));
   kll = kl(*,)(w,:upto);
-  
+
   zern = array(float,numberof(w),upto);
   // +1 to cover exactly same radial order than kls.
-  // -1 because we exclude piston. upto+1-1 = upto... 
+  // -1 because we exclude piston. upto+1-1 = upto...
   for (i=1;i<=dimsof(zern)(0);i++) zern(,i) = zernike(i+1)(w);
 
   cp = zern(+,) * kll(+,);
   zern = kll = [];
-  
+
   ord = sig = array(long,upto);
-  
+
   for (i=1;i<=upto;i++) {
     ord(i) = wheremax(abs(cp(i,)));
     sig(i) = sign(cp(i,ord(i)));
   }
-    
+
   //  ord = abs(ord);
   //  zeq = ord(mxx,);
   klo = kl;
@@ -1335,7 +1335,7 @@ func order_kls(kl,pupd,&cp,&ord,&sig,upto=)
   // restore prepzernike
   zdim = zdim2; zr = zr2; zmask = zmask2;
   zrmod = zrmod2; zmaskmod = zmaskmod2;
-  
+
   return klo;
 }
 
@@ -1436,4 +1436,3 @@ func disp_zernikes(n,invert_background=)
   l = limits();
   range,l(4),l(3);
 }
-

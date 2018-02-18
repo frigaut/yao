@@ -3,7 +3,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.3";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2017aug30";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.4";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2018feb19";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -2159,7 +2159,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       // build subaperture geometry:
       make_curv_wfs_subs,ns,size,sim.pupildiam;
       // init WFS
-      curv_wfs,pupil,pupil*0.0f,ns,init=1;
+      curv_wfs,*wfs(ns)._pupil,*wfs(ns)._pupil*0.0f,ns,init=1;
       wfs(ns)._nsub = int(sum(*(wfs(ns).nsubperring)));
       wfs(ns)._nmes = wfs(ns)._nsub;
 
@@ -2174,21 +2174,21 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     } else if (wfs(ns).type == "pyramid") {
 
       // init WFS
-      v = pyramid_wfs(pupil,pupil*0.,ns,disp=disp,init=1);
+      v = pyramid_wfs(*wfs(ns)._pupil,*wfs(ns)._pupil*0.,ns,disp=disp,init=1);
       wfs(ns)._nsub = numberof(v)/2;
       wfs(ns)._nmes = 2*wfs(ns)._nsub;
 
     } else if (wfs(ns).type == "zernike") {
-      zernike_wfs,ipupil,ipupil*0.,ns,init=1;
+      zernike_wfs,*wfs(ns)._pupil,*wfs(ns)._pupil*0.,ns,init=1;
 
     } else if (wfs(ns).type == "dh") {
-      dh_wfs,ipupil,ipupil*0.,ns,init=1;
+      dh_wfs,*wfs(ns)._pupil,*wfs(ns)._pupil*0.,ns,init=1;
 
     } else {
       // assign user_wfs to requested function/type:
       cmd = swrite(format="user_wfs = %s",wfs(ns).type);
       include,[cmd],1;
-      user_wfs,ipupil,ipupil*0.,ns,init=1;
+      user_wfs,*wfs(ns)._pupil,*wfs(ns)._pupil*0.,ns,init=1;
     }
 
     if ( (wfs(ns).disjointpup) && (disjointpup==[]) ) \
@@ -2270,7 +2270,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   mes = mult_wfs_int_mat(disp=disp)/push4ttref;  // mes in arcsec
 
   wfs._tiltrefv = split_wfs_vector(mes);
-  
+
   for (ns=1;ns<=nwfs;ns++) {
     sumtilt2 = sum(*wfs(ns)._tiltrefv^2.);
     if (sumtilt2 > 0.){
@@ -2279,7 +2279,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       wfs(ns)._tiltrefvn = &(*wfs(ns)._tiltrefv);
     }
   }
-  
+
   // restore pre-operation filtertilt:
   wfs.filtertilt = mem;
 
@@ -3643,7 +3643,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   cubphase      = array(float,[3,size,size,target._ntarget]);
   im            = array(float,[3,size,size,target._ntarget]);
   imav          = array(float,[4,size,size,target._ntarget,target._nlambda]);
-  if (*target._pupil == []){ 
+  if (*target._pupil == []){
     airy          = calc_psf_fast(pupil,pupil*0.);
     sairy         = max(airy);
   } else {
@@ -3653,7 +3653,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       sairy(nt) = max(airy);
     }
   }
-    
+
   fwhm   = e50  = array(float,[2,target._ntarget,target._nlambda]);
   pp            = array(complex,[2,size,size]);
   sphase        = array(float,[2,_n,_n]);
@@ -3715,7 +3715,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
           shwfs_init,disjointpup(,,ns),ns,silent=1;
         } else shwfs_init,*wfs(ns)._pupil,ns,silent=1;
       } else if (wfs(ns).type == "curvature") {
-        curv_wfs,pupil,pupil*0.0f,ns,init=1,silent=1;
+        curv_wfs,*wfs(ns)._pupil,*wfs(ns)._pupil*0.0f,ns,init=1,silent=1;
       }
     } else { // even if no_reinit asked, we need to do at least
       // the following as it may have been left in an imat state.
@@ -4311,7 +4311,7 @@ func go(nshot,all=)
       }
       niterok += 1;
       grow,itv,i;
-      if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;      
+      if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
       grow,strehlsp,im(max,max,sind)/sairy(sind);
       grow,strehllp,imav(max,max,sind,0)/sairy(sind)/(niterok+1e-5);
     }

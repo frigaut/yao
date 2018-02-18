@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -70,13 +70,13 @@ func broadcast_sync(targets,msg)
 }
 
 /*
-struct setnsync { string prop; 
+struct setnsync { string prop;
 
 func set_generic(prop,value)
 {
   extern atm,opt,sim,wfs,dm,mat,tel,target,gs,loop,phi;
   local var;
-  
+
   wfs.noise = noise_flag;
 
   if (sim.svipc) {
@@ -89,7 +89,7 @@ func set_generic(prop,value)
     broadcast_sync,targets,"sync_noise";
   }
   // no action to take.
-  
+
 }
 */
 
@@ -108,7 +108,7 @@ func sync_wfs_forks(pupsh)
   extern sync_init_done;
 
   if (pupsh==[]) pupsh=ipupil;
-  
+
   // save the wfs structures
   var = vsave(wfs);
   // write in shm
@@ -145,12 +145,12 @@ func sync_wfs_from_master(ns,nf)
   extern pupsh;
 
   if (prev_sync_counter==[]) prev_sync_counter=0;
-  
+
   vname = swrite(format="sync_wfs%d_forks",ns);
-  sync_counter = shm_read(shmkey,vname)(1); 
+  sync_counter = shm_read(shmkey,vname)(1);
 
   if (sync_counter == prev_sync_counter) return;
-  
+
   pupsh = shm_read(shmkey,"pupsh");
 
   var = shm_read(shmkey,"wfs_structs");
@@ -158,7 +158,7 @@ func sync_wfs_from_master(ns,nf)
   restore,openb(var);
 
   prev_sync_counter = sync_counter;
-  
+
   if (sim.debug>1) \
     write,format="WFS sync'ed on WFS#%d fork#%d\n", ns, nf;
   if (sim.debug>20) \
@@ -173,7 +173,7 @@ func set_noise(noise_flag)
 {
   extern wfs;
   local var;
-  
+
   wfs.noise = noise_flag;
 
   if (sim.svipc) {
@@ -260,7 +260,7 @@ func set_cn2(layerfrac)
   }
 
   layerfrac = layerfrac/sum(layerfrac);
-  
+
   *atm.layerfrac = layerfrac;
 
   if (sim.svipc) {
@@ -287,7 +287,7 @@ func sync_cn2(void)
   }
   write,format="Cn2 sync'ed on child %s\n",svipc_procname;
   // action to take.
-  get_turb_phase_init,skipReadPhaseScreens=1;  
+  get_turb_phase_init,skipReadPhaseScreens=1;
 }
 
 
@@ -358,7 +358,7 @@ func set_ngs_geometry(wfsxpos,wfsypos)
   ngs = numberof(wfsxpos);
   wfs(6:6+ngs-1).gspos(1,) = wfsxpos;
   wfs(6:6+ngs-1).gspos(2,) = wfsypos;
-  
+
   if (sim.svipc) {
     targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
     targets = _(targets,"PSFs");
@@ -393,14 +393,14 @@ func set_lgs_profile(amp,alt,lgs_focus_alt,ns)
     write,"numberof(amp)!=numberof(alt)";
     return;
   }
-  
+
   for (i=1;i<=numberof(ns);i++) {
     if (amp!=[]) wfs(ns(i)).lgs_prof_amp = &float(amp);
     if (alt!=[]) wfs(ns(i)).lgs_prof_alt = &float(alt);
     if (lgs_focus_alt!=[]) wfs(ns(i)).lgs_focus_alt = lgs_focus_alt; \
     shwfs_comp_lgs_defocuses,ns(i);
   }
-  
+
   if (sim.svipc) {
     targets = all_svipc_procname(where(strmatch(all_svipc_procname,"WFS")));
     // save the wfs structures
@@ -415,7 +415,7 @@ func set_lgs_profile(amp,alt,lgs_focus_alt,ns)
 func sync_lgs_profile(void)
 {
   extern wfs;
-  
+
   if (sim.svipc) {
     var = shm_read(shmkey,"wfs_structs");
     restore,openb(var);
@@ -438,11 +438,11 @@ func sync_wfs(void)
     broadcast_sync,targets,"child_sync_wfs";
   }
 }
-  
+
 func child_sync_wfs(void)
 {
   extern wfs;
-  
+
   if (sim.svipc) {
     var = shm_read(shmkey,"wfs_structs");
     restore,openb(var);
@@ -462,20 +462,19 @@ func sync_opt(void)
   var = vsave(opt);
   // write in shm
   shm_free,shmkey,"opt_structs";
-  shm_write,shmkey,"opt_structs",&var;      
+  shm_write,shmkey,"opt_structs",&var;
   // broadcast message to children
   broadcast_sync,targets,"child_sync_opt";
 }
-  
+
 func child_sync_opt(void)
 {
   extern opt;
 
   if (opt==[]) return;
   if (!sim.svipc) return;
-  
+
   var = shm_read(shmkey,"opt_structs");
   restore,openb(var);
   write,format="OPT structure sync'ed on child %s\n",svipc_procname;
 }
-

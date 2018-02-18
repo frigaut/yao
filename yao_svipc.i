@@ -5,7 +5,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -202,10 +202,10 @@ func svipc_wfs_init(phase,ns)
       optwfsxposcub = optwfsyposcub = optgsxposcub = optgsyposcub = [];
       statsokvec = sphase = bphase = imtmp = imphase = [];
       strehllp = strehlsp = itv = commb = errmb = [];
-      
+
       // set the random_seed determined above:
       random_seed,svipc_random_seeds(nf);
-      
+
       if (sim.debug) write,format="WFS#%d child %d spawned with PID %d\n",ns,nf,getpid();
 
       // start listening
@@ -271,7 +271,7 @@ func wfs_fork_listen(ns,nf)
     // sync if needed:
     status = sync_wfs_from_master(ns,nf);
 
-    // do our stuff:            
+    // do our stuff:
     err = _shwfs_phase2spots( pupsh, phase, phasescale,
             *wfs(ns)._tiltsh, int(size), *wfs(ns)._istart,
             *wfs(ns)._jstart, int(subsize), int(subsize),
@@ -279,7 +279,7 @@ func wfs_fork_listen(ns,nf)
             *wfs(ns)._kernel, wfs(1)._nkernels, *wfs(ns)._kernels, *wfs(ns)._kerfftr,
             *wfs(ns)._kerffti, wfs(ns)._initkernels, wfs(ns)._kernelconv,
             *wfs(ns)._binindices, wfs(ns)._binxy,
-            wfs(ns)._rebinfactor, wfs(ns)._nx4fft, *wfs(ns)._unittip, 
+            wfs(ns)._rebinfactor, wfs(ns)._nx4fft, *wfs(ns)._unittip,
             *wfs(ns)._unittilt, *wfs(ns).lgs_prof_amp,
             *wfs(ns)._lgs_defocuses, int(numberof(*wfs(ns).lgs_prof_amp)),
             *wfs(ns)._unitdefocus, ffimage, svipc_subok,

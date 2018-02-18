@@ -1,7 +1,7 @@
 /*
  * YAO_NEWFITS.I
  *
- * Copyright (c) 2002-2013, Francois Rigaut
+ * Copyright (c) 2002-2017, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -43,7 +43,7 @@ local yao_newfits;
  * fitsDeleteCard(hdr,keyword) delete an entry in a header
  * fitsAddComment(hdr,comment,after=,before=,first=,last=)
  * fitsAddHistory(hdr,comment,after=,before=,first=,last=)
- * 
+ *
  * _fGetKeyword(line) Return keyword associated with the input line
  * _fGetValue(line,&comment) Return value associated with input line
  * _fCheckPrimaryHeader(hdr) Checks header is conform to fits standards
@@ -56,7 +56,7 @@ local yao_newfits;
  * _fStripCoreFromHeader(hdr) Strip a header from the core keywords
  * is_set(arg) test if the keyword "arg" is set (=1)
  * _fRescale(data, bitpix, &bscale, &bzero, data_min=, data_max=) Rescale array
- * 
+ *
  * Known bugs:
  * * fitsHdrValue does not parse properly the card image string values which
  *   contain a "/" before the comment.
@@ -107,7 +107,7 @@ func yao_fitsread(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
   if (!is_void(hdu)) extension=hdu;
   if (is_void(extension)) extension=0;
   /* (extension number starts at 1) */
-  
+
   file= open(name, "rb");
   sun_primitives, file;
   address= 0L;
@@ -170,9 +170,9 @@ func yao_fitsread(name, &phdr, &ehdr, extension= , hdu=, onlyheader= )
     close,file;
     error,"Unrecognized BITPIX value";
   }
-  
+
   data = array(x,naxis);
-  
+
   if (_read(file,address,data) != numberof(data)) {
     close,file;
     error,"EOF encountered before all data were read";
@@ -232,7 +232,7 @@ func fitsHdrValue(hdr,keyword,&position,default=)
 {
   key= strtrim(strtoupper(keyword));
   position= -1;
-  
+
   for (i=1;i<=numberof(hdr);i++) {
     if (strtrim(_fGetKeyword(hdr(i))) == key) {
       position = i;
@@ -244,7 +244,7 @@ func fitsHdrValue(hdr,keyword,&position,default=)
 }
 
 sxpar = fitsHdrValue;
-    
+
 func _fGetKeyword(line) {return strtoupper(strpart(line,1:8));}
 
 func _fGetValue(line,&comment)
@@ -252,7 +252,7 @@ func _fGetValue(line,&comment)
 
   if (strpart(line,9:9) != "=") {return [];}
   /* This is not a line that contains a valid keyword+value */
-  
+
   vline   = strpart(line,10:80);
   vline   = strtok(vline,"/");
   val     = strtrim(vline(1));
@@ -265,7 +265,7 @@ func _fGetValue(line,&comment)
 
   /* Case string */
   if (strpart(val,1:1) == "'") {return strpart(val,2:-1);}
-  
+
   x = long();
   if (sread(val,format="%i",x)) {value = x;}
 
@@ -273,7 +273,7 @@ func _fGetValue(line,&comment)
     x = double();
     if (sread(val,format="%g",x)) {value = x;}
   }
-  
+
   return value;
 }
 
@@ -303,8 +303,8 @@ func _fCheckPrimaryHeader(hdr)
 {
   /* Is the header conform to FITS standard ?
      Some mandatory keywords have to be there */
-  ok = ((strtrim(_fGetKeyword(hdr(1))) == "SIMPLE") && 
-        (strtrim(_fGetKeyword(hdr(2))) == "BITPIX") && 
+  ok = ((strtrim(_fGetKeyword(hdr(1))) == "SIMPLE") &&
+        (strtrim(_fGetKeyword(hdr(2))) == "BITPIX") &&
         (strtrim(_fGetKeyword(hdr(3))) == "NAXIS"));
 
   return ok;
@@ -321,8 +321,8 @@ func _fCheckExtensionHeader(hdr,&XTtype)
 
   if (XTtype == "IMAGE") {
     /* fits image extension */
-    return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" && 
-            strtrim(_fGetKeyword(hdr(2))) == "BITPIX" && 
+    return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" &&
+            strtrim(_fGetKeyword(hdr(2))) == "BITPIX" &&
             strtrim(_fGetKeyword(hdr(3))) == "NAXIS" &&
             (fitsHdrValue(hdr,"PCOUNT") == 0) &&
             (fitsHdrValue(hdr,"GCOUNT") == 1));
@@ -330,7 +330,7 @@ func _fCheckExtensionHeader(hdr,&XTtype)
 
   if (XTtype == "TABLE") {
     /* fits table extension */
-    return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" && 
+    return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" &&
             (fitsHdrValue(hdr,"BITPIX") == 8) &&
             (fitsHdrValue(hdr,"NAXIS") == 2) &&
             strtrim(_fGetKeyword(hdr(4))) == "NAXIS1" &&
@@ -343,8 +343,8 @@ func _fCheckExtensionHeader(hdr,&XTtype)
   if (XTtype == "BINTABLE") {
     /* fits binary table extension */
     error,"Binary table not yet handle by yao_fitsread";
-    return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" && 
-            strtrim(_fGetKeyword(hdr(2))) == "BITPIX" && 
+    return (strtrim(_fGetKeyword(hdr(1))) == "XTENSION" &&
+            strtrim(_fGetKeyword(hdr(2))) == "BITPIX" &&
             strtrim(_fGetKeyword(hdr(3))) == "NAXIS" &&
             strtrim(_fGetKeyword(hdr(4))) == "NAXIS1" &&
             strtrim(_fGetKeyword(hdr(5))) == "NAXIS2" &&
@@ -361,13 +361,13 @@ func _fGetNaxis(hdr)
   /* determine # of axis and dimensions */
   nax     = fitsHdrValue(hdr,"NAXIS",position);
   naxis   = nax;
-  
+
   for (i=1;i<=nax;i++) {
     grow,naxis,_fGetValue(hdr(position+i));
   }
   return naxis;
 }
-  
+
 func _fBuildArray(hdr)
 {
   naxis = _fGetNaxis(hdr);
@@ -381,7 +381,7 @@ func _fBuildArray(hdr)
   if (type == -32) {x = float();}  /* -32 pixel values are 4-byte floating points */
   if (type == -64) {x = double();} /* -64 pixel values are 8-byte floating points */
   if (is_void(x)) error,"Unrecognized BITPIX value";
-  
+
   data = array(x,naxis);
   return data;
 }
@@ -496,12 +496,12 @@ func yao_fitswrite(filename,data,header,exttype=,append=,rescale=)
     address += long(abs(numberof(data)*fitsHdrValue(hdr,"BITPIX"))/8.);
     _fPadFits,stream,address;
   }
-  
+
   close, stream;
 
   // Yorick uses a Contents Log file, which should be removed...
   if (open(filename+"L", "", 1)) {remove, filename+"L";}
-}  
+}
 
 func _fPadFits(stream,&address)
 {
@@ -531,7 +531,7 @@ func _fBuildCoreHeader(exttype,data)
 */
 {
   upxtype = strtoupper(exttype);
-  
+
   bitpix= [];
   if (typeof(data) == "void") bitpix=8;
   if (typeof(data) == "char") bitpix=8;
@@ -543,7 +543,7 @@ func _fBuildCoreHeader(exttype,data)
   if (is_void(bitpix)) error,"Unsupported data type";
   if (data != []) {dim= dimsof(data);} else {dim=[0];}
   hdr= [];
-  
+
   if (upxtype == "PRIMARY") {
     grow,hdr,fitsBuildCard("SIMPLE",int(1),"file conforms to FITS standard");
   }
@@ -551,7 +551,7 @@ func _fBuildCoreHeader(exttype,data)
   if (upxtype == "IMAGE") {
     grow,hdr,fitsBuildCard("XTENSION","IMAGE","IMAGE extension");
   }
-  
+
   if (upxtype == "BINTABLE") {
     grow,hdr,fitsBuildCard("XTENSION","BINTABLE","BINARY TABLE extension");
   }
@@ -565,12 +565,12 @@ func _fBuildCoreHeader(exttype,data)
   if (upxtype == "PRIMARY") {
     grow,hdr,fitsBuildCard("EXTEND",int(1),"FITS dataset may contain extensions");
   }
-  
+
   if (upxtype == "IMAGE") {
     grow,hdr,fitsBuildCard("PCOUNT",0l,"required keyword; must = 0");
     grow,hdr,fitsBuildCard("GCOUNT",1l,"required keyword; must = 1");
   }
-  
+
   return hdr;
 }
 
@@ -584,14 +584,14 @@ func _fStripCoreFromHeader(hdr)
 */
 {
   mask = (_fGetKeyword(hdr) != "SIMPLE  ") &
-    (strpart(_fGetKeyword(hdr),1:5) != "NAXIS") & 
-    (_fGetKeyword(hdr) != "BITPIX  ") & 
-    (_fGetKeyword(hdr) != "EXTEND  ") & 
-    (_fGetKeyword(hdr) != "PCOUNT  ") & 
-    (_fGetKeyword(hdr) != "GCOUNT  ") & 
-    (_fGetKeyword(hdr) != "XTENSION") & 
-    (_fGetKeyword(hdr) != "BZERO   ") & 
-    (_fGetKeyword(hdr) != "BSCALE  ") & 
+    (strpart(_fGetKeyword(hdr),1:5) != "NAXIS") &
+    (_fGetKeyword(hdr) != "BITPIX  ") &
+    (_fGetKeyword(hdr) != "EXTEND  ") &
+    (_fGetKeyword(hdr) != "PCOUNT  ") &
+    (_fGetKeyword(hdr) != "GCOUNT  ") &
+    (_fGetKeyword(hdr) != "XTENSION") &
+    (_fGetKeyword(hdr) != "BZERO   ") &
+    (_fGetKeyword(hdr) != "BSCALE  ") &
     (_fGetKeyword(hdr) != "END     ");
 
   return hdr(where(mask));
@@ -647,9 +647,9 @@ func fitsAddCard(&hdr,keyword,value,comment,type=,form=,
   // after the "END" keyword, as this will be cleaned up by
   // when it's written up (yao_fitswrite).
   if (pos == -1) return _(hdr,line);
-  
+
   ncard = numberof(hdr);
-  if ((is_set(before)) & (pos == 1)) { hdr = _(line,hdr); return hdr; } 
+  if ((is_set(before)) & (pos == 1)) { hdr = _(line,hdr); return hdr; }
   if ((is_set(after)) & (pos == ncard)) { hdr = _(hdr,line); return hdr; }
   if (is_set(before)) { hdr = _(hdr(1:pos-1),line,hdr(pos:)); return hdr; }
   if (is_set(after)) { hdr = _(hdr(1:pos),line,hdr(pos+1:)); return hdr; }
@@ -673,7 +673,7 @@ func fitsAddComment(&hdr,comment,after=,before=,first=,last=)
 {
   line = "COMMENT "+comment+string(&(array(' ',80)));
   line = strpart(line,1:80);
-  
+
   if (noneof([is_set(first),is_set(last),is_set(before),
               is_set(after)])) last=1;
 
@@ -691,7 +691,7 @@ func fitsAddComment(&hdr,comment,after=,before=,first=,last=)
   // after the "END" keyword, as this will be cleaned up by
   // when it's written up (yao_fitswrite).
   if (pos == -1) { hdr = _(hdr,line);return hdr; }
-  
+
   ncard = numberof(hdr);
   if ((is_set(before)) & (pos == 1)) { hdr = _(line,hdr) ; return hdr; }
   if ((is_set(after)) & (pos == ncard)) { hdr = _(hdr,line) ; return hdr; }
@@ -717,7 +717,7 @@ func fitsAddHistory(&hdr,comment,after=,before=,first=,last=)
 {
   line = "HISTORY "+comment+string(&(array(' ',80)));
   line = strpart(line,1:80);
-  
+
   if (noneof([is_set(first),is_set(last),is_set(before),
               is_set(after)])) last=1;
 
@@ -735,7 +735,7 @@ func fitsAddHistory(&hdr,comment,after=,before=,first=,last=)
   // after the "END" keyword, as this will be cleaned up by
   // when it's written up (yao_fitswrite).
   if (pos == -1) { hdr = _(hdr,line); return hdr; }
-  
+
   ncard = numberof(hdr);
   if ((is_set(before)) & (pos == 1)) { hdr = _(line,hdr);  return hdr; }
   if ((is_set(after)) & (pos == ncard)) { hdr = _(hdr,line); return hdr; }
@@ -754,7 +754,7 @@ func fitsBuildCard(keyword,value,comment,type=,form=)
     line = strpart(line+pad,1:80);
     return line;
   }
-  
+
   line+= "= ";
   if (!is_void(form)) {
     line+= swrite(format=form,value);
@@ -769,10 +769,10 @@ func fitsBuildCard(keyword,value,comment,type=,form=)
     if (typeof(value) == "float" || typeof(value) == "double")
       line+= swrite(format="%#20g",value);
   }
-  
+
   line+= " / "+comment;
   line= strpart(line+pad,1:80);
-  
+
   return line;
 }
 
@@ -852,14 +852,14 @@ func _fEndCard(void)
 {return "END                                                                              ";}
 
 // lowercase equivalent:
-// fitshead       = yao_fitshead;      
-// fitsread       = yao_fitsread;     
-// fitswrite      = yao_fitswrite;     
-fitshdrvalue   = fitsHdrValue;  
+// fitshead       = yao_fitshead;
+// fitsread       = yao_fitsread;
+// fitswrite      = yao_fitswrite;
+fitshdrvalue   = fitsHdrValue;
 fitshdrcomment = fitsHdrComment;
 fitshdrhistory = fitsHdrHistory;
 fitsdeletecard = fitsDeleteCard;
-fitsaddcard    = fitsAddCard;   
+fitsaddcard    = fitsAddCard;
 fitsaddcomment = fitsAddComment;
 fitsaddhistory = fitsAddHistory;
-fitsbuildcard  = fitsBuildCard; 
+fitsbuildcard  = fitsBuildCard;
