@@ -352,14 +352,14 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
  */
 {
   extern wfs;
-
+  
   as2rd = dtor/3600.;
   cobs  = 0;
 
   // position of GS/WFS in arcsec:
   w =  where(wfs._gsalt > 0);
-  //  xwfs = [0,-30.0,30.0,30.0,-30.0];
-  //  ywfs = [0,30.0,30.0,-30.0,-30.0];
+  ns = where(w == nwfs)(1);
+  
   xwfs = wfs(w).gspos(1,);
   ywfs = wfs(w).gspos(2,);
   nbeams = numberof(xwfs);
@@ -373,18 +373,18 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   // I have not implemented the 4 following parameters in the parfile.
   // one has to fill it by hand in the code for now!!!!!!!
   // beamdiameter = 0.3; // fwhm of gaussian laser beam in meter
-  if (wfs(nwfs).LLT1overe2diam==0) wfs(nwfs).LLT1overe2diam=0.3;
-  beamdiameter = wfs(nwfs).LLT1overe2diam; // Gaussian laser beam FWHM [m]
+  if (wfs(w)(ns).LLT1overe2diam==0) wfs(w)(ns).LLT1overe2diam=0.3;
+  beamdiameter = wfs(w)(ns).LLT1overe2diam; // Gaussian laser beam FWHM [m]
 
-  laserlambda  = wfs(nwfs).lambda*1e-6; //589e-9;
-  diamsubap    = tel.diam/wfs(nwfs).shnxsub; // side of a subaperture [m]
+  laserlambda  = wfs(w)(ns).lambda*1e-6; //589e-9;
+  diamsubap    = tel.diam/wfs(w)(ns).shnxsub; // side of a subaperture [m]
   r0           = (tel.diam/atm.dr0at05mic)*cos(zenith)^0.6;
   seeing       = laserlambda/r0/4.848e-6;
   spotsize     = 1.0; // irrelevant for rayleigh in this code.
   d            = 1e-2; // linear size of aperture for flux (/cm^2) <???
 
-  altsod       = wfs(nwfs)._gsalt;
-  fwhmsod      = wfs(nwfs)._gsdepth;
+  altsod       = wfs(w)(ns)._gsalt;
+  fwhmsod      = wfs(w)(ns)._gsdepth;
 
   // definitions of the image array to return to caller
   dim = long(ceil(fov/aspp));
@@ -392,10 +392,9 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   imstar = array(float,[2,dim,dim]);
 
   // looking at GS #n with WFS #n -> some angle
-  phin   = sqrt(xwfs(nwfs)^2.+ywfs(nwfs)^2.)*as2rd;
-  thetan = atan(xwfs(nwfs),ywfs(nwfs));
+  phin   = sqrt(xwfs(ns)^2.+ywfs(ns)^2.)*as2rd;
+  thetan = atan(xwfs(ns),ywfs(ns));
   // range vector to sample h (for Rayleigh only)
-  //  rvec = spanl(2000,altsod,150);
   rvec = spanl(1000,altsod,50);
 
   // definitions for sodium GS:
@@ -422,8 +421,8 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       // fit to the lidar equation:
       sbnr = 16.12*exp(-z*0.14177e-3)*1e-6;
       // total number of photons received per cm^2 and period (800Hz)
-      rayleigh = wfs(beam).laserpower/(6.62e-34*3e8/589e-9)*sbnr*d^2/(4*pi*r^2.)*
-        deltar*loop.ittime*wfs(nwfs).optthroughput;
+      rayleigh = wfs(w)(beam).laserpower/(6.62e-34*3e8/589e-9)*sbnr*d^2/(4*pi*r^2.)*
+        deltar*loop.ittime*wfs(w)(ns).optthroughput;
 
       if (rayleigh_fudge) rayleigh *= rayleigh_fudge;
 
@@ -458,8 +457,8 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
     // loop on altitude for SODIUM
 
     // Na return detected on WFSCCD in ph/cm^2/exptime/laser_power/telescope+system_throughput:
-    nPhotonFromSodStar = wfs(beam).laserpower*gs.lgsreturnperwatt*loop.ittime*
-      cos(zenith)*wfs(nwfs).optthroughput;
+    nPhotonFromSodStar = wfs(w)(beam).laserpower*gs.lgsreturnperwatt*loop.ittime*
+      cos(zenith)*wfs(w)(ns).optthroughput;
     sodprofile = exp(-((rvecsod-altsod)/(fwhmsod/2.))^4.);
     sodprofile = sodprofile/sum(sodprofile)*nPhotonFromSodStar;
 
@@ -495,9 +494,9 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       pause,20;
     }
   }
+
   return [imrayl,imstar];
 }
-
 
 //----------------------------------------------------
 func do_imat(disp=)
