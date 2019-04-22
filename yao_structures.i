@@ -214,6 +214,7 @@ struct wfs_struct
                           // pupildiam should be a multiple of this number
                           // e.g. to investigate lenslet larger than pupildiam (or mask inpupil)
   float   pixsize;        // Subaperture pixel size in arcsec. Required [none]
+  int     pad_simage;     // zero padding factor, optional, default = 1. Increasing the padding factor allows finer resolution in pixel size and more accurate subimages, at a cost in speed. 
   int     npixels;        // Final # of pixels in subaperture. Required [none]
   float   spotpitch;      // # of pixels between spots (should be of the order of wfs._npixels)
   float   extfield;       // Extended field of view (to enlarge dynamical range) [arcsec]

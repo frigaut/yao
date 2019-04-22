@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.4";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2018feb19";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.5";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2019apr22";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1867,7 +1867,7 @@ func aoread(parfile)
   atm    = atm_struct();
   opts   = opt_struct(path_type="common",scale=1.0);
   sim    = sim_struct();
-  wfss   = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.,framedelay=-1);
+  wfss   = wfs_struct(dispzoom=1,_bckgrdsub=1,shcalibseeing=0.667,subsystem=1,excessnoise=1.,framedelay=-1,pad_simage=1);
   dms    = dm_struct(gain=1.,coupling=0.2,thresholdresp=0.3);
   mat    = mat_struct(file="",fit_type="target",fit_which=1);
   tel    = tel_struct();

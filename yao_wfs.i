@@ -46,8 +46,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   subsize    = pupd/nxsub;
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   fracsub    = wfs(ns).fracIllum;
-  sdim       = long(2^ceil(log(subsize)/log(2)+1));
-  if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
+  sdim       = long(2^ceil(log(subsize)/log(2)+wfs(ns).pad_simage));
   sdimpow2   = int(log(sdim)/log(2));
 
   wfs(ns)._centroidgain = 1.f;
@@ -855,9 +854,8 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   // sdim is the dimension of "simage" in _shwfs(),
   // i.e. if 2^l is the smallest array size that can contains the subaperture
-  // sdim is 2^(l+1)
-  sdim       = long(2^ceil(log(subsize)/log(2)+1));
-  if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
+  // sdim is 2^(l+1) unless wfs(ns).pad_simage is set
+  sdim       = long(2^ceil(log(subsize)/log(2)+wfs(ns).pad_simage));
   err        = 0;
 
   desiredPixelSize = wfs(ns).pixsize;
@@ -987,8 +985,7 @@ func sh_wfs(pupsh,phase,ns)
   } else {
 
     // size of array in which to embed phase image of 1 subaperture
-    sdim       = long(2^ceil(log(subsize)/log(2)+1));
-    if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
+    sdim       = long(2^ceil(log(subsize)/log(2)+wfs(ns).pad_simage));
     // sdimpow2 such that sdim = 2^sdimpow2
     sdimpow2   = int(log(sdim)/log(2));
     threshold = array(float,wfs(ns)._nsub4disp+1)+wfs(ns).shthreshold;

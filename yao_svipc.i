@@ -237,8 +237,7 @@ func wfs_fork_listen(ns,nf)
   subsize     = int(pupd/nxsub);
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
   phasescale  = float(2*pi/wfs(ns).lambda);
-  sdim        = long(2^ceil(log(subsize)/log(2)+1));
-  if (no_pad_simage) sdim = long(2^ceil(log(subsize)/log(2)));
+  sdim        = long(2^ceil(log(subsize)/log(2)+wfs(ns).pad_simage));
   sdimpow2    = int(log(sdim)/log(2));
 
   // to protect from a WFS sync, let's not put it in the wfs structure
