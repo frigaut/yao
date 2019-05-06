@@ -20,7 +20,7 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.5";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.6";
 aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2019apr22";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
@@ -344,8 +344,8 @@ func control_screen(i,init=)
 
 //----------------------------------------------------
 
-func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
-/* DOCUMENT mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
+func mcao_rayleigh(nwfs,xsubap,ysubap,fov,aspp,zenith)
+/* DOCUMENT mcao_rayleigh(nwfs,xsubap,ysubap,fov,aspp,zenith)
    Computes the rayleigh backscattering from other LGS beams (fratricide)
    Called from shwfs_init()
    SEE ALSO: shwfs_init
@@ -356,6 +356,8 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   as2rd = dtor/3600.;
   cobs  = 0;
 
+  zenith *= dtor;
+
   // position of GS/WFS in arcsec:
   w =  where(wfs._gsalt > 0);
   ns = where(w == nwfs)(1);
@@ -364,23 +366,18 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
   ywfs = wfs(w).gspos(2,);
   nbeams = numberof(xwfs);
 
-  if (!is_set(zenith)) {zenith = 0.;}
-  zenith = zenith*dtor;
-
-  if (!is_set(fov))  { fov  = 2;}  // FoV (arcsec)
-  if (!is_set(aspp)) { aspp = 1;} // arcsec per pixel
-
-  // I have not implemented the 4 following parameters in the parfile.
-  // one has to fill it by hand in the code for now!!!!!!!
-  // beamdiameter = 0.3; // fwhm of gaussian laser beam in meter
-  if (wfs(w)(ns).LLT1overe2diam==0) wfs(w)(ns).LLT1overe2diam=0.3;
+  // note that the incoming xsubap and ysubap have been switched!
+  // hence
+  lltx = wfs(w).LLTxy(2,);
+  llty = wfs(w).LLTxy(1,);
+  
+  if (wfs(w)(ns).LLT1overe2diam==0) {wfs(w)(ns).LLT1overe2diam=0.3;}
   beamdiameter = wfs(w)(ns).LLT1overe2diam; // Gaussian laser beam FWHM [m]
 
   laserlambda  = wfs(w)(ns).lambda*1e-6; //589e-9;
   diamsubap    = tel.diam/wfs(w)(ns).shnxsub; // side of a subaperture [m]
   r0           = (tel.diam/atm.dr0at05mic)*cos(zenith)^0.6;
   seeing       = laserlambda/r0/4.848e-6;
-  spotsize     = 1.0; // irrelevant for rayleigh in this code.
   d            = 1e-2; // linear size of aperture for flux (/cm^2) <???
 
   altsod       = wfs(w)(ns)._gsalt;
@@ -421,14 +418,13 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       // fit to the lidar equation:
       sbnr = 16.12*exp(-z*0.14177e-3)*1e-6;
       // total number of photons received per cm^2 and period (800Hz)
-      rayleigh = wfs(w)(beam).laserpower/(6.62e-34*3e8/589e-9)*sbnr*d^2/(4*pi*r^2.)*
-        deltar*loop.ittime*wfs(w)(ns).optthroughput;
+      rayleigh = wfs(w)(beam).laserpower/(6.62e-34*3e8/589e-9)*sbnr*d^2/(4*pi*r^2.)*deltar*loop.ittime*wfs(w)(ns).optthroughput;
 
       if (rayleigh_fudge) rayleigh *= rayleigh_fudge;
 
       // compute position angles of the beam center for this altitude
-      alpha = sin(phib)*cos(thetab)-sin(phin)*cos(thetan) - xsubap/r + xsubap/altsod;
-      beta  = sin(phib)*sin(thetab)-sin(phin)*sin(thetan) - ysubap/r + ysubap/altsod;
+      alpha = sin(phib)*cos(thetab)-sin(phin)*cos(thetan) - (xsubap-lltx(beam))/r + (xsubap-lltx(beam))/altsod;
+      beta  = sin(phib)*sin(thetab)-sin(phin)*sin(thetan) - (ysubap-llty(beam))/r + (ysubap-llty(beam))/altsod;
       alpha /= 4.848e-6; // in arcsec
       beta  /= 4.848e-6;
       if (sim.debug > 3) {
@@ -469,8 +465,8 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,zenith=,fov=,aspp=)
       sodium  = sodprofile(i);
 
       // compute position angles of the beam center for this altitude
-      alpha = sin(phib)*cos(thetab)-sin(phin)*cos(thetan) - xsubap/r + xsubap/altsod;
-      beta  = sin(phib)*sin(thetab)-sin(phin)*sin(thetan) - ysubap/r + ysubap/altsod;
+      alpha = sin(phib)*cos(thetab)-sin(phin)*cos(thetan) - (xsubap-lltx(beam))/r + (xsubap-lltx(beam))/altsod;
+      beta  = sin(phib)*sin(thetab)-sin(phin)*sin(thetan) - (ysubap-llty(beam))/r + (ysubap-llty(beam))/altsod;
       alpha /= 4.848e-6; // in arcsec
       beta  /= 4.848e-6;
       if (sim.debug > 3) {

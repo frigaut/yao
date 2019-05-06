@@ -733,18 +733,17 @@ func shwfs_init_rayleigh(ns)
   } else {
     for (l=1; l<=wfs(ns)._nsub4disp; l++) {
       xsub = (*wfs(ns)._x)(l); ysub = (*wfs(ns)._y)(l);
-      tmp = mcao_rayleigh(ns,ysub,xsub,fov=fov,aspp=aspp,zenith=gs.zenithangle);
+      // note xsub, ysub are switched on purpose!
+      tmp = mcao_rayleigh(ns,ysub,xsub,fov,aspp,gs.zenithangle);
       rayleighflux(l) = sum(tmp(,,1));
       sodiumflux(l)   = sum(tmp(,,2));
       tmp = transpose(tmp(,,1));
       // the switch of xsub <-> ysub and transpose are to accomodate the
       // C vs yorick 0 vs 1 start array index.
-      //        tmp = tmp/sum(tmp);
       if (kall==[]) {
         kall = array(0.0f,[2,numberof(tmp),wfs(ns)._nsub4disp]);
       }
       kall(,l) = float((eclat(tmp))(*));
-      // grow,kall,(eclat(tmp))(*);
     }
     yao_fitswrite,YAO_SAVEPATH+rayfname,kall;
     yao_fitswrite,YAO_SAVEPATH+rayfname,rayleighflux,append=1,exttype="image";
