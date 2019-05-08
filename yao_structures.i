@@ -247,6 +247,7 @@ struct wfs_struct
   float   LLT1overe2diam; // LLT 1/e2 diameter [m]
   // float   LLTlaserM2;     // laser M2. Setting this will overwrite wfs.kernel to model M2
   int     rayleighflag;   // set to one to take rayleigh into account
+  float   rayleighthresh; // maximum ratio of Rayleigh to sodium flux 
   float   lgs_focus_alt;  // LGS WFS current focusing altitude [m]
   pointer lgs_prof_amp;   // vector of lgs profile (intensity, Arbitrary, renormlaized later using laserpower), same # as lgs_prof_alt
   pointer lgs_prof_alt;   // vector of lgs profile (altitudes [m]), same # as lgs_prof_amp
