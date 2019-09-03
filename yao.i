@@ -206,7 +206,7 @@ func comp_dm_shape(nm,command,extrap=)
   }
 
   // temporary method for shifting DMs/influence functions
-  // one can not anymore use the straight (*dm._def)(,,sum),
+  // one cannot anymore use the straight (*dm._def)(,,sum),
   // but instead should always use comp_dm_shape.
   if (dm(nm)._puppixoffset!=[]) {
     sphase = roll(sphase,dm(nm)._puppixoffset);
@@ -1033,7 +1033,7 @@ func get_turb_phase_init(skipReadPhaseScreens=)
                   // phase screen N, in pixel coords. dim [N iteracurwtions,nscreens]
     yposvec,      // same for Y. This should be cst in the current implementation
                   // as the screens have been cut in Y, therefore are not periodic
-                  // and therefore we can not wrap.
+                  // and therefore we cannot wrap.
     wfsxposcub,   // contains the position of the ray at which a given X pixel
                   // intersects the Nth phase screen, for each WFS GS.
                   // dimension [dimX outphase, nscreens, #GS]
@@ -1872,7 +1872,7 @@ func aoread(parfile)
   loop   = loop_struct(modalgainfile="",stats_every=4,startskip=10);
 
   if (!fileExist(parfile)) {
-    exit,swrite(format="Can not find parameter file %s !",parfile);}
+    exit,swrite(format="Cannot find parameter file %s !",parfile);}
 
   // read out the parfile. This stuffs values into the structures:
   include,parfile,1;
@@ -3422,9 +3422,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                    (dm(w0).type == "zernike") | (dm(w0).type == "dh")  );
     nmlow = w0(nmlow);
     if (numberof(nmlow) == 0) {
-      pyk_error,"I can not find a DM at altitude 0 to produce the lower "+
+      pyk_error,"I cannot find a DM at altitude 0 to produce the lower "+
         "part of the anisoplanatism modes !";
-      error,"I can not find a DM at altitude 0 to produce the lower "+
+      error,"I cannot find a DM at altitude 0 to produce the lower "+
         "part of the anisoplanatism modes !";
     }
     if (numberof(nmlow) > 1) {
@@ -3451,9 +3451,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                     (dm(wn0).type == "zernike") | (dm(wn0).type == "dh")  );
     nmhigh = wn0(nmhigh);
     if (numberof(nmhigh) == 0) {
-      pyk_error,"I can not find a DM at the requested altitude to produce "+ \
+      pyk_error,"I cannot find a DM at the requested altitude to produce "+ \
                 "the higher part of the anisoplanatism modes !";
-      error,"I can not find a DM at the requested altitude to produce "+ \
+      error,"I cannot find a DM at the requested altitude to produce "+ \
             "the higher part of the anisoplanatism modes !";
     }
     if (numberof(nmhigh) > 1) {

@@ -824,7 +824,7 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
    Finds the pixel size for the requested WFS configuration.
 
    There are constraints:
-     - First, the pixel size can not be arbitrary.
+     - First, the pixel size cannot be arbitrary.
        It is defined by lambda_wfs/pixel_size_in_pupil_space/sdim.
      - Second, the max subaperture size is lambda_wfs/pixel_size_in_pupil_space
 
@@ -895,7 +895,7 @@ func wfs_check_pixel_size(ns,&sdim,&rebinFactor,&actualPixelSize,printheader=,si
 
   if (wfs(ns).npixels == 0) {
     write,format="\nWFS#%2d: The desired pixel size is too large.\n",ns;
-    write,"       I can not even fit 2x2 pixels.";
+    write,"       I cannot even fit 2x2 pixels.";
     write,"       Reduce pixel size in parfile or use a larger sim.pupildiam.\n";
     exit;
   }

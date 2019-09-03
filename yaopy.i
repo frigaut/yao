@@ -101,7 +101,7 @@ func save_conf(void)
   if (is_void(path2conf)) path2conf=Y_USER;
 
   if (catch(0x02)) {
-    pyk_error,swrite(format="Can not create %syao.conf. Permission problem?",path2conf);
+    pyk_error,swrite(format="Cannot create %syao.conf. Permission problem?",path2conf);
     return;
   }
 
@@ -141,11 +141,10 @@ func wrap_create_phase_screens(void)
   else prefix=Y_USER+"data";
 
   if (catch(0x02)) {
-    pyk_error,swrite(format="Can not create %s. Permission problem?",prefix);
+    pyk_error,swrite(format="Cannot create %s. Permission problem?",prefix);
     clean_progressbar;
     pyk,"set_cursor_busy(0)";
     return;
-    //    error,swrite(format="Can not create %s. Permission problem?",prefix);
   }
   mkdirp,prefix;
 

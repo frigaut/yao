@@ -345,7 +345,17 @@ func check_parameters(void)
   if ((*atm.screen) == []) {exit,"atm.screen has not been set";}
   if (typeof(*atm.screen) != "string") {exit,"*atm.screen is not a string";}
 
+  // Check that all phase screens are different. If the same file is repeated, this makes the turbulence much worse than what is specified by r0!
   ftmp = *atm.screen;
+    
+  for (i=1;i<=numberof(ftmp);i++){
+    if (sum(ftmp == (ftmp)(i)) > 1){
+      write, "atm.screen must not have repeated values";
+      write, "doing so changes the statistics of the atmospheric turbulence";  
+      error,"exiting";
+    }
+  }
+
   for (i=1;i<=numberof(ftmp);i++) {
     if (!open(ftmp(i),"r",1)) { // file does not exist
       msg = swrite(format="Phase screen %s not found!\\n"+
@@ -760,12 +770,6 @@ func check_parameters(void)
 
     dm(nm)._eiffile = parprefix+swrite(format="-if%d",nm)+"-ext.fits";
   }
-
-
-// now possible (2009oct6, v4.3.0)
-//   if (anyof(dm.elt == 1) && anyof(dm.type == "aniso")) {
-//     exit,"You can not use currently dm.elt=1 with anisoplanatism modes";
-//   }
 
   for (i=1;i<=max(_(wfs.subsystem,dm.subsystem));i++) {
     if (noneof(wfs.subsystem == i)) {

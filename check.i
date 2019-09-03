@@ -9,7 +9,7 @@ if (tmp==[]) {
   tmp=find_in_path("sh6x6.par",takefirst=1,path=parpath);
  }
 if (tmp!=[]) yaopardir = dirname(tmp);
-if (noneof(yaopardir)) error,"Can not find parfile example directory";
+if (noneof(yaopardir)) error,"Cannot find parfile example directory";
 cd,yaopardir;
 YAO_SAVEPATH="./";
 include,"test-all.i";
