@@ -1,6 +1,6 @@
 # YAO package
 
-Copyright (c) Francois Rigaut (frigaut) 2002-2016.
+Copyright (c) Francois Rigaut (frigaut) 2002-2019.
 Initial release June 2002.
 
 ## Developers
@@ -16,7 +16,6 @@ Yao is a Monte-Carlo simulation tool for Adaptive optics (AO) systems, written a
 ## Help pages
 http://frigaut.github.com/yao/index.html
 
-
 ## Required Dependencies
 
 - FFTW (http://www.fftw.org)
@@ -26,6 +25,7 @@ http://frigaut.github.com/yao/index.html
 - yorick-usleep (https://github.com/frigaut/yorick-usleep)
 
 ## Optional Dependencies
+
 - yorick-soy (https://github.com/frigaut/yorick-soy)
 - ygsl (https://github.com/emmt/ygsl)
-- ylapack (available from Eric Thiebaut)
+- ylapack (https://github.com/emmt/YLapack)
