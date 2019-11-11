@@ -525,6 +525,9 @@ func check_parameters(void)
       error,"numberof(*wfs(ns).lgs_prof_amp)!=numberof(*wfs(ns).lgs_prof_alt)";
     }
 
+    if (wfs(ns).minzer == 0) {
+      wfs(ns).minzer = 1;
+    }
   }
 
   // DM STRUCTURE

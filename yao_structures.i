@@ -254,6 +254,7 @@ struct wfs_struct
 
   // zernike wfs only
   int     nzer;           // # of zernike sensed
+  int     minzer;         // lowest order zernike, default=1 (piston)
 
   // DH wfs only
   int     ndh;            // # of dh sensed

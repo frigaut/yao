@@ -1804,15 +1804,15 @@ func zernike_wfs(pupsh,phase,ns,init=)
     }
     pupd  = sim.pupildiam;
     size  = sim._size;
+    minzer = wfs(ns).minzer;
     nzer  = wfs(ns).nzer(1);
-    wfs(ns)._nmes  = wfs(ns).nzer;
+    wfs(ns)._nmes = nmes = nzer-minzer+1;
     cent  = sim._cent;
     prepzernike,size,pupd,sim._cent,sim._cent;
     wfs_wzer = where(zernike(1)*pupil);
-    wfs_zer = array(float,[2,numberof(wfs_wzer),nzer]);
-    for (i=1;i<=nzer;i++) wfs_zer(,i) = zernike_ext(i)(*)(wfs_wzer);
+    wfs_zer = array(float,[2,numberof(wfs_wzer),nmes]);
+    for (i=1;i<=nmes;i++) wfs_zer(,i) = zernike_ext(i+minzer-1)(*)(wfs_wzer);
     wfs_zer = LUsolve(wfs_zer(+,)*wfs_zer(+,),transpose(wfs_zer));
-    // wfs_zer(nzer,npt in pupil)
     tmp = where(zernike(1)(avg,));
     zn12 = minmax(tmp);
     pwfs_zer(ns) = &wfs_zer;
