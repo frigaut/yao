@@ -432,6 +432,7 @@ struct dm_struct
                           // exp(-(d/irfact)^1.5) model (irexp=1) or
                           // sinc*gaussian (irexp=2)
   float   irfact;         // use when irexp=1 (see above)
+  long    filterpiston;   // Filter piston on this DM? Optional [1=yes for stackarray]
   long    filtertilt;     // Filter TT on this DM? Optional [0=no]
 
   // Zernike-only keywords:

@@ -542,6 +542,7 @@ func check_parameters(void)
     if (dm(nm).iffile == string()) {dm(nm).iffile = "";}
     if (dm(nm).ecmatfile == string()) {dm(nm).ecmatfile = "";}
     if (dm(nm).push4imat == 0) {dm(nm).push4imat = 20;}
+    if (dm(nm).filterpiston == 0) {dm(nm).filterpiston = 1;}
     if (dm(nm).gain == 0) {write,format="  WARNING: dm(%d).gain set to 0\n",nm;}
     if (dm(nm).unitpervolt == 0) {
       write,format="  WARNING: dm(%d).unitpervolt set to 0\n",nm;

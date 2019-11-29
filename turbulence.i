@@ -27,7 +27,7 @@ pyk_error=pyk_info=pyk_warning=gui_message=gui_progressbar_frac=gui_progressbar_
 
 //+++++++++++++++++++++++++++
 
-func phase_struct_func(phase,npt,step,plot=)
+func phase_struct_func(phase,npt,step,&xsep,plot=,color=)
   /* DOCUMENT phase_struct_func(phase,npt,step,plot=)
      Compute (and plot) structure function along the first dimension
      of array. Transpose if you need to plot structure function along
@@ -45,14 +45,15 @@ func phase_struct_func(phase,npt,step,plot=)
     psfx(i/step) = avg((phase(1:-i,..)-phase(1+i:,..))^2.);
   }
   psfx = grow(0.,psfx);
-  if (is_set(plot)) { fma; plg,psfx,step*(indgen(xm+1)-1.); }
+  xsep = step*(indgen(xm+1)-1.);
+  if (is_set(plot)) { plg,psfx,xsep,color=color; }
   return psfx;
 }
 phaseStructFunc = phase_struct_func;
 
 //+++++++++++++++++++++++++++
 
-func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
+func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,nogsl=,silent=)
   /* DOCUMENT create_phase_screens(dimx,dimy,prefix=)
      Create phase screens and save them in fits files.
      The saved phase screens have a dimension dimx*dimy.
@@ -110,7 +111,9 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
     r = float(indgen(off(2)));
 
     include, "gsl.i", 3; // loads the Bessel functions, but does not crash if function does not exist
-    if (gsl_sf_bessel_Knu == []){ // function does not exist, use an approximation
+    if ((gsl_sf_bessel_Knu == [])||(nogsl)||(dont_use_gsl)) {
+      // function does not exist, use an approximation
+      // flags for comparison tests
       write, "*** WARNING: gsl_sf_bessel_Knu is not defined ***";
       write, "Normalization might be wrong with finite outer scale";
       write, "Please install ygsl (https://github.com/emmt/ygsl)";
@@ -127,8 +130,8 @@ func create_phase_screens(dimx,dimy,l0=,prefix=,nalias=,no_ipart=,silent=)
 
   pscreen(*) = pscreen(*)/float(nfact);
 
-  if (!silent) write,"Sectioning and saving phase screens";
-  if (yaopy) gui_progressbar_text,"Sectioning and saving phase screens";
+  if (!silent) write,"Splitting and saving phase screens";
+  if (yaopy) gui_progressbar_text,"Splitting and saving phase screens";
   pscreen = reform(pscreen,[3,dimx,dimy,nscreen]);
   if (!is_void(prefix)) {
     for (i=1;i<=nscreen;i++) {
@@ -163,7 +166,7 @@ func generate_phase(dim,silent=)
   */
 
 {
-  randomize;
+  if (!do_not_randomize_pscreens) randomize;
   if (!silent) write,"Creating arrays";
   if (!silent) write,"Creating amplitude";
   tmp   = clip(dist(dim),1e-8,);
@@ -239,7 +242,7 @@ func generate_phase_with_L0(dim,l0,nalias=,silent=,no_ipart=)
 
 {
   if (l0 == 0.) { k0=0.0f; } else { k0 = float(dim)/l0; }
-  randomize;
+  if (!do_not_randomize_pscreens) randomize;
   gui_progressbar_frac,0.01;
   if (!silent) {
     write,"Creating arrays";

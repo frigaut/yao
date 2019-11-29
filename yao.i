@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.6";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2019apr22";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.7";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2019nov29";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -352,7 +352,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,fov,aspp,zenith)
  */
 {
   extern wfs;
-  
+
   as2rd = dtor/3600.;
   cobs  = 0;
 
@@ -361,7 +361,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,fov,aspp,zenith)
   // position of GS/WFS in arcsec:
   w =  where(wfs._gsalt > 0);
   ns = where(w == nwfs)(1);
-  
+
   xwfs = wfs(w).gspos(1,);
   ywfs = wfs(w).gspos(2,);
   nbeams = numberof(xwfs);
@@ -370,7 +370,7 @@ func mcao_rayleigh(nwfs,xsubap,ysubap,fov,aspp,zenith)
   // hence
   lltx = wfs(w).LLTxy(2,);
   llty = wfs(w).LLTxy(1,);
-  
+
   if (wfs(w)(ns).LLT1overe2diam==0) {wfs(w)(ns).LLT1overe2diam=0.3;}
   beamdiameter = wfs(w)(ns).LLT1overe2diam; // Gaussian laser beam FWHM [m]
 
@@ -4107,7 +4107,13 @@ func go(nshot,all=)
       }
     }
 
-    if (dm(nm).filtertilt){ // filter piston, tip and tilt
+    if (dm(nm).filterpiston){ // filter piston
+      if (dm(nm).type == "stackarray"){
+        *dm(nm)._command -= avg(*dm(nm)._command);
+      }
+    }
+
+    if (dm(nm).filtertilt){ // filter tip and tilt
       if (dm(nm).type == "stackarray"){
         // todo: have a variable to store xv and yv to avoid recomputing
         xv = *dm(nm)._x - avg(*dm(nm)._x);
