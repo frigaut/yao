@@ -20,7 +20,7 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.7";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.8";
 aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2019nov29";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
@@ -4018,7 +4018,9 @@ func go(nshot,all=)
       err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
     }
   } else {
-    err = cMat(,+) * usedMes(+);
+    // if loop.method = "none", everything is left to the user,
+    // thus we skip this matrix multiply.
+    if (loop.method != "none") err = cMat(,+) * usedMes(+);
     if ((loop.method == "pseudo open-loop") && (i > 1)){
       // make sure that dMat exists
       if (dMat == []){
@@ -4066,6 +4068,12 @@ func go(nshot,all=)
   // Computes the mirror shape using influence functions:
   for (nm=1; nm<=ndm; nm++) {
 
+    if (loop.method=="none") {
+      if (user_loop_command!=[]) user_loop_command,nm;
+      grow,comvec,*dm(nm)._command;
+      continue;
+    }
+
     if (dm(nm).type == "aniso") {
       grow,comvec,*dm(nm)._command;
       continue;
@@ -4100,21 +4108,21 @@ func go(nshot,all=)
       for (idx=1;idx<= numberof(virtualDMs);idx++){
         grow, virtualdmcommand, *dm(virtualDMs(idx))._command;
       }
-      if (mat.method == "mmse-sparse"){
+      if (mat.method == "mmse-sparse") {
         *dm(nm)._command = rcoxv(*dm(nm)._fMat,virtualdmcommand);
       } else {
         *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
       }
     }
 
-    if (dm(nm).filterpiston){ // filter piston
-      if (dm(nm).type == "stackarray"){
+    if (dm(nm).filterpiston) { // filter piston
+      if (dm(nm).type == "stackarray") {
         *dm(nm)._command -= avg(*dm(nm)._command);
       }
     }
 
-    if (dm(nm).filtertilt){ // filter tip and tilt
-      if (dm(nm).type == "stackarray"){
+    if (dm(nm).filtertilt) { // filter tip and tilt
+      if (dm(nm).type == "stackarray") {
         // todo: have a variable to store xv and yv to avoid recomputing
         xv = *dm(nm)._x - avg(*dm(nm)._x);
         xv = xv / sqrt(sum(xv*xv));
@@ -4127,8 +4135,8 @@ func go(nshot,all=)
         *dm(nm)._command -= (yv(+)*(*dm(nm)._command)(+))*yv;
       }
 
-      if (dm(nm).type == "zernike"){
-        if (dm(nm).minzer <= 3){
+      if (dm(nm).type == "zernike") {
+        if (dm(nm).minzer <= 3) {
           (*dm(nm)._command)(1:4-dm(nm).minzer) = 0;
         }
       }

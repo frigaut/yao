@@ -347,11 +347,11 @@ func check_parameters(void)
 
   // Check that all phase screens are different. If the same file is repeated, this makes the turbulence much worse than what is specified by r0!
   ftmp = *atm.screen;
-    
+
   for (i=1;i<=numberof(ftmp);i++){
     if (sum(ftmp == (ftmp)(i)) > 1){
       write, "atm.screen must not have repeated values";
-      write, "doing so changes the statistics of the atmospheric turbulence";  
+      write, "doing so changes the statistics of the atmospheric turbulence";
       error,"exiting";
     }
   }
@@ -660,7 +660,7 @@ func check_parameters(void)
 
   // LOOP STRUCTURE
   if (loop.method == string()) loop.method = "closed-loop";
-  loop_method_options = ["closed-loop","open-loop","pseudo open-loop"];
+  loop_method_options = ["closed-loop","open-loop","pseudo open-loop","none"];
   if (noneof(loop_method_options == loop.method)) exit,"ERROR: loop.method should be set to closed-loop, open-loop or pseudo open-loop";
   if ((loop.method == "open-loop") && (loop.gain != 1 || loop.leak != 1)){
     write, "Warning: For open-loop simulations the recommended settings are";

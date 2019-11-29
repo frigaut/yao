@@ -1,5 +1,5 @@
 %define name yorick_yao
-%define version 5.10.7
+%define version 5.10.8
 %define release 01gemini
 %define yorick_version 2.2
 
