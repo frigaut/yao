@@ -4068,114 +4068,109 @@ func go(nshot,all=)
   // Computes the mirror shape using influence functions:
   for (nm=1; nm<=ndm; nm++) {
 
-    if (loop.method=="none") {
-      if (user_loop_command!=[]) user_loop_command,nm;
-      grow,comvec,*dm(nm)._command;
-      continue;
-    }
-
-    if (dm(nm).type == "aniso") {
-      grow,comvec,*dm(nm)._command;
-      continue;
-    }
-
-    n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
-
-    if (*dm(nm).dmfit_which == []){ // not a tomographic DM
-      // update the command vector for this DM:
-      // this DM error:
-      ctrlden = *dm(nm)._ctrlden;
-      ctrlnum = *dm(nm)._ctrlnum;
-
-      command = *dm(nm)._command*(-ctrlden(2));
-      for (order=3;order<=numberof(ctrlden);order++){
-        imb = (i-order+1)%10;
-        command -= commb(indexDm(1,nm):indexDm(2,nm),imb)*ctrlden(order);
+    if (loop.method!="none") {
+      if (dm(nm).type == "aniso") {
+        grow,comvec,*dm(nm)._command;
+        continue;
       }
 
-      dmerr = err(indexDm(1,nm):indexDm(2,nm));
-      command -= dmerr*ctrlnum(1);
-      for (order=2;order<=numberof(ctrlnum);order++){
-        imb = (i-order+1)%10;
-        command -=errmb(indexDm(1,nm):indexDm(2,nm),imb)*ctrlnum(order);
-      }
+      n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
 
-      *dm(nm)._command = command;
+      if (*dm(nm).dmfit_which == []) { // not a tomographic DM
+        // update the command vector for this DM:
+        // this DM error:
+        ctrlden = *dm(nm)._ctrlden;
+        ctrlnum = *dm(nm)._ctrlnum;
 
-    } else { // tomographic DM; DM commands from virtual DMs
-      virtualDMs = int(*dm(nm).dmfit_which);
-      virtualdmcommand = [];
-      for (idx=1;idx<= numberof(virtualDMs);idx++){
-        grow, virtualdmcommand, *dm(virtualDMs(idx))._command;
-      }
-      if (mat.method == "mmse-sparse") {
-        *dm(nm)._command = rcoxv(*dm(nm)._fMat,virtualdmcommand);
-      } else {
-        *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
-      }
-    }
+        command = *dm(nm)._command*(-ctrlden(2));
+        for (order=3;order<=numberof(ctrlden);order++) {
+          imb = (i-order+1)%10;
+          command -= commb(indexDm(1,nm):indexDm(2,nm),imb)*ctrlden(order);
+        }
 
-    if (dm(nm).filterpiston) { // filter piston
-      if (dm(nm).type == "stackarray") {
-        *dm(nm)._command -= avg(*dm(nm)._command);
-      }
-    }
+        dmerr = err(indexDm(1,nm):indexDm(2,nm));
+        command -= dmerr*ctrlnum(1);
+        for (order=2;order<=numberof(ctrlnum);order++) {
+          imb = (i-order+1)%10;
+          command -=errmb(indexDm(1,nm):indexDm(2,nm),imb)*ctrlnum(order);
+        }
 
-    if (dm(nm).filtertilt) { // filter tip and tilt
-      if (dm(nm).type == "stackarray") {
-        // todo: have a variable to store xv and yv to avoid recomputing
-        xv = *dm(nm)._x - avg(*dm(nm)._x);
-        xv = xv / sqrt(sum(xv*xv));
+        *dm(nm)._command = command;
 
-        yv = *dm(nm)._y - avg(*dm(nm)._y);
-        yv = yv / sqrt(sum(yv*yv));
-
-        *dm(nm)._command -= avg(*dm(nm)._command);
-        *dm(nm)._command -= (xv(+)*(*dm(nm)._command)(+))*xv;
-        *dm(nm)._command -= (yv(+)*(*dm(nm)._command)(+))*yv;
-      }
-
-      if (dm(nm).type == "zernike") {
-        if (dm(nm).minzer <= 3) {
-          (*dm(nm)._command)(1:4-dm(nm).minzer) = 0;
+      } else { // tomographic DM; DM commands from virtual DMs
+        virtualDMs = int(*dm(nm).dmfit_which);
+        virtualdmcommand = [];
+        for (idx=1;idx<= numberof(virtualDMs);idx++) {
+          grow, virtualdmcommand, *dm(virtualDMs(idx))._command;
+        }
+        if (mat.method == "mmse-sparse") {
+          *dm(nm)._command = rcoxv(*dm(nm)._fMat,virtualdmcommand);
+        } else {
+          *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
         }
       }
-    }
 
-    estdmcommand = [];
-    for (idx=1;idx<=ndm;idx++){
-      if (!dm(idx).dmfit_which){
-        grow, estdmcommand, *dm(idx)._command;
+      if (dm(nm).filterpiston) { // filter piston
+        if (dm(nm).type == "stackarray") {
+          *dm(nm)._command -= avg(*dm(nm)._command);
+        }
       }
-    }
 
-    if (dm(nm).maxvolt != 0) {
-      dm(nm)._command=&(float(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt)));
+      if (dm(nm).filtertilt) { // filter tip and tilt
+        if (dm(nm).type == "stackarray") {
+          // todo: have a variable to store xv and yv to avoid recomputing
+          xv = *dm(nm)._x - avg(*dm(nm)._x);
+          xv = xv / sqrt(sum(xv*xv));
+
+          yv = *dm(nm)._y - avg(*dm(nm)._y);
+          yv = yv / sqrt(sum(yv*yv));
+
+          *dm(nm)._command -= avg(*dm(nm)._command);
+          *dm(nm)._command -= (xv(+)*(*dm(nm)._command)(+))*xv;
+          *dm(nm)._command -= (yv(+)*(*dm(nm)._command)(+))*yv;
+        }
+
+        if (dm(nm).type == "zernike") {
+          if (dm(nm).minzer <= 3) {
+            (*dm(nm)._command)(1:4-dm(nm).minzer) = 0;
+          }
+        }
+      }
+
+      estdmcommand = [];
+      for (idx=1;idx<=ndm;idx++) {
+        if (!dm(idx).dmfit_which) {
+          grow, estdmcommand, *dm(idx)._command;
+        }
+      }
+
+      if (dm(nm).maxvolt != 0) {
+        dm(nm)._command=&(float(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt)));
+      }
     }
 
     if (user_loop_command!=[]) user_loop_command,nm;
 
-    if (dm(nm).virtual == 0){
+    if (dm(nm).virtual == 0) {
       grow,comvec,*dm(nm)._command;
-      if (dm(nm).hyst > 0){
+      if (dm(nm).hyst > 0) {
         mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,&(hysteresis(*dm(nm)._command,nm)));
       } else {
         mircube(n1:n2,n1:n2,nm) = comp_dm_shape(nm,dm(nm)._command);
       }
       if ( (nm==1) && (add_dm0_shape!=[]) ) mircube(,,1) += add_dm0_shape;
       // extrapolated actuators:
-      if ((dm(nm)._enact != 0) && (dm(nm).noextrap == 0)) {
+      if ( (dm(nm)._enact != 0) && (dm(nm).noextrap == 0) ) {
         ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
         mircube(n1:n2,n1:n2,nm) += comp_dm_shape(nm,&ecom,extrap=1);
       }
     } else {
       mircube(n1:n2,n1:n2,nm) = 0.; //virtual DM, does not produce a shape
     }
-
   }
 
   // fill minibuffers
-  errmb(,(i%10)) = err; // 10 will go in 0, which is 10.
+  if (err!=[]) errmb(,(i%10)) = err; // 10 will go in 0, which is 10.
   commb(,(i%10)) = comvec; // 10 will go in 0, which is 10.
 
   if (tipvib!=[]) { // add tip vibrations
