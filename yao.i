@@ -4175,7 +4175,7 @@ func go(nshot,all=)
   }
 
   // fill minibuffers
-  errmb(,(i%10)) = err; // 10 will go in 0, which is 10.
+  if (err!=[]) errmb(,(i%10)) = err; // 10 will go in 0, which is 10.
   commb(,(i%10)) = comvec; // 10 will go in 0, which is 10.
 
   if (tipvib!=[]) { // add tip vibrations
