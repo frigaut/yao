@@ -4074,8 +4074,6 @@ func go(nshot,all=)
         continue;
       }
 
-      n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
-
       if (*dm(nm).dmfit_which == []) { // not a tomographic DM
         // update the command vector for this DM:
         // this DM error:
@@ -4148,6 +4146,8 @@ func go(nshot,all=)
         dm(nm)._command=&(float(clip(*dm(nm)._command,-dm(nm).maxvolt,dm(nm).maxvolt)));
       }
     }
+
+    n1 = dm(nm)._n1; n2 = dm(nm)._n2; nxy = n2-n1+1;
 
     if (user_loop_command!=[]) user_loop_command,nm;
 
