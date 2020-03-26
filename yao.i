@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.10.8";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2019nov29";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.11.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020mar26";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1887,7 +1887,7 @@ func aoread(parfile)
 
 //----------------------------------------------------
 
-func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
+func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 /* DOCUMENT aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
    Second function of the ao serie.
    Initialize everything in preparation for the loop (aoloop).
@@ -1906,6 +1906,28 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
                   re-executed when the interaction matrix is done).
                   Setting keepdmconfig=1 impose that the valid/extrapolated
                   setting remains as it was.
+  external_actpos = array of pointers to external pixel-based position-defined
+                  actuator positions. external_actpos is an array of pointer to 
+                  arrays containing the desired (to keep) actuator x and y positions
+                  (in pixel coordinates), so that
+                  *(external_actpos(1,nm)) is the x position for the DM nm
+                  *(external_actpos(2,nm)) is the x position for the DM nm
+                  The user can actually specify actuators on a DM basis, not 
+                  defining the elements of the pointer array if not needing to 
+                  define external actuator there (note that both Y and X need to be 
+                  defined in the opposite case).
+                  example of a complete example using this and external iMat and cMat: 
+                  aoread,"sh6x6.par"; sim.verbose=1; dm(1).elt=1; 
+                  aoinit,disp=1,clean=1; 
+                  // here we retrict the number of actuators (can't expand as of now):
+                  apos = [&((*dm(1)._x)(6:)*1.0),&((*dm(1)._y)(6:)*1.0)];
+                  // we re-run with the new number of actuators/act location:
+                  aoinit,disp=1,clean=1,external_actpos=apos; 
+                  // now we have the correct imat+cmat, we set the proper variables:
+                  user_imat=iMat; user_cmat=cMat; 
+                  // and this one is with the new actuator and new imat+cmat,
+                  // much much faster !
+                  aoinit,disp=1,clean=1,external_actpos=apos;
    SEE ALSO: aoread, aoloop
 */
 {
@@ -1938,6 +1960,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   forcemat = ( (forcemat==[])? (aoinit_forcemat==[]? 0:aoinit_forcemat):forcemat );
   svd = ( (svd==[])? (aoinit_svd==[]? 0:aoinit_svd):svd );
   keepdmconfig = ( (keepdmconfig==[])? (aoinit_keepdmconfig==[]? 0:aoinit_keepdmconfig):keepdmconfig );
+
+  if (forcemat&&skipmats) error,"Can't have forcemat and skipmats at the same time!";
 
   if (anyof(strlen(dm.actlocfile) > 0)){
     if (sim.verbose){
@@ -2553,8 +2577,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
       }
     }
 
-    if (use_user_imat) iMat = user_imat;
-    else do_imat,disp=disp;
+    if (user_imat!=[]) {
+      if (sim.verbose) write,format="%s\n","Using user-provided imat (user_imat)";
+      iMat = user_imat;
+    } else do_imat,disp=disp;
 
     // select valid actuators by their response, only if
     // 1. at least one of the DM is a stackarray (otherwise it does not make sense)
@@ -2592,37 +2618,70 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
             dmj1 = *dm(nm)._j1;
           }
 
-          tmp = resp(indexDm(1,nm):indexDm(2,nm));
-
-          if (dm(nm).thresholdresp < 0.) {
-            do {
-              // criteria for an actuator to be retained as valid:
+          if ((external_actpos!=[])&&(*(external_actpos(1,nm))!=[])) { 
+            // list of valid actuator position <- external
+            // external actpos is an array of pointer to arrays
+            // containing the desired (to keep) actuator x and y position (in
+            // pixel coordinates), so that
+            // *(external_actpos(1,nm)) is the x position for the DM nm
+            // *(external_actpos(2,nm)) is the x position for the DM nm
+            // with the double test above, the user can actually specify 
+            // actuators on a DM basis, not defining the elements of the 
+            // pointer array if not needing to define external actuator there
+            // (but Y and X need to be defined in the opposite case).
+            if (sim.verbose) write,format="%s\n","Using External actuator list (external_actpos)";
+            xext = *(external_actpos(1,nm));
+            yext = *(external_actpos(2,nm));
+            xyao = *dm(nm)._x;
+            yyao = *dm(nm)._y;
+            vali = xyao*0;
+            // now we need to find and select the actuators with these positions
+            // in the existing, yao-generated actuators
+            // compute distance between yao coordinates and externals:
+            // we could do that without loop but it would involve rather large 
+            // matrices, so I'm going to do a loop.
+            for (k=1;k<=numberof(xext);k++) {
+              d = abs(xext(k)-xyao,yext(k)-yyao);
+              w = where(d<1e-3);
+              if (numberof(w)==0) \
+                error,"External actuator is not present in yao list";
+              vali(w(1)) = 1;
+            }
+            ok  = where(vali==1);
+            nok = where(vali==0);
+          } else { // regular method based on iMat response.
+            tmp = resp(indexDm(1,nm):indexDm(2,nm));
+            if (dm(nm).thresholdresp < 0.) {
+              do {
+                // criteria for an actuator to be retained as valid:
+                ok = where(tmp >  dm(nm).thresholdresp*max(tmp));
+                nok= where(tmp <= dm(nm).thresholdresp*max(tmp));
+                dm(nm)._x = &(dmx(ok));
+                dm(nm)._y = &(dmy(ok));
+                if (numberof(nok) != 0) {
+                  dm(nm)._ex = &(dmx(nok));
+                  dm(nm)._ey = &(dmy(nok));
+                }
+                graphic_config,dm(nm).subsystem,nm;
+                write,format="DM #%d: # of valid actuators: %d ",nm,numberof(ok);
+                again = "y"; read,prompt="Again ? ",again;
+                if (again != "n") {
+                  read,prompt=swrite(format="Threshold (old = %f) : ",\
+                                     dm(nm).thresholdresp),dm(nm).thresholdresp;
+                }
+              } while (again != "n");
+            }
+  
+            if (dm(nm).ncp){ // if DM used for WFS
+              ok = indgen(numberof(tmp));
+              nok = [];
+            } else {
               ok = where(tmp >  dm(nm).thresholdresp*max(tmp));
               nok= where(tmp <= dm(nm).thresholdresp*max(tmp));
-              dm(nm)._x = &(dmx(ok));
-              dm(nm)._y = &(dmy(ok));
-              if (numberof(nok) != 0) {
-                dm(nm)._ex = &(dmx(nok));
-                dm(nm)._ey = &(dmy(nok));
-              }
-              graphic_config,dm(nm).subsystem,nm;
-              write,format="DM #%d: # of valid actuators: %d ",nm,numberof(ok);
-              again = "y"; read,prompt="Again ? ",again;
-              if (again != "n") {
-                read,prompt=swrite(format="Threshold (old = %f) : ",\
-                                   dm(nm).thresholdresp),dm(nm).thresholdresp;
-              }
-            } while (again != "n");
+              if (numberof(nok)==0) nok=[];
+            }
           }
-
-          if (dm(nm).ncp){// if DM used for WFS
-            ok = indgen(numberof(tmp));
-            nok = [];
-          } else {
-            ok = where(tmp >  dm(nm).thresholdresp*max(tmp));
-            nok= where(tmp <= dm(nm).thresholdresp*max(tmp));
-            if (numberof(nok)==0) nok=[];
-          }
+          
 
           dm(nm)._indval = &ok;
           dm(nm)._indext = &nok;
@@ -2682,9 +2741,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           if (mat.method == "mmse-sparse"){
             grow, actuators_to_remove, indexDm(1,nm)-1+nok;
           } else {
-            iMat(,indexDm(1,nm)-1+nok) *=0.;
+            if (user_imat==[]) iMat(,indexDm(1,nm)-1+nok) *=0.;
           }
-
         }
       }
       if (mat.method == "mmse-sparse"){
@@ -2696,7 +2754,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
           }
         }
       } else {
-        iMat = iMat(,where(iMat(rms,) != 0.));
+        if (user_imat==[]) iMat = iMat(,where(iMat(rms,) != 0.));
         cMat = transpose(iMat)*0.;
       }
     }
@@ -2812,7 +2870,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   if (sim.verbose) {write,"\n> INTERACTION AND COMMAND MATRICES";}
   gui_message,"Initializing control matrix";
 
-  if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
+  if (user_cmat!=[]) {
+    cMat = user_cmat;
+
+  } else if ((fileExist(YAO_SAVEPATH+mat.file)) && (forcemat != 1)) {
 
     if (sim.verbose) {write,format=">> Reading file %s\n",mat.file;}
     if (mat.method != "mmse-sparse") {
@@ -2877,7 +2938,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
     }
   }
 
-  if (svd || forcemat || need_new_iMat){
+  if ((svd || forcemat || need_new_iMat)&&(user_cmat==[])) {
     // create the regularization matrices
     nDMs = numberof(dm);
     for (nm=1;nm<=nDMs;nm++){
@@ -3110,292 +3171,294 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
   }
 
   // in the opposite case, plus if svd=1 (request re-do SVD):
-  if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
-    if (mat.method == "svd") {
-      if (sim.verbose) {
-        write,">> Preparing SVD and computing command matrices";
-      }
-      // do the SVD and build the command matrix:
-      sswfs = ssdm = [];
-      for (ns=1;ns<=nwfs;ns++) {grow,sswfs,array(wfs(ns).subsystem,wfs(ns)._nmes);}
-      for (nm=1;nm<=ndm;nm++)  {grow,ssdm,array(dm(nm).subsystem,dm(nm)._nact);}
-      for (ss=1;ss<=max(dm.subsystem);ss++) {
+  if (user_cmat==[]) {
+    if ((!fileExist(YAO_SAVEPATH+mat.file)) || (forcemat == 1) || (svd == 1)) {
+      if (mat.method == "svd") {
+        if (sim.verbose) {
+          write,">> Preparing SVD and computing command matrices";
+        }
+        // do the SVD and build the command matrix:
+        sswfs = ssdm = [];
+        for (ns=1;ns<=nwfs;ns++) {grow,sswfs,array(wfs(ns).subsystem,wfs(ns)._nmes);}
+        for (nm=1;nm<=ndm;nm++)  {grow,ssdm,array(dm(nm).subsystem,dm(nm)._nact);}
+        for (ss=1;ss<=max(dm.subsystem);ss++) {
 
-        wsswfs = where(sswfs == ss);
-        wssdm  = where(ssdm  == ss);
-        imat = iMat(wsswfs,wssdm);
-        mg = modalgain(wssdm);
+          wsswfs = where(sswfs == ss);
+          wssdm  = where(ssdm  == ss);
+          imat = iMat(wsswfs,wssdm);
+          mg = modalgain(wssdm);
 
-        prep_svd,imat,ss,svd=svd,disp=disp;
+          prep_svd,imat,ss,svd=svd,disp=disp;
 
-        tmpdisp = noneof(dm(where(dm.subsystem == ss)).type == "aniso");
-        cmat = build_cmat( (*mat.condition)(ss), mg, subsystem=ss,
-                          all=1,disp=tmpdisp);
-        cMat(wssdm,wsswfs) = cmat;
-      }
-
-    } else if (mat.method == "mmse") {
-      if (anyof(dm.dmfit_which)){
-        estAct = []; // actuators used to estimate wavefront
-        realAct = []; // real (non virtual) actuators used to compensate the wavefront
-        actno = 0;
-
-        for (nm=1;nm<=ndm;nm++){
-          if (!dm(nm).dmfit_which){
-            grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
-          }
-          if (!dm(nm).virtual & !dm(nm).ncp){
-            grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
-          }
-          actno += dm(nm)._nact;
+          tmpdisp = noneof(dm(where(dm.subsystem == ss)).type == "aniso");
+          cmat = build_cmat( (*mat.condition)(ss), mg, subsystem=ss,
+                            all=1,disp=tmpdisp);
+          cMat(wssdm,wsswfs) = cmat;
         }
 
-        Ga = iMat(:,realAct);
-        Gx = iMat(:,estAct);
-        AtA = Gx(+,)*Gx(+,);
+      } else if (mat.method == "mmse") {
+        if (anyof(dm.dmfit_which)){
+          estAct = []; // actuators used to estimate wavefront
+          realAct = []; // real (non virtual) actuators used to compensate the wavefront
+          actno = 0;
 
-        nEstAct = numberof(estAct);
-        nRealAct = numberof(realAct);
-
-        Cphi = array(float,[2,nEstAct,nEstAct]);
-
-        mc = 0;
-        for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).dmfit_which){
-            Cphi(mc+1:mc+dm(nm)._nact,mc+1:mc+dm(nm)._nact) = \
-                          dm(nm).regparam*(*dm(nm)._regmatrix);
-            mc += dm(nm)._nact;
+          for (nm=1;nm<=ndm;nm++){
+            if (!dm(nm).dmfit_which){
+              grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
+            }
+            if (!dm(nm).virtual & !dm(nm).ncp){
+              grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
+            }
+            actno += dm(nm)._nact;
           }
-        }
 
-        cMat = LUsolve(AtA+Cphi,transpose(Gx));
-        yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
+          Ga = iMat(:,realAct);
+          Gx = iMat(:,estAct);
+          AtA = Gx(+,)*Gx(+,);
 
-        realDMs = where(!dm.virtual & !dm.ncp); // DMs used to compensate wavefront
-        estDMs = where(!dm.dmfit_which); // DMs used to estimate wavefront
+          nEstAct = numberof(estAct);
+          nRealAct = numberof(realAct);
 
-        nRealAct = sum(dm(realDMs)._nact);
-        nEstAct = sum(dm(estDMs)._nact);
+          Cphi = array(float,[2,nEstAct,nEstAct]);
 
-        fMat = array(float,[2,nRealAct, nEstAct]);
-
-        indexDm       = array(long,2,ndm);
-        indexDm(,1)   = [1,dm(1)._nact];
-        for (nm=2;nm<=ndm;nm++) {
-          indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
-        }
-
-        startIdx = 1;
-        for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).virtual & !dm(nm).ncp){
-            idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
-            startIdx +=  dm(nm)._nact;
-
-            if (!dm(nm).dmfit_which) {
-              // real (ordinary) DM
-              vidx = indgen(indexDm(1,nm):indexDm(2,nm));
-              fMat(idx,vidx) = float(unit(dm(nm)._nact));
-            } else {
-              // tomographic DM
-              vidx = [];
-              virtualDMs = int(*dm(nm).dmfit_which);
-              for (c1=1;c1<= numberof(virtualDMs);c1++){
-                grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1)));
-              }
-              fMat(idx,vidx) =  *dm(nm)._fMat;
+          mc = 0;
+          for (nm=1;nm<=nDMs;nm++){
+            if (!dm(nm).dmfit_which){
+              Cphi(mc+1:mc+dm(nm)._nact,mc+1:mc+dm(nm)._nact) = \
+                            dm(nm).regparam*(*dm(nm)._regmatrix);
+              mc += dm(nm)._nact;
             }
           }
+
+          cMat = LUsolve(AtA+Cphi,transpose(Gx));
+          yao_fitswrite, YAO_SAVEPATH + parprefix + "-cMat.fits", cMat;
+
+          realDMs = where(!dm.virtual & !dm.ncp); // DMs used to compensate wavefront
+          estDMs = where(!dm.dmfit_which); // DMs used to estimate wavefront
+
+          nRealAct = sum(dm(realDMs)._nact);
+          nEstAct = sum(dm(estDMs)._nact);
+
+          fMat = array(float,[2,nRealAct, nEstAct]);
+
+          indexDm       = array(long,2,ndm);
+          indexDm(,1)   = [1,dm(1)._nact];
+          for (nm=2;nm<=ndm;nm++) {
+            indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
+          }
+
+          startIdx = 1;
+          for (nm=1;nm<=nDMs;nm++){
+            if (!dm(nm).virtual & !dm(nm).ncp){
+              idx = indgen(startIdx:startIdx + dm(nm)._nact - 1);
+              startIdx +=  dm(nm)._nact;
+
+              if (!dm(nm).dmfit_which) {
+                // real (ordinary) DM
+                vidx = indgen(indexDm(1,nm):indexDm(2,nm));
+                fMat(idx,vidx) = float(unit(dm(nm)._nact));
+              } else {
+                // tomographic DM
+                vidx = [];
+                virtualDMs = int(*dm(nm).dmfit_which);
+                for (c1=1;c1<= numberof(virtualDMs);c1++){
+                  grow, vidx, indgen(indexDm(1,virtualDMs(c1)):indexDm(2,virtualDMs(c1)));
+                }
+                fMat(idx,vidx) =  *dm(nm)._fMat;
+              }
+            }
+          }
+
+          Dterm = Ga(,+)*fMat(+,)-Gx;
+          polcMat = Gx(+,)*Dterm(+,)-Cphi;
+          dMat = LUsolve(AtA+Cphi,polcMat);
+          yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
+        } else {
+          nAct = (dimsof(iMat))(3);
+          Cphi = array(float,[2,nAct,nAct]);
+
+          mc = 0; // matrix counter
+          nDMs = numberof(dm);
+          for (nm=1;nm<=nDMs;nm++){
+            if (!dm(nm).dmfit_which){
+              Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = \
+                                    (*dm(nm)._regmatrix)*dm(nm).regparam;
+              mc += dm(nm)._nact;
+            }
+          }
+          cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
         }
 
-        Dterm = Ga(,+)*fMat(+,)-Gx;
-        polcMat = Gx(+,)*Dterm(+,)-Cphi;
-        dMat = LUsolve(AtA+Cphi,polcMat);
-        yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
-      } else {
-        nAct = (dimsof(iMat))(3);
-        Cphi = array(float,[2,nAct,nAct]);
+      } else if (mat.method == "mmse-sparse") {
 
-        mc = 0; // matrix counter
+        // create the regularization matrices for each DM
+        nAct = iMatSP.r;
         nDMs = numberof(dm);
-        for (nm=1;nm<=nDMs;nm++){
-          if (!dm(nm).dmfit_which){
-            Cphi((mc+1):(mc+dm(nm)._nact),(mc+1):(mc+dm(nm)._nact)) = \
-                                  (*dm(nm)._regmatrix)*dm(nm).regparam;
-            mc += dm(nm)._nact;
-          }
-        }
-        cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
-      }
 
-    } else if (mat.method == "mmse-sparse") {
-
-      // create the regularization matrices for each DM
-      nAct = iMatSP.r;
-      nDMs = numberof(dm);
-
-      CphiSP = [];
-
-      for (nm=1;nm<=nDMs;nm++) {
-        regmatrix = *dm(nm)._regmatrix;
-        ruox, regmatrix, dm(nm).regparam; // multiply the matrix by a constant
-
-        if (!dm(nm).dmfit_which){
-        if (CphiSP == []) {
-          CphiSP = regmatrix;
-          } else {
-          spcon, CphiSP,regmatrix, diag=1, ruo=1;
-          }
-        }
-      }
-
-      if (anyof(dm.dmfit_which)) {
-        estAct = [];  // actuators used to estimate wavefront
-        realAct = []; // real (non virtual) actuators used to compensate
-                      // the wavefront
-        actno = 0;
-
-        for (nm=1;nm<=ndm;nm++){
-          if (!dm(nm).dmfit_which){
-            grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
-          }
-          if (!dm(nm).virtual & !dm(nm).ncp){
-            grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
-          }
-          actno += dm(nm)._nact;
-        }
-
-        // create copies of iMatSP and remove the rows corresponding to
-        // virtual actuators or tomographic actuators. Need to copy the
-        // data in the pointers to avoid modifying the data in iMatSP.
-
-        GaSP = iMatSP;
-        GaSP.ix = &(*iMatSP.ix);
-        GaSP.jx = &(*iMatSP.jx);
-        GaSP.xn = &(*iMatSP.xn);
-
-        GxSP = iMatSP;
-        GxSP.ix = &(*iMatSP.ix);
-        GxSP.jx = &(*iMatSP.jx);
-        GxSP.xn = &(*iMatSP.xn);
-
-        for (a1=iMatSP.r;a1>=1;a1--){
-          if (noneof(estAct == a1)){
-            rcodr, GxSP, a1;
-          }
-          if (noneof(realAct == a1)){
-            rcodr, GaSP, a1;
-          }
-        }
-
-        save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
-
-        // create a global fitting matrix
-
-        fMatSP = [];
-
-        indexDm       = array(long,2,ndm);
-        indexDm(,1)   = [1,dm(1)._nact];
-        for (nm=2;nm<=ndm;nm++) {
-          indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
-        }
-
-        nEstAct =sum(dm(where(!dm.dmfit_which))._nact);
-        nEstDMs = numberof(where(!dm.dmfit_which));
-        nRealAct = sum(dm(where(!dm.virtual & !dm.ncp))._nact);
-
-        for (nm=1;nm<=numberof(dm);nm++) {
-          if (dm(nm).virtual){ continue; } // no virtual DMs in the rows
-          if (dm(nm).ncp){ continue; } // no non-common path DMs in the rows
-
-          if (dm(nm).dmfit_which) {
-            dmfMat = rcotr(*dm(nm)._fMat);
-            vdmidx = [];
-            for (mm=1;mm<=nEstDMs;mm++){
-              if (anyof(mm == *dm(nm).dmfit_which)){
-                grow, vdmidx, indgen(indexDm(1,mm):indexDm(2,mm));
-              }
-            }
-
-            for (c1=1;c1<=dm(nm)._nact;c1++){
-              row = array(float,[2,nEstAct,1]);
-              vec = array(float,nRealAct);
-              vec(c1) = 1.;
-              row(vdmidx) = rcoxv(dmfMat, vec); // extract row c1
-
-              if (fMatSP == []){
-                fMatSP = sprco(row);
-              } else {
-                rcobuild, fMatSP, row, mat.sparse_thresh;
-              }
-            }
-
-          } else { // an ordinary DM
-            for (c1=1;c1<=dm(nm)._nact;c1++){
-              row = array(float,[2,nEstAct,1]);
-              row(indexDm(1,nm)+c1-1)=1;
-              if (fMatSP == []){
-                fMatSP = sprco(row);
-              } else {
-                rcobuild, fMatSP, row, mat.sparse_thresh;
-              }
-            }
-          }
-        }
-
-        t1 = rcoatb(rcotr(fMatSP),rcotr(GaSP));
-        fMatSP = GaSP = [];
-
-        AtA = rcoata(GxSP);
-        AtAregSP = ruoadd(AtA,CphiSP);
-
-        AtA = [];
-
-        (*GxSP.xn) *= -1;
-        DtermSP = rcoadd(t1,GxSP);
-        t1 = [];
-        (*GxSP.xn) *= -1;
-        t2 = rcoatb(DtermSP,GxSP);
-
-        DtermSP = [];
-        CphiSPrco = ruo2rco(CphiSP);
         CphiSP = [];
-        *CphiSPrco.xn *= -1;
-        polcMatSP = rcotr(rcoadd(t2,CphiSPrco));
-        t2 = CphiSPrco = [];
-        save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
-      } else {
-        GxSP = iMatSP;
-        AtA = rcoata(iMatSP);
-        AtAregSP = ruoadd(AtA,CphiSP);
-        AtA = CphiSP =  [];
-        save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
+
+        for (nm=1;nm<=nDMs;nm++) {
+          regmatrix = *dm(nm)._regmatrix;
+          ruox, regmatrix, dm(nm).regparam; // multiply the matrix by a constant
+
+          if (!dm(nm).dmfit_which){
+          if (CphiSP == []) {
+            CphiSP = regmatrix;
+            } else {
+            spcon, CphiSP,regmatrix, diag=1, ruo=1;
+            }
+          }
+        }
+
+        if (anyof(dm.dmfit_which)) {
+          estAct = [];  // actuators used to estimate wavefront
+          realAct = []; // real (non virtual) actuators used to compensate
+                        // the wavefront
+          actno = 0;
+
+          for (nm=1;nm<=ndm;nm++){
+            if (!dm(nm).dmfit_which){
+              grow, estAct, indgen(1+actno:actno+dm(nm)._nact);
+            }
+            if (!dm(nm).virtual & !dm(nm).ncp){
+              grow, realAct, indgen(1+actno:actno+dm(nm)._nact);
+            }
+            actno += dm(nm)._nact;
+          }
+
+          // create copies of iMatSP and remove the rows corresponding to
+          // virtual actuators or tomographic actuators. Need to copy the
+          // data in the pointers to avoid modifying the data in iMatSP.
+
+          GaSP = iMatSP;
+          GaSP.ix = &(*iMatSP.ix);
+          GaSP.jx = &(*iMatSP.jx);
+          GaSP.xn = &(*iMatSP.xn);
+
+          GxSP = iMatSP;
+          GxSP.ix = &(*iMatSP.ix);
+          GxSP.jx = &(*iMatSP.jx);
+          GxSP.xn = &(*iMatSP.xn);
+
+          for (a1=iMatSP.r;a1>=1;a1--){
+            if (noneof(estAct == a1)){
+              rcodr, GxSP, a1;
+            }
+            if (noneof(realAct == a1)){
+              rcodr, GaSP, a1;
+            }
+          }
+
+          save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
+
+          // create a global fitting matrix
+
+          fMatSP = [];
+
+          indexDm       = array(long,2,ndm);
+          indexDm(,1)   = [1,dm(1)._nact];
+          for (nm=2;nm<=ndm;nm++) {
+            indexDm(,nm) = [indexDm(2,nm-1)+1,sum(dm(1:nm)._nact)];
+          }
+
+          nEstAct =sum(dm(where(!dm.dmfit_which))._nact);
+          nEstDMs = numberof(where(!dm.dmfit_which));
+          nRealAct = sum(dm(where(!dm.virtual & !dm.ncp))._nact);
+
+          for (nm=1;nm<=numberof(dm);nm++) {
+            if (dm(nm).virtual){ continue; } // no virtual DMs in the rows
+            if (dm(nm).ncp){ continue; } // no non-common path DMs in the rows
+
+            if (dm(nm).dmfit_which) {
+              dmfMat = rcotr(*dm(nm)._fMat);
+              vdmidx = [];
+              for (mm=1;mm<=nEstDMs;mm++){
+                if (anyof(mm == *dm(nm).dmfit_which)){
+                  grow, vdmidx, indgen(indexDm(1,mm):indexDm(2,mm));
+                }
+              }
+
+              for (c1=1;c1<=dm(nm)._nact;c1++){
+                row = array(float,[2,nEstAct,1]);
+                vec = array(float,nRealAct);
+                vec(c1) = 1.;
+                row(vdmidx) = rcoxv(dmfMat, vec); // extract row c1
+
+                if (fMatSP == []){
+                  fMatSP = sprco(row);
+                } else {
+                  rcobuild, fMatSP, row, mat.sparse_thresh;
+                }
+              }
+
+            } else { // an ordinary DM
+              for (c1=1;c1<=dm(nm)._nact;c1++){
+                row = array(float,[2,nEstAct,1]);
+                row(indexDm(1,nm)+c1-1)=1;
+                if (fMatSP == []){
+                  fMatSP = sprco(row);
+                } else {
+                  rcobuild, fMatSP, row, mat.sparse_thresh;
+                }
+              }
+            }
+          }
+
+          t1 = rcoatb(rcotr(fMatSP),rcotr(GaSP));
+          fMatSP = GaSP = [];
+
+          AtA = rcoata(GxSP);
+          AtAregSP = ruoadd(AtA,CphiSP);
+
+          AtA = [];
+
+          (*GxSP.xn) *= -1;
+          DtermSP = rcoadd(t1,GxSP);
+          t1 = [];
+          (*GxSP.xn) *= -1;
+          t2 = rcoatb(DtermSP,GxSP);
+
+          DtermSP = [];
+          CphiSPrco = ruo2rco(CphiSP);
+          CphiSP = [];
+          *CphiSPrco.xn *= -1;
+          polcMatSP = rcotr(rcoadd(t2,CphiSPrco));
+          t2 = CphiSPrco = [];
+          save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
+        } else {
+          GxSP = iMatSP;
+          AtA = rcoata(iMatSP);
+          AtAregSP = ruoadd(AtA,CphiSP);
+          AtA = CphiSP =  [];
+          save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
+        }
+
+        save_rco,iMatSP,YAO_SAVEPATH+mat.file;
+        iMatSP = [];
+        save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
       }
 
-      save_rco,iMatSP,YAO_SAVEPATH+mat.file;
-      iMatSP = [];
-      save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
+      if (mat.method != "mmse-sparse") {
+
+        // More debug display
+        if (sim.debug>=3){
+          tv,cMat(,+)*iMat(+,);
+          mypltitle,"cMat(,+)*iMat(+,)",[0.,-0.005],height=12;
+          typeReturn;
+          tv,iMat(,+)*cMat(+,);
+          mypltitle,"iMat(,+)*cMat(+,)",[0.,-0.005],height=12;
+          typeReturn;
+        }
+
+        // save the results:
+        if (noneof(dm.dmfit_which)){
+        yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
+        } else { // just save the iMat and force the recreation of cMat on reload
+          yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
+        }
+      }
     }
-
-    if (mat.method != "mmse-sparse") {
-
-      // More debug display
-      if (sim.debug>=3){
-        tv,cMat(,+)*iMat(+,);
-        mypltitle,"cMat(,+)*iMat(+,)",[0.,-0.005],height=12;
-        typeReturn;
-        tv,iMat(,+)*cMat(+,);
-        mypltitle,"iMat(,+)*cMat(+,)",[0.,-0.005],height=12;
-        typeReturn;
-      }
-
-      // save the results:
-      if (noneof(dm.dmfit_which)){
-      yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];
-      } else { // just save the iMat and force the recreation of cMat on reload
-        yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,iMat];
-      }
     }
-  }
 
   if (mat.use_cmat_file) {
     if (sim.verbose) write,format=">> Reading requested cmat %s\n",mat.use_cmat_file;
