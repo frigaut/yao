@@ -1,0 +1,27 @@
+----------------------------------------------------------
+Mon Mar 30 21:02:40 2020
+Parfile      Name                               iter/s  Display?  Strehl    
+test         Simple SH6x6 w/ TT mirror, full... 175.3   ON        0.42@1.65mic
+test         Simple SH6x6 w/ TT mirror, full... 358.6   OFF       0.42@1.65mic
+test0        Simple SH6x6 w/ TT mirror, full... 83.4    ON        0.42@1.65mic
+test0        Simple SH6x6 w/ TT mirror, full... 104.8   OFF       0.42@1.65mic
+test1        Simili Altair LGS, full diffrac... 97.6    ON        0.54@1.65mic
+test1        Simili Altair LGS, full diffrac... 141.5   OFF       0.54@1.65mic
+test2        SH 12x12, quick method, with se... 486.7   ON        0.79@1.65mic
+test2        SH 12x12, quick method, with se... 622.2   OFF       0.79@1.65mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 63.0    ON        0.05@2.23mic
+test3        GLAO example, 3 8x8 SHWFS, w/ d... 101.8   OFF       0.05@2.23mic
+test4        Simple Curvature 36 actuators w... 199.6   ON        0.58@2.20mic
+test4        Simple Curvature 36 actuators w... 987.6   OFF       0.58@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 103.3   ON        0.80@2.20mic
+test5        2.5 metre telescope w/ Pyramid WFS 143.4   OFF       0.80@2.20mic
+test6        DH WFS & DM                        223.8   ON        0.47@1.65mic
+test6        DH WFS & DM                        868.3   OFF       0.47@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 21.6    ON        0.61@1.65mic
+test7        LGS SH12x12, Extended WFS (11 n... 23.9    OFF       0.61@1.65mic
+test8        Simple SH6x6 (geometrical)         403.3   ON        0.41@1.65mic
+test8        Simple SH6x6 (geometrical)         2365.8  OFF       0.41@1.65mic
+test9        Simple SH6x6 w/ TT mirror, chec... 157.0   ON        0.34@1.65mic
+test9        Simple SH6x6 w/ TT mirror, chec... 362.0   OFF       0.34@1.65mic
+test_LGS     LGS SH12x12, Extended WFS (11 n... 24.1    ON        0.49@1.65mic
+test_LGS     LGS SH12x12, Extended WFS (11 n... 26.6    OFF       0.49@1.65mic

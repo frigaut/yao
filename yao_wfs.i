@@ -49,6 +49,9 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   sdim       = long(2^ceil(log(subsize)/log(2)+wfs(ns).pad_simage));
   sdimpow2   = int(log(sdim)/log(2));
 
+  // first rotate/translate if needed:
+  pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+
   wfs(ns)._centroidgain = 1.f;
 
   //  if (anyof(wfs.svipc>1)) status = quit_wfs_forks();
@@ -166,6 +169,15 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   xsub       = xsub(gind);
   ysub       = ysub(gind);
   fluxPerSub = fluxPerSub(gind);
+
+  // Let's deal with the shift and rotation:
+  subsize_m = subsize * tel.diam/sim.pupildiam;
+  xsub += wfs(ns).shift(1)/subsize*subsize_m;
+  ysub += wfs(ns).shift(2)/subsize*subsize_m;
+  xy   = transpose([xsub,ysub]);
+  xyr  = mrot(wfs(ns).rotation)(+,)*xy(+,);
+  xsub = xyr(1,);
+  ysub = xyr(2,);
 
   // stuff some of wfs structure for WFS "ns":
   wfs(ns)._istart = &(int(istart-1)); // -1n 'cause C is 0 based
@@ -933,6 +945,10 @@ func sh_wfs(pupsh,phase,ns)
   subsize    = int(pupd/nxsub);
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
 
+  // first rotate/translate if needed:
+  pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
+
   // The phase is in microns. this scaling factor restore it in radian
   // at the wfs lambda
   phasescale = float(2*pi/wfs(ns).lambda);   // wfs.lambda in microns
@@ -1189,6 +1205,10 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
   size       = sim._size;
   dimpow2   = int(log(size)/log(2));
 
+  // first rotate/translate if needed:
+  pupil = yao_wfs_rotate_shift(pupil,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
+
   if (init == 1) {
     if ( (sim.verbose>=1) && (!is_set(silent)) ) {write,"> Initializing curv_wfs\n";}
     fratio= 60.;
@@ -1316,6 +1336,10 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   shnxsub    = wfs(ns).shnxsub;
   nintegcycles = wfs(ns).nintegcycles;
   if (init) nintegcycles = 1;
+
+  // first rotate/translate if needed:
+  pup = yao_wfs_rotate_shift(pup,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
 
   // extract subarrays from input pupil & phase:
   npup  = sim.pupildiam + 2*padding*npixpersub;
@@ -1521,7 +1545,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
     }
   }
 
-  if (aoinit){
+  if (aoinit) { 
     // spatial filtering by the pixel extent:
     // *2/2 intended. min should be 0.40 = sinc(0.5)^2.
     xy2 = xy/(pyr_npix-1)*2/2;
@@ -1713,6 +1737,10 @@ func zwfs(pup,pha,ns,init=)
   if (zwfsantialia) \
     zwfsaarad = sim._size/2./sim.pupildiam*zwfsoversamp*2*zwfsantialia;
 
+  // first rotate/translate if needed:
+  pup = yao_wfs_rotate_shift(pup,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  pha = yao_wfs_rotate_shift(pha,wfs(ns).rotation,wfs(ns).shift);
+
   if (init) {
     // Built up the phase shift mask
     zwfsmask = (dist(sim._size*zwfsoversamp)<zwfsmaskrad)*2*pi*zwfsphashift;
@@ -1795,6 +1823,10 @@ func zernike_wfs(pupsh,phase,ns,init=)
   // I have chosen to return coefficients of zernikes in nm (rms)
 
   extern pwfs_zer,pwfs_wzer,pzn12;
+
+  // first rotate/translate if needed:
+  pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
 
   if (init) {
     if ((pwfs_zer==[])||(numberof(pwfs_zer)!=nwfs)) {

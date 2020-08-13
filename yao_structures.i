@@ -157,6 +157,8 @@ struct wfs_struct
   float   lambda;         // WFS wavelength in microns. Required [none]
   long    noise;          // Enable noise (photon noise/read out noise). Optional [0=no].
   float   ron;            // Read out noise in electrons. If wfs.shmethod=1, this is the noise in arcseconds. Optional [0]
+  float   shift(2);       // WFS X/Y shift in pixels (it's shift first, rotation after). Set "use_fftshift" to use FFT method to shift. A positive shift value moves the WFS (ulens array) toward positive values in the pupil coordinate system (i.e. the pupil illumination moves opposite)
+  float   rotation;       // WFS rotation in degrees (CCW). Set "use_fftrotate" to use FFT method to rotate.
   float   darkcurrent;    // dark current in e-/sec/pixel or APD. Optional [0]
   float   excessnoise;    // excess noise factor, e.g., from EM CCDs (1.41) or silicon APDs (~1.07). Defined as sqrt(variance(X)/ mean(X)). Optional [1.]
   float   gspos(2);       // This WFS guide star position (x<y) in arcsec. Optional [0,0]

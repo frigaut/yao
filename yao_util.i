@@ -678,6 +678,134 @@ func fftrebin(image,nreb)
 }
 
 //---------------------------------------------------------
+func yao_wfs_rotate_shift(ar,rot,sh,integer=)
+/* DOCUMENT yao_rotate_shift
+   Rotate and shift an input array
+   This is meant to be used to rotate and shift the phase at the input
+   of the wfs routines.
+   Uses FFT shift and FFT rotate
+   Restiction: rotation has to be [-90,+90]
+   shift has to be reasonable in pixels (a few)
+   rot is rotation angle in degrees (CW)
+   shift is 2 element vector [x,y] of shift in pixels
+   when integer is set, input is expected to be integer array and is trated as such
+   (output is also integer array)
+   rot shift it/s
+   0   0     103
+   with bilinear
+   1   0     58
+   0   1     63
+   1   1     61
+   with fft*
+   1   0     32
+   0   1     44
+   1   1     25
+   */
+{
+  extern ywrs_dim,ywrs_disk,ywrs_mask,ywrs_sdisk;
+
+  if (sum(ar)==0) return ar;
+  if (allof((rot==0.)&(sh==[0,0]))) return ar; 
+  // First let's deal with rotation:
+  if ((abs(rot)>90)&&(use_fftrotate)) error,"WFS rotation has to be within [-90,90]";
+  // this is especially to rotate eiuther a phase or a pupil, but likely something 
+  // that is defined over a disk of diameter < array size (allegedly < array size/2)
+  // let's build a apodising mask to avoid ringing:
+  marg = 3;
+  if (ywrs_dim != sim._size) {
+    ywrs_dim = sim._size;
+    ywrs_disk = dist(sim._size) < (sim._size/2-marg);
+    ywrs_sdisk = sum(ywrs_disk)*1.0f;
+    ywrs_mask = smooth(ywrs_disk,marg);
+  }
+  if (integer) {
+    tmp = indgen(sim._size);
+    ar = bilinear(ar,tmp+sh(1),tmp+sh(2),grid=1);
+    ar = rotate2(ar,-rot); // rotate2() rot parameter is opposite fft_rotate()
+    return ar;
+  }
+  // else we are dealing with phase, float arrays
+  cst = sum(ar*ywrs_disk)/ywrs_sdisk;
+  // prepare array to rotate/shift. The following should be approximately 
+  // zero-centred and rolled off at the edge to avoid/minimise ringing
+  ar2rs = (ar-cst)*ywrs_mask;
+  // Now we can shift:
+  if (nallof(sh==[0,0])) {
+    if (use_fftshift) ar2rs = fftshift(ar2rs,-sh(1),-sh(2));
+    else {
+      tmp = indgen(sim._size);
+      ar2rs = bilinear(ar2rs,tmp+sh(1),tmp+sh(2),grid=1);
+    } 
+  }
+  // and rotate:
+  if (rot!=0) {
+    if (use_fftrotate) ar2rs = fftrotate(ar2rs,rot);
+    else ar2rs = rotate2(ar2rs,-rot);
+  }
+  return ar2rs;
+}
+
+
+func fftrotate(im,angle,xc=,yc=)
+/* DOCUMENT fftrotate(im,angle)
+    im    : square image
+    angle : rotation angle in degrees (clockwise)
+    xc,yc : x,y positions of the rotation center
+
+    high precision image rotation using fft
+    no information loss if : image is shannon sampled
+                             image has sufficiently large guard band
+    using the algorithm from :
+    "Fast Fourier method for the accurate rotation of sampled images"
+    Kieran G. Larkin, Michael A. Oldfield, Hanno Klemm
+    Optics Communications 139 (1997) 99-106
+
+    routine by d. gratadour 31/05/2011
+    SEE ALSO:
+  */
+
+{
+   size = dimsof(im);
+   if (size(2) != size(3)) error,"works only on square images";
+   nx = size(2);
+
+
+   if (xc == []) xc = (nx%2 == 0 ? nx/2+0.5 : nx/2+1);
+   if (yc == []) yc = (nx%2 == 0 ? nx/2+0.5 : nx/2+1);
+
+   theta = angle * pi / 180.;
+
+   stepx = tan(theta/2);
+   stepy = -1.*sin(theta);
+
+   if (nx%2) {
+     tiltx = -2.*pi/nx*(float(stepx)*(indgen(nx)-nx/2-0.5));
+     tilty = -2.*pi/nx*(float(stepy)*(indgen(nx)-nx/2-0.5));
+   } else {
+     tiltx = -2.*pi/nx*(float(stepx)*(indgen(nx)-nx/2-1));
+     tilty = -2.*pi/nx*(float(stepy)*(indgen(nx)-nx/2-1));
+   }
+
+   compltiltx=array(complex,nx);
+   compltiltx.im=roll(tiltx);
+   compltiltx = compltiltx(,-::nx-1);
+
+   compltilty=array(complex,nx);
+   compltilty.im=roll(tilty);
+   compltilty = compltilty(-::nx-1,);
+
+   col  = span(1,nx,nx)(,-:1:nx);
+   lig  = transpose(col);
+
+   tmpc=array(complex,nx,nx);
+
+   tmpc = fft(exp(compltiltx*(lig-xc))*fft(im,[1,0]),[-1,0]);
+   tmpc = fft(exp(compltilty*(col-yc))*fft(tmpc,[0,1]),[0,-1]);
+   tmpc = fft(exp(compltiltx*(lig-xc))*fft(tmpc,[1,0]),[-1,0]);
+
+   return tmpc.re/nx/nx/nx;
+}
+
 
 // December 2003:This function is superseeded by the clip function that call the
 // clip C rountine. Much faster than this one. see yorickfr.i
