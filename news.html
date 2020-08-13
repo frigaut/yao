@@ -26,6 +26,43 @@
 
   <div id="container">
 
+    <a name="were_still_alive"></a>
+    <div id="blogentry">
+    <div id="entrydate">August 13, 2020</div>
+    <div id="entrytitle">Yao still alive and kicking</div>
+    <div id="entrybody">
+      Just to mention that, even though this feed has been very silent for many years, yao is still alive and in development &mdash; although probably not as actively as it used to be. But as you see below, we have recently added new features; some have not been documented properly I'm afraid, perhaps I will catch up on these later. The main developer (Francois) has less time to take care of it, having other responsibilities &mdash;this happens when you get older&mdash;, but developments are still going on and we have the occasional contribution from Marcos van Dam and Jesse Cranney. Again, if you are a user, let us know. We're also happy to answer questions if you have any.
+    </div>
+    </div>
+
+
+
+
+    <a name="Per_SHWFS_rotation_and_shifts"></a>
+    <div id="blogentry">
+    <div id="entrydate">August 13, 2020</div>
+    <div id="entrytitle">Per SHWFS rotation and shifts</div>
+    <div id="entrybody">
+      There is now a feature to rotate WFSs (only SH for now) independently from each other (and from the rest of the system). To quote yao_structures.i (wfs structure):
+<pre>
+  float   shift(2);       // WFS X/Y shift in pixels (it's shift first, rotation after). 
+  // Set "use_fftshift" to use FFT method to shift. A positive shift value moves the WFS
+  // (ulens array) toward positive values in the pupil coordinate system (i.e. the pupil
+  // illumination moves opposite)
+
+  float   rotation;       // WFS rotation in degrees (CCW). 
+  // Set "use_fftrotate" to use FFT method to rotate.
+</pre>
+I have also included a couple of new parfiles in examples: <b>sh16x16_wfsrot.par</b> and <b>mcao_wfsrot.par</b>. In there, for instance:
+<pre>
+wfs(1).rotation       = 30.; // degrees CCW of rotation ot this WFS
+wfs(1).shift          = [3,1]; // in pixels
+</pre>
+Note that in the display, the WFS spots are not rotated, it is the phase and amplitude that are rotated, so the rotation of e.g. the DM appears CW in the display (but the WFS is indeed rotated CCW). Enjoy the new feature. This could bring interesting gains in tomographic systems.
+    </div>
+    </div>
+
+
     <a name="yao_5.0"></a>
     <div id="blogentry">
     <div id="entrydate">October 17, 2012</div>
