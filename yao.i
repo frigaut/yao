@@ -615,7 +615,6 @@ func do_imat(disp=)
           pli,(mircube(,,1)-min(mircube(,,1)))*ipupil,1,0.,2,1.;
           if (ndm==1) range,0.25,0.75;
           for (jj=2;jj<=ndm;jj++) {
-            //pli,mircube(dm(nm)._n1:dm(nm)._n2,dm(nm)._n1:dm(nm)._n2,nm),nm,0.,nm+1,1.;
             if (dm(jj).alt==0) {
               pli,(mircube(,,jj)-min(mircube(,,jj)))*ipupil,jj,0.,jj+1,1.;
             } else {
@@ -623,7 +622,6 @@ func do_imat(disp=)
             }
           }
         }
-        // mypltitle,"DM(s)",[0.,0.008],height=12;
         myxytitles,"","DM(s)",[0.010,0.],height=12;
 
         if ((dm(nm).type == "aniso") && (sim.debug >= 2)) hitReturn;
@@ -3465,80 +3463,110 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
     cMat = yao_fitsread(mat.use_cmat_file);
   }
 
-
   //===================================================================
   // COMPUTE THE COMMAND VECTOR FOR OFFLOADING THE ANISOPLANATISM MODES
   //===================================================================
 
-  if (anyof(dm.type == "aniso")) {
-
-    // find which DM is the aniso DM:
-    nmaniso = where(dm.type == "aniso");
-    if (numberof(nmaniso) != 1) {
-      pyk_error,"there can be only one aniso DM !";
-      error,"there can be only one aniso DM !";
-    }
-
-    // finds which DM is at altitude 0
-    w0 = where((dm.alt == 0)*(dm.virtual == 0));
-    nmlow = where( (dm(w0).type == "stackarray") | (dm(w0).type == "bimorph") |
-                   (dm(w0).type == "zernike") | (dm(w0).type == "dh")  );
-    nmlow = w0(nmlow);
-    if (numberof(nmlow) == 0) {
-      pyk_error,"I cannot find a DM at altitude 0 to produce the lower "+
-        "part of the anisoplanatism modes !";
-      error,"I cannot find a DM at altitude 0 to produce the lower "+
-        "part of the anisoplanatism modes !";
-    }
-    if (numberof(nmlow) > 1) {
-      pyk_warning,swrite(format=\
-        "Weird. There are %d high-order DMs at altitude=0 (look at console)",\
-        numberof(nmlow));
-      write,format="Weird. There are %d high-order DMs at altitude=0:", \
-            numberof(nmlow);
-      for (i=1;i<=numberof(nmlow);i++) {
-        write,format="DM #%d:",nmlow(i);
-        print,dm(i);
-      }
-      rep = "";
-      question = "Which one ? ["+strcompress(strjoin(swrite(nmlow),","),all=1)+"] ";
-      read,prompt=question,rep;
-      tmp=0; sread,rep,tmp;
-      if (noneof(nmlow == tmp)) { error,"Invalid selection"; }
-      nmlow = tmp;
-    }
-
-    // finds which DM is at altitude specified by dm(nmaniso).alt
-    wn0 = where(dm.alt == dm(nmaniso).alt);
-    nmhigh = where( (dm(wn0).type == "stackarray") | (dm(wn0).type == "bimorph") |
-                    (dm(wn0).type == "zernike") | (dm(wn0).type == "dh")  );
-    nmhigh = wn0(nmhigh);
-    if (numberof(nmhigh) == 0) {
-      pyk_error,"I cannot find a DM at the requested altitude to produce "+ \
-                "the higher part of the anisoplanatism modes !";
-      error,"I cannot find a DM at the requested altitude to produce "+ \
-            "the higher part of the anisoplanatism modes !";
-    }
-    if (numberof(nmhigh) > 1) {
-      pyk_warning,swrite(format=\
-        "Weird. There are %d high-order DMs at altitude %.0f (look at console)",
-                         numberof(nmhigh),dm(nmaniso).alt);
-      write,format="Weird. There are %d high-order DMs at altitude %.0f:",
-        numberof(nmhigh),dm(nmaniso).alt;
-      for (i=1;i<=numberof(nmhigh);i++) {
-        write,format="DM #%d:",nmhigh(i);
-        print,dm(i);
-      }
-      rep = "";
-      question = "Which one ? ["+strcompress(strjoin(swrite(nmhigh),","),all=1)+"] ";
-      read,prompt=question,rep;
-      tmp=0; sread,rep,tmp;
-      if (noneof(nmhigh == tmp)) { error,"Invalid selection"; }
-      nmhigh = tmp;
-    }
-    project_aniso_dm,nmaniso(1),nmlow(1),nmhigh(1),disp=0;
+  nmaniso = where(dm.type == "aniso");
+  if (numberof(nmaniso) > 1){
+    mssg = "The number of DMs with dm.type == aniso must be 0 or 1";
+    pyk_error,mssg;
+    error,mssg;
   }
-
+  if (numberof(nmaniso) == 1){    
+    nmaniso = nmaniso(1);
+          
+    dmfit = dm(nmaniso).anisodmfit;
+    if (numberof(dmfit) != 2){
+      // the user needs to specify two DMs at different altitudes
+      exit,"Exactly 2 DMs must be specified in anisodmfit for aniso DM";
+    }
+    
+    if (noneof(dmfit == 0)){
+        // use dm.anisodmfit to specify which DMs these modes are projected onto
+        nmlow = nmhigh = [];
+        alt = dm(dmfit).alt;
+        if (alt(1) < alt(2)){
+          nmlow = dmfit(1);
+          nmhigh = dmfit(2);
+        }
+        if (alt(1) > alt(2)){
+          nmlow = dmfit(2);
+          nmhigh = dmfit(1);
+        }
+        if (alt(1) == alt(2)){
+          mssg = "DMs specified in anisodmfit must have different altitudes";
+          pyk_error,mssg;
+          error,mssg;
+        }
+        if (dm(nmaniso).alt != dm(nmhigh).alt){
+        mssg = "Aniso DM must have the same altitude as the highest altitude DM in anisodmfit";
+        pyk_error,mssg;
+        error,mssg;        
+      }
+    } else {
+    
+      // finds which DM is at altitude 0
+      w0 = where((dm.alt == 0)*(dm.virtual == 0));
+      nmlow = where( (dm(w0).type == "stackarray") | (dm(w0).type == "bimorph") |
+                     (dm(w0).type == "zernike") | (dm(w0).type == "dh")  );
+      nmlow = w0(nmlow);
+      if (numberof(nmlow) == 0) {
+        pyk_error,"I cannot find a DM at altitude 0 to produce the lower "+
+          "part of the anisoplanatism modes !";
+        error,"I cannot find a DM at altitude 0 to produce the lower "+
+          "part of the anisoplanatism modes !";
+      }
+      if (numberof(nmlow) > 1) {
+        pyk_warning,swrite(format=                                      \
+                           "Weird. There are %d high-order DMs at altitude=0 (look at console)", \
+                           numberof(nmlow));
+        write,format="Weird. There are %d high-order DMs at altitude=0:", \
+          numberof(nmlow);
+        for (i=1;i<=numberof(nmlow);i++) {
+          write,format="DM #%d:",nmlow(i);
+          print,dm(i);
+        }
+        rep = "";
+        question = "Which one ? ["+strcompress(strjoin(swrite(nmlow),","),all=1)+"] ";
+        read,prompt=question,rep;
+        tmp=0; sread,rep,tmp;
+        if (noneof(nmlow == tmp)) { error,"Invalid selection"; }
+        nmlow = tmp;
+      }
+      
+      // finds which DM is at altitude specified by dm(nmaniso).alt
+      wn0 = where(dm.alt == dm(nmaniso).alt);
+      nmhigh = where( (dm(wn0).type == "stackarray") | (dm(wn0).type == "bimorph") |
+                      (dm(wn0).type == "zernike") | (dm(wn0).type == "dh")  );
+      nmhigh = wn0(nmhigh);
+      if (numberof(nmhigh) == 0) {
+        pyk_error,"I cannot find a DM at the requested altitude to produce "+ \
+          "the higher part of the anisoplanatism modes !";
+        error,"I cannot find a DM at the requested altitude to produce "+ \
+          "the higher part of the anisoplanatism modes !";
+      }
+      if (numberof(nmhigh) > 1) {
+        pyk_warning,swrite(format=                                      \
+                           "Weird. There are %d high-order DMs at altitude %.0f (look at console)",
+                           numberof(nmhigh),dm(nmaniso).alt);
+        write,format="Weird. There are %d high-order DMs at altitude %.0f:",
+          numberof(nmhigh),dm(nmaniso).alt;
+        for (i=1;i<=numberof(nmhigh);i++) {
+          write,format="DM #%d:",nmhigh(i);
+          print,dm(i);
+        }
+        rep = "";
+        question = "Which one ? ["+strcompress(strjoin(swrite(nmhigh),","),all=1)+"] ";
+        read,prompt=question,rep;
+        tmp=0; sread,rep,tmp;
+        if (noneof(nmhigh == tmp)) { error,"Invalid selection"; }
+        nmhigh = tmp;
+      }
+    }
+    project_aniso_dm,nmaniso,nmlow(1),nmhigh(1),disp=0;
+  }
+  
   //==========================
   // OUTPUT GRAPHIC FOR CONFIG
   //==========================

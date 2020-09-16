@@ -448,6 +448,9 @@ struct dm_struct
   // KL-only keywords:
   long    nkl;            // Number of modes, including piston. Required [none]
 
+  // aniso only keywords:
+  long    anisodmfit(2)     // DMs to fit the anisoplanatic tiptilt modes 
+  
   // Segmented only keywords:
   long    nxseg;          // number of segments in long axis (X)
   float   fradius;        // segments are created over a wider area than the

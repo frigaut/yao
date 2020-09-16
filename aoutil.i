@@ -612,6 +612,21 @@ func check_parameters(void)
     if (dm(nm).hyst > 0.){write,"WARNING: DM hysteresis implementation assumes that voltages are of the order of 0.1 to 10. If not, do not use hysteresis.";}
   }
 
+  nmaniso = where(dm.type == "aniso");
+  if (numberof(nmaniso) > 1){
+    exit, "The number of DMs with dm.type == aniso must be 0 or 1";
+  }
+  if (numberof(nmaniso) == 1){    
+    nmaniso = nmaniso(1);
+          
+    // use dm.dmfit_which to specify which DMs these modes are projected onto
+    dmfit = dm(nmaniso).anisodmfit;
+    if (numberof(dmfit) != 2){
+      // the user needs to specify two DMs at different altitudes
+      exit,"Exactly 2 DMs must be specified in anisodmfit for aniso DM";
+    }
+  }
+  
   // MAT STRUCTURE
   if (mat.method == string()) {mat.method = "svd";};
   if (mat.method == "svd"){
