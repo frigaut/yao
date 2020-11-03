@@ -7,8 +7,8 @@
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
-    <property name="version">V5.3.0</property>
-    <property name="copyright" translatable="yes">Francois Rigaut, 2001-2013</property>
+    <property name="version">V5.12.0</property>
+    <property name="copyright" translatable="yes">Francois Rigaut et al, 2001-2021</property>
     <property name="comments" translatable="yes">YAO is an Adaptive Optics simulation package written in yorick, an open source interpreted language. It features Shack-Hartmann and curvature wavefront 
 sensors, Stack array (piezostack) or curvature deformable mirrors, or modal (Zernike) correctors. An arbitrary number
 of WFS or DM can be used, with possible conjugation at altitude. Systems such as GLAO, MCAO, NGS AO and LGS
@@ -16,8 +16,8 @@ AO can easily be simulated.
 System configuration is done through a parameter file. The current GUI only provides a convenient way to interface
 with the main YAO functions and to change/play with some of the main system parameters, and see the changes at 
 once. This tool can be viewed as very practical for AO education purposes.</property>
-    <property name="website">http://www.maumae.net/yao</property>
-    <property name="license" translatable="yes">Copyright (c) 2002-2017, Francois Rigaut
+    <property name="website">https://frigaut.github.io/yao/index.html</property>
+    <property name="license" translatable="yes">Copyright (c) 2002-2021, Francois Rigaut
 
 This program is free software; you can redistribute it and/or  modify it
 under the terms of the GNU General Public License  as  published  by the
@@ -560,7 +560,7 @@ yet, they will be saved in Y_USER/data</property>
                                     <property name="homogeneous">True</property>
                                     <child>
                                       <widget class="GtkButton" id="go">
-                                        <property name="label" translatable="yes">go</property>
+                                        <property name="label" translatable="yes">go / cont</property>
                                         <property name="visible">True</property>
                                         <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>

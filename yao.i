@@ -4371,8 +4371,9 @@ func go(nshot,all=)
         niterok += 1;
         grow,itv,i;
         if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
-        grow,strehlsp,im(max,max,sind)/sairy(sind);
-        grow,strehllp,imav(max,max,sind,0)/sairy(sind)/(niterok+1e-5);
+        if (numberof(sairy)==1) tmp=sairy; else tmp=sairy(sind); // dirty fix
+        grow,strehlsp,im(max,max,sind)/tmp;
+        grow,strehllp,imav(max,max,sind,0)/tmp/(niterok+1e-5);
       }
       extern psf_child_started;
       // give the go for next batch:
@@ -4407,8 +4408,9 @@ func go(nshot,all=)
       niterok += 1;
       grow,itv,i;
       if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
-      grow,strehlsp,im(max,max,sind)/sairy(sind);
-      grow,strehllp,imav(max,max,sind,0)/sairy(sind)/(niterok+1e-5);
+      if (numberof(sairy)==1) tmp=sairy; else tmp=sairy(sind); // dirty fix
+      grow,strehlsp,im(max,max,sind)/tmp;
+      grow,strehllp,imav(max,max,sind,0)/tmp/(niterok+1e-5);
     }
   }
 

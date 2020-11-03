@@ -690,6 +690,7 @@ class yao:
 
 
    def set_cursor_busy(self,state):
+      return True
       if state:
          self.window.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
       else:

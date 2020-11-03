@@ -1,2 +1,2 @@
 #!/bin/sh
-yorick -i yaopy.i $*
+rlwrap yorick -i yaopy.i $*
