@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.12.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020jun30";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.13.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020nov04";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1886,7 +1886,7 @@ func aoread(parfile)
 //----------------------------------------------------
 
 func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
-/* DOCUMENT aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=)
+/* DOCUMENT aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
    Second function of the ao serie.
    Initialize everything in preparation for the loop (aoloop).
    Follows a call to aoread, parfile.
@@ -1905,23 +1905,25 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
                   Setting keepdmconfig=1 impose that the valid/extrapolated
                   setting remains as it was.
   external_actpos = array of pointers to external pixel-based position-defined
-                  actuator positions. external_actpos is an array of pointer to 
-                  arrays containing the desired (to keep) actuator x and y positions
-                  (in pixel coordinates), so that
+                  actuator positions. external_actpos is an array of pointer 
+                  to arrays containing the desired (to keep) actuator x and y 
+                  positions (in pixel coordinates), so that
                   *(external_actpos(1,nm)) is the x position for the DM nm
-                  *(external_actpos(2,nm)) is the x position for the DM nm
+                  *(external_actpos(2,nm)) is the y position for the DM nm
                   The user can actually specify actuators on a DM basis, not 
-                  defining the elements of the pointer array if not needing to 
-                  define external actuator there (note that both Y and X need to be 
-                  defined in the opposite case).
-                  example of a complete example using this and external iMat and cMat: 
+                  defining the elements of the pointer array if not needing 
+                  to define external actuator there (note that both Y and X 
+                  need to be defined in the opposite case).
+                  example of a complete example using this and external 
+                  iMat and cMat: 
                   aoread,"sh6x6.par"; sim.verbose=1; dm(1).elt=1; 
                   aoinit,disp=1,clean=1; 
-                  // here we retrict the number of actuators (can't expand as of now):
+                  // here we restrict the number of actuators:
                   apos = [&((*dm(1)._x)(6:)*1.0),&((*dm(1)._y)(6:)*1.0)];
                   // we re-run with the new number of actuators/act location:
                   aoinit,disp=1,clean=1,external_actpos=apos; 
-                  // now we have the correct imat+cmat, we set the proper variables:
+                  // now we have the correct imat+cmat, we set the proper 
+                  // variables:
                   user_imat=iMat; user_cmat=cMat; 
                   // and this one is with the new actuator and new imat+cmat,
                   // much much faster !

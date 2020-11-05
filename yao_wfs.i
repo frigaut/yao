@@ -163,6 +163,11 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   tmp = fluxPerSub;
   tmp = tmp(gind);
   if (!wfs_keep_valid) wfs(ns)._validsubs = &(int(tmp > fracsub));
+  // 20201104: not sure what wfs_keep_valid would be use for, but leaving in there.
+
+  // User-defined validsubs (in that case, the responsibility of having the right number
+  // of elements, etc, is left to the user):
+  if (wfs(ns).extern_validsubs) wfs(ns)._validsubs = wfs(ns).extern_validsubs;
 
   istart     = istart(gind);
   jstart     = jstart(gind);

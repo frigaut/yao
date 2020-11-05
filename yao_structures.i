@@ -230,6 +230,7 @@ struct wfs_struct
   float   biasrmserror;   // rms error on WFS bias in electron. Optional [0]
   float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]
                           // Typical value can be 0.01
+  pointer extern_validsubs;// external long vector of valid subapertures; overrides wfs._validsubs when set.
   string  fsname;         // fits file with subaperture amplitude mask. It should have
                           // dimension 2^sdimpow2 square. can be float or long.
   string  fstop;          // "none", "square" or "round" are allowable values
