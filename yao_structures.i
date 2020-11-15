@@ -365,6 +365,7 @@ struct wfs_struct
   int     _nkernels;      // number of kernels in *wfs._kernel
   pointer _dmnotinpath;   // vector of ndm lengh with value included/not included. from dmnotinpath
   pointer _pupil;         // the pupil for this WFS
+  pointer _phase;         // the last (small) phase for this WFS
 };
 
 struct dm_struct

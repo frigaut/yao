@@ -437,6 +437,10 @@ class yao:
       if wdg.get_active():
          self.py2yo('toggle_im_imav 1')
 
+   def on_image_disp_phase_clicked(self,wdg):
+      if wdg.get_active():
+         self.py2yo('toggle_im_imav 2')
+
    def on_disp_rate_value_changed(self,wdg):
       self.dispflag = wdg.get_value()
       self.py2yo('funcset dispFlag %d' % self.dispflag)

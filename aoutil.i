@@ -20,6 +20,56 @@
  *
  */
 
+func yao_tricks(void)
+{
+  write,format="%-78s\n","FLAGS:";
+  txt = "dispImImav: Image (PSF) display: (0) inst. PSF (1): avg PSF (2) phases";
+  grow,txt,"display_phase_not_wfs: (bool) Display phases instead of WFS images";
+  write,format="%-78s\n",txt;
+  write,"";
+  write,format="%-78s\n","HOOKS: (see code in yao.i, go() function)";
+  txt = "go_user_func: called at the start of go(), before entering the loop is go has been called with all=1";
+  grow,txt,"go2_user_func: called at the start of go(), after entering the loop is go has been called with all=1";
+  grow,txt,"user_loop_err: called after calculation of err from measurements";
+  grow,txt,"user_loop_command: called after calculation of command vector";
+  grow,txt,"";
+  write,format="%-78s\n",txt;
+  write,"";
+}
+
+func init_image_display(void)
+{
+  if (target._ntarget == 1) {
+    // if only one target, display correct plate scale for image display
+    *target.dispzoom = [(*target.lambda)(0)*1e-6/4.848e-6/
+                        tel.diam*sim.pupildiam/sim._size/2*sim._size];
+    // last 2 terms to accomodate internal dispzoom scaling
+  }
+
+  txpos = *target.xposition;
+  typos = *target.yposition;
+  disp2d,im,txpos,typos,1,zoom=*target.dispzoom,init=1;
+  for (j=1;j<=nwfs;j++) {
+    // plg,wfs(j).gspos(2),wfs(j).gspos(1),marker='\2',
+    //   type="none",marks=1,color="red";
+    if (wfs(j).gsalt==0) plp,wfs(j).gspos(2),wfs(j).gspos(1),symbol=8,color="fg",width=2,size=0.6;
+    else if (wfs(j).gsalt>50000) plp,wfs(j).gspos(2),wfs(j).gspos(1),symbol=8,color="orange",width=2,size=0.6;
+    else plp,wfs(j).gspos(2),wfs(j).gspos(1),symbol=8,color="green",width=2,size=0.6;
+  }
+  myxytitles,"","arcsec",[0.005,0.01],height=12;
+  plmargin;
+
+  if (wfs_display_mode=="spatial") {
+    disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
+       zoom=wfs.dispzoom,init=1;
+  } else {
+    disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,\
+       init=1;
+  }
+
+  return 0;
+}
+
 
 func create_yao_window(dpi)
 /* DOCUMENT create_yao_window(dpi)

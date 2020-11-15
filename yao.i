@@ -3865,27 +3865,9 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   }
 
   // display
-  if (is_set(disp)) {
-    if (target._ntarget == 1) {
-      // if only one target, display correct plate scale for image display
-      *target.dispzoom = [(*target.lambda)(0)*1e-6/4.848e-6/
-                          tel.diam*sim.pupildiam/sim._size/2*sim._size];
-      // last 2 terms to accomodate internal dispzoom scaling
-    }
+  if (is_set(disp)) status = init_image_display();
 
-    txpos = *target.xposition;
-    typos = *target.yposition;
-    disp2d,im,txpos,typos,1,zoom=*target.dispzoom,init=1;
-      if (wfs_display_mode=="spatial") {
-        disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2,\
-           zoom=wfs.dispzoom,init=1;
-      } else {
-        disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2,zoom=wfs.dispzoom,\
-           init=1;
-      }
-  }
-
-  dispImImav = 0; // 0 is to display im, 1 to display imav
+  if (dispImImav==[]) dispImImav = 0; // 0 is to display im, 1 to display imav
 
   olddisp = disp;
   oldcontrolscreen = controlscreen;
@@ -4446,26 +4428,40 @@ func go(nshot,all=)
     typos = *target.yposition;
     if (target.yspeed) typos += *target.yspeed*loopCounter*loop.ittime;
 
-    if (dispImImav) {
-      disp2d,imav,txpos,typos,1,power=0.5;
-      mypltitle,"Average PSFs",[0.,-0.00],height=12;
-    } else {
+    if (dispImImav==0) {
       disp2d,im,txpos,typos,1,power=0.5;
       mypltitle,"Instantaneous PSFs",[0.,-0.00],height=12;
+    } else if (dispImImav==1) {
+      disp2d,imav,txpos,typos,1,power=0.5;
+      mypltitle,"Average PSFs",[0.,-0.00],height=12;
+    } else if (dispImImav==2) {
+      scubphase = cubphase(_n1:_n2,_n1:_n2,);
+      spup = ipupil(_n1:_n2,_n1:_n2); wspup = where(spup);
+      minv = scubphase(*,)(wspup,)(min,);
+      for (j=1;j<=dimsof(scubphase)(0);j++) scubphase(,,j) = (scubphase(,,j)-minv(j))*spup;
+      disp2d,scubphase,txpos,typos,1;
+      mypltitle,"Image Phase",[0.,-0.00],height=12;
     }
     for (j=1;j<=nwfs;j++) {
-      plg,wfs(j).gspos(2),wfs(j).gspos(1),marker='\2',
-        type="none",marks=1,color="red";
+      // plg,wfs(j).gspos(2),wfs(j).gspos(1),marker='\2',
+      //   type="none",marks=1,color="red";
+      if (wfs(j).gsalt==0) plp,wfs(j).gspos(2),wfs(j).gspos(1),symbol=8,color="fg",width=2,size=0.6;
+      else if (wfs(j).gsalt>50000) plp,wfs(j).gspos(2),wfs(j).gspos(1),symbol=8,color="orange",width=2,size=0.6;
+      else plp,wfs(j).gspos(2),wfs(j).gspos(1),symbol=8,color="green",width=2,size=0.6;
     }
     myxytitles,"","arcsec",[0.005,0.01],height=12;
 
     // WFS spots
     if (!allof(wfs.shmethod ==1)) {
       if (wfs_display_mode=="spatial") {
-        disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
+        if (display_phase_not_wfs) {
+          disp2d,wfs._phase,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
+        } else disp2d,wfs._dispimage,wfs.pupoffset(1,),wfs.pupoffset(2,),2;
         mypltitle,"WFSs (spatial mode)",[0.,-0.005],height=12;
       } else {
-        disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2;
+        if (display_phase_not_wfs) {
+          disp2d,wfs._phase,wfs.gspos(1,),wfs.gspos(2,),2;
+        } else disp2d,wfs._dispimage,wfs.gspos(1,),wfs.gspos(2,),2;
         mypltitle,"WFSs",[0.,-0.00],height=12;
       }
     }
@@ -4512,7 +4508,7 @@ func go(nshot,all=)
                       (*target.lambda)(0)),[0.005,-0.005],height=12;
         range,0.,1.;
         if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
-        plt,"Over target indices "+print(sind)(1),0.070,0.6075,tosys=0,justify="LT",height=8;
+        plt,"Over target indices (disp!_strehl!_indice) "+print(sind)(1),0.070,0.6075,tosys=0,justify="LT",height=10;
       }
     }
     // Display residual wavefront
@@ -4602,7 +4598,6 @@ func go(nshot,all=)
     }
   }
   }
-  time(8) += tac();
 
   if (nshots==0) {
     if (animFlag && dispFlag) {
@@ -4613,6 +4608,8 @@ func go(nshot,all=)
   }
 
   if (user_end_go != []) status = user_end_go();  // execute user's routine if it exists.
+
+  time(8) += tac();
 
   tic,2; endtime=_nowtime(2); endtime_str = gettime();
 //  if (loopCounter<loop.niter) after, 0.001, go;
@@ -4734,9 +4731,13 @@ func after_loop(void)
       YAO_SAVEPATH+parprefix;
 
   time2 = (time - roll(time,1))/loopCounter;
-  timeComments = ["WF sensing","Reset and measurement history handling","cMat multiplication",\
-                  "DM shape computation","Target PSFs estimation","Displays",\
-                  "Circular buffers, end-of-loop printouts"];
+  timeComments = ["WF sensing",
+                  "Reset and measurement history handling",\
+                  "cMat product - incl. user_loop_err",\
+                  "DM shape computation - incl. user_loop_command",\
+                  "Target PSFs estimation",\
+                  "Displays",\
+                  "Circular buffers, printouts - incl. user_end_go"];
   if (!go_quiet) {
     for (i=2;i<=8;i++) {
       write,format="time(%d-%d) = %5.2f ms  (%s)\n",i-1,i,time2(i)*1e3,timeComments(i-1);}

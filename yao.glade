@@ -36,7 +36,7 @@ Marcos van Dam (marcos@flatwavefronts.com),
 Ralf Flicker &amp; Damien Gratadour (damien.gratadour@obspm.fr)
 Debian packaging by Thibaut Paumard.</property>
     <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
-    <signal name="close" handler="on_aboutdialog_close"/>
+    <signal name="close" handler="on_aboutdialog_close" />
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
@@ -158,7 +158,7 @@ Debian packaging by Thibaut Paumard.</property>
     <property name="can_focus">False</property>
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="resizable">False</property>
-    <signal name="map_event" handler="on_window1_map_event"/>
+    <signal name="map_event" handler="on_window1_map_event" />
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -192,7 +192,7 @@ Debian packaging by Thibaut Paumard.</property>
                         <property name="can_focus">False</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_edit2_activate"/>
+                        <signal name="activate" handler="on_edit2_activate" />
                         <child internal-child="image">
                           <widget class="GtkImage" id="image1">
                             <property name="visible">True</property>
@@ -232,7 +232,7 @@ Debian packaging by Thibaut Paumard.</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_quit1_activate"/>
+                        <signal name="activate" handler="on_quit1_activate" />
                       </widget>
                     </child>
                   </widget>
@@ -254,7 +254,7 @@ Debian packaging by Thibaut Paumard.</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Show WFSs &amp; DMs</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_show_wfss_and_dms_toggled"/>
+                        <signal name="toggled" handler="on_show_wfss_and_dms_toggled" />
                       </widget>
                     </child>
                   </widget>
@@ -283,7 +283,7 @@ atm.screen variable. If no parfile has been read out
 yet, they will be saved in Y_USER/data</property>
                         <property name="label" translatable="yes">Create phase screens</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_create_phase_screens_activate"/>
+                        <signal name="activate" handler="on_create_phase_screens_activate" />
                       </widget>
                     </child>
                   </widget>
@@ -307,7 +307,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="tooltip" translatable="yes">Toggle debug statements</property>
                         <property name="label" translatable="yes">python &lt;&gt; yorick debug</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_debug_toggled"/>
+                        <signal name="toggled" handler="on_debug_toggled" />
                       </widget>
                     </child>
                     <child>
@@ -317,7 +317,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_about_activate"/>
+                        <signal name="activate" handler="on_about_activate" />
                       </widget>
                     </child>
                   </widget>
@@ -374,8 +374,8 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
-                                        <signal name="changed" handler="on_yaoparfile_changed"/>
-                                        <signal name="activate" handler="on_yaoparfile_activate"/>
+                                        <signal name="activate" handler="on_yaoparfile_activate" />
+                                        <signal name="changed" handler="on_yaoparfile_changed" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -390,7 +390,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_yaoparfile_select_clicked"/>
+                                        <signal name="clicked" handler="on_yaoparfile_select_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -407,7 +407,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_edit_clicked"/>
+                                        <signal name="clicked" handler="on_edit_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -437,7 +437,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_aoread_clicked"/>
+                                        <signal name="clicked" handler="on_aoread_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -455,11 +455,10 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="label" translatable="yes">aoinit</property>
                                             <property name="width_request">80</property>
                                             <property name="visible">True</property>
-                                            <property name="sensitive">False</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
                                             <property name="use_underline">True</property>
-                                            <signal name="clicked" handler="on_aoinit_clicked"/>
+                                            <signal name="clicked" handler="on_aoinit_clicked" />
                                           </widget>
                                           <packing>
                                             <property name="expand">True</property>
@@ -505,11 +504,10 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="label" translatable="yes">aoloop</property>
                                             <property name="width_request">80</property>
                                             <property name="visible">True</property>
-                                            <property name="sensitive">False</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
                                             <property name="use_underline">True</property>
-                                            <signal name="clicked" handler="on_aoloop_clicked"/>
+                                            <signal name="clicked" handler="on_aoloop_clicked" />
                                           </widget>
                                           <packing>
                                             <property name="expand">True</property>
@@ -562,11 +560,10 @@ yet, they will be saved in Y_USER/data</property>
                                       <widget class="GtkButton" id="go">
                                         <property name="label" translatable="yes">go / cont</property>
                                         <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_go_clicked"/>
+                                        <signal name="clicked" handler="on_go_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -578,11 +575,10 @@ yet, they will be saved in Y_USER/data</property>
                                       <widget class="GtkButton" id="pause">
                                         <property name="label" translatable="yes">pause</property>
                                         <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_pause_clicked"/>
+                                        <signal name="clicked" handler="on_pause_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -594,11 +590,10 @@ yet, they will be saved in Y_USER/data</property>
                                       <widget class="GtkButton" id="step">
                                         <property name="label" translatable="yes">step</property>
                                         <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_step_clicked"/>
+                                        <signal name="clicked" handler="on_step_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -610,11 +605,10 @@ yet, they will be saved in Y_USER/data</property>
                                       <widget class="GtkButton" id="restart">
                                         <property name="label" translatable="yes">restart</property>
                                         <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_restart_clicked"/>
+                                        <signal name="clicked" handler="on_restart_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -656,7 +650,6 @@ yet, they will be saved in Y_USER/data</property>
                     <child>
                       <widget class="GtkFrame" id="displays">
                         <property name="visible">True</property>
-                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="border_width">2</property>
                         <property name="label_xalign">0</property>
@@ -686,7 +679,7 @@ yet, they will be saved in Y_USER/data</property>
                                     <property name="adjustment">1 0 10000 1 10 0</property>
                                     <property name="climb_rate">0.10000000149</property>
                                     <property name="numeric">True</property>
-                                    <signal name="value_changed" handler="on_disp_rate_value_changed"/>
+                                    <signal name="value_changed" handler="on_disp_rate_value_changed" />
                                   </widget>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -704,7 +697,7 @@ yet, they will be saved in Y_USER/data</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="use_underline">True</property>
-                                    <signal name="clicked" handler="on_disp_pause_clicked"/>
+                                    <signal name="clicked" handler="on_disp_pause_clicked" />
                                   </widget>
                                   <packing>
                                     <property name="y_options"/>
@@ -718,7 +711,7 @@ yet, they will be saved in Y_USER/data</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="use_underline">True</property>
-                                    <signal name="clicked" handler="on_disp_resume_clicked"/>
+                                    <signal name="clicked" handler="on_disp_resume_clicked" />
                                   </widget>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -756,7 +749,7 @@ yet, they will be saved in Y_USER/data</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Image Display</property>
+                                    <property name="label" translatable="yes">ImDisp</property>
                                   </widget>
                                   <packing>
                                     <property name="top_attach">1</property>
@@ -777,7 +770,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="clicked" handler="on_image_disp_inst_clicked"/>
+                                        <signal name="clicked" handler="on_image_disp_inst_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -794,12 +787,29 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
                                         <property name="group">image_disp_inst</property>
-                                        <signal name="clicked" handler="on_image_disp_avg_clicked"/>
+                                        <signal name="clicked" handler="on_image_disp_avg_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
                                         <property name="fill">False</property>
                                         <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkRadioButton" id="image_disp_phase">
+                                        <property name="label" translatable="yes">phase</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="use_underline">True</property>
+                                        <property name="draw_indicator">True</property>
+                                        <property name="group">image_disp_inst</property>
+                                        <signal name="clicked" handler="on_image_disp_phase_clicked" />
+                                      </widget>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">False</property>
+                                        <property name="position">2</property>
                                       </packing>
                                     </child>
                                   </widget>
@@ -873,7 +883,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="climb_rate">0.0001</property>
                         <property name="digits">3</property>
                         <property name="numeric">True</property>
-                        <signal name="value_changed" handler="on_seeing_value_changed"/>
+                        <signal name="value_changed" handler="on_seeing_value_changed" />
                       </widget>
                       <packing>
                         <property name="expand">True</property>
@@ -908,7 +918,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="climb_rate">0.0099999997764800008</property>
                         <property name="digits">3</property>
                         <property name="numeric">True</property>
-                        <signal name="value_changed" handler="on_loopgain_value_changed"/>
+                        <signal name="value_changed" handler="on_loopgain_value_changed" />
                       </widget>
                       <packing>
                         <property name="expand">True</property>
@@ -943,7 +953,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="climb_rate">0.0099999997764800008</property>
                         <property name="digits">2</property>
                         <property name="numeric">True</property>
-                        <signal name="value_changed" handler="on_imlambda_value_changed"/>
+                        <signal name="value_changed" handler="on_imlambda_value_changed" />
                       </widget>
                       <packing>
                         <property name="expand">True</property>
@@ -1018,7 +1028,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_subtract_background_toggled"/>
+                                        <signal name="toggled" handler="on_subtract_background_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -1034,7 +1044,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_noise_toggled"/>
+                                        <signal name="toggled" handler="on_noise_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -1050,7 +1060,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_correct_up_tt_toggled"/>
+                                        <signal name="toggled" handler="on_correct_up_tt_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -1201,7 +1211,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="secondary_icon_sensitive">True</property>
                                             <property name="adjustment">0 0 20 1 10 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
-                                            <signal name="value_changed" handler="on_ninteg_cycles_value_changed"/>
+                                            <signal name="value_changed" handler="on_ninteg_cycles_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">7</property>
@@ -1220,7 +1230,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="secondary_icon_sensitive">True</property>
                                             <property name="adjustment">0 0 10 0.10000000000000001 10 0</property>
                                             <property name="climb_rate">0.0099999997764825821</property>
-                                            <signal name="value_changed" handler="on_sh_kernel_value_changed"/>
+                                            <signal name="value_changed" handler="on_sh_kernel_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">6</property>
@@ -1240,7 +1250,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0 -100 100 0.10000000000000001 10 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">2</property>
-                                            <signal name="value_changed" handler="on_sh_threshold_value_changed"/>
+                                            <signal name="value_changed" handler="on_sh_threshold_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">5</property>
@@ -1260,7 +1270,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0 0 100 0.10000000000000001 10 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">2</property>
-                                            <signal name="value_changed" handler="on_ron_value_changed"/>
+                                            <signal name="value_changed" handler="on_ron_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">4</property>
@@ -1279,7 +1289,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="secondary_icon_sensitive">True</property>
                                             <property name="adjustment">0 0 50000 100 10 0</property>
                                             <property name="climb_rate">1</property>
-                                            <signal name="value_changed" handler="on_gsdepth_value_changed"/>
+                                            <signal name="value_changed" handler="on_gsdepth_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">3</property>
@@ -1298,7 +1308,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="secondary_icon_sensitive">True</property>
                                             <property name="adjustment">0 0 500000 100 10 0</property>
                                             <property name="climb_rate">1</property>
-                                            <signal name="value_changed" handler="on_gsalt_value_changed"/>
+                                            <signal name="value_changed" handler="on_gsalt_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">2</property>
@@ -1318,7 +1328,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0 0 25 0.10000000000000001 10 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">2</property>
-                                            <signal name="value_changed" handler="on_gsmag_value_changed"/>
+                                            <signal name="value_changed" handler="on_gsmag_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">1</property>
@@ -1338,7 +1348,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0.050000000000000003 0.050000000000000003 10 0.02 10 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">2</property>
-                                            <signal name="value_changed" handler="on_efd_value_changed"/>
+                                            <signal name="value_changed" handler="on_efd_value_changed" />
                                           </widget>
                                         </child>
                                         <child>
@@ -1355,7 +1365,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0.20000000000000001 0 3 0.050000000000000003 0.10000000000000001 0</property>
                                             <property name="climb_rate">0.01</property>
                                             <property name="digits">2</property>
-                                            <signal name="value_changed" handler="on_pyr_mod_value_changed"/>
+                                            <signal name="value_changed" handler="on_pyr_mod_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">8</property>
@@ -1403,7 +1413,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1418,7 +1428,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1433,7 +1443,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1448,7 +1458,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1463,7 +1473,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1478,7 +1488,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1493,7 +1503,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1508,7 +1518,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_wfs_select_toggled"/>
+                                        <signal name="toggled" handler="on_wfs_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1630,7 +1640,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_dmreset_clicked"/>
+                                        <signal name="clicked" handler="on_dmreset_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1645,7 +1655,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
                                         <property name="use_underline">True</property>
-                                        <signal name="clicked" handler="on_dmflatten_clicked"/>
+                                        <signal name="clicked" handler="on_dmflatten_clicked" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1749,7 +1759,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="secondary_icon_sensitive">True</property>
                                             <property name="adjustment">0 0 10000 1 10 0</property>
                                             <property name="climb_rate">1</property>
-                                            <signal name="value_changed" handler="on_sat_voltage_value_changed"/>
+                                            <signal name="value_changed" handler="on_sat_voltage_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">3</property>
@@ -1772,7 +1782,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0 -1 1 0.01 0.10000000000000001 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">3</property>
-                                            <signal name="value_changed" handler="on_ymisreg_value_changed"/>
+                                            <signal name="value_changed" handler="on_ymisreg_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">2</property>
@@ -1795,7 +1805,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0 -1 1 0.01 0.10000000000000001 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">3</property>
-                                            <signal name="value_changed" handler="on_xmisreg_value_changed"/>
+                                            <signal name="value_changed" handler="on_xmisreg_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="top_attach">1</property>
@@ -1816,7 +1826,7 @@ yet, they will be saved in Y_USER/data</property>
                                             <property name="adjustment">0 0 3 0.050000000000000003 10 0</property>
                                             <property name="climb_rate">0.0099999997764800008</property>
                                             <property name="digits">3</property>
-                                            <signal name="value_changed" handler="on_dmgain_value_changed"/>
+                                            <signal name="value_changed" handler="on_dmgain_value_changed" />
                                           </widget>
                                           <packing>
                                             <property name="y_options"/>
@@ -1848,7 +1858,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1863,7 +1873,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1878,7 +1888,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1893,7 +1903,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1908,7 +1918,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1923,7 +1933,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1980,7 +1990,7 @@ yet, they will be saved in Y_USER/data</property>
                                         <property name="receives_default">False</property>
                                         <property name="use_underline">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_dm_select_toggled"/>
+                                        <signal name="toggled" handler="on_dm_select_toggled" />
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2171,7 +2181,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_editor_save_activate"/>
+                        <signal name="activate" handler="on_editor_save_activate" />
                       </widget>
                     </child>
                     <child>
@@ -2181,7 +2191,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_editor_save_as_activate"/>
+                        <signal name="activate" handler="on_editor_save_as_activate" />
                       </widget>
                     </child>
                     <child>
@@ -2197,7 +2207,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_editor_close_activate"/>
+                        <signal name="activate" handler="on_editor_close_activate" />
                       </widget>
                     </child>
                   </widget>
@@ -2220,7 +2230,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_about_activate"/>
+                        <signal name="activate" handler="on_about_activate" />
                       </widget>
                     </child>
                   </widget>
@@ -2289,7 +2299,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_editor2_save_activate"/>
+                        <signal name="activate" handler="on_editor2_save_activate" />
                       </widget>
                     </child>
                     <child>
@@ -2305,7 +2315,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_editor2_close_activate"/>
+                        <signal name="activate" handler="on_editor2_close_activate" />
                       </widget>
                     </child>
                   </widget>
@@ -2328,7 +2338,7 @@ yet, they will be saved in Y_USER/data</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_about_activate"/>
+                        <signal name="activate" handler="on_about_activate" />
                       </widget>
                     </child>
                   </widget>

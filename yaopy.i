@@ -233,11 +233,14 @@ func set_loop_gain(gain)
 }
 
 func toggle_im_imav(imavg)
+/* DOCUMENT toggle_im_imav(imavg)
+0: display inst. image(s)
+1: Display avg image(s)
+2: Display phase(s)
+*/
 {
   extern dispImImav;
-
-  if (imavg) dispImImav=imavg;
-  else dispImImav=1-dispImImav;
+  dispImImav=imavg;
 }
 
 func change_target_lambda(lambda)

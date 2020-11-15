@@ -785,7 +785,7 @@ func shwfs_init_rayleigh(ns)
 func subimage_disp(image_cube,ref_image){
 /* DOCUMENT subimage_disp(image_cube,ref_image)
 
-   Finds the displacement of the images in the image cube relative to the refernece image. Used to implement the correlation algorithm instead of the centroid in a Shack-Hartmann WFS.
+   Finds the displacement of the images in the image cube relative to the reference image. Used to implement the correlation algorithm instead of the centroid in a Shack-Hartmann WFS.
 
    SEE ALSO:
  */
@@ -942,6 +942,10 @@ func sh_wfs(pupsh,phase,ns)
   // bail out if bad type (otherwise error in C function call)
   if (typeof(pupsh) != "float") {error,"pupsh was not float !";}
   if (typeof(phase) != "float") {error,"Phase was not float !";}
+
+  spha = phase(_n1:_n2,_n1:_n2)*pupsh(_n1:_n2,_n1:_n2);
+  spha = (spha-min(spha))*pupsh(_n1:_n2,_n1:_n2);
+  wfs(ns)._phase = &spha;
 
   // shorthand
   pupd       = sim.pupildiam;
