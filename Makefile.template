@@ -30,12 +30,12 @@ PKG_DEPLIBS=-lfftw3f
 
 # set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS=-Wall
+PKG_LDFLAGS=
 # on OSX (or other platforms), you may need to add the path to the
 # fftw3 include files:
 # PKG_CFLAGS=-Wall -I/path/to/fftw3/include
-PKG_CFLAGS=-Wall -I/opt/local/include
-PKG_LDFLAGS=-L/opt/local/lib
-# PKG_LDFLAGS=
+# PKG_CFLAGS=-Wall -I/opt/local/include
+# PKG_LDFLAGS=-L/opt/local/lib
 
 # list of additional package names you want in PKG_EXENAME
 # (typically Y_EXE_PKGS should be first here)
