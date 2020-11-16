@@ -716,9 +716,9 @@ func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
 /* DOCUMENT func project_aniso_dm(nmaniso,nmlow,nmhigh,disp=)
    This function finds the actuator commands to apply on dmlow and dmhigh
    to produce the anisoplanatism modes (which upper part is in dm(nmaniso)).
-   nmaniso: # indice of anisoplanatism DM
-   nmlow: # indice of low DM (at 0 altitude)
-   nmhigh: # indice of high DM (at non zero altitude)
+   nmaniso: # index of anisoplanatism DM
+   nmlow: # index of low DM (at 0 altitude)
+   nmhigh: # index of high DM (at non zero altitude)
 
    computes alow and ahigh, which are #actuator x #anisomode.
    also compute "comaniso", which is the alow and ahigh put into a

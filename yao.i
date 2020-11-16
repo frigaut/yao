@@ -21,7 +21,7 @@
 
 extern aoSimulVersion, aoSimulVersionDate;
 aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.13.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020nov04";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020nov16";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1501,14 +1501,17 @@ func get_turb_phase(iter,nn,type)
 }
 
 //----------------------------------------------------
-func get_phase2d_from_dms(nn,type)
-/* DOCUMENT get_phase2d_from_dms(nn, type)
+func get_phase2d_from_dms(nn,type,w=)
+/* DOCUMENT get_phase2d_from_dms(nn, type, w=)
    Similar than get_turb_phase excepts it works on the mirror shape
    data cube. Returns the integrated phase along one given direction.
 
    nn = yao object # of type as below
    type = "wfs" or "target".
-   so get_phase2d_from_dms(2,"wfs") will return the phase integrated along
+   w is the list of DMs to propagate through. Can be selected for interaction 
+   matrix generation or ray tracing in tomographic reconstruction
+   
+   get_phase2d_from_dms(2,"wfs") will return the phase integrated along
    the third dimension of the cube (different altitude) in the direction
    of wfs #2.
    uses mircube (extern) = cube or image of phase screen (mirrors)
@@ -1519,43 +1522,37 @@ func get_phase2d_from_dms(nn,type)
    SEE ALSO:
 */
 {
-  sphase = array(float,_n,_n);
-  bphase = array(float,sim._size,sim._size);
-
-  if (anyof(dm.ncp)||(target.ncpdm)||((type=="wfs")&&(wfs(nn).ncpdm))) {
-    mirrorcube = mircube; // create a copy
-    dmidx = where(dm.ncp == 0);
-
+  if (w == []){  
+    // determine which DMs the light must pass through
+    idx = !dm.ncp; // start with only DMs on the common path
+    // TODO: check this logic
     if (type == "target"){
-      if (*target.ncpdm != []){
-        ncpdm = (*target.ncpdm)(nn);
-        if (ncpdm != 0 && noneof(dmidx == ncpdm)){
-          grow, dmidx, ncpdm;
-        }
-      }
+      // ignore non-common path DMs on the WFS side
+      idx(*target.ncpdm) = 1;
     } else { // type == "wfs"
-      if (wfs(nn).ncpdm != 0 && noneof(dmidx == wfs(nn).ncpdm)){
-        grow, dmidx, wfs(nn).ncpdm;
-      }
+      if (*wfs(nn).dmnotinpath){idx(*wfs(nn).dmnotinpath) = 0;} // DMs not in path of this WFS
+      if (wfs(nn).ncpdm){idx(wfs(nn).ncpdm) = 1;}    
     }
+    w = where(idx);
+    if (numberof(w) == 0){return 0.0f;}
+  } 
+  psnx = dimsof(mircube)(2);
+  psny = dimsof(mircube)(3);
+  nmirrors = dimsof(mircube)(4);
 
-    mirrorcube = mirrorcube(,,dmidx);
-  } else eq_nocopy,mirrorcube,mircube;
-
+  skip = array(1n,nmirrors);
+  skip(w) = 0;
+      
   // Now we can call the C interpolation routine and get the integrated
   // phase for this star
   // there are a few things to do to get ready
-  psnx = dimsof(mirrorcube)(2);
-  psny = dimsof(mirrorcube)(3);
-  nmirrors = dimsof(mirrorcube)(4);
-
+ 
   // here we have a branch to be able to process wfs and targets with the same
   // subroutine, this one.
   if (type == "wfs") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmwfsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
     yshifts = dmwfsyposcub(,,nn)+(sim._cent+dm.misreg(2,)-1)(-,);
-    skip = int(*wfs(nn)._dmnotinpath);
   } else if ( type == "target") {
     // stuff xshifts with fractional offsets, add xposvec for each screen
     xshifts = dmgsxposcub(,,nn)+(sim._cent+dm.misreg(1,)-1)(-,);
@@ -1569,21 +1566,22 @@ func get_phase2d_from_dms(nn,type)
       yss = (*target.yspeed)(nn)*4.848e-6*dm.alt*loop.ittime*loopCounter*ppm;
       yshifts += float(yss)(-,);
     }
-    skip = array(0n,nmirrors);
   }
 
   ishifts = int(xshifts); xshifts = xshifts - ishifts;
   jshifts = int(yshifts); yshifts = yshifts - jshifts;
 
-  err = _get2dPhase(&mirrorcube,psnx,psny,nmirrors,&skip,
+  sphase = array(float,_n,_n);
+  err = _get2dPhase(&mircube,psnx,psny,nmirrors,&skip,
                     &sphase,_n,_n,
                     &ishifts,&xshifts,
                     &jshifts,&yshifts);
 
   if (err != 0) {error,"Error in get_phase2d_from_dms";}
 
+  bphase = array(float,sim._size,sim._size);
   bphase(_n1:_n2,_n1:_n2) = sphase;
-
+ 
   return bphase;
 }
 
@@ -4354,7 +4352,7 @@ func go(nshot,all=)
         imav = shm_read(shmkey,"imlp");
         niterok += 1;
         grow,itv,i;
-        if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
+        if (disp_strehl_index) sind=disp_strehl_index; else sind=1;
         if (numberof(sairy)==1) tmp=sairy; else tmp=sairy(sind); // dirty fix
         grow,strehlsp,im(max,max,sind)/tmp;
         grow,strehllp,imav(max,max,sind,0)/tmp/(niterok+1e-5);
@@ -4391,7 +4389,7 @@ func go(nshot,all=)
       }
       niterok += 1;
       grow,itv,i;
-      if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
+      if (disp_strehl_index) sind=disp_strehl_index; else sind=1;
       if (numberof(sairy)==1) tmp=sairy; else tmp=sairy(sind); // dirty fix
       grow,strehlsp,im(max,max,sind)/tmp;
       grow,strehllp,imav(max,max,sind,0)/tmp/(niterok+1e-5);
@@ -4507,8 +4505,8 @@ func go(nshot,all=)
         myxytitles,"",swrite(format="Strehl @ %.2f mic",\
                       (*target.lambda)(0)),[0.005,-0.005],height=12;
         range,0.,1.;
-        if (disp_strehl_indice) sind=disp_strehl_indice; else sind=1;
-        plt,"Over target indices (disp!_strehl!_indice) "+print(sind)(1),0.070,0.6075,tosys=0,justify="LT",height=10;
+        if (disp_strehl_index) sind=disp_strehl_index; else sind=1;
+        plt,"Over target indices (disp!_strehl!_index) "+print(sind)(1),0.070,0.6075,tosys=0,justify="LT",height=10;
       }
     }
     // Display residual wavefront

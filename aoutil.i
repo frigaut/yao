@@ -1266,7 +1266,7 @@ func make_curv_wfs_subs(ns,dim,pupd,disp=,cobs=)
   // the signal over the subaperture area in CurvWFS:
   // now I am passing a vector of indices for each subaperture
   // and using them for the sum.
-  // sind is the ensemble of indice vectors
+  // sind is the ensemble of index vectors
   // nsind is the number of actual indices for a given subaperture
   tmp   = Subs(sum,sum,);
   sind  = array(long,max(tmp),NSub)*0+1;
