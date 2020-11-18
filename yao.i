@@ -2682,7 +2682,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           
 
           dm(nm)._indval = &ok;
-          dm(nm)._indext = &nok;
 
           dm(nm)._x = &(dmx(ok));
           dm(nm)._y = &(dmy(ok));
@@ -2692,6 +2691,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           }
 
           if (numberof(nok) == 0) continue; //yes, it should be here.
+
+          dm(nm)._indext = &nok;
 
           dm(nm)._ex = &(dmx(nok));
           dm(nm)._ey = &(dmy(nok));
