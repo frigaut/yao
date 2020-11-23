@@ -3960,6 +3960,8 @@ func go(nshot,all=)
   loopCounter++;
   nshots--;
 
+  if (sim.debug>50) write,format="loopCounter = %d\n",loopCounter;
+
   // update gui progress bar, but don't do it too often.
   if (max_progressbar_update_freq==[]) max_progressbar_update_freq=5.; // in Hz
   if (tac(3)>(1./max_progressbar_update_freq)) {
@@ -4289,9 +4291,11 @@ func go(nshot,all=)
     if (residual_phase_what==[]) residual_phase_what="target";
     if (residual_phase_which==[]) residual_phase_which=1;
 
-    residual_phase=get_phase2d_from_dms(residual_phase_which,residual_phase_what) +
-                   get_phase2d_from_optics(residual_phase_which,residual_phase_what) +
-                   get_turb_phase(i,residual_phase_which,residual_phase_what);
+    turb_phase = get_phase2d_from_optics(residual_phase_which,residual_phase_what) +
+                 get_turb_phase(i,residual_phase_which,residual_phase_what);
+
+    residual_phase = get_phase2d_from_dms(residual_phase_which,residual_phase_what) +
+                     turb_phase;
 
     residual_phase1d = residual_phase(where(pupil > 0));
     residual_phase1d -= min(residual_phase1d);
@@ -4302,10 +4306,11 @@ func go(nshot,all=)
       yao_fitswrite,fname,float(residual_phase*pupil);
     }
 
-    if (residual_phase_zcontent) {
+    if (ok&&residual_phase_zcontent) {
+      if (sim.debug>50) write,"Entering residual_phase_zcontent";
       // project residual phase on zernike
       // init zernikes:
-      extern rp_zerns,rp_nzerns,rp_w,rp_rms,rp_z,rp_mode_type;
+      extern rp_zerns,rp_nzerns,rp_w,rp_rms,rp_z,tp_z,rp_mode_type;
       // rp_mode_type = "kl" (for KL) or anything else (for Zernike)
       // rp_nzerns = # of modes
       // rp_z = mode coefficients for last iteration for which we have "OK"
@@ -4324,12 +4329,17 @@ func go(nshot,all=)
           for (nz=1;nz<=rp_nzerns;nz++) rp_zerns(,,nz) = zernike(nz);
         }
         rp_zerns = rp_zerns(*,)(where(pupil(_n1:_n2,_n1:_n2)),);
-        rp_zerns = QRsolve(transpose(rp_zerns),unit(rp_nzerns));
+        if (sim.debug>50) write,"LUsolve: inverting modes for residual calculations";
+        // rp_zerns = QRsolve(transpose(rp_zerns),unit(rp_nzerns));
+        rp_zerns = rp_zerns(,+)*LUsolve(rp_zerns(+,)*rp_zerns(+,))(,+);
         rp_w = where(pupil);
       }
       rp1d = residual_phase(rp_w);
       rp_rms = rp1d(rms)*1000.; // in nm
       rp_z = rp1d(+)*rp_zerns(+,)*1000.; // in nm
+      tp1d = turb_phase(rp_w);
+      tp_rms = tp1d(rms)*1000.; // in nm
+      tp_z = tp1d(+)*rp_zerns(+,)*1000.; // in nm
     } else if (residual_phase_rms_nott) {
       extern rp_tip1d,rp_tilt1d;
       if (rp_tip1d==[]) {
