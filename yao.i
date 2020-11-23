@@ -4305,16 +4305,24 @@ func go(nshot,all=)
     if (residual_phase_zcontent) {
       // project residual phase on zernike
       // init zernikes:
-      extern rp_zerns,rp_nzerns,rp_w,rp_rms,rp_z;
+      extern rp_zerns,rp_nzerns,rp_w,rp_rms,rp_z,rp_mode_type;
+      // rp_mode_type = "kl" (for KL) or anything else (for Zernike)
+      // rp_nzerns = # of modes
+      // rp_z = mode coefficients for last iteration for which we have "OK"
       if (rp_zerns==[]) {
         if (!rp_nzerns) rp_nzerns = 45;
         rp_zerns = array(float,[3,_n,_n,rp_nzerns]);
         // I've done the zernike thingy in a very stupid way.
         // it might have been used/initialized elsewhere and I can
         // mess up this initialisation here. To avoid this, temporarily:
-        if (zrmod!=[]) error,"zernike have already been initialized, can't do!";
-        prepzernike,_n,sim.pupildiam;
-        for (nz=1;nz<=rp_nzerns;nz++) rp_zerns(,,nz) = zernike(nz);
+        if (rp_mode_type=="kl") {
+          require,"yaokl.i";
+          rp_zerns(,,) = make_kl(rp_nzerns,_n,varkl,outbas,ipupil(_n1:_n2,_n1:_n2),oc=0.16,nr=64);
+        } else {
+          if (zrmod!=[]) error,"zernike have already been initialized, can't do!";
+          prepzernike,_n,sim.pupildiam;
+          for (nz=1;nz<=rp_nzerns;nz++) rp_zerns(,,nz) = zernike(nz);
+        }
         rp_zerns = rp_zerns(*,)(where(pupil(_n1:_n2,_n1:_n2)),);
         rp_zerns = QRsolve(transpose(rp_zerns),unit(rp_nzerns));
         rp_w = where(pupil);
