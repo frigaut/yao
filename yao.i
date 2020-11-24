@@ -4322,22 +4322,26 @@ func go(nshot,all=)
         // mess up this initialisation here. To avoid this, temporarily:
         if (rp_mode_type=="kl") {
           require,"yaokl.i";
-          rp_zerns(,,) = make_kl(rp_nzerns,_n,varkl,outbas,ipupil(_n1:_n2,_n1:_n2),oc=0.16,nr=64);
+          // rp_zerns(,,1) = ipupil(_n1:_n2,_n1:_n2);
+          rp_zerns(,,) = make_kl(rp_nzerns,_n,varkl,outbas,ipupil(_n1:_n2,_n1:_n2),oc=tel.cobs,nr=64);
         } else {
           if (zrmod!=[]) error,"zernike have already been initialized, can't do!";
           prepzernike,_n,sim.pupildiam;
           for (nz=1;nz<=rp_nzerns;nz++) rp_zerns(,,nz) = zernike(nz);
         }
-        rp_zerns = rp_zerns(*,)(where(pupil(_n1:_n2,_n1:_n2)),);
-        if (sim.debug>50) write,"LUsolve: inverting modes for residual calculations";
+        rp_zerns = rp_zerns(*,)(where(ipupil(_n1:_n2,_n1:_n2)),);
+        if (sim.debug) write,format="%s","LUsolve: inverting modes for residual calculations...";
         // rp_zerns = QRsolve(transpose(rp_zerns),unit(rp_nzerns));
         rp_zerns = rp_zerns(,+)*LUsolve(rp_zerns(+,)*rp_zerns(+,))(,+);
-        rp_w = where(pupil);
+        if (sim.debug) write,"Done";
+        rp_w = where(ipupil);
       }
       rp1d = residual_phase(rp_w);
+      rp1d -= avg(rp1d); // remove piston, otherwise alias in m=0 modes
       rp_rms = rp1d(rms)*1000.; // in nm
       rp_z = rp1d(+)*rp_zerns(+,)*1000.; // in nm
       tp1d = turb_phase(rp_w);
+      tp1d -= avg(tp1d); // remove piston, otherwise alias in m=0 modes
       tp_rms = tp1d(rms)*1000.; // in nm
       tp_z = tp1d(+)*rp_zerns(+,)*1000.; // in nm
     } else if (residual_phase_rms_nott) {

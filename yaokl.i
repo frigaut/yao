@@ -734,8 +734,10 @@ func make_kl(nmax,dim,&var,&outpolarbase,&pupil,oc=,nr=,nopup=,funct=,outscl=,ve
   if (!is_set(nr)) nr=64;
 
   if (dimsof(funct)==[]) {
-    write,"using the Kolmogorov model";
+    write,"make_kl: Using the Kolmogorov model";
     funct="kolmo";
+  } else if (funct=="karman") {
+    write,"make_kl: Using the von-Karman model";
   }
 
   polarbase = gkl_bas(ri=oc,nr=nr,np=(2*pi*nr),nfunc=nmax,\
