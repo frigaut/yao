@@ -30,10 +30,7 @@
    These pages present information about <b>yao</b>, a Monte-Carlo simulation tool for Adaptive optics (AO) systems.
    <b>Yao</b> is open source released under the GPLv3. You are welcome
    to use it, expand it and even distribute it, but please link back
-   to this page, as I am releasing updates semi-regularly. The last
-   version of yao (big release, lots of new stuff) to date (July 2010)
-   is <b>4.6.0</b>. Looks <a href="news.html">here</a> for the
-   latest news.<a name="features" id="features"></a></p>
+   to this page, as I am releasing updates semi-regularly. Look <a href="news.html">here</a> for the latest news.<a name="features" id="features"></a></p>
  
    <h2>Main features</h2>
 
@@ -44,39 +41,40 @@
    <h3>Highlights</h3>
    <ul class="spaced">
 
-     <li><font class="highlight">Coded in <a href="http://yorick.sourceforge.net">yorick</a></font>, a open source scripting language similar to IDL or mathlab (powerful and free!). The core, CPU intensive routines are coded in C. Yorick and the YAO plugins are written in ANSI-C, which makes them portable on many platforms. YAO should run on any *nix platform, including Linux, Mac OsX, BSD, cygwin, etc... It may also work on windows, but I have never tried.</li>
+     <li><font class="highlight">Coded in <a href="http://yorick.sourceforge.net">yorick</a></font>, an open-source scripting language similar to IDL or Matlab (powerful and free!). The core, CPU intensive routines are coded in C. Yorick and the YAO plugins are written in ANSI-C, which makes them portable on many platforms. YAO should run on any *nix platform, including Linux, Mac OSX, BSD, cygwin, etc... It may also work on windows, but I have never tried.</li>
 
      <li>
        <font class="highlight">Shack-Hartmann</font>,
-       <font class="highlight">Curvature</font> and
+       <font class="highlight">Curvature</font>,
+       <font class="highlight">Pyramid</font> and
        <font class="highlight">Modal</font> (Zernike) 
        <font class="highlight">WFS</font>,
        ON or OFF axis, are supported. It is also possible
        to <font class="highlight">add your own
-       WFS</font> <font class="new">NEW 4.5</font>.
+       WFS</font>.
      </li>
      <li>
        <font class="highlight">Stackarray</font> (piezostack), 
        <font class="highlight">curvature</font> (bimorph), 
-       <font class="highlight">segmented</font> <font class="new">NEW 4.5</font>, (experimental), 
-       <font class="highlight">modal</font> (zernike,
-       disk-marmonic <font class="new">NEW 4.6</font> or
-       KL) and 
-       <font class="highlight">Tip-Tilt deformable mirrors</font> 
+       <font class="highlight">segmented</font>, 
+       <font class="highlight">modal</font> (Zernike,
+       disk-harmonic or
+       Karhunen-Loeve) and 
+       <font class="highlight">Tip-tilt</font> mirrors
        are supported. The altitude of conjugation is adjustable. It is
        also possible  to <font class="highlight">add your own
-       DM</font> <font class="new">NEW 4.5</font>.
+       DM</font>
      </li>
      <li><font class="highlight">Various reconstructors:
      least-square with truncation (SVD) and MMSE-like</font>. MMSE can use
      either full matrix or sparse methods (fast). Users can hook into
      yao and use their own code to compute the
-     reconstructor <font class="new">NEW 4.5.2</font></li>
-     <li>An <font class="highlight">arbitrary number of WFSs and DMs</font> can be used, with the possibility of mixing types. It is therefore possible  to simulate single DM systems, as well as single non-zero conjugate, GLAO and MCAO systems.
+     reconstructor</li>
+     <li>An <font class="highlight">arbitrary number of WFSs and DMs</font> can be used, with the possibility of mixing types. It is therefore possible  to simulate single DM systems, as well as LTAO, GLAO and MCAO systems. 
      </li>
      <li>It supports <font class="highlight">Natural and Laser Guide Stars</font> (or a mix).
      </li>
-     <li>It supports <font class="highlight">photon and read-out noise</font>.
+     <li>It supports <font class="highlight">photon noise, read-out noise, dark current, and the excess noise factor</font>.
      </li>
      <li>It uses a multi-layered atmospheric model, with geometrical propagation only.
      </li>
@@ -86,13 +84,13 @@
        levels optimized C calls. Overall, this is rather efficient: A
        simple 6x6 Shack-Hartmann system (geometrical model, no
        diffraction) runs at <font class="highlight">over a 1000
-       iterations/seconds</font> on modern machines (about 250it/sec
+       iterations/seconds</font> on modern machines (about 250 iter/sec
        for a full diffractive SHWFS). That's including turbulent phase
        computation, wavefront sensing, reconstruction, calculation of
        the DM shape and PSF/performance estimation.  A 50x50
        Shack-Hartmann (full diffraction model) system runs at about 10
        iterations/s for an 8-m telescope. A 188 curvature system runs
-       at over 40 iterations/s (see
+       at over 40 iter/s (see
        the <a href="news.html#breaking_the_1000itpersec_barrier">this
        entry</a> for more details). Medium-size AO systems for ELTs
        can also be simulated, but it takes more time and RAM (a 60x60
@@ -106,7 +104,7 @@
      </li>
      <li>Straightforward <font class="highlight">scriptability</font> to probe parameter space.
      </li>
-     <li>An (optional) GTK <font class="highlight">GUI</font> provides a convenient interface. One can, e.g., change some of the system parameters <font class="highlight">while the loop is running</font>. This provides an educational approach to Adaptive Optics (newbies can play with the parameters and immediately sees how the system reacts) and can also provides a quick way to investigate the stability conditions for a newly designed system, before entering more serious Monte-carlo simulations. Note that because the GUI is GTK-based, it requires the gnome libraries. These come automatically in Linux and BSD, but are a bit more challenging to install on OsX (but possible with <a href="http://www.macports.org/">macport</a> or <a href="http://www.finkproject.org/">fink</a>). Note that the GUI is not essential to run YAO.
+     <li>An (optional) GTK <font class="highlight">GUI</font> provides a convenient interface. One can, e.g., change some of the system parameters <font class="highlight">while the loop is running</font>. This provides an educational approach to Adaptive Optics (newbies can play with the parameters and immediately see how the system reacts) and can also provides a quick way to investigate the stability conditions for a newly designed system, before entering more serious Monte-carlo simulations. Note that because the GUI is GTK-based, it requires the gnome libraries. These come automatically in Linux and BSD, but are a bit more challenging to install on OSX (but possible with <a href="http://www.macports.org/">macport</a> or <a href="http://www.finkproject.org/">fink</a>). Note that the GUI is not essential to run yao.
      </li>
    </ul>
    <h3>Other capabilities</h3>
@@ -124,7 +122,7 @@
          thresholding, convolution by a gaussian kernel and image
          elongation in the case of LGS. Proper overlap between
          subapertures and possibility to put a field stop with
-         adjustable shape, size and position <font class="new">NEW 4.5</font> .
+         adjustable shape, size and position.
          </li>
        </ol>
      </li>
@@ -132,7 +130,7 @@
      <li>Adjustable frame delay (in integer unit of the quantum loop time)</li>
      <li>Anisoplanatism modes for MCAO</li>
      <li>Infinite impulse response, up to 10th
-     order <font class="new">NEW 4.5</font></li>
+     order</li>
      <li>Separate control laws for each DM</li>
      <li>DM hysteresis</li>
      <li>DM saturation</li>
@@ -146,25 +144,23 @@
      <li>Extrapolated actuators</li>
      <li>Centroid gain optimization, using LGS dithering (only for LGS + Shack-Hartmann)</li>
      <li>Parametrizable vibration spectrum: white, 1/f, peaks with
-     adjustable rms and width <font class="new">NEW 4.5</font>
+     adjustable rms and width
      <li>Lots of internal variables are accessible from the outside of the program for debugging/implementation of new features</li>
    </ul>
-   <h3>Comments and shorcomings</h3>
+   <h3>Comments and shortcomings</h3>
    <ul class="spaced">
      <li>Dependency on <font class="highlight">FFTW</font> for the
      fast FFT C implementation.</li>
      <li>Dependencies on the following yorick packages: yutils
      (general utilities, v&ge;1.3), imutil (image manipulation,
-     v&ge;0.5), soy (sparse operations with yorick, v&ge;1.2) and svipc (v0.9)</li>
-     <li>The set-up routines (aoinit) have not yet been optimized for speed, thus, in particular, inverting large matrices can take some time. This optimization may come in due time, if deemed necessary.</li>
+       v&ge;0.5)
+     <li>Optional dependencies: soy (sparse operations with yorick, v&ge;1.2), svipc (v0.9), ylapack (faster matrix inversions), ygsl</li>
      <li>
        <font class="highlight">There is no GUI to configure the systems</font>. The parfile has to be edited manually, which in my view is not a big deal and actually allows for more compact &amp; clever parfiles, as yorick loops can be used to set repetitive variables.
      </li>
-     <li>Some work has been done with pyramid WFS but no has not been maintained and does not work in the current version
-     </li>
      <li>Scintillation is not supported, as it has been shown by many studies to be negligible at NIR wavelengths.
      </li>
-     <li>Command matrices are up to now computed as least-square estimates. Implementation of minimum-variance or MAP should come shortly.
+     <li>Command matrices are up to now computed as least-square estimates.
      </li>
    </ul><a name="start" id="start"></a>
  
