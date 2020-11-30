@@ -32,6 +32,7 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
  */
 
 {
+  // extern wfs;
   if (silent==[]) silent = (sim.verbose==0);
 
   // wfs._initkernels = array(1n,nwfs);
@@ -50,7 +51,14 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   sdimpow2   = int(log(sdim)/log(2));
 
   // first rotate/translate if needed:
-  pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // 20201201: I have concluded that this cause a lot of issues. Because ipupil 
+  // has discontinuities, it is near impossible to rotate it with linear operators
+  // without changing the values at the edge. So for now (20201201), I am *not* 
+  // rotating the pupil amplitude. This means any anisotropy in the pupil will not
+  // rotate, i.e. spiders etc. Beware. When fixed, just re-establish the rotation
+  // by uncommenting all the yao_wfs_rotate_shift() relative to pupsh.
+  // pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // wfs(ns)._pupil = &float(pupsh*1);
 
   wfs(ns)._centroidgain = 1.f;
 
@@ -955,7 +963,7 @@ func sh_wfs(pupsh,phase,ns)
   if (wfs(ns).npixpersub) subsize = wfs(ns).npixpersub;
 
   // first rotate/translate if needed:
-  pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
   phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
 
   // The phase is in microns. this scaling factor restore it in radian
@@ -1215,7 +1223,7 @@ func curv_wfs(pupil,phase,ns,init=,disp=,silent=)
   dimpow2   = int(log(size)/log(2));
 
   // first rotate/translate if needed:
-  pupil = yao_wfs_rotate_shift(pupil,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // pupil = yao_wfs_rotate_shift(pupil,wfs(ns).rotation,wfs(ns).shift,integer=1);
   phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
 
   if (init == 1) {
@@ -1347,7 +1355,7 @@ func pyramid_wfs(pup,phase,ns,init=,disp=)
   if (init) nintegcycles = 1;
 
   // first rotate/translate if needed:
-  pup = yao_wfs_rotate_shift(pup,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // pup = yao_wfs_rotate_shift(pup,wfs(ns).rotation,wfs(ns).shift,integer=1);
   phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
 
   // extract subarrays from input pupil & phase:
@@ -1747,7 +1755,7 @@ func zwfs(pup,pha,ns,init=)
     zwfsaarad = sim._size/2./sim.pupildiam*zwfsoversamp*2*zwfsantialia;
 
   // first rotate/translate if needed:
-  pup = yao_wfs_rotate_shift(pup,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // pup = yao_wfs_rotate_shift(pup,wfs(ns).rotation,wfs(ns).shift,integer=1);
   pha = yao_wfs_rotate_shift(pha,wfs(ns).rotation,wfs(ns).shift);
 
   if (init) {
@@ -1834,7 +1842,7 @@ func zernike_wfs(pupsh,phase,ns,init=)
   extern pwfs_zer,pwfs_wzer,pzn12;
 
   // first rotate/translate if needed:
-  pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
+  // pupsh = yao_wfs_rotate_shift(pupsh,wfs(ns).rotation,wfs(ns).shift,integer=1);
   phase = yao_wfs_rotate_shift(phase,wfs(ns).rotation,wfs(ns).shift);
 
   if (init) {

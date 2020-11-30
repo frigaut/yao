@@ -2121,8 +2121,11 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
   // if the pupil for the WFSs has not already been defined by the user_pupil function, then set it to be the same as the telescope pupil
   for (ns=1;ns<=numberof(wfs);ns++) {
     if (*wfs(ns)._pupil == []) { 
-      if (wfs(ns).type=="hartmann") wfs(ns)._pupil = &ipupil; \
-      else wfs(ns)._pupil = &pupil;
+      if (wfs(ns).type=="hartmann") {
+        wfs(ns)._pupil = &ipupil;
+      } else {
+        wfs(ns)._pupil = &pupil;
+      }
     }
   }
 
