@@ -688,7 +688,7 @@ func yao_wfs_rotate_shift(ar,rot,sh,integer=)
    shift has to be reasonable in pixels (a few)
    rot is rotation angle in degrees (CW)
    shift is 2 element vector [x,y] of shift in pixels
-   when integer is set, input is expected to be integer array and is trated as such
+   when integer is set, input is expected to be integer array and is treated as such
    (output is also integer array)
    rot shift it/s
    0   0     103
@@ -721,7 +721,7 @@ func yao_wfs_rotate_shift(ar,rot,sh,integer=)
   if (integer) {
     tmp = indgen(sim._size);
     ar = bilinear(ar,tmp+sh(1),tmp+sh(2),grid=1);
-    ar = rotate2(ar,-rot); // rotate2() rot parameter is opposite fft_rotate()
+    ar = rotate2(ar,-rot,xc=sim._cent,yc=sim._cent); // rotate2() rot parameter is opposite fft_rotate()
     return ar;
   }
   // else we are dealing with phase, float arrays
@@ -739,8 +739,8 @@ func yao_wfs_rotate_shift(ar,rot,sh,integer=)
   }
   // and rotate:
   if (rot!=0) {
-    if (use_fftrotate) ar2rs = fftrotate(ar2rs,rot);
-    else ar2rs = rotate2(ar2rs,-rot);
+    if (use_fftrotate) ar2rs = fftrotate(ar2rs,rot,xc=sim._cent,yc=sim._cent);
+    else ar2rs = rotate2(ar2rs,-rot,xc=sim._cent,yc=sim._cent);
   }
   return ar2rs;
 }
