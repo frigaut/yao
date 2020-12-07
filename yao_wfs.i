@@ -167,15 +167,33 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
     gind       = where(fluxPerSub > fracsub);
   }
 
+  // alternatively, the user can supply a number of subaperture, and we'll do
+  // our best here to match this. There may be no solution, in which case we'll 
+  // exit in error
+  // wfs.extnsubs should be set to the desired number of valid subapertures
+  if (wfs(ns).extnsubs) {
+    step = 1./subsize^2.;
+    step = step/2.; // for good measure
+    if (numberof(gind)>wfs(ns).extnsubs) direc = +1;
+    else direc = -1;
+    fracs = wfs(ns).fracIllum;
+    while (numberof(gind)!=wfs(ns).extnsubs) {
+      fracs = fracs + direc*step;
+      gind  = where(fluxPerSub > fracs);
+      if (abs(fracs-0.5)>0.5) error,swrite(format="No solution to reach required wfs(%d).extnsubs\n",ns);
+    }
+    write,format="User requested nsub OK: Found wfs.fracIllum=%.3f\n",fracs;
+  } else if (wfs(ns).extern_validsubs) {
+    // User-defined validsubs (in that case, the responsibility of having the right number
+    // of elements, etc, is left to the user):
+    wfs(ns)._validsubs = wfs(ns).extern_validsubs;
+  }
+
   // then out of these, we will only compute mesvec for the "valid":
-  tmp = fluxPerSub;
-  tmp = tmp(gind);
+  tmp = fluxPerSub; tmp = tmp(gind);
   if (!wfs_keep_valid) wfs(ns)._validsubs = &(int(tmp > fracsub));
   // 20201104: not sure what wfs_keep_valid would be use for, but leaving in there.
 
-  // User-defined validsubs (in that case, the responsibility of having the right number
-  // of elements, etc, is left to the user):
-  if (wfs(ns).extern_validsubs) wfs(ns)._validsubs = wfs(ns).extern_validsubs;
 
   istart     = istart(gind);
   jstart     = jstart(gind);

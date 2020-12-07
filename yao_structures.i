@@ -231,6 +231,7 @@ struct wfs_struct
   float   flatrmserror;   // rms error on WFS flat, referenced to 1. Optional [0]
                           // Typical value can be 0.01
   pointer extern_validsubs;// external long vector of valid subapertures; overrides wfs._validsubs when set.
+  long    extnsubs;       // if set, yao will try to find the fracIllum that gives this. Will fail in error if no solution
   string  fsname;         // fits file with subaperture amplitude mask. It should have
                           // dimension 2^sdimpow2 square. can be float or long.
   string  fstop;          // "none", "square" or "round" are allowable values
