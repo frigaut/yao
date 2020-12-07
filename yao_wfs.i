@@ -174,13 +174,11 @@ func shwfs_init(pupsh,ns,silent=,imat=,clean=)
   if (wfs(ns).extnsubs) {
     step = 1./subsize^2.;
     step = step/2.; // for good measure
-    if (numberof(gind)>wfs(ns).extnsubs) direc = +1;
-    else direc = -1;
-    fracs = wfs(ns).fracIllum;
+    fracs = 0.;
     while (numberof(gind)!=wfs(ns).extnsubs) {
-      fracs = fracs + direc*step;
+      fracs += step;
       gind  = where(fluxPerSub > fracs);
-      if (abs(fracs-0.5)>0.5) error,swrite(format="No solution to reach required wfs(%d).extnsubs\n",ns);
+      if (fracs>1.0) error,swrite(format="No solution to reach required wfs(%d).extnsubs\n",ns);
     }
     write,format="User requested nsub OK: Found wfs.fracIllum=%.3f\n",fracs;
   } else if (wfs(ns).extern_validsubs) {
