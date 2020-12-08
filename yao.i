@@ -1472,11 +1472,11 @@ func get_turb_phase(iter,nn,type)
     yshifts = gsyposcub(,,nn)+yposvec(iter,)(-,);
     ppm = sim.pupildiam/tel.diam;
     if (target.xspeed&&loopCounter) {
-      xss = (*target.xspeed)(nn)*4.848e-6*(*atm.layeralt)*loop.ittime*loopCounter*ppm;
+      xss = (*target.xspeed)(nn)*4.848e-6*(*atm._layeralt)*loop.ittime*loopCounter*ppm;
       xshifts += float(xss)(-,);
     }
     if (target.yspeed&&loopCounter) {
-      yss = (*target.yspeed)(nn)*4.848e-6*(*atm.layeralt)*loop.ittime*loopCounter*ppm;
+      yss = (*target.yspeed)(nn)*4.848e-6*(*atm._layeralt)*loop.ittime*loopCounter*ppm;
       yshifts += float(yss)(-,);
     }
   }
@@ -4340,8 +4340,8 @@ func go(nshot,all=)
         // rp_zerns = QRsolve(transpose(rp_zerns),unit(rp_nzerns));
         rp_zerns = rp_zerns(,+)*LUsolve(rp_zerns(+,)*rp_zerns(+,))(,+);
         if (sim.debug) write,"Done";
-        rp_w = where(ipupil);
       }
+      rp_w = where(ipupil);
       rp1d = residual_phase(rp_w);
       rp1d -= avg(rp1d); // remove piston, otherwise alias in m=0 modes
       rp_rms = rp1d(rms)*1000.; // in nm
