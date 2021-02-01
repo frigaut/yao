@@ -69,7 +69,7 @@ int _sinf(float *x, long n)
   return (0);
 }
 
-#ifdef __APPLE__
+// #ifdef __APPLE__
 
 /* This is supposed to patch the issue of linking to a dynamic lib
 in OsX. */
@@ -265,4 +265,4 @@ void _eclat_double(double *ar, int nx, int ny)
   }
 }
 
-#endif
+// #endif
