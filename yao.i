@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.13.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020nov16";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.13.1";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021apr30";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -1527,10 +1527,14 @@ func get_phase2d_from_dms(nn,type,w=)
     idx = !dm.ncp; // start with only DMs on the common path
     // TODO: check this logic
     if (type == "target"){
-      // ignore non-common path DMs on the WFS side
-      idx(*target.ncpdm) = 1;
+      // set non-common path DMs on the target side
+      if (*target.ncpdm != []){
+        if ((*target.ncpdm)(nn) != 0){
+          idx((*target.ncpdm)(nn)) = 1;
+        }
+      }
     } else { // type == "wfs"
-      if (*wfs(nn).dmnotinpath){idx(*wfs(nn).dmnotinpath) = 0;} // DMs not in path of this WFS
+      if (*wfs(nn).dmnotinpath != []){idx(*wfs(nn).dmnotinpath) = 0;}// DMs not in path of this WFS
       if (wfs(nn).ncpdm){idx(wfs(nn).ncpdm) = 1;}    
     }
     w = where(idx);
