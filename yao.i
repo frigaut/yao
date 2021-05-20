@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.13.2";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021may19";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.14.0";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021may20";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -63,6 +63,7 @@ require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
 require,"yaodh.i";
+include, "lapack.i", 2; // load lapack if it exists
 
 func LUsolve2(A,b){
 /* DOCUMENT LUsolve2(a, b)
@@ -2981,7 +2982,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
             ww = where(dist2 == pitch2);
             if (numberof(ww)){L(ii,ww) = 0.25;}
           }
-          dm(nm)._regmatrix = &(L(+,)*L(+,));
+          if (lpk_gemm == []){          
+            dm(nm)._regmatrix = &(L(+,)*L(+,));
+          } else {
+            tmp = array(float,[2,dm(nm)._nact,dm(nm)._nact]);
+            dm(nm)._regmatrix = &lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),L,L,float(1.),tmp);
+          }
         } else { // identity matrix
           dm(nm)._regmatrix = &unit(dm(nm)._nact);
         }
@@ -3169,7 +3175,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           }
 
           if (mat.method == "mmse"){
-            dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
+            if (lpk_gemm == []){
+              dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
+            } else {
+              tmp = dm(nm).regparam*(*dm(nm)._regmatrix);
+              lhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,tomoMat,tomoMat,float(1.),tmp);           
+              tmp = array(float,[2,dimsof(tomoMat)(3),dimsof(virtMat)(3)]);
+              rhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),tomoMat,virtMat,float(1.),tmp);
+              dm(nm)._fMat = &LUsolve(lhs,rhs);
+            }
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
             yao_fitswrite,filename,*dm(nm)._fMat;
           } else {
@@ -3228,8 +3242,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 
           Ga = iMat(:,realAct);
           Gx = iMat(:,estAct);
-          AtA = Gx(+,)*Gx(+,);
-
+          if (lpk_gemm == []){
+            AtA = Gx(+,)*Gx(+,);
+          } else {
+            tmp = array(float,[2,dimsof(Gx)(3),dimsof(Gx)(3)]);
+            AtA = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),Gx,Gx,float(1.),tmp);
+          }
           nEstAct = numberof(estAct);
           nRealAct = numberof(realAct);
 
@@ -3283,8 +3301,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
             }
           }
 
-          Dterm = Ga(,+)*fMat(+,)-Gx;
-          polcMat = Gx(+,)*Dterm(+,)-Cphi;
+          if (lpk_gemm == []){
+            Dterm = Ga(,+)*fMat(+,)-Gx;
+            polcMat = Gx(+,)*Dterm(+,)-Cphi;
+          } else {            
+            tmp = float(Gx); 
+            Dterm = lpk_gemm(LPK_NO_TRANS,LPK_NO_TRANS,float(1.),Ga,fMat,float(-1.),tmp); // this operation changes tmp (that's why it is copied)
+            polcMat = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),Gx,Dterm,float(-1.),Cphi); // this operation changes Cphi
+            Cphi = [];            
+          }
           dMat = LUsolve(AtA+Cphi,polcMat);
           yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
         } else {
@@ -3300,9 +3325,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
               mc += dm(nm)._nact;
             }
           }
-          cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
+          if (lpk_gemm == []){
+            cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
+          } else {
+            iMat = float(iMat);
+            cMat = LUsolve(lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),iMat,iMat,float(1.),Cphi),transpose(iMat)); // note: this operation changes Cphi
+            Cphi = [];
+          }
         }
-
       } else if (mat.method == "mmse-sparse") {
 
         // create the regularization matrices for each DM
@@ -3723,6 +3753,30 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
     }
   }
 
+    // check that dMat exists for pseudo open-loop control.
+  // otherwise, load it or compute it
+  if ((loop.method == "pseudo open-loop")&&(mat.method != "mmse-sparse")&&(dMat == [])){
+    // need to load or compute dMat
+    if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
+      if (sim.verbose){write, "Loading " + parprefix + "-dMat.fits";}
+      dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
+    } else {
+      if (sim.verbose){write, "Computing dMat";}
+      identityMatrix = float(unit(dimsof(cMat)(2)));
+      if (lpk_gemm == []){
+        dMat = (float(cMat))(,+)*(float(iMat))(+,) - identityMatrix;
+      } else {
+        dMat = lpk_gemm(LPK_NO_TRANS,LPK_NO_TRANS,float(1.),float(cMat),float(iMat),float(-1.),identityMatrix);
+      }
+      if (sim.verbose){write, "Saving "+parprefix + "-dMat.fits";}
+      yao_fitswrite,YAO_SAVEPATH + parprefix + "-dMat.fits",dMat;
+      identityMatrix = [];
+    }
+  }
+
+  // if lapack has not been loaded, ensure that it is not used in the reconstruction process
+  if (lpk_gemv == []){mat.lapack_mvm = 0;}
+  
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._x0 = &array(float,dm(nm)._nact);
@@ -4000,10 +4054,9 @@ func go(nshot,all=)
   if (loopCounter>loop.niter) {
     exit,"Can't continue: loopCounter > loop.niter !";
   }
-
+  
   i = loopCounter;
   tic; time(1) = tac();
-
 
   prevOK  = ok;
 
@@ -4099,23 +4152,28 @@ func go(nshot,all=)
       } else {
         Ats=rcoxv(GxSP,usedMes);
         err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
-      }                                                                               
+      }      
     }
   } else {
     // if loop.method = "none", everything is left to the user,
     // thus we skip this matrix multiply.
-    if (loop.method != "none") err = cMat(,+) * usedMes(+);
-    if ((loop.method == "pseudo open-loop") && (i > 1)){
-      // make sure that dMat exists
-      if (dMat == []){
-        // if not, load it
-        if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
-          dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
-        } else {
-          error, "loop.method set to pseudo open-loop, but dMat is not defined";
-        }
+    if (loop.method != "none"){
+      if (mat.lapack_mvm == 0){
+        err = cMat(,+)*usedMes(+);
+      } else {
+        tmp = array(float,dimsof(cMat)(2));
+        err = lpk_gemv(LPK_NO_TRANS,float(1.0),cMat,usedMes,float(0.0),tmp);
       }
-      polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
+    }
+    
+    if ((loop.method == "pseudo open-loop") && (i > 1)){
+      if (mat.lapack_mvm == 0){
+        polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
+      } else {
+        tmp = array(float,dimsof(dMat)(2));
+        polccorr = lpk_gemv(LPK_NO_TRANS,float(1.0),dMat,estdmcommand,float(0.0),tmp);
+      }
+        
       if (anyof(wfs.nintegcycles > 1)){
         // if some DMs are not updating because the WFSs have not finished
         // integrating, then the POLC correction should not be applied to
@@ -4135,7 +4193,6 @@ func go(nshot,all=)
       err -= polccorr;
     }
   }
-
 
   if (user_loop_err!=[]) user_loop_err;
 
@@ -4188,7 +4245,12 @@ func go(nshot,all=)
         if (mat.method == "mmse-sparse") {
           *dm(nm)._command = rcoxv(*dm(nm)._fMat,virtualdmcommand);
         } else {
-          *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
+          if (mat.lapack_mvm == 0){
+            *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
+          } else {
+            tmp = array(float,dimsof(*dm(nm)._fMat)(2));
+            *dm(nm)._command =  lpk_gemv(LPK_NO_TRANS,float(1.),*dm(nm)._fMat,virtualdmcommand,float(0.),tmp);
+          }
         }
       }
 
@@ -4245,7 +4307,12 @@ func go(nshot,all=)
       if ( (nm==1) && (add_dm0_shape!=[]) ) mircube(,,1) += add_dm0_shape;
       // extrapolated actuators:
       if ( (dm(nm)._enact != 0) && (dm(nm).noextrap == 0) ) {
-        ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
+        if (mat.lapack_mvm == 0){        
+          ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
+        } else {
+          tmp = array(float,dm(nm)._enact);
+          ecom = float(lpk_gemv(LPK_NO_TRANS,float(1.0),*dm(nm)._extrapcmat,*dm(nm)._command,float(0.0),tmp));
+        }
         mircube(n1:n2,n1:n2,nm) += comp_dm_shape(nm,&ecom,extrap=1);
       }
     } else {
