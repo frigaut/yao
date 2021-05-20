@@ -4464,13 +4464,14 @@ func go(nshot,all=)
       psf_child_started = 1;
     } else {
       // compute integrated phases and fill phase cube
+      for (jt=1;jt<=target._ntarget;jt++) {
+        cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +      \
+          get_phase2d_from_optics(jt,"target") +                   \
+          get_turb_phase(i,jt,"target");
+      }
+      // vibration already added to dm1
+      
       for (jl=1;jl<=target._nlambda;jl++) {
-        for (jt=1;jt<=target._ntarget;jt++) {
-          cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +    \
-                            get_phase2d_from_optics(jt,"target") + \
-                            get_turb_phase(i,jt,"target");
-          // vibration already added to dm1
-        }
         if (*target._pupil == []){
           // compute image cube from phase cube
           status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
