@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.14.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021may20";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.14.1";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021may26";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -580,13 +580,13 @@ func do_imat(disp=)
       if (mat.method != "mmse-sparse"){
         if (!dm(nm).ncp){
           // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
-          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
+          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat;
         }
       } else {
         if (!dm(nm).ncp){
-          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat), mat.sparse_thresh;
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat), mat.sparse_thresh;
         } else {
-          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0.), mat.sparse_thresh;
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat*0.), mat.sparse_thresh;
         }
       }
 
@@ -1858,7 +1858,7 @@ func aoread(parfile)
   // flush any prior assignments to ao members
   atm=opt=sim=wfs=dm=mat=tel=target=gs=loop=cwfs=[];
   // reset a number of other array that may have been set previously
-  pupil = ipupil = loopCounter = iMat = cMat = [];
+  pupil = ipupil = loopCounter = iMat = cMat = dMat = [];
 
   // INIT STRUCTURES:
   atm    = atm_struct();
@@ -2564,6 +2564,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
     if (mat.method != "mmse-sparse"){
       iMat = array(double,sum(wfs._nmes),sum(dm._nact));
       cMat = array(double,sum(dm._nact),sum(wfs._nmes));
+      dMat = []; // remove any previous values
 
       if (sim.verbose>1) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
     } else {
@@ -2912,7 +2913,6 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
         }
       }
     } else {
-      dMat = [];
       iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
       write, "Reading "+YAO_SAVEPATH+mat.file;
       if (fileExist(YAO_SAVEPATH+parprefix+"-AtA.ruo")){
@@ -2954,6 +2954,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
   }
   
   if ((svd || forcemat || need_new_iMat)&&(user_cmat==[])) {
+    // remove any previous dMat used in pseudo open-loop control
+    dMat = [];
+    dMat_filename = YAO_SAVEPATH+parprefix+"-dMat.fits";
+    if (fileExist(dMat_filename)){
+      if (sim.verbose){write, "Deleting file "+dMat_filename;}
+      remove, dMat_filename;
+    }
+    
     // create the regularization matrices
     nDMs = numberof(dm);
     for (nm=1;nm<=nDMs;nm++){
