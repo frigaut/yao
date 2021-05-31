@@ -14,7 +14,7 @@ Aurea Garcia-Rissmann   agrissmann@gmail.com
 Yao is a Monte-Carlo simulation tool for Adaptive optics (AO) systems, written as a yorick plugin. It uses a number of custom developed functions to simulate wavefront sensors (WFS), deformable mirrors (DM) and many other aspects of an AO loop. The core functions are written in C, hence are very fast.
 
 ## Help pages
-http://frigaut.github.com/yao/index.html
+https://frigaut.github.io/yao/
 
 ## Required Dependencies
 
