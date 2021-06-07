@@ -1934,7 +1934,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
    SEE ALSO: aoread, aoloop
 */
 {
-  extern pupil,ipupil;
+  extern pupil,ipupil,wp;
   extern iMat,cMat,fMat,dMat;
   extern iMatSP,AtA,AtAregSP,fMatSP,GxSP,polcMatSP;
   extern modalgain;
@@ -2111,6 +2111,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 
   pupil  = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                             real=sim.pupilapod,cobs=tel.cobs)); // changed from real=1 by Marcos.
+  wp = where(pupil > 0);
   ipupil = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                           cobs=tel.cobs));
 
@@ -3696,7 +3697,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 }
 
 //---------------------------------------------------------------
-func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_reinit_wfs=)
+func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_reinit_wfs=,quick_strehl=)
 /* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    Prepare all arrays for the execution of the loop (function go()).
 
@@ -3711,13 +3712,14 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
                    see animate() yorick function. ON by default.
    savephase     = set to save residual wavefront on first target as fits file
    no_reinit_wfs = don't re-init wfs
+   quick_strehl  = calculate the Strehl *only* directly from phase screens
    SEE ALSO: aoread, aoinit, go, restart
  */
 {
   extern looptime, mircube, command, wfsMesHistory, cubphase;
   extern im, imav, airy, sairy, fwhm, e50;
   extern niterok;
-  extern pp, sphase, bphase, imphase, dimpow2, cMat, pupil, ipupil;
+  extern pp, sphase, bphase, imphase, dimpow2, cMat, pupil, ipupil, wp;
   extern time, strehllp, strehlsp, rpv, itv, ok, njumpsinceswap;
   extern remainingTimestring  ;
   extern cbmes, cbcom, cberr;
@@ -3727,7 +3729,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   extern dispImImav;
   extern loopCounter, nshots, statsokvec;
   extern savecbFlag, dpiFlag, controlscreenFlag;
-  extern dispFlag, nographinitFlag, animFlag;
+  extern dispFlag, nographinitFlag, animFlag, quickstrehlFlag;
   extern aoloop_disp,aoloop_savecb,aoloop_no_reinit_wfs;
   extern commb,errmb; // minibuffers
   extern default_dpi;
@@ -3736,6 +3738,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
   if ((no_reinit_wfs==[])&&(aoloop_no_reinit_wfs!=[])) no_reinit_wfs=aoloop_no_reinit_wfs;
+  if (quick_strehl == []){quick_strehl = 0;}
   if (anim==[]) anim=1; // let's make it the default
 
   dispFlag = disp;
@@ -3745,6 +3748,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   nographinitFlag = nographinit;
   animFlag = anim;
   savephaseFlag = savephase;
+  quickstrehlFlag = quick_strehl;
 
   gui_message,"Initializing loop";
 
@@ -3825,6 +3829,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       airy = calc_psf_fast((*target._pupil)(,,nt),pupil*0.);
       sairy(nt) = max(airy);
     }
+    quickstrehlFlag = 0; // not yet implemented!
   }
 
   fwhm   = e50  = array(float,[2,target._ntarget,target._nlambda]);
@@ -4007,12 +4012,13 @@ func go(nshot,all=)
 {
   extern niterok, starttime, endtime, endtime_str, tottime, now2, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag;
-  extern nographinitFlag,savephaseFlag;
+  extern nographinitFlag,savephaseFlag,quickstrehlFlag;
   extern cbmes, cbcom, cberr;
   extern iMatSP, AtA, AtAregSP, GxTSP
   extern commb,errmb; // minibuffers (last 10 iterations)
   extern im,imav;
   extern iter_per_sec;
+  extern wp;
 
   gui_show_statusbar1;
 
@@ -4380,9 +4386,9 @@ func go(nshot,all=)
     residual_phase = get_phase2d_from_dms(residual_phase_which,residual_phase_what) +
                      turb_phase;
 
-    residual_phase1d = residual_phase(where(pupil > 0));
+    residual_phase1d = residual_phase(wp);
     residual_phase1d -= min(residual_phase1d);
-    residual_phase(where(pupil > 0)) = residual_phase1d;
+    residual_phase(wp) = residual_phase1d;
 
     if (savephase){
       fname = swrite(format="%s/%s_rwf%d.fits",YAO_SAVEPATH,parprefix,loopCounter);
@@ -4474,16 +4480,25 @@ func go(nshot,all=)
       // compute integrated phases and fill phase cube
       for (jt=1;jt<=target._ntarget;jt++) {
         cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +      \
-          get_phase2d_from_optics(jt,"target") +                   \
-          get_turb_phase(i,jt,"target");
+          get_phase2d_from_optics(jt,"target") +                        \
+          get_turb_phase(i,jt,"target"); // vibration already added to dm1
       }
-      // vibration already added to dm1
       
       for (jl=1;jl<=target._nlambda;jl++) {
         if (*target._pupil == []){
+          if (quickstrehlFlag){
+            // we are not going to calculate the image
+            // instead, calculate the DC component of the image, since this is where the maximum value is expected.
+            // this can be used to calculate the Strehl ratio            
+            for (jt=1;jt<=target._ntarget;jt++){
+              p = cubphase(,,jt)(wp)*float(2*pi)/(*target.lambda)(jl);
+              im(sim._size/2,sim._size/2,jt) = sum(sin(p))^2+sum(cos(p))^2;
+            }
+          } else {
           // compute image cube from phase cube
           status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
                                   target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
+          }
         } else {
           for (nt=1;nt<=target._ntarget;nt++){
             imtarg = im(,,nt);
@@ -4827,7 +4842,11 @@ func after_loop(void)
   extern cbmes, cbcom, cberr;
   extern strehl,e50,fwhm;
   extern iter_per_sec;
+  extern quickstrehlFlag;
 
+  calc_ee = (!quickstrehlFlag)*(!no_ee);
+  calc_fwhm = (!quickstrehlFlag)*(!no_fwhm);
+    
   savecb = savecbFlag;
 
   gui_message,swrite(format="Saving results in %s.res (ps,imav.fits)...",YAO_SAVEPATH+parprefix);
@@ -4861,10 +4880,10 @@ func after_loop(void)
     write,"cbmes, cbcom and cberr are saved.";
     write,"You can run modal_gain_optimization() to optimize and update the gains";
   }
-
+  
   // End of loop calculations (fwhm, EE, Strehl):
-  fairy  = findfwhm(airy,saveram=1);
-  if (!no_ee) e50airy= encircled_energy(airy,ee50); else e50airy=0.;
+  if (calc_fwhm) fairy  = findfwhm(airy,saveram=1);
+  if (calc_ee) e50airy= encircled_energy(airy,ee50); else e50airy=0.;
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
 
   psize  = (float(sim.pupildiam)/sim._size)*(*target.lambda)/tel.diam/4.848e-3;
@@ -4878,8 +4897,8 @@ func after_loop(void)
   write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
     for (jt=1;jt<=target._ntarget;jt++) {
-      fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
-      if (!no_ee) encircled_energy,imav(,,jt,jl),tmp; else tmp=0.;
+      if (calc_fwhm) fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
+      if (calc_ee) encircled_energy,imav(,,jt,jl),tmp; else tmp=0.;
       e50(jt,jl)  = tmp*psize(jl);
 
       write,format=
@@ -4935,8 +4954,10 @@ func after_loop(void)
   grow, header, fitsBuildCard("XPOSITION", *target.xposition , "arcsec");
   grow, header, fitsBuildCard("YPOSITION", *target.yposition , "arcsec");
 
-  yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav, header;
-
+  if (quickstrehlFlag == 0){
+    yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav, header;
+  }
+  
   // saved graphics
   window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
   fma;
