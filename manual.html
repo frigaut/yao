@@ -51,8 +51,7 @@
 <li class="tocsubsec"><a href="#hacking_yao">5.2 Hacking yao</a></li>
 </ul>
 </div>
-This manual is for yao v4.5.0. It was almost entirely re-written from
-previous versions. Written by Francois Rigaut on November 2009. <!-- Here is a link to a <a href="yao_manual.pdf">PDF version</a> of this manual.-->
+This manual is for yao v5.14.1. Last modified July 2021. <!-- Here is a link to a <a href="yao_manual.pdf">PDF version</a> of this manual.-->
 <a href="javascript:ReverseDisplay('notes_on_yorick');
 javascript:ReverseDisplay('make_square_pupil');
 javascript:ReverseDisplay('details_wfs_pupoffset');
@@ -80,8 +79,6 @@ Expand/Collapse</a> all detailled comments.</p>
   <li><code>aoloop,some keywords...</code></li>
   <li><code>go</code></li>
 </ol>
-
-
 <br><p>Let us now enter into some details.</p>
 
 <!-- <ol>
@@ -445,7 +442,6 @@ dm                 = array(dms,ndm);
 
 n  =1;
 dm(n).type	   = "stackarray";
-dm(n).iffile	   = "";
 dm(n).nxact	   = 7;
 dm(n).pitch	   = 20;
 dm(n).alt          = 0.;
@@ -454,7 +450,6 @@ dm(n).push4imat    = 100;
 
 n  =2;
 dm(n).type	   = "tiptilt";
-dm(n).iffile	   = "";
 dm(n).alt          = 0.;
 dm(n).unitpervolt  = 0.0005;
 dm(n).push4imat    = 400;
@@ -488,8 +483,7 @@ loop.modalgainfile = "simulModeGains.fits";
 //-------------------------------
 </pre>
 
-<p>The parfile defines entirely your system. As you see, it is made of
-  several (9) subsections, in which the 9 main yao structures are filled.
+<p>The parfile defines entirely your system. It consists of nine subsections in which the yao structures are filled.
   All of the structure members are listed in
   the <a href="#yao_structures">yao structure</a> section, together with
   a short explanation of each parameters (structure member). How to
@@ -591,8 +585,8 @@ observed object, etc...). </p>
   subaperture images (probably less so in the final image if it is estimated
   in the Near Infrared and the WFS works in the visible).
   This is bad and will bias your results. You have been warned.</p>
-  <p>That said, yao 5.0 has introduced a new feature for Shack-Hartmann WFS: 
-    extended field of view. When using this feature (control it with 
+  <p>That said, yao 5.0 has introduced a new feature for Shack-Hartmann WFS:
+    extended field of view. When using this feature (control it with
     <code>wfs.extfield</code>), the individual subaperture imagelets are embedded into larger intermediate images before being binned and embedded into the final SHWFS spot image. This allows extending the field of view of subapertures without the prohibite cost of using a very large number of pixels in your pupil diameter (as outlined above). It is of particular interest for large LGS elongations, e.g. for ELTs. The whole process, describing the steps used to compute the SHWFS final spot image, is somewhat detailled in <a href="shwfs_extended_field.html">this page</a>.
 
 
@@ -865,7 +859,7 @@ Note that it is important (and required) to set a field stop when
   of zernike in the WFS. Note that this include piston, so <code>wfs.nzer=11</code>
   would include up to spherical (included). Important note: The Zernike are
   the <strong>Noll Zernike</strong> (see Noll 1976), which are not the
-  standard Zernike, but the one used most commonly in AO. Normalization??</p>
+  standard Zernike, but the one used most commonly in AO. </p>
 
 
 <h4>User defined WFS</h4>
@@ -1015,7 +1009,6 @@ wfs(1).npixels      = 8;
 
 dm                  = array(dms,1);
 dm(1).type          = "stackarray";
-dm(1).iffile        = "";
 dm(1).nxact         = 13;
 dm(1).pitch         = 32;
 dm(1).alt           = 0.;
@@ -1045,9 +1038,6 @@ and the extrapolated ones in 2 different files (e.g.
 are not recomputed in further calls to <code>aoinit()</code> unless the
 clean keyword is set (in which case <code>aoinit()</code> restart from scratch
 and recompute <em>everything</em>).</p>
-
-<p>Normalization??</p>
-
 
 <h4>Bimorph (curvature) DM</h4>
 <p>Set <code>dm.type="bimorph"</code>. The other mandatory parameter
@@ -1200,15 +1190,11 @@ section), but for the DMs.</p>
 <a name="building_a_reconstructor"></a>
 <h3>Building a Reconstructor</h3>
 
-<p>Up to 4.5.1, yao was only offering reconstructors created with a
-truncated-SVD method. This is in effect a least-square solution where
-"invisible" modes are totally discarded. In June 2010, Marcos Van Dam
-contributed code that enables the possibility to select an alternative
-<b>MMSE</b>-like method (Minimum Mean Square Error). In addition, this MMSE
-reconstructor can be either built using full matrices or sparse
-matrices techniques, which offers a significant speed boost.</p>
+<p> The default reconstructor which was initially the only option in YAO is the truncated singular value decomposition (SVD). This is a least-square solution where
+invisible or poorly sensed modes are totally discarded. A faster and better performing reconstructor (especially for large AO systems) is the minimum mean-square error (MMSE) reconstructor. This MMSE
+reconstructor can be either built using full matrices or sparse matrices techniques, which offers a significant speed boost.</p>
 
-<h4>Method selection (provided by M.v.D)</h4>
+<h4>Method selection</h4>
 
 <p>There are three options for wavefront reconstruction, and these are
 set using the <code>mat.method</code> parameter.</p>
@@ -1234,30 +1220,62 @@ matrix has similar statistics to the inverse covariance matrix for
 Kolmogorov turbulence and penalizes local waffle in the DM.</p>
 
 <p>The relevant parameters for the MMSE inversion process are
-<code>mat.method = "mmse"</code>,
-<code>dm.regparam</code>,
-<code>dm.regtype</code> and
-<code>dm.regmatrix</code>.</p>
 
-<p><b>MMSE Sparse method</b></p>
+  <pre>
+    mat.method = "mmse";
+    dm.regparam = 0.01; // higher for larger systems
+    dm.regtype = "laplacian"; // "laplacian" or "identity"
+    dm.regmatrix = &([]); // you can specify your own regularization matrix</pre>
+
+<h5>Minimum Mean Square Error Sparse Reconstructor</h5>
 
 <p>A sparse matrix implementation of the above is also available.
-Set <code>mat.method = "mmse-sparse"</code>. This is ideal for very large
-systems with thousands of actuators, as it reduces memory requirements
+This is ideal for very large systems with thousands of actuators, as it reduces memory requirements
 and increases computational speed. Do not use the sparse method when
 the interaction matrices are not actually sparse (e.g., when using a
-Zernike DM). <code>mat.method = "mmse-sparse"</code> uses the same
-parameters as "mmse" as well as <code>mat.sparse_MR</code>
-and <code>mat.sparse_MN</code> (see table below for meaning of these
-parameters). You will need to set these values to a higher level than
-the default if you have extremely large system (for instance for a
-  200x200 SH system I had to set them to (100000 and 2000000 respectively).</p>
+Zernike DM).</p>
 
+<pre>
+  mat.method = "mmse-sparse";
+  mat.sparse_MR = 1e4; // a number larger than the total number of rows
+  mat.sparse_MR = 1e5; // a number larger than the number of elements
+  dm.regparam = 0.01; // higher for larger systems
+  dm.regtype = "laplacian"; // "laplacian" or "identity"
+  dm.regmatrix = &([]); // you can specify your own regularization matrix</pre>
 
+<p>If you set the values of <code>mat.sparse_MN</code> and <code>mat.sparse_MR</code> too low, the system could crash. Too high and you could run out of memory.</p>
+
+<h5>Code Your Own Reconstructor</h5>
+
+<p>It is possible to code your own reconstructor and make YAO use it. You need to overwrite the reconstructor matrix cMat as the matrix that you compute.
+  You can also save the reconstructor so that it is not overwritten whenever <code>aoinit</code> is run.</p>
+  <pre>
+    cMat = myNewReconstructor;
+    yao_fitswrite,YAO_SAVEPATH+mat.file,[iMat,transpose(cMat)];</pre>
+ <p>Your reconstructor will, however, be overwritten if you do<code>aoinit,clean=1</code> or <code>aoinit,svd=1</code></p>
+
+ <a name="loop_parameters"></a>
+ <h3>Loop parameters</h3>
+Most AO systems run in closed-loop. Typical parameters are
+<pre>
+  loop.method     = "closed-loop";
+  loop.framedelay = 1;
+  loop.gain       = 0.6;
+  loop.leak       = 0.001; </pre>
+<p> The gain is typically a value around 0.5, and the leak is a small value needed to prevent the build-up of poorly sensed modes on the DM.
+  For tomographic reconstructors, you can use pseudo open-loop control: <code>loop.method = "pseudo open-loop"</code>.
+  If you have an AO system where the WFSs see the uncorrected wavefront, you can run the simulation in open-loop:</p>
+  <pre>
+    loop.method     = "open-loop";
+    loop.framedelay = 1;
+    loop.gain       = 1;
+    loop.leak       = 1.; </pre>
+<p>In open-loop, it is essential to set the loop gain to 1 and the leak to 1.</p>
+  
 <a name="parallel_features"></a>
 <h3>Running yao using parallel processes</h3>
 
-Since yao 4.6.0, you can take advantage of multi-core machines to
+You can take advantage of multi-core machines to
 speed up the execution time. Gains range from 20% to 350%
 (i.e. 1.2x to 3.5x). Here is a copy of the blog entry I posted when
 announcing yao parallel:
