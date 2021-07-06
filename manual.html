@@ -3,6 +3,7 @@
 <head>
   <title>yao::manual</title>
   <script type="text/javascript" src="scripts.js">void=null;</script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
   <!-- Uncomment the print.css line and comment the style.css line to get a printable version -->
   <!-- <link rel="stylesheet" href="print.css" type="text/css"> -->
   <link rel="stylesheet" href="styles.css" type="text/css">
@@ -1263,6 +1264,8 @@ Most AO systems run in closed-loop. Typical parameters are
   loop.gain       = 0.6;
   loop.leak       = 0.001; </pre>
 <p> The gain is typically a value around 0.5, and the leak is a small value needed to prevent the build-up of poorly sensed modes on the DM.
+  The framedelay is the compute time rounded to the nearest number of frames, typically 1. There is already a one cycle delay inherent in the zero-order hold of the WFS and the DM stare, and this does not need to be added.</p>
+  <p>
   For tomographic reconstructors, you can use pseudo open-loop control: <code>loop.method = "pseudo open-loop"</code>.
   If you have an AO system where the WFSs see the uncorrected wavefront, you can run the simulation in open-loop:</p>
   <pre>
@@ -1271,6 +1274,12 @@ Most AO systems run in closed-loop. Typical parameters are
     loop.gain       = 1;
     loop.leak       = 1.; </pre>
 <p>In open-loop, it is essential to set the loop gain to 1 and the leak to 1.</p>
+
+<p>It is also possible to create high-order control laws and to control each DM with a separate controller. This is especially useful to separate the tip-tilt and DM control.
+For example, to implement the control law on dm(1):</p>
+ $$ \frac{0.5 + 0.12 z^{-1} -0.05 z^{-2}}{1 - 0.64 z^{-1} -0.36 z^{-2}} $$
+ <pre>dm(1).ctrlnum = &([0.5,0.12,-0.05]);
+dm(1).ctrlden = &([1,-0.64,-0.36]);</pre>
 
 <a name="parallel_features"></a>
 <h3>Running yao using parallel processes</h3>
