@@ -521,6 +521,7 @@ struct mat_struct
   string  fit_type;       // optimize for a target or wfs location
   long    fit_which;      // which target or wfs to optimize fitting for, default = 1
   float   fit_minval;     // minimum value for sparse fitting matrix, default = 1e-2
+  int     lapack_mvm;     // boolean: use lapack to do the vector matrix multiplication in the reconstruction process, which may or may not be faster
 };
 
 struct tel_struct

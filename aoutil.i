@@ -698,6 +698,7 @@ func check_parameters(void)
 
   // TARGET STRUCTURE
   if ((*target.lambda) == []) exit,"target.lambda has not been set";
+  target.lambda = &(float(*target.lambda)); // *target.lambda must be floats
   if ((*target.xposition) == []) exit,"target.xposition has not been set";
   if ((*target.yposition) == []) exit,"target.yposition has not been set";
   if ((*target.dispzoom) == []) {
@@ -708,7 +709,7 @@ func check_parameters(void)
     exit,"Some elements within target.xposition, yposition, dispzoom "+\
       "do not have the same number of elements.";
   }
-
+  
   // GS STRUCTURE
   if (gs.zenithangle > 0 && anyof(wfs.gsalt > 0)){write,"WARNING: The return from the LGS is assumed to vary as cos(gs.zenithangle).";}
 

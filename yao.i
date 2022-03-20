@@ -3,7 +3,7 @@
  *
  * This file is part of the yao package, an adaptive optics simulation tool.
  *
- * Copyright (c) 2002-2017, Francois Rigaut
+ * Copyright (c) 2002-2021, Francois Rigaut
  *
  * This program is free software; you can redistribute it and/or  modify it
  * under the terms of the GNU General Public License  as  published  by the
@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.13.0";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2020nov16";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.14.1";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021may26";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -63,6 +63,7 @@ require,"turbulence.i";
 require,"plot.i";  // in yorick-yutils
 require,"yao_structures.i";
 require,"yaodh.i";
+include, "lapack.i", 2; // load lapack if it exists
 
 func LUsolve2(A,b){
 /* DOCUMENT LUsolve2(a, b)
@@ -579,13 +580,13 @@ func do_imat(disp=)
       if (mat.method != "mmse-sparse"){
         if (!dm(nm).ncp){
           // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
-          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
+          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat;
         }
       } else {
         if (!dm(nm).ncp){
-          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat), mat.sparse_thresh;
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat), mat.sparse_thresh;
         } else {
-          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0.), mat.sparse_thresh;
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat*0.), mat.sparse_thresh;
         }
       }
 
@@ -1527,10 +1528,14 @@ func get_phase2d_from_dms(nn,type,w=)
     idx = !dm.ncp; // start with only DMs on the common path
     // TODO: check this logic
     if (type == "target"){
-      // ignore non-common path DMs on the WFS side
-      idx(*target.ncpdm) = 1;
+      // set non-common path DMs on the target side
+      if (*target.ncpdm != []){
+        if ((*target.ncpdm)(nn) != 0){
+          idx((*target.ncpdm)(nn)) = 1;
+        }
+      }
     } else { // type == "wfs"
-      if (*wfs(nn).dmnotinpath){idx(*wfs(nn).dmnotinpath) = 0;} // DMs not in path of this WFS
+      if (*wfs(nn).dmnotinpath != []){idx(*wfs(nn).dmnotinpath) = 0;}// DMs not in path of this WFS
       if (wfs(nn).ncpdm){idx(wfs(nn).ncpdm) = 1;}    
     }
     w = where(idx);
@@ -1853,7 +1858,7 @@ func aoread(parfile)
   // flush any prior assignments to ao members
   atm=opt=sim=wfs=dm=mat=tel=target=gs=loop=cwfs=[];
   // reset a number of other array that may have been set previously
-  pupil = ipupil = loopCounter = iMat = cMat = [];
+  pupil = ipupil = loopCounter = iMat = cMat = dMat = [];
 
   // INIT STRUCTURES:
   atm    = atm_struct();
@@ -1929,9 +1934,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
    SEE ALSO: aoread, aoloop
 */
 {
-  extern pupil,ipupil;
+  extern pupil,ipupil,wp;
   extern iMat,cMat,fMat,dMat;
-  extern iMatSP,AtAregSP,fMatSP,GxSP, polcMatSP;
+  extern iMatSP,AtA,AtAregSP,fMatSP,GxSP,polcMatSP;
   extern modalgain;
   extern _n,_n1,_n2,_p1,_p2,_p;
   extern def,mircube;
@@ -1977,17 +1982,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
   }
 
   if (mat.method == "mmse-sparse"){
-
     require,"soy.i";
     extern MR,MN;
     MR = mat.sparse_MR;
     MN = mat.sparse_MN;
     mat.file = parprefix+"-iMat.rco";
-
   } else {
-
     mat.file = parprefix+"-mat.fits";
-
   }
 
   if (sim.verbose>1) write,format="Starting aoinit with flags disp=%d,clean=%d,"+ \
@@ -2110,6 +2111,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 
   pupil  = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                             real=sim.pupilapod,cobs=tel.cobs)); // changed from real=1 by Marcos.
+  wp = where(pupil > 0);
   ipupil = float(make_pupil(sim._size,sim.pupildiam,xc=sim._cent,yc=sim._cent,\
                           cobs=tel.cobs));
 
@@ -2563,9 +2565,9 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
     if (mat.method != "mmse-sparse"){
       iMat = array(double,sum(wfs._nmes),sum(dm._nact));
       cMat = array(double,sum(dm._nact),sum(wfs._nmes));
+      dMat = []; // remove any previous values
 
       if (sim.verbose>1) write,format="sizeof(iMat) = %dMB\n",long(sizeof(iMat)/1.e6);
-      pause,100;
     } else {
       iMatSP = rco();
     }
@@ -2600,12 +2602,13 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 
       // response from actuators:
       if (mat.method == "mmse-sparse"){
-        AtA = rcoata(iMatSP);
-        resp = sqrt((*AtA.xd)(1:AtA.r)); // take the diagonal
+        iMatSq = iMatSP;
+        iMatSq.xn = &((*iMatSq.xn)^2); // iMat^2
+        ones = array(float(1.),iMatSq.c); 
+        resp = sqrt(rcoxv(iMatSq,ones)); // sum over one dimension by multiplying by ones                         
         actuators_to_remove = [];
       } else {
         resp = sqrt((iMat^2.)(sum,));
-        //resp = (abs(iMat))(max,); // marcos commented this. problem?
       }
 
       if (sim.debug >= 2) {fma; plh,resp; limits,square=0; typeReturn;}
@@ -2911,14 +2914,22 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
         }
       }
     } else {
-      dMat = [];
       iMatSP = restore_rco(YAO_SAVEPATH+mat.file);
+      write, "Reading "+YAO_SAVEPATH+mat.file;
+      if (fileExist(YAO_SAVEPATH+parprefix+"-AtA.ruo")){
+        write, "Reading "+parprefix+"-AtA.ruo";
+        AtA = restore_ruo(YAO_SAVEPATH+parprefix+"-AtA.ruo");        
+      } else {
+        AtA = [];
+      }
       if (fileExist(YAO_SAVEPATH+parprefix+"-AtAreg.ruo")){
+        write, "Reading "+parprefix+"-AtAreg.ruo";
         AtAregSP = restore_ruo(YAO_SAVEPATH+parprefix+"-AtAreg.ruo");
       } else {
         svd = 1;
       }
       if (fileExist(YAO_SAVEPATH+parprefix+"-GxSP.rco")){
+        write, "Reading "+parprefix+"-GxSP.rco";
         GxSP = restore_rco(YAO_SAVEPATH+parprefix+"-GxSP.rco");
       } else {
         svd = 1;  // need to recreate reconstructors
@@ -2942,8 +2953,16 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
       }
     }
   }
-
+  
   if ((svd || forcemat || need_new_iMat)&&(user_cmat==[])) {
+    // remove any previous dMat used in pseudo open-loop control
+    dMat = [];
+    dMat_filename = YAO_SAVEPATH+parprefix+"-dMat.fits";
+    if (fileExist(dMat_filename)){
+      if (sim.verbose){write, "Deleting file "+dMat_filename;}
+      remove, dMat_filename;
+    }
+    
     // create the regularization matrices
     nDMs = numberof(dm);
     for (nm=1;nm<=nDMs;nm++){
@@ -2972,7 +2991,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
             ww = where(dist2 == pitch2);
             if (numberof(ww)){L(ii,ww) = 0.25;}
           }
-          dm(nm)._regmatrix = &(L(+,)*L(+,));
+          if (lpk_gemm == []){          
+            dm(nm)._regmatrix = &(L(+,)*L(+,));
+          } else {
+            tmp = array(float,[2,dm(nm)._nact,dm(nm)._nact]);
+            dm(nm)._regmatrix = &lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),L,L,float(1.),tmp);
+          }
         } else { // identity matrix
           dm(nm)._regmatrix = &unit(dm(nm)._nact);
         }
@@ -3160,7 +3184,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           }
 
           if (mat.method == "mmse"){
-            dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
+            if (lpk_gemm == []){
+              dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
+            } else {
+              tmp = dm(nm).regparam*(*dm(nm)._regmatrix);
+              lhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,tomoMat,tomoMat,float(1.),tmp);           
+              tmp = array(float,[2,dimsof(tomoMat)(3),dimsof(virtMat)(3)]);
+              rhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),tomoMat,virtMat,float(1.),tmp);
+              dm(nm)._fMat = &LUsolve(lhs,rhs);
+            }
             filename = YAO_SAVEPATH+parprefix+"-fMat"+swrite(nm, format="%i"+".fits");
             yao_fitswrite,filename,*dm(nm)._fMat;
           } else {
@@ -3219,8 +3251,12 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 
           Ga = iMat(:,realAct);
           Gx = iMat(:,estAct);
-          AtA = Gx(+,)*Gx(+,);
-
+          if (lpk_gemm == []){
+            AtA = Gx(+,)*Gx(+,);
+          } else {
+            tmp = array(float,[2,dimsof(Gx)(3),dimsof(Gx)(3)]);
+            AtA = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),Gx,Gx,float(1.),tmp);
+          }
           nEstAct = numberof(estAct);
           nRealAct = numberof(realAct);
 
@@ -3274,8 +3310,15 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
             }
           }
 
-          Dterm = Ga(,+)*fMat(+,)-Gx;
-          polcMat = Gx(+,)*Dterm(+,)-Cphi;
+          if (lpk_gemm == []){
+            Dterm = Ga(,+)*fMat(+,)-Gx;
+            polcMat = Gx(+,)*Dterm(+,)-Cphi;
+          } else {            
+            tmp = float(Gx); 
+            Dterm = lpk_gemm(LPK_NO_TRANS,LPK_NO_TRANS,float(1.),Ga,fMat,float(-1.),tmp); // this operation changes tmp (that's why it is copied)
+            polcMat = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),Gx,Dterm,float(-1.),Cphi); // this operation changes Cphi
+            Cphi = [];            
+          }
           dMat = LUsolve(AtA+Cphi,polcMat);
           yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
         } else {
@@ -3291,9 +3334,14 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
               mc += dm(nm)._nact;
             }
           }
-          cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
+          if (lpk_gemm == []){
+            cMat = LUsolve(iMat(+,)*iMat(+,)+Cphi,transpose(iMat));
+          } else {
+            iMat = float(iMat);
+            cMat = LUsolve(lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),iMat,iMat,float(1.),Cphi),transpose(iMat)); // note: this operation changes Cphi
+            Cphi = [];
+          }
         }
-
       } else if (mat.method == "mmse-sparse") {
 
         // create the regularization matrices for each DM
@@ -3413,8 +3461,10 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           fMatSP = GaSP = [];
 
           AtA = rcoata(GxSP);
-          AtAregSP = ruoadd(AtA,CphiSP);
+          if (sim.verbose){write, "Saving "+parprefix+"-AtA.ruo";}
+          save_ruo,AtA,YAO_SAVEPATH+parprefix+"-AtA.ruo";
 
+          AtAregSP = ruoadd(AtA,CphiSP);
           AtA = [];
 
           (*GxSP.xn) *= -1;
@@ -3432,17 +3482,24 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           save_rco,polcMatSP,YAO_SAVEPATH+parprefix+"-polcMat.rco";
         } else {
           GxSP = iMatSP;
-          AtA = rcoata(iMatSP);
-          AtAregSP = ruoadd(AtA,CphiSP);
-          AtA = CphiSP =  [];
+          if (sim.verbose){write, "Saving "+parprefix+"-GxSP.rco";}
           save_rco,GxSP,YAO_SAVEPATH+parprefix+"-GxSP.rco";
+          if (AtA == []){
+            if (sim.verbose){write, "Calculating AtA";}
+            AtA = rcoata(iMatSP);
+            if (sim.verbose){write, "Saving "+parprefix+"-AtA.ruo";}
+            save_ruo,AtA,YAO_SAVEPATH+parprefix+"-AtA.ruo";
+          }
+          AtAregSP = ruoadd(AtA,CphiSP);
+          if (sim.verbose){write, "Saving "+parprefix+"-AtAreg.ruo";}        
+          save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
+          AtA = CphiSP =  [];
         }
-
+        if (sim.verbose){write, "Saving "+mat.file;}
         save_rco,iMatSP,YAO_SAVEPATH+mat.file;
         iMatSP = [];
-        save_ruo,AtAregSP,YAO_SAVEPATH+parprefix+"-AtAreg.ruo";
       }
-
+      
       if (mat.method != "mmse-sparse") {
 
         // More debug display
@@ -3640,7 +3697,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
 }
 
 //---------------------------------------------------------------
-func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_reinit_wfs=)
+func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_reinit_wfs=,quick_strehl=)
 /* DOCUMENT aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=)
    Prepare all arrays for the execution of the loop (function go()).
 
@@ -3655,13 +3712,14 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
                    see animate() yorick function. ON by default.
    savephase     = set to save residual wavefront on first target as fits file
    no_reinit_wfs = don't re-init wfs
+   quick_strehl  = calculate the Strehl *only* directly from phase screens
    SEE ALSO: aoread, aoinit, go, restart
  */
 {
   extern looptime, mircube, command, wfsMesHistory, cubphase;
   extern im, imav, airy, sairy, fwhm, e50;
   extern niterok;
-  extern pp, sphase, bphase, imphase, dimpow2, cMat, pupil, ipupil;
+  extern pp, sphase, bphase, imphase, dimpow2, cMat, pupil, ipupil, wp;
   extern time, strehllp, strehlsp, rpv, itv, ok, njumpsinceswap;
   extern remainingTimestring  ;
   extern cbmes, cbcom, cberr;
@@ -3671,7 +3729,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   extern dispImImav;
   extern loopCounter, nshots, statsokvec;
   extern savecbFlag, dpiFlag, controlscreenFlag;
-  extern dispFlag, nographinitFlag, animFlag;
+  extern dispFlag, nographinitFlag, animFlag, quickstrehlFlag;
   extern aoloop_disp,aoloop_savecb,aoloop_no_reinit_wfs;
   extern commb,errmb; // minibuffers
   extern default_dpi;
@@ -3680,6 +3738,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   if ((disp==[])&&(aoloop_disp!=[])) disp=aoloop_disp;
   if ((savecb==[])&&(aoloop_savecb!=[])) savecb=aoloop_savecb;
   if ((no_reinit_wfs==[])&&(aoloop_no_reinit_wfs!=[])) no_reinit_wfs=aoloop_no_reinit_wfs;
+  if (quick_strehl == []){quick_strehl = 0;}
   if (anim==[]) anim=1; // let's make it the default
 
   dispFlag = disp;
@@ -3689,6 +3748,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
   nographinitFlag = nographinit;
   animFlag = anim;
   savephaseFlag = savephase;
+  quickstrehlFlag = quick_strehl;
 
   gui_message,"Initializing loop";
 
@@ -3705,6 +3765,30 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
     }
   }
 
+    // check that dMat exists for pseudo open-loop control.
+  // otherwise, load it or compute it
+  if ((loop.method == "pseudo open-loop")&&(mat.method != "mmse-sparse")&&(dMat == [])){
+    // need to load or compute dMat
+    if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
+      if (sim.verbose){write, "Loading " + parprefix + "-dMat.fits";}
+      dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
+    } else {
+      if (sim.verbose){write, "Computing dMat";}
+      identityMatrix = float(unit(dimsof(cMat)(2)));
+      if (lpk_gemm == []){
+        dMat = (float(cMat))(,+)*(float(iMat))(+,) - identityMatrix;
+      } else {
+        dMat = lpk_gemm(LPK_NO_TRANS,LPK_NO_TRANS,float(1.),float(cMat),float(iMat),float(-1.),identityMatrix);
+      }
+      if (sim.verbose){write, "Saving "+parprefix + "-dMat.fits";}
+      yao_fitswrite,YAO_SAVEPATH + parprefix + "-dMat.fits",dMat;
+      identityMatrix = [];
+    }
+  }
+
+  // if lapack has not been loaded, ensure that it is not used in the reconstruction process
+  if (lpk_gemv == []){mat.lapack_mvm = 0;}
+  
   // Initialize hysteresis parameters
   for (nm=1;nm<=ndm;nm++){
     dm(nm)._x0 = &array(float,dm(nm)._nact);
@@ -3745,6 +3829,7 @@ func aoloop(disp=,savecb=,dpi=,controlscreen=,nographinit=,anim=,savephase=,no_r
       airy = calc_psf_fast((*target._pupil)(,,nt),pupil*0.);
       sairy(nt) = max(airy);
     }
+    quickstrehlFlag = 0; // not yet implemented!
   }
 
   fwhm   = e50  = array(float,[2,target._ntarget,target._nlambda]);
@@ -3927,12 +4012,13 @@ func go(nshot,all=)
 {
   extern niterok, starttime, endtime, endtime_str, tottime, now2, nshots;
   extern dispFlag, savecbFlag, dpiFlag, controlscreenFlag;
-  extern nographinitFlag,savephaseFlag;
+  extern nographinitFlag,savephaseFlag,quickstrehlFlag;
   extern cbmes, cbcom, cberr;
-  extern iMatSP, AtAregSP
+  extern iMatSP, AtA, AtAregSP, GxTSP
   extern commb,errmb; // minibuffers (last 10 iterations)
   extern im,imav;
   extern iter_per_sec;
+  extern wp;
 
   gui_show_statusbar1;
 
@@ -3982,10 +4068,9 @@ func go(nshot,all=)
   if (loopCounter>loop.niter) {
     exit,"Can't continue: loopCounter > loop.niter !";
   }
-
+  
   i = loopCounter;
   tic; time(1) = tac();
-
 
   prevOK  = ok;
 
@@ -4067,53 +4152,42 @@ func go(nshot,all=)
   // RECONSTRUCTION:
   // computes the actuator error vector from the measurements:
   if (mat.method == "mmse-sparse") {
-    if (i == 1){
-      MR = mat.sparse_MR;
-      MN = mat.sparse_MN;
-    }
-
-    if (sum(usedMes != 0) == 0){ // sparse CG method does not work if all zeros
+    if (i == 1){GxTSP = rcotr(GxSP);}
+    // this could be implemented if we treat each WFS separately, but I have not done so. (MvD)
+    if (anyof(wfs.nintegcycles > 1)){error,"pseudo open-loop control is not implemented for wfs.nintegcyles > 1 and mat.method = sparse";}
+    if (sum(usedMes^2) == 0.){// sparse CG method does not work if all zeros
       err = array(float,AtAregSP.r);
     } else {
-      Ats=rcoxv(GxSP,usedMes)
-      if ((loop.method == "pseudo open-loop") && (i > 1) && (polcMatSP != [])){
-        // apply polc correction
-        polccorr = rcoxv(polcMatSP,estdmcommand);
-        if (anyof(wfs.nintegcycles > 1)){
-          // if some DMs are not updating because the WFSs have not finished
-          // integrating, then the POLC correction should not be applied to
-          // those DMs
-          // Check to see which DMs have updated; only non tomographic DMs
-          mc = 0; // counter
-          for (nm=1;nm<=numberof(dm);nm++){
-            if (!dm(nm).dmfit_which){
-              comms = Ats(mc+1:mc+dm(nm)._nact);
-              if (comms(rms) == 0){ // has not updated
-                polccorr(mc+1:mc+dm(nm)._nact) = 0;
-              }
-              mc += dm(nm)._nact;
-            }
-          }
-        }
-        Ats -= polccorr;
-      }
-      err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
+      if ((loop.method == "pseudo open-loop") && (i > 1)){        
+        openloopMes = usedMes - rcoxv(GxTSP,estdmcommand);
+        Ats = rcoxv(GxSP,openloopMes);
+        err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
+        err += estdmcommand;
+      } else {
+        Ats=rcoxv(GxSP,usedMes);
+        err = float(ruopcg(AtAregSP,Ats, array(float,AtAregSP.r), tol=mat.sparse_pcgtol));
+      }      
     }
   } else {
     // if loop.method = "none", everything is left to the user,
     // thus we skip this matrix multiply.
-    if (loop.method != "none") err = cMat(,+) * usedMes(+);
-    if ((loop.method == "pseudo open-loop") && (i > 1)){
-      // make sure that dMat exists
-      if (dMat == []){
-        // if not, load it
-        if (fileExist(YAO_SAVEPATH+parprefix+"-dMat.fits")){
-          dMat = yao_fitsread(YAO_SAVEPATH + parprefix + "-dMat.fits");
-        } else {
-          error, "loop.method set to pseudo open-loop, but dMat is not defined";
-        }
+    if (loop.method != "none"){
+      if (mat.lapack_mvm == 0){
+        err = cMat(,+)*usedMes(+);
+      } else {
+        tmp = array(float,dimsof(cMat)(2));
+        err = lpk_gemv(LPK_NO_TRANS,float(1.0),cMat,usedMes,float(0.0),tmp);
       }
-      polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
+    }
+    
+    if ((loop.method == "pseudo open-loop") && (i > 1)){
+      if (mat.lapack_mvm == 0){
+        polccorr = dMat(,+)*estdmcommand(+); //pseudo open loop correction
+      } else {
+        tmp = array(float,dimsof(dMat)(2));
+        polccorr = lpk_gemv(LPK_NO_TRANS,float(1.0),dMat,estdmcommand,float(0.0),tmp);
+      }
+        
       if (anyof(wfs.nintegcycles > 1)){
         // if some DMs are not updating because the WFSs have not finished
         // integrating, then the POLC correction should not be applied to
@@ -4133,7 +4207,6 @@ func go(nshot,all=)
       err -= polccorr;
     }
   }
-
 
   if (user_loop_err!=[]) user_loop_err;
 
@@ -4186,7 +4259,12 @@ func go(nshot,all=)
         if (mat.method == "mmse-sparse") {
           *dm(nm)._command = rcoxv(*dm(nm)._fMat,virtualdmcommand);
         } else {
-          *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
+          if (mat.lapack_mvm == 0){
+            *dm(nm)._command = (*dm(nm)._fMat)(,+)*virtualdmcommand(+);
+          } else {
+            tmp = array(float,dimsof(*dm(nm)._fMat)(2));
+            *dm(nm)._command =  lpk_gemv(LPK_NO_TRANS,float(1.),*dm(nm)._fMat,virtualdmcommand,float(0.),tmp);
+          }
         }
       }
 
@@ -4243,7 +4321,12 @@ func go(nshot,all=)
       if ( (nm==1) && (add_dm0_shape!=[]) ) mircube(,,1) += add_dm0_shape;
       // extrapolated actuators:
       if ( (dm(nm)._enact != 0) && (dm(nm).noextrap == 0) ) {
-        ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
+        if (mat.lapack_mvm == 0){        
+          ecom = float(((*dm(nm)._extrapcmat)(,+))*(*dm(nm)._command)(+));
+        } else {
+          tmp = array(float,dm(nm)._enact);
+          ecom = float(lpk_gemv(LPK_NO_TRANS,float(1.0),*dm(nm)._extrapcmat,*dm(nm)._command,float(0.0),tmp));
+        }
         mircube(n1:n2,n1:n2,nm) += comp_dm_shape(nm,&ecom,extrap=1);
       }
     } else {
@@ -4303,9 +4386,9 @@ func go(nshot,all=)
     residual_phase = get_phase2d_from_dms(residual_phase_which,residual_phase_what) +
                      turb_phase;
 
-    residual_phase1d = residual_phase(where(pupil > 0));
+    residual_phase1d = residual_phase(wp);
     residual_phase1d -= min(residual_phase1d);
-    residual_phase(where(pupil > 0)) = residual_phase1d;
+    residual_phase(wp) = residual_phase1d;
 
     if (savephase){
       fname = swrite(format="%s/%s_rwf%d.fits",YAO_SAVEPATH,parprefix,loopCounter);
@@ -4395,17 +4478,27 @@ func go(nshot,all=)
       psf_child_started = 1;
     } else {
       // compute integrated phases and fill phase cube
+      for (jt=1;jt<=target._ntarget;jt++) {
+        cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +      \
+          get_phase2d_from_optics(jt,"target") +                        \
+          get_turb_phase(i,jt,"target"); // vibration already added to dm1
+      }
+      
       for (jl=1;jl<=target._nlambda;jl++) {
-        for (jt=1;jt<=target._ntarget;jt++) {
-          cubphase(,,jt)  = get_phase2d_from_dms(jt,"target") +    \
-                            get_phase2d_from_optics(jt,"target") + \
-                            get_turb_phase(i,jt,"target");
-          // vibration already added to dm1
-        }
         if (*target._pupil == []){
+          if (quickstrehlFlag){
+            // we are not going to calculate the image
+            // instead, calculate the DC component of the image, since this is where the maximum value is expected.
+            // this can be used to calculate the Strehl ratio            
+            for (jt=1;jt<=target._ntarget;jt++){
+              p = cubphase(,,jt)(wp)*float(2*pi)/(*target.lambda)(jl);
+              im(sim._size/2,sim._size/2,jt) = sum(sin(p))^2+sum(cos(p))^2;
+            }
+          } else {
           // compute image cube from phase cube
           status = _calc_psf_fast(&pupil,&cubphase,&im,2^dimpow2,
                                   target._ntarget,float(2*pi/(*target.lambda)(jl)),1n);
+          }
         } else {
           for (nt=1;nt<=target._ntarget;nt++){
             imtarg = im(,,nt);
@@ -4749,7 +4842,11 @@ func after_loop(void)
   extern cbmes, cbcom, cberr;
   extern strehl,e50,fwhm;
   extern iter_per_sec;
+  extern quickstrehlFlag;
 
+  calc_ee = (!quickstrehlFlag)*(!no_ee);
+  calc_fwhm = (!quickstrehlFlag)*(!no_fwhm);
+    
   savecb = savecbFlag;
 
   gui_message,swrite(format="Saving results in %s.res (ps,imav.fits)...",YAO_SAVEPATH+parprefix);
@@ -4783,10 +4880,10 @@ func after_loop(void)
     write,"cbmes, cbcom and cberr are saved.";
     write,"You can run modal_gain_optimization() to optimize and update the gains";
   }
-
+  
   // End of loop calculations (fwhm, EE, Strehl):
-  fairy  = findfwhm(airy,saveram=1);
-  if (!no_ee) e50airy= encircled_energy(airy,ee50); else e50airy=0.;
+  if (calc_fwhm) fairy  = findfwhm(airy,saveram=1);
+  if (calc_ee) e50airy= encircled_energy(airy,ee50); else e50airy=0.;
   strehl = imav(max,max,,)/sairy/(niterok+1e-5);
 
   psize  = (float(sim.pupildiam)/sim._size)*(*target.lambda)/tel.diam/4.848e-3;
@@ -4800,8 +4897,8 @@ func after_loop(void)
   write,format="\n         lambda   XPos   YPos  FWHM[mas]  Strehl  E50d[mas]%s\n","";
   for (jl=1;jl<=target._nlambda;jl++) {
     for (jt=1;jt<=target._ntarget;jt++) {
-      fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
-      if (!no_ee) encircled_energy,imav(,,jt,jl),tmp; else tmp=0.;
+      if (calc_fwhm) fwhm(jt,jl) = findfwhm(imav(,,jt,jl),psize(jl),saveram=1);
+      if (calc_ee) encircled_energy,imav(,,jt,jl),tmp; else tmp=0.;
       e50(jt,jl)  = tmp*psize(jl);
 
       write,format=
@@ -4857,8 +4954,10 @@ func after_loop(void)
   grow, header, fitsBuildCard("XPOSITION", *target.xposition , "arcsec");
   grow, header, fitsBuildCard("YPOSITION", *target.yposition , "arcsec");
 
-  yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav, header;
-
+  if (quickstrehlFlag == 0){
+    yao_fitswrite,YAO_SAVEPATH+parprefix+"-imav.fits",imav, header;
+  }
+  
   // saved graphics
   window,7,display="",hcp=YAO_SAVEPATH+parprefix+".ps",wait=1,style="work.gs";
   fma;

@@ -1963,7 +1963,7 @@ func dh_wfs(pupsh,phase,ns,init=)
 
 //----------------------------------------------------
 
-func mult_wfs_int_mat(disp=,subsys=)
+func mult_wfs_int_mat(disp=,subsys=,nm=)
 /* DOCUMENT func mult_wfs_int_mat(disp=,subsys=)
    as mult_wfs but special for IntMat acquisition
    for speed in aoloop
@@ -1982,7 +1982,7 @@ func mult_wfs_int_mat(disp=,subsys=)
     }
     filterTiltOrig = wfs(ns).filtertilt; wfs(ns).filtertilt = 0;
 
-    phase   = get_phase2d_from_dms(ns,"wfs");
+    phase   = get_phase2d_from_dms(ns,"wfs",w=nm);
     // uncomment if needed:
     //    phase  += get_phase2d_from_optics(ns,"wfs");
     wfs(ns)._nkernels = 1;
