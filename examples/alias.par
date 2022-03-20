@@ -1,0 +1,76 @@
+// YAO parameter file
+//-------------------------------
+sim.name           = "SH10x10 svipc tests";
+sim.pupildiam      = 100;
+sim.debug          = 0;
+sim.verbose        = 0;
+
+//-------------------------------
+atm.dr0at05mic     = 42.44;  // this is r0=0.166 at 550 nm
+atm.screen         = &(Y_USER+"data/screen"+["1","2","3","4"]+".fits");
+atm.layerfrac      = &([0.4,0.2,0.3,0.1]);
+atm.layerspeed     = &([11.,20,29,35]);
+atm.layeralt       = &([0.,400,6000,9000]);
+atm.winddir        = &([0,0,0,0]);
+
+//-------------------------------
+nwfs               = 1; // number of WFSs (>1 if e.g. mcao)
+wfs = array(wfss,nwfs);
+
+n   = 1;
+wfs(n).type        = "hartmann";
+wfs(n).lambda      = 0.65;
+wfs(n).gspos       = [0.,0.];
+wfs(n).gsalt       = 0.;
+wfs(n).gsmag       = 5.;
+wfs(n).shmethod    = 1;
+wfs(n).shnxsub     = 10;
+wfs(n).pixsize     = 0.2;
+wfs(n).npixels     = 10;
+wfs(n).noise       = 0;
+wfs(n).ron         = 3.5;
+wfs(n).shthreshold = 0.;
+wfs(n).nintegcycles= 1;
+
+//-------------------------------
+ndm                = 1;
+dm = array(dms,ndm);
+
+n  =1;
+dm(n).type         = "kl";
+dm(n).iffile       = "";
+dm(n).nkl          = 30;
+dm(n).alt          = 0.;
+dm(n).unitpervolt  = 0.01;
+dm(n).push4imat    = 100;
+
+//-------------------------------
+mat.condition      = &([15.]);
+mat.file           = "";
+mat.method         = "mmse";
+loop.method        = "closed-loop";
+
+//-------------------------------
+tel.diam           = 7.9;
+tel.cobs           = 0.1125;
+
+//-------------------------------
+target.lambda      = &([1.65]);
+target.xposition   = &([0.]);
+target.yposition   = &([0]);
+target.dispzoom    = &([1.]);
+
+//-------------------------------
+gs.zeropoint       = 1e11;
+
+//-------------------------------
+loop.gain          = 0.5;
+loop.framedelay    = 1;
+loop.niter         = 100;
+loop.ittime        = 2e-3;
+loop.startskip     = 10;
+loop.skipevery     = 10000;
+loop.skipby        = 10000;
+loop.modalgainfile = "simulModeGains.fits";
+
+//-------------------------------

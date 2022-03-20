@@ -740,7 +740,7 @@ func yao_wfs_rotate_shift(ar,rot,sh,integer=)
   // and rotate:
   if (rot!=0) {
     if (use_fftrotate) ar2rs = fftrotate(ar2rs,rot,xc=sim._cent,yc=sim._cent);
-    else ar2rs = rotate2(ar2rs,-rot,xc=sim._cent,yc=sim._cent);
+    else ar2rs = rotate2(ar2rs,-rot,xc=sim._cent+1.0,yc=sim._cent-1.0);
   }
   return ar2rs;
 }
