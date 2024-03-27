@@ -1,9 +1,9 @@
 # these values filled in by    yorick -batch make.i
-Y_MAKEDIR=/usr/lib/yorick/2.2
-Y_EXE=/usr/lib/yorick/2.2/bin/yorick
+Y_MAKEDIR=/usr/lib/yorick
+Y_EXE=/usr/lib/yorick/bin/yorick
 Y_EXE_PKGS=
-Y_EXE_HOME=/usr/lib/yorick/2.2
-Y_EXE_SITE=/usr/share/yorick/2.2
+Y_EXE_HOME=/usr/lib/yorick
+Y_EXE_SITE=/usr/lib/yorick
 Y_HOME_PKG=
 
 # ----------------------------------------------------- optimization flags
@@ -30,12 +30,12 @@ PKG_DEPLIBS=-lfftw3f
 
 # set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS=-Wall
-PKG_LDFLAGS=
 # on OSX (or other platforms), you may need to add the path to the
 # fftw3 include files:
 # PKG_CFLAGS=-Wall -I/path/to/fftw3/include
-# PKG_CFLAGS=-Wall -I/opt/local/include
-# PKG_LDFLAGS=-L/opt/local/lib
+PKG_CFLAGS=-Wall -I/opt/local/include
+PKG_LDFLAGS=-L/opt/local/lib
+# PKG_LDFLAGS=
 
 # list of additional package names you want in PKG_EXENAME
 # (typically Y_EXE_PKGS should be first here)

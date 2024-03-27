@@ -3188,7 +3188,7 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
               dm(nm)._fMat = &(LUsolve(tomoMat(+,)*tomoMat(+,) + dm(nm).regparam* (*dm(nm)._regmatrix),tomoMat(+,)*virtMat(+,)));
             } else {
               tmp = dm(nm).regparam*(*dm(nm)._regmatrix);
-              lhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,tomoMat,tomoMat,float(1.),tmp);           
+              lhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),tomoMat,tomoMat,float(1.),tmp);           
               tmp = array(float,[2,dimsof(tomoMat)(3),dimsof(virtMat)(3)]);
               rhs = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),tomoMat,virtMat,float(1.),tmp);
               dm(nm)._fMat = &LUsolve(lhs,rhs);
@@ -3316,8 +3316,8 @@ func aoinit(disp=,clean=,forcemat=,svd=,dpi=,keepdmconfig=,external_actpos=)
           } else {            
             tmp = float(Gx); 
             Dterm = lpk_gemm(LPK_NO_TRANS,LPK_NO_TRANS,float(1.),Ga,fMat,float(-1.),tmp); // this operation changes tmp (that's why it is copied)
-            polcMat = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),Gx,Dterm,float(-1.),Cphi); // this operation changes Cphi
-            Cphi = [];            
+	    tmp = Cphi;
+            polcMat = lpk_gemm(LPK_TRANS,LPK_NO_TRANS,float(1.),Gx,Dterm,float(-1.),tmp); // this operation changes Cphi, that is why it is copied to tmp
           }
           dMat = LUsolve(AtA+Cphi,polcMat);
           yao_fitswrite, YAO_SAVEPATH + parprefix + "-dMat.fits", dMat;
