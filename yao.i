@@ -20,8 +20,8 @@
 */
 
 extern aoSimulVersion, aoSimulVersionDate;
-aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.14.1";
-aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2021may26";
+aoSimulVersion = yaoVersion = aoYaoVersion = yao_version = "5.14.2";
+aoSimulVersionDate = yaoVersionDate = aoYaoVersionDate = "2024jun25";
 
 write,format=" Yao version %s, Last modified %s\n",yaoVersion,yaoVersionDate;
 
@@ -580,13 +580,13 @@ func do_imat(disp=)
       if (mat.method != "mmse-sparse"){
         if (!dm(nm).ncp){
           // Fill iMat (reference vector subtracted in mult_wfs_int_mat):
-          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat;
+          iMat(,i+indexDm(1,nm)-1) = mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat;
         }
       } else {
         if (!dm(nm).ncp){
-          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat), mat.sparse_thresh;
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat), mat.sparse_thresh;
         } else {
-          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys,nm=nm)/dm(nm).push4imat*0.), mat.sparse_thresh;
+          rcobuild, iMatSP, float(mult_wfs_int_mat(disp=disp,subsys=subsys)/dm(nm).push4imat*0.), mat.sparse_thresh;
         }
       }
 
